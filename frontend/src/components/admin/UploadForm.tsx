@@ -15,6 +15,7 @@ const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
   });
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,29 +27,79 @@ const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      console.log('File selected:', {
+        name: selectedFile.name,
+        type: selectedFile.type,
+        size: selectedFile.size,
+      });
+
+      // Validate file extension
+      const fileName = selectedFile.name.toLowerCase();
+      const validExtensions = ['.ppt', '.pptx', '.pdf', '.mp4', '.webm', '.avi', '.mov', '.mkv', '.mpeg', '.jpg', '.jpeg', '.png', '.gif', '.webp'];
+      const hasValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+
+      if (!hasValidExtension) {
+        setError('Tipe file tidak valid. Hanya PowerPoint (.ppt, .pptx), PDF (.pdf), Video (.mp4, .webm, .avi), dan Foto (.jpg, .png, .gif, .webp) yang diperbolehkan.');
+        e.target.value = '';
+        return;
+      }
+
       // Validate file type
       const validTypes = [
         'application/vnd.ms-powerpoint',
         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'application/pdf',
         'video/mp4',
         'video/webm',
         'video/x-msvideo',
+        'video/avi',
+        'video/quicktime',
+        'video/mpeg',
+        'video/x-matroska',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/webp',
       ];
 
-      if (!validTypes.includes(selectedFile.type)) {
-        setError('Tipe file tidak valid. Hanya PowerPoint dan Video yang diperbolehkan.');
+      // Some browsers might not set correct MIME type, so we check extension too
+      if (selectedFile.type && !validTypes.includes(selectedFile.type) && !hasValidExtension) {
+        setError('Tipe file tidak valid. Hanya PowerPoint, PDF, Video, dan Foto yang diperbolehkan.');
+        e.target.value = '';
         return;
       }
 
-      // Validate file size (50MB)
-      const maxSize = 50 * 1024 * 1024;
+      // Validate file size based on type
+      let maxSize: number;
+      let maxSizeLabel: string;
+      
+      if (fileName.endsWith('.mp4') || fileName.endsWith('.webm') || fileName.endsWith('.avi') || fileName.endsWith('.mov') || fileName.endsWith('.mkv')) {
+        maxSize = 1024 * 1024 * 1024; // 1GB for videos
+        maxSizeLabel = '1GB';
+      } else if (fileName.endsWith('.ppt') || fileName.endsWith('.pptx') || fileName.endsWith('.pdf')) {
+        maxSize = 100 * 1024 * 1024; // 100MB for PowerPoint and PDF
+        maxSizeLabel = '100MB';
+      } else {
+        maxSize = 50 * 1024 * 1024; // 50MB for photos
+        maxSizeLabel = '50MB';
+      }
+      
       if (selectedFile.size > maxSize) {
-        setError('Ukuran file terlalu besar. Maksimal 50MB.');
+        setError(`Ukuran file terlalu besar (${(selectedFile.size / 1024 / 1024).toFixed(2)} MB). Maksimal ${maxSizeLabel}.`);
+        e.target.value = '';
+        return;
+      }
+
+      if (selectedFile.size === 0) {
+        setError('File kosong atau tidak valid.');
+        e.target.value = '';
         return;
       }
 
       setFile(selectedFile);
       setError(null);
+      console.log('File validation passed');
     }
   };
 
@@ -69,11 +120,26 @@ const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
     setIsUploading(true);
 
     try {
-      await uploadInnovation({
+      console.log('Starting upload...', {
         title: formData.title,
         description: formData.description,
-        file,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
       });
+
+      const result = await uploadInnovation(
+        {
+          title: formData.title,
+          description: formData.description,
+          file,
+        },
+        (progress) => {
+          setUploadProgress(progress);
+        }
+      );
+
+      console.log('Upload successful:', result);
 
       setShowSuccess(true);
       setFormData({ title: '', description: '' });
@@ -89,15 +155,19 @@ const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
 
       setTimeout(() => setShowSuccess(false), 5000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal mengupload file');
+      console.error('Upload error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Gagal mengupload file. Silakan coba lagi.';
+      setError(errorMessage);
     } finally {
       setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
   const getFileIcon = () => {
     if (!file) return <Upload className="w-8 h-8" />;
     if (file.type.includes('video')) return <Video className="w-8 h-8 text-secondary-600" />;
+    if (file.type.includes('image')) return <span className="text-4xl">📸</span>;
     return <FileText className="w-8 h-8 text-primary-600" />;
   };
 
@@ -152,7 +222,7 @@ const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
         {/* File Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            File (PowerPoint atau Video) <span className="text-primary-500">*</span>
+            File (PowerPoint, PDF, Video, atau Foto) <span className="text-primary-500">*</span>
           </label>
           <div className="mt-1">
             <label
@@ -171,19 +241,34 @@ const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
                   )}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  PPT, PPTX, MP4, WEBM, AVI (Max. 50MB)
+                  PPT/PPTX/PDF (Max. 100MB), Video MP4/WEBM/AVI (Max. 1GB), Foto JPG/PNG/GIF (Max. 50MB)
                 </p>
               </div>
               <input
                 id="file-upload"
                 type="file"
                 className="hidden"
-                accept=".ppt,.pptx,.mp4,.webm,.avi"
+                accept=".ppt,.pptx,.pdf,.mp4,.webm,.avi,.mov,.mkv,.mpeg,.jpg,.jpeg,.png,.gif,.webp"
                 onChange={handleFileChange}
               />
             </label>
           </div>
         </div>
+
+        {isUploading && uploadProgress > 0 && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Mengupload...</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div
+                className="bg-gradient-to-r from-primary-500 to-secondary-500 h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
 
         <Button
           type="submit"
@@ -191,8 +276,9 @@ const UploadForm = ({ onUploadSuccess }: UploadFormProps) => {
           size="lg"
           fullWidth
           isLoading={isUploading}
+          disabled={isUploading}
         >
-          {isUploading ? 'Mengupload...' : 'Upload Konten'}
+          {isUploading ? `Mengupload... ${uploadProgress}%` : 'Upload Konten'}
         </Button>
       </form>
     </div>

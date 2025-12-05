@@ -27,18 +27,20 @@ export class InnovationCatcherGame {
   private lastSpawnTime: number = 0;
   private spawnInterval: number = 1000;
   private startTime: number = 0;
-  private isMobile: boolean;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
-    this.ctx = canvas.getContext('2d')!;
-    this.isMobile = window.innerWidth < 768;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('Could not get 2D context from canvas');
+    }
+    this.ctx = context;
 
     // Set canvas size
     this.resizeCanvas();
     window.addEventListener('resize', () => this.resizeCanvas());
 
-    // Initialize basket
+    // Initialize basket after canvas is sized
     this.basket = {
       x: this.canvas.width / 2 - 40,
       y: this.canvas.height - 80,
@@ -58,38 +60,70 @@ export class InnovationCatcherGame {
 
     // Setup controls
     this.setupControls();
+    
+    console.log('Game initialized:', {
+      canvasWidth: this.canvas.width,
+      canvasHeight: this.canvas.height,
+      basketPosition: this.basket
+    });
   }
 
   private resizeCanvas() {
     const container = this.canvas.parentElement;
     if (container) {
-      this.canvas.width = Math.min(container.clientWidth, 800);
-      this.canvas.height = Math.min(window.innerHeight * 0.7, 600);
+      const width = Math.min(container.clientWidth - 32, 800);
+      const height = Math.min(window.innerHeight * 0.6, 600);
+      
+      // Only resize if dimensions changed significantly
+      if (Math.abs(this.canvas.width - width) > 10 || Math.abs(this.canvas.height - height) > 10) {
+        this.canvas.width = width;
+        this.canvas.height = height;
+        
+        // Update basket position after resize
+        if (this.basket) {
+          this.basket.y = this.canvas.height - 80;
+          this.basket.x = Math.min(this.basket.x, this.canvas.width - this.basket.width);
+        }
+      }
     }
   }
 
   private setupControls() {
     // Mouse control
     this.canvas.addEventListener('mousemove', (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      this.basket.x = Math.max(0, Math.min(x - this.basket.width / 2, this.canvas.width - this.basket.width));
+      if (!this.state.isPaused && this.state.isPlaying) {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        this.basket.x = Math.max(0, Math.min(x - this.basket.width / 2, this.canvas.width - this.basket.width));
+      }
     });
 
     // Touch control
     this.canvas.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      const rect = this.canvas.getBoundingClientRect();
-      const touch = e.touches[0];
-      const x = touch.clientX - rect.left;
-      this.basket.x = Math.max(0, Math.min(x - this.basket.width / 2, this.canvas.width - this.basket.width));
+      if (!this.state.isPaused && this.state.isPlaying) {
+        e.preventDefault();
+        const rect = this.canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = touch.clientX - rect.left;
+        this.basket.x = Math.max(0, Math.min(x - this.basket.width / 2, this.canvas.width - this.basket.width));
+      }
+    }, { passive: false });
+
+    // Click to unpause
+    this.canvas.addEventListener('click', () => {
+      if (this.state.isPaused && this.state.isPlaying) {
+        this.pause();
+      }
     });
   }
 
   public start() {
     this.state.isPlaying = true;
     this.state.gameOver = false;
+    this.state.isPaused = false;
     this.startTime = Date.now();
+    this.lastSpawnTime = Date.now();
+    console.log('Game started');
     this.gameLoop();
   }
 
@@ -196,41 +230,236 @@ export class InnovationCatcherGame {
   }
 
   private draw() {
-    // Clear canvas
-    this.ctx.fillStyle = '#F9FAFB';
+    // Clear canvas with futuristic gradient background
+    const gradient = this.ctx.createLinearGradient(0, 0, 0, this.canvas.height);
+    gradient.addColorStop(0, '#0F172A'); // Dark blue
+    gradient.addColorStop(0.5, '#1E293B'); // Slate
+    gradient.addColorStop(1, '#0C4A6E'); // Deep blue
+    this.ctx.fillStyle = gradient;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Draw basket
-    this.ctx.fillStyle = '#3B82F6';
-    this.ctx.fillRect(this.basket.x, this.basket.y, this.basket.width, this.basket.height);
-    this.ctx.strokeStyle = '#1E40AF';
-    this.ctx.lineWidth = 3;
-    this.ctx.strokeRect(this.basket.x, this.basket.y, this.basket.width, this.basket.height);
-
-    // Draw items
-    this.items.forEach((item) => {
-      this.ctx.fillStyle = item.color;
+    // Draw futuristic grid pattern
+    this.ctx.strokeStyle = 'rgba(59, 130, 246, 0.1)';
+    this.ctx.lineWidth = 1;
+    const gridSize = 40;
+    for (let x = 0; x < this.canvas.width; x += gridSize) {
       this.ctx.beginPath();
-      this.ctx.arc(item.x + item.width / 2, item.y + item.height / 2, item.width / 2, 0, Math.PI * 2);
+      this.ctx.moveTo(x, 0);
+      this.ctx.lineTo(x, this.canvas.height);
+      this.ctx.stroke();
+    }
+    for (let y = 0; y < this.canvas.height; y += gridSize) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(0, y);
+      this.ctx.lineTo(this.canvas.width, y);
+      this.ctx.stroke();
+    }
+
+    // Draw animated particles/stars
+    const time = Date.now() * 0.001;
+    this.ctx.fillStyle = 'rgba(147, 197, 253, 0.6)';
+    for (let i = 0; i < 20; i++) {
+      const x = (i * 50 + time * 20) % this.canvas.width;
+      const y = (i * 30) % this.canvas.height;
+      const size = Math.sin(time + i) * 1 + 1.5;
+      this.ctx.beginPath();
+      this.ctx.arc(x, y, size, 0, Math.PI * 2);
       this.ctx.fill();
+    }
+
+    // Draw futuristic basket with neon glow effect
+    const basketGradient = this.ctx.createLinearGradient(
+      this.basket.x, 
+      this.basket.y, 
+      this.basket.x, 
+      this.basket.y + this.basket.height
+    );
+    basketGradient.addColorStop(0, '#3B82F6');
+    basketGradient.addColorStop(0.5, '#8B5CF6');
+    basketGradient.addColorStop(1, '#6366F1');
+    
+    // Glow effect
+    this.ctx.shadowColor = '#3B82F6';
+    this.ctx.shadowBlur = 20;
+    this.ctx.shadowOffsetX = 0;
+    this.ctx.shadowOffsetY = 0;
+    
+    // Basket body - futuristic trapezoid
+    this.ctx.fillStyle = basketGradient;
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.basket.x + 15, this.basket.y);
+    this.ctx.lineTo(this.basket.x + this.basket.width - 15, this.basket.y);
+    this.ctx.lineTo(this.basket.x + this.basket.width - 5, this.basket.y + this.basket.height);
+    this.ctx.lineTo(this.basket.x + 5, this.basket.y + this.basket.height);
+    this.ctx.closePath();
+    this.ctx.fill();
+    
+    // Neon border
+    this.ctx.strokeStyle = '#60A5FA';
+    this.ctx.lineWidth = 2;
+    this.ctx.stroke();
+    
+    // Reset shadow
+    this.ctx.shadowBlur = 0;
+    
+    // Tech lines on basket
+    this.ctx.strokeStyle = 'rgba(147, 197, 253, 0.5)';
+    this.ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const y = this.basket.y + (this.basket.height / 4) * i;
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.basket.x + 10, y);
+      this.ctx.lineTo(this.basket.x + this.basket.width - 10, y);
+      this.ctx.stroke();
+    }
+
+    // Draw items with futuristic neon graphics
+    this.items.forEach((item) => {
+      const centerX = item.x + item.width / 2;
+      const centerY = item.y + item.height / 2;
+      const radius = item.width / 2;
+
+      // Neon glow effect
+      let glowColor = '';
+      if (item.type === 'good') {
+        glowColor = '#10B981';
+      } else if (item.type === 'bonus') {
+        glowColor = '#F59E0B';
+      } else {
+        glowColor = '#EF4444';
+      }
+
+      this.ctx.shadowColor = glowColor;
+      this.ctx.shadowBlur = 15;
+
+      // Item gradient with neon colors
+      const itemGradient = this.ctx.createRadialGradient(
+        centerX - radius / 3,
+        centerY - radius / 3,
+        0,
+        centerX,
+        centerY,
+        radius
+      );
+      
+      if (item.type === 'good') {
+        itemGradient.addColorStop(0, '#6EE7B7');
+        itemGradient.addColorStop(0.5, '#10B981');
+        itemGradient.addColorStop(1, '#059669');
+      } else if (item.type === 'bonus') {
+        itemGradient.addColorStop(0, '#FCD34D');
+        itemGradient.addColorStop(0.5, '#F59E0B');
+        itemGradient.addColorStop(1, '#D97706');
+      } else {
+        itemGradient.addColorStop(0, '#FCA5A5');
+        itemGradient.addColorStop(0.5, '#EF4444');
+        itemGradient.addColorStop(1, '#DC2626');
+      }
+
+      // Draw hexagon shape for futuristic look
+      this.ctx.fillStyle = itemGradient;
+      this.ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i;
+        const x = centerX + radius * Math.cos(angle);
+        const y = centerY + radius * Math.sin(angle);
+        if (i === 0) {
+          this.ctx.moveTo(x, y);
+        } else {
+          this.ctx.lineTo(x, y);
+        }
+      }
+      this.ctx.closePath();
+      this.ctx.fill();
+
+      // Neon border
+      this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      this.ctx.lineWidth = 2;
+      this.ctx.stroke();
+
+      // Reset shadow
+      this.ctx.shadowBlur = 0;
+
+      // Item icon/symbol with glow
+      this.ctx.shadowColor = '#FFFFFF';
+      this.ctx.shadowBlur = 5;
+      this.ctx.fillStyle = '#FFFFFF';
+      this.ctx.font = 'bold 18px sans-serif';
+      this.ctx.textAlign = 'center';
+      this.ctx.textBaseline = 'middle';
+      if (item.type === 'good') {
+        this.ctx.fillText('✓', centerX, centerY);
+      } else if (item.type === 'bonus') {
+        this.ctx.fillText('★', centerX, centerY);
+      } else {
+        this.ctx.fillText('✗', centerX, centerY);
+      }
+      this.ctx.shadowBlur = 0;
     });
 
-    // Draw HUD
-    this.ctx.fillStyle = '#1F2937';
-    this.ctx.font = 'bold 20px sans-serif';
-    this.ctx.fillText(`Score: ${this.state.score}`, 10, 30);
-    this.ctx.fillText(`Lives: ${this.state.lives}`, 10, 60);
-    this.ctx.fillText(`Level: ${this.state.level}`, 10, 90);
+    // Draw futuristic HUD with neon styling
+    const hudBg = this.ctx.createLinearGradient(0, 0, 220, 0);
+    hudBg.addColorStop(0, 'rgba(15, 23, 42, 0.9)');
+    hudBg.addColorStop(1, 'rgba(30, 41, 59, 0.8)');
+    this.ctx.fillStyle = hudBg;
+    this.ctx.fillRect(5, 5, 220, 110);
+    
+    // Neon border
+    this.ctx.strokeStyle = '#3B82F6';
+    this.ctx.lineWidth = 2;
+    this.ctx.shadowColor = '#3B82F6';
+    this.ctx.shadowBlur = 10;
+    this.ctx.strokeRect(5, 5, 220, 110);
+    this.ctx.shadowBlur = 0;
 
-    // Draw pause overlay
+    // HUD text with neon glow
+    this.ctx.font = 'bold 18px "Courier New", monospace';
+    this.ctx.textAlign = 'left';
+    
+    // Score
+    this.ctx.fillStyle = '#60A5FA';
+    this.ctx.shadowColor = '#60A5FA';
+    this.ctx.shadowBlur = 5;
+    this.ctx.fillText(`SCORE`, 15, 30);
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.fillText(`${this.state.score}`, 120, 30);
+    
+    // Lives
+    this.ctx.fillStyle = '#F87171';
+    this.ctx.shadowColor = '#F87171';
+    this.ctx.fillText(`LIVES`, 15, 55);
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.fillText(`${'❤️'.repeat(this.state.lives)}`, 120, 55);
+    
+    // Level
+    this.ctx.fillStyle = '#FCD34D';
+    this.ctx.shadowColor = '#FCD34D';
+    this.ctx.fillText(`LEVEL`, 15, 80);
+    this.ctx.fillStyle = '#FFFFFF';
+    this.ctx.fillText(`${this.state.level}`, 120, 80);
+    
+    this.ctx.shadowBlur = 0;
+
+    // Draw futuristic pause overlay
     if (this.state.isPaused) {
-      this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      this.ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      this.ctx.fillStyle = '#FFFFFF';
-      this.ctx.font = 'bold 40px sans-serif';
+      
+      // Neon text effect
+      this.ctx.shadowColor = '#3B82F6';
+      this.ctx.shadowBlur = 20;
+      this.ctx.fillStyle = '#60A5FA';
+      this.ctx.font = 'bold 48px "Courier New", monospace';
       this.ctx.textAlign = 'center';
-      this.ctx.fillText('PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+      this.ctx.textBaseline = 'middle';
+      this.ctx.fillText('⏸️ PAUSED', this.canvas.width / 2, this.canvas.height / 2);
+      
+      this.ctx.shadowBlur = 10;
+      this.ctx.fillStyle = '#FFFFFF';
+      this.ctx.font = '20px "Courier New", monospace';
+      this.ctx.fillText('Klik untuk melanjutkan', this.canvas.width / 2, this.canvas.height / 2 + 50);
       this.ctx.textAlign = 'left';
+      this.ctx.shadowBlur = 0;
     }
   }
 

@@ -34,7 +34,7 @@ function GamePage() {
 
   return (
     <Layout showFooter={false}>
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 py-12">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 py-12">
         <Container>
           {screen === 'menu' && (
             <GameModeSelection

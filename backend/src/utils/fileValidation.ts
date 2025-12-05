@@ -21,18 +21,28 @@ export const isValidVideoFile = (mimeType: string, filename: string): boolean =>
     'video/mp4',
     'video/webm',
     'video/x-msvideo',
+    'video/quicktime',
+    'video/mpeg',
+    'video/x-matroska',
   ];
 
-  const validExtensions = ['.mp4', '.webm', '.avi'];
+  const validExtensions = ['.mp4', '.webm', '.avi', '.mov', '.mkv', '.mpeg'];
   const hasValidExtension = validExtensions.some(ext => filename.toLowerCase().endsWith(ext));
 
   return validMimeTypes.includes(mimeType) && hasValidExtension;
 };
 
 /**
- * Validates file size
+ * Validates file size based on file type
  */
-export const isValidFileSize = (fileSize: number, maxSizeMB: number = 50): boolean => {
+export const isValidFileSize = (fileSize: number, fileType: 'video' | 'powerpoint' | 'photo'): boolean => {
+  const maxSizes = {
+    video: 1024, // 1GB for videos
+    powerpoint: 100, // 100MB for PowerPoint
+    photo: 50, // 50MB for photos
+  };
+  
+  const maxSizeMB = maxSizes[fileType] || 50;
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
   return fileSize > 0 && fileSize <= maxSizeBytes;
 };

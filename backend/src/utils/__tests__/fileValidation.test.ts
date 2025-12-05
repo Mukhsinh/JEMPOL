@@ -114,7 +114,7 @@ describe('File size validation', () => {
       fc.property(
         fc.integer({ min: 1, max: 50 * 1024 * 1024 }),
         (fileSize) => {
-          expect(isValidFileSize(fileSize, 50)).toBe(true);
+          expect(isValidFileSize(fileSize, 'photo')).toBe(true);
         }
       ),
       { numRuns: 100 }
@@ -126,7 +126,7 @@ describe('File size validation', () => {
       fc.property(
         fc.integer({ min: 51 * 1024 * 1024, max: 100 * 1024 * 1024 }),
         (fileSize) => {
-          expect(isValidFileSize(fileSize, 50)).toBe(false);
+          expect(isValidFileSize(fileSize, 'photo')).toBe(false);
         }
       ),
       { numRuns: 100 }
@@ -134,8 +134,8 @@ describe('File size validation', () => {
   });
 
   it('should reject zero or negative file sizes', () => {
-    expect(isValidFileSize(0)).toBe(false);
-    expect(isValidFileSize(-1)).toBe(false);
+    expect(isValidFileSize(0, 'photo')).toBe(false);
+    expect(isValidFileSize(-1, 'photo')).toBe(false);
   });
 });
 

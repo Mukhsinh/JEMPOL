@@ -1,7 +1,5 @@
 import { useState, FormEvent } from 'react';
 import { Trophy, RotateCcw, Home } from 'lucide-react';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
 import { submitGameScore, getDeviceType } from '../../services/gameService';
 
 interface GameOverProps {
@@ -49,59 +47,61 @@ const GameOver = ({ score, level, duration, mode, onPlayAgain, onBackToMenu }: G
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 text-center">
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl shadow-2xl p-8 text-center border-2 border-blue-500/30">
         {/* Trophy Icon */}
-        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-full mb-6">
-          <Trophy className="w-12 h-12 text-white" />
+        <div className="inline-flex items-center justify-center w-28 h-28 bg-gradient-to-br from-yellow-500/30 to-orange-500/30 rounded-full mb-6 border-4 border-yellow-400/50 shadow-2xl shadow-yellow-500/40 animate-pulse">
+          <Trophy className="w-14 h-14 text-yellow-400" />
         </div>
 
-        <h2 className="text-4xl font-bold text-gray-900 mb-2">Game Over!</h2>
-        <p className="text-gray-600 mb-8">Permainan selesai, berikut hasil Anda:</p>
+        <h2 className="text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2 font-mono">GAME OVER!</h2>
+        <p className="text-blue-300/70 mb-8 font-mono">Permainan selesai, berikut hasil Anda:</p>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg p-4">
-            <p className="text-sm text-gray-600 mb-1">Skor Akhir</p>
-            <p className="text-3xl font-bold text-primary-600">{score}</p>
+          <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-lg p-4 border-2 border-blue-400/30 shadow-lg shadow-blue-500/20">
+            <p className="text-sm text-blue-300 mb-1 font-mono">SKOR AKHIR</p>
+            <p className="text-4xl font-bold text-blue-400 font-mono">{score}</p>
           </div>
-          <div className="bg-gradient-to-br from-secondary-50 to-secondary-100 rounded-lg p-4">
-            <p className="text-sm text-gray-600 mb-1">Level</p>
-            <p className="text-3xl font-bold text-secondary-600">{level}</p>
+          <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg p-4 border-2 border-purple-400/30 shadow-lg shadow-purple-500/20">
+            <p className="text-sm text-purple-300 mb-1 font-mono">LEVEL</p>
+            <p className="text-4xl font-bold text-purple-400 font-mono">{level}</p>
           </div>
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4">
-            <p className="text-sm text-gray-600 mb-1">Durasi</p>
-            <p className="text-3xl font-bold text-gray-700">{duration}s</p>
+          <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg p-4 border-2 border-green-400/30 shadow-lg shadow-green-500/20">
+            <p className="text-sm text-green-300 mb-1 font-mono">DURASI</p>
+            <p className="text-4xl font-bold text-green-400 font-mono">{duration}s</p>
           </div>
         </div>
 
         {/* Submit Score Form */}
         {!submitted ? (
           <form onSubmit={handleSubmit} className="mb-6">
-            <p className="text-sm text-gray-700 mb-4">
+            <p className="text-sm text-blue-300 mb-4 font-mono">
               Masukkan nama Anda untuk menyimpan skor ke leaderboard:
             </p>
             <div className="flex space-x-3">
-              <Input
+              <input
                 type="text"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
-                placeholder="Nama Anda"
-                error={error || undefined}
+                placeholder="NAMA ANDA"
+                className="flex-1 px-4 py-3 bg-slate-800/50 border-2 border-blue-400/30 rounded-lg text-white placeholder-blue-300/50 focus:border-blue-400/60 focus:outline-none font-mono"
               />
-              <Button
+              <button
                 type="submit"
-                variant="primary"
-                isLoading={isSubmitting}
-                disabled={!playerName.trim()}
+                disabled={!playerName.trim() || isSubmitting}
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-bold font-mono hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Simpan
-              </Button>
+                {isSubmitting ? 'SAVING...' : 'SIMPAN'}
+              </button>
             </div>
+            {error && (
+              <p className="text-red-400 text-sm mt-2 font-mono">{error}</p>
+            )}
           </form>
         ) : (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-800 font-medium">Skor berhasil disimpan!</p>
-            <p className="text-green-700 text-sm mt-1">
+          <div className="mb-6 p-4 bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-400/50 rounded-lg shadow-lg shadow-green-500/20">
+            <p className="text-green-400 font-bold font-mono">SKOR BERHASIL DISIMPAN!</p>
+            <p className="text-green-300/70 text-sm mt-1 font-mono">
               Lihat posisi Anda di leaderboard
             </p>
           </div>
@@ -109,14 +109,20 @@ const GameOver = ({ score, level, duration, mode, onPlayAgain, onBackToMenu }: G
 
         {/* Actions */}
         <div className="flex space-x-3">
-          <Button variant="outline" size="lg" fullWidth onClick={onBackToMenu}>
+          <button 
+            onClick={onBackToMenu}
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-slate-700 to-slate-600 text-white rounded-lg font-bold font-mono hover:from-slate-600 hover:to-slate-500 transition-all shadow-lg border-2 border-slate-500/50 inline-flex items-center justify-center"
+          >
             <Home className="w-5 h-5 mr-2" />
-            Menu Utama
-          </Button>
-          <Button variant="primary" size="lg" fullWidth onClick={onPlayAgain}>
+            MENU UTAMA
+          </button>
+          <button 
+            onClick={onPlayAgain}
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-bold font-mono hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg shadow-green-500/30 inline-flex items-center justify-center"
+          >
             <RotateCcw className="w-5 h-5 mr-2" />
-            Main Lagi
-          </Button>
+            MAIN LAGI
+          </button>
         </div>
       </div>
     </div>

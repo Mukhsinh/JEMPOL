@@ -5,7 +5,15 @@ import { VisitorFormData, VisitorRecord, APIResponse } from '../types';
  * Register a new visitor
  */
 export const registerVisitor = async (data: VisitorFormData): Promise<APIResponse> => {
-  const response = await api.post<APIResponse>('/visitors', data);
+  // Convert camelCase to snake_case for backend
+  const payload = {
+    nama: data.nama,
+    instansi: data.instansi,
+    jabatan: data.jabatan,
+    no_handphone: data.noHandphone,
+  };
+  
+  const response = await api.post<APIResponse>('/visitors', payload);
   return response.data;
 };
 

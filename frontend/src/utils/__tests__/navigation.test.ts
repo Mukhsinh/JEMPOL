@@ -77,7 +77,7 @@ describe('Property: Active menu highlighting', () => {
           let currentTop = 0;
           const sectionIds: string[] = [];
 
-          sections.forEach((section, index) => {
+          sections.forEach((section) => {
             const element = document.createElement('div');
             element.id = section.id;
             

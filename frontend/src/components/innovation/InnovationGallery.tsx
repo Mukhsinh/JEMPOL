@@ -1,38 +1,29 @@
 import { useState, useEffect } from 'react';
-import { Lightbulb, Filter } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 import InnovationCard from './InnovationCard';
 import Button from '../ui/Button';
 import { InnovationItem } from '../../types';
 import { getAllInnovations } from '../../services/innovationService';
 
 interface InnovationGalleryProps {
+  type?: 'powerpoint' | 'pdf' | 'video' | 'photo';
   onItemClick: (item: InnovationItem) => void;
 }
 
-const InnovationGallery = ({ onItemClick }: InnovationGalleryProps) => {
+const InnovationGallery = ({ type, onItemClick }: InnovationGalleryProps) => {
   const [items, setItems] = useState<InnovationItem[]>([]);
-  const [filteredItems, setFilteredItems] = useState<InnovationItem[]>([]);
-  const [filter, setFilter] = useState<'all' | 'powerpoint' | 'video'>('all');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInnovations();
-  }, []);
-
-  useEffect(() => {
-    if (filter === 'all') {
-      setFilteredItems(items);
-    } else {
-      setFilteredItems(items.filter(item => item.type === filter));
-    }
-  }, [filter, items]);
+  }, [type]);
 
   const fetchInnovations = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await getAllInnovations();
+      const response = await getAllInnovations(type as any);
       setItems(response.data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal memuat data inovasi');
@@ -45,7 +36,7 @@ const InnovationGallery = ({ onItemClick }: InnovationGalleryProps) => {
     return (
       <div className="text-center py-12">
         <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        <p className="mt-4 text-gray-600">Memuat galeri inovasi...</p>
+        <p className="mt-4 text-gray-600">Memuat galeri...</p>
       </div>
     );
   }
@@ -61,66 +52,61 @@ const InnovationGallery = ({ onItemClick }: InnovationGalleryProps) => {
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-12">
+      <div className="text-center py-12 bg-gray-50 rounded-xl">
         <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-4">
           <Lightbulb className="w-10 h-10 text-gray-400" />
         </div>
         <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          Belum Ada Konten Inovasi
+          Belum Ada Konten
         </h3>
         <p className="text-gray-600">
-          Konten inovasi akan ditampilkan di sini setelah diupload oleh admin
+          Konten akan ditampilkan di sini setelah diupload oleh admin
         </p>
       </div>
     );
   }
 
+  // For photos, use grid layout
+  if (type === 'photo') {
+    const API_BASE_URL = (import.meta as any).env?.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+    
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {items.map((item) => {
+          const fileUrl = `${API_BASE_URL}${item.fileUrl || item.file_url}`;
+          return (
+            <div
+              key={item._id || item.id}
+              className="group relative aspect-square overflow-hidden rounded-xl cursor-pointer shadow-md hover:shadow-xl transition-all"
+              onClick={() => onItemClick(item)}
+            >
+              <img
+                src={fileUrl}
+                alt={item.title}
+                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <p className="text-white font-semibold text-sm line-clamp-2">{item.title}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // For powerpoint, pdf, and video, use card layout
   return (
-    <div>
-      {/* Filter Buttons */}
-      <div className="flex items-center justify-center space-x-2 mb-8">
-        <Filter className="w-5 h-5 text-gray-500" />
-        <Button
-          variant={filter === 'all' ? 'primary' : 'ghost'}
-          size="sm"
-          onClick={() => setFilter('all')}
-        >
-          Semua ({items.length})
-        </Button>
-        <Button
-          variant={filter === 'powerpoint' ? 'primary' : 'ghost'}
-          size="sm"
-          onClick={() => setFilter('powerpoint')}
-        >
-          PowerPoint ({items.filter(i => i.type === 'powerpoint').length})
-        </Button>
-        <Button
-          variant={filter === 'video' ? 'primary' : 'ghost'}
-          size="sm"
-          onClick={() => setFilter('video')}
-        >
-          Video ({items.filter(i => i.type === 'video').length})
-        </Button>
-      </div>
-
-      {/* Gallery Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredItems.map((item) => (
-          <InnovationCard
-            key={item._id}
-            item={item}
-            onClick={() => onItemClick(item)}
-          />
-        ))}
-      </div>
-
-      {filteredItems.length === 0 && filter !== 'all' && (
-        <div className="text-center py-12">
-          <p className="text-gray-600">
-            Tidak ada {filter === 'powerpoint' ? 'PowerPoint' : 'Video'} yang tersedia
-          </p>
-        </div>
-      )}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {items.map((item) => (
+        <InnovationCard
+          key={item._id || item.id}
+          item={item}
+          onClick={() => onItemClick(item)}
+        />
+      ))}
     </div>
   );
 };

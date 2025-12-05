@@ -99,7 +99,7 @@ const VisitorRegistrationForm = ({
             <User className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            Pendaftaran Pengunjung
+            Daftar Pengunjung
           </h2>
           <p className="text-gray-600">
             Silakan isi formulir di bawah ini untuk mendaftar sebagai pengunjung

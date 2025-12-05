@@ -1,18 +1,18 @@
-# 🚀 Innovation Landing Page
+# 💳 JEMPOL - Jembatan Pembayaran Online
 
-Platform web responsif yang lengkap untuk menampilkan inovasi organisasi dengan fitur pendaftaran pengunjung, galeri multimedia, dan game interaktif "Innovation Catcher".
+Platform web responsif yang lengkap untuk menampilkan inovasi JEMPOL (Jembatan Pembayaran Online) dari RSUD Bendan Kota Pekalongan, dengan fitur pendaftaran pengunjung, galeri multimedia, dan game interaktif "Innovation Catcher".
 
 ## ✨ Fitur Utama
 
-### 📝 Pendaftaran Pengunjung
+### 📝 Daftar Pengunjung
 - Form registrasi dengan validasi lengkap
 - Validasi nomor handphone Indonesia
 - Export data ke CSV
 - Search & filter pengunjung
 
-### 🎨 Galeri Inovasi
-- Upload PowerPoint (PPT, PPTX)
-- Upload Video (MP4, WEBM, AVI)
+### 🎨 Galeri Inovasi JEMPOL
+- Upload materi PowerPoint (PPT, PPTX) - dapat dibaca dan didownload
+- Upload Video tutorial (MP4, WEBM, AVI) - dapat diputar langsung
 - Preview & download konten
 - Filter berdasarkan tipe
 - View counter

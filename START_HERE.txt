@@ -1,0 +1,70 @@
+================================================================================
+                    ⚠️  BACKEND SERVER BELUM BERJALAN! ⚠️
+================================================================================
+
+ERROR YANG ANDA LIHAT:
+  ❌ Network Error
+  ❌ ERR_CONNECTION_REFUSED
+  ❌ localhost:5000/api/innovations
+
+PENYEBAB:
+  Backend server tidak berjalan di port 5000
+
+SOLUSI CEPAT:
+  1. Double-click: FIX_AND_START.bat
+  2. Tunggu sampai muncul: "Server running on port 5000"
+  3. Refresh halaman admin
+  4. Upload akan berhasil! ✅
+
+================================================================================
+                         LANGKAH DETAIL
+================================================================================
+
+STEP 1: START MONGODB
+  Buka Command Prompt baru, ketik:
+  > mongod
+  
+  Biarkan terminal ini tetap terbuka!
+
+STEP 2: START BACKEND
+  Buka Command Prompt baru, ketik:
+  > cd backend
+  > npm run dev
+  
+  Harus muncul: "Server running on port 5000"
+  Biarkan terminal ini tetap terbuka!
+
+STEP 3: VERIFY
+  Buka browser: http://localhost:5000/api/health
+  Harus muncul: {"success":true,"message":"Server is running"}
+
+STEP 4: TEST UPLOAD
+  Buka: http://localhost:3000/admin
+  Upload file - TIDAK ADA ERROR LAGI! ✅
+
+================================================================================
+                         FILES BANTUAN
+================================================================================
+
+FIX_AND_START.bat       - Auto fix dan start backend
+CHECK_STATUS.bat        - Cek status semua services
+ERROR_SOLUTION.md       - Panduan lengkap error solution
+STARTUP_GUIDE.md        - Panduan startup lengkap
+UPLOAD_TROUBLESHOOTING.md - Troubleshooting upload
+
+================================================================================
+                         QUICK REFERENCE
+================================================================================
+
+MongoDB:     mongod
+Backend:     cd backend && npm run dev
+Frontend:    cd frontend && npm run dev
+
+Health:      http://localhost:5000/api/health
+Admin:       http://localhost:3000/admin
+
+================================================================================
+
+INGAT: Backend HARUS running untuk upload berfungsi!
+
+================================================================================

@@ -1,0 +1,79 @@
+========================================
+  CARA MEMBUAT TABEL ADMIN DI SUPABASE
+========================================
+
+LANGKAH-LANGKAH:
+
+1. Buka browser dan akses:
+   https://supabase.com/dashboard
+
+2. Login ke akun Supabase Anda
+
+3. Pilih project: jxxzbdivafzzwqhagwrf
+
+4. Klik "SQL Editor" di menu sebelah kiri
+
+5. Klik tombol "New Query"
+
+6. Copy dan paste SQL berikut:
+
+========================================
+CREATE TABLE IF NOT EXISTS admins (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  username VARCHAR(255) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admins_username ON admins(username);
+
+ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all operations on admins" ON admins
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+INSERT INTO admins (username, password_hash)
+VALUES ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy')
+ON CONFLICT (username) DO NOTHING;
+========================================
+
+7. Klik tombol "Run" (atau tekan Ctrl+Enter)
+
+8. Tunggu sampai muncul "Success. No rows returned"
+
+9. Selesai! Tabel admin sudah dibuat
+
+VERIFIKASI:
+
+1. Klik "Table Editor" di menu kiri
+2. Cari tabel "admins"
+3. Harus ada 1 row dengan username "admin"
+
+LOGIN INFO:
+
+Username: admin
+Password: admin123
+
+SETELAH TABEL DIBUAT:
+
+1. Refresh halaman login: http://localhost:3001/login
+2. Login dengan username: admin, password: admin123
+3. Seharusnya berhasil masuk ke Admin Panel
+
+========================================
+
+TROUBLESHOOTING:
+
+Error "relation already exists"?
+→ Tabel sudah ada, skip langkah ini
+
+Error "permission denied"?
+→ Pastikan Anda login sebagai owner project
+
+Masih tidak bisa login?
+→ Pastikan backend berjalan (npm run dev di folder backend)
+→ Cek console browser untuk error
+
+========================================

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Lightbulb } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { getActiveSection } from '../../utils/navigation';
+import JempolLogo from '../ui/JempolLogo';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -31,7 +32,7 @@ const Header = () => {
 
   const navItems = [
     { name: 'Beranda', href: '/', section: 'home' },
-    { name: 'Pendaftaran', href: '/#registration', section: 'registration' },
+    { name: 'Daftar Tamu', href: '/#registration', section: 'registration' },
     { name: 'Galeri Inovasi', href: '/#gallery', section: 'gallery' },
     { name: 'Game', href: '/game', section: 'game' },
     { name: 'Leaderboard', href: '/#leaderboard', section: 'leaderboard' },
@@ -64,13 +65,16 @@ const Header = () => {
       <nav className="container-custom">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group">
-            <div className="bg-gradient-to-br from-primary-500 to-secondary-500 p-2 rounded-lg group-hover:scale-110 transition-transform">
-              <Lightbulb className="w-6 h-6 text-white" />
+          <Link to="/" className="flex items-center space-x-3 group">
+            <div className="group-hover:scale-110 transition-transform">
+              <JempolLogo size={48} />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
-              Platform Inovasi
-            </span>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold bg-gradient-to-r from-primary-600 via-secondary-600 to-primary-600 bg-clip-text text-transparent">
+                JEMPOL
+              </span>
+              <span className="text-xs text-gray-600 font-medium">Jembatan Pembayaran Online</span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}

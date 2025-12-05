@@ -14,18 +14,29 @@ export interface VisitorRecord extends VisitorFormData {
 
 // Innovation Types
 export interface InnovationItem {
-  _id: string;
+  _id?: string;
+  id?: string;
   title: string;
   description: string;
-  type: 'powerpoint' | 'video';
-  fileUrl: string;
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
+  type: 'powerpoint' | 'pdf' | 'video' | 'photo';
+  category?: 'innovation' | 'video' | 'photo';
+  fileUrl?: string;
+  file_url?: string;
+  fileName?: string;
+  file_name?: string;
+  fileSize?: number;
+  file_size?: number;
+  mimeType?: string;
+  mime_type?: string;
   thumbnailUrl?: string;
-  uploadedBy: string;
-  uploadedAt: Date;
-  views: number;
+  thumbnail_url?: string;
+  uploadedBy?: string;
+  uploaded_by?: string;
+  uploadedAt?: Date | string;
+  uploaded_at?: Date | string;
+  views?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Game Types

@@ -1,16 +1,16 @@
 import { Request, Response } from 'express';
-import Visitor from '../models/Visitor.js';
+import supabase from '../config/supabase.js';
 
 /**
- * Register a new visitor
+ * Register new visitor
  * POST /api/visitors
  */
 export const registerVisitor = async (req: Request, res: Response) => {
   try {
-    const { nama, instansi, jabatan, noHandphone } = req.body;
+    const { nama, instansi, jabatan, no_handphone } = req.body;
 
-    // Validate required fields
-    if (!nama || !instansi || !jabatan || !noHandphone) {
+    // Validation
+    if (!nama || !instansi || !jabatan || !no_handphone) {
       return res.status(400).json({
         success: false,
         error: 'Semua field harus diisi',
@@ -18,34 +18,37 @@ export const registerVisitor = async (req: Request, res: Response) => {
     }
 
     // Get IP address
-    const ipAddress = req.ip || req.socket.remoteAddress;
+    const ip_address = req.ip || req.headers['x-forwarded-for'] || 'unknown';
 
-    // Create visitor
-    const visitor = new Visitor({
-      nama: nama.trim(),
-      instansi: instansi.trim(),
-      jabatan: jabatan.trim(),
-      noHandphone: noHandphone.trim(),
-      ipAddress,
-    });
+    const { data, error } = await supabase
+      .from('visitors')
+      .insert({
+        nama: nama.trim(),
+        instansi: instansi.trim(),
+        jabatan: jabatan.trim(),
+        no_handphone: no_handphone.trim(),
+        ip_address: Array.isArray(ip_address) ? ip_address[0] : ip_address,
+      })
+      .select()
+      .single();
 
-    await visitor.save();
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
 
     res.status(201).json({
       success: true,
-      data: {
-        id: visitor._id,
-        registeredAt: visitor.registeredAt,
-      },
+      data,
       message: 'Pendaftaran berhasil',
     });
   } catch (error: any) {
     console.error('Error registering visitor:', error);
 
-    if (error.name === 'ValidationError') {
+    if (error.code === '23505') {
       return res.status(400).json({
         success: false,
-        error: error.message,
+        error: 'Data pengunjung sudah terdaftar',
       });
     }
 
@@ -57,42 +60,26 @@ export const registerVisitor = async (req: Request, res: Response) => {
 };
 
 /**
- * Get all visitors (admin only)
+ * Get all visitors
  * GET /api/visitors
  */
 export const getAllVisitors = async (req: Request, res: Response) => {
   try {
-    const { search, page = 1, limit = 50 } = req.query;
+    const { data, error } = await supabase
+      .from('visitors')
+      .select('*')
+      .order('registered_at', { ascending: false });
 
-    const query: any = {};
-
-    // Search by name or institution
-    if (search) {
-      query.$or = [
-        { nama: { $regex: search, $options: 'i' } },
-        { instansi: { $regex: search, $options: 'i' } },
-      ];
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
     }
-
-    const skip = (Number(page) - 1) * Number(limit);
-
-    const [visitors, total] = await Promise.all([
-      Visitor.find(query)
-        .sort({ registeredAt: -1 })
-        .skip(skip)
-        .limit(Number(limit))
-        .lean(),
-      Visitor.countDocuments(query),
-    ]);
 
     res.json({
       success: true,
-      data: visitors,
-      total,
-      page: Number(page),
-      totalPages: Math.ceil(total / Number(limit)),
+      data: data || [],
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching visitors:', error);
     res.status(500).json({
       success: false,
@@ -102,38 +89,78 @@ export const getAllVisitors = async (req: Request, res: Response) => {
 };
 
 /**
- * Export visitors to CSV
- * GET /api/visitors/export
+ * Delete visitor
+ * DELETE /api/visitors/:id
  */
-export const exportVisitors = async (req: Request, res: Response) => {
+export const deleteVisitor = async (req: Request, res: Response) => {
   try {
-    const visitors = await Visitor.find()
-      .sort({ registeredAt: -1 })
-      .lean();
+    const { id } = req.params;
 
-    // Create CSV content
-    const headers = ['Nama', 'Instansi', 'Jabatan', 'No. Handphone', 'Tanggal Daftar'];
-    const rows = visitors.map(v => [
-      v.nama,
-      v.instansi,
-      v.jabatan,
-      v.noHandphone,
-      new Date(v.registeredAt).toLocaleString('id-ID'),
-    ]);
+    const { error } = await supabase
+      .from('visitors')
+      .delete()
+      .eq('id', id);
 
-    const csv = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
-    ].join('\n');
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
 
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=pengunjung.csv');
-    res.send(csv);
-  } catch (error) {
-    console.error('Error exporting visitors:', error);
+    res.json({
+      success: true,
+      message: 'Data pengunjung berhasil dihapus',
+    });
+  } catch (error: any) {
+    console.error('Error deleting visitor:', error);
     res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan saat mengekspor data',
+      error: 'Terjadi kesalahan saat menghapus data pengunjung',
+    });
+  }
+};
+
+/**
+ * Get visitor statistics
+ * GET /api/visitors/stats
+ */
+export const getVisitorStats = async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('visitors')
+      .select('*');
+
+    if (error) {
+      throw error;
+    }
+
+    const stats = {
+      total: data?.length || 0,
+      today: data?.filter((v: any) => {
+        const today = new Date();
+        const registeredDate = new Date(v.registered_at);
+        return registeredDate.toDateString() === today.toDateString();
+      }).length || 0,
+      thisWeek: data?.filter((v: any) => {
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        return new Date(v.registered_at) >= weekAgo;
+      }).length || 0,
+      thisMonth: data?.filter((v: any) => {
+        const monthAgo = new Date();
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
+        return new Date(v.registered_at) >= monthAgo;
+      }).length || 0,
+    };
+
+    res.json({
+      success: true,
+      data: stats,
+    });
+  } catch (error: any) {
+    console.error('Error fetching visitor stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan saat mengambil statistik',
     });
   }
 };
