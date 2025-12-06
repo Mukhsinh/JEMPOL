@@ -5,16 +5,23 @@ import { VisitorFormData, VisitorRecord, APIResponse } from '../types';
  * Register a new visitor
  */
 export const registerVisitor = async (data: VisitorFormData): Promise<APIResponse> => {
-  // Convert camelCase to snake_case for backend
-  const payload = {
-    nama: data.nama,
-    instansi: data.instansi,
-    jabatan: data.jabatan,
-    no_handphone: data.noHandphone,
-  };
-  
-  const response = await api.post<APIResponse>('/visitors', payload);
-  return response.data;
+  try {
+    // Convert camelCase to snake_case for backend
+    const payload = {
+      nama: data.nama.trim(),
+      instansi: data.instansi.trim(),
+      jabatan: data.jabatan.trim(),
+      no_handphone: data.noHandphone.trim(),
+    };
+    
+    console.log('Registering visitor:', payload);
+    const response = await api.post<APIResponse>('/visitors', payload);
+    console.log('Visitor registered successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error registering visitor:', error);
+    throw error;
+  }
 };
 
 /**

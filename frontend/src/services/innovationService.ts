@@ -5,9 +5,16 @@ import { InnovationItem, APIResponse } from '../types';
  * Get all innovations
  */
 export const getAllInnovations = async (type?: 'powerpoint' | 'pdf' | 'video' | 'photo'): Promise<APIResponse<InnovationItem[]>> => {
-  const params = type ? { type } : {};
-  const response = await api.get<APIResponse<InnovationItem[]>>('/innovations', { params });
-  return response.data;
+  try {
+    const params = type ? { type } : {};
+    console.log('Fetching innovations:', params);
+    const response = await api.get<APIResponse<InnovationItem[]>>('/innovations', { params });
+    console.log('Innovations fetched successfully:', response.data.data?.length || 0, 'items');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching innovations:', error);
+    throw error;
+  }
 };
 
 /**
@@ -60,8 +67,16 @@ export const deleteInnovation = async (id: string): Promise<APIResponse> => {
  * Increment view count
  */
 export const incrementView = async (id: string): Promise<APIResponse> => {
-  const response = await api.post<APIResponse>(`/innovations/${id}/view`);
-  return response.data;
+  try {
+    console.log('Incrementing view for innovation:', id);
+    const response = await api.post<APIResponse>(`/innovations/${id}/view`);
+    console.log('View incremented successfully');
+    return response.data;
+  } catch (error) {
+    console.error('Error incrementing view:', error);
+    // Don't throw error for view increment - it's not critical
+    return { success: false, error: 'Failed to increment view' };
+  }
 };
 
 /**

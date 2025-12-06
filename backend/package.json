@@ -7,7 +7,10 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:connection": "node test-connection.js",
+    "test:database": "node test-database.js",
+    "test:all": "node test-all-endpoints.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",

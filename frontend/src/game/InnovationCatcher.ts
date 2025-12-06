@@ -29,49 +29,54 @@ export class InnovationCatcherGame {
   private startTime: number = 0;
 
   constructor(canvas: HTMLCanvasElement) {
-    this.canvas = canvas;
-    const context = canvas.getContext('2d');
-    if (!context) {
-      throw new Error('Could not get 2D context from canvas');
+    try {
+      this.canvas = canvas;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        throw new Error('Could not get 2D context from canvas');
+      }
+      this.ctx = context;
+
+      // Initialize basket with default values first
+      this.basket = {
+        x: 0,
+        y: 0,
+        width: 80,
+        height: 60,
+      };
+
+      // Initialize state
+      this.state = {
+        score: 0,
+        lives: 3,
+        level: 1,
+        isPlaying: false,
+        isPaused: false,
+        gameOver: false,
+      };
+
+      // Set canvas size and update basket position
+      this.resizeCanvas();
+      
+      // Add resize listener with debounce
+      let resizeTimeout: number;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = window.setTimeout(() => this.resizeCanvas(), 100);
+      });
+
+      // Setup controls
+      this.setupControls();
+      
+      console.log('Game initialized successfully:', {
+        canvasWidth: this.canvas.width,
+        canvasHeight: this.canvas.height,
+        basketPosition: this.basket
+      });
+    } catch (error) {
+      console.error('Error initializing game:', error);
+      throw error;
     }
-    this.ctx = context;
-
-    // Initialize basket with default values first
-    this.basket = {
-      x: 0,
-      y: 0,
-      width: 80,
-      height: 60,
-    };
-
-    // Initialize state
-    this.state = {
-      score: 0,
-      lives: 3,
-      level: 1,
-      isPlaying: false,
-      isPaused: false,
-      gameOver: false,
-    };
-
-    // Set canvas size and update basket position
-    this.resizeCanvas();
-    
-    // Add resize listener with debounce
-    let resizeTimeout: number;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = window.setTimeout(() => this.resizeCanvas(), 100);
-    });
-
-    // Setup controls
-    this.setupControls();
-    
-    console.log('Game initialized:', {
-      canvasWidth: this.canvas.width,
-      canvasHeight: this.canvas.height,
-      basketPosition: this.basket
-    });
   }
 
   private resizeCanvas() {
@@ -176,13 +181,24 @@ export class InnovationCatcherGame {
   }
 
   public start() {
-    this.state.isPlaying = true;
-    this.state.gameOver = false;
-    this.state.isPaused = false;
-    this.startTime = Date.now();
-    this.lastSpawnTime = Date.now();
-    console.log('Game started');
-    this.gameLoop();
+    try {
+      this.state.isPlaying = true;
+      this.state.gameOver = false;
+      this.state.isPaused = false;
+      this.state.score = 0;
+      this.state.lives = 3;
+      this.state.level = 1;
+      this.items = [];
+      this.startTime = Date.now();
+      this.lastSpawnTime = Date.now();
+      this.spawnInterval = 1000;
+      console.log('Game started successfully');
+      this.gameLoop();
+    } catch (error) {
+      console.error('Error starting game:', error);
+      this.state.isPlaying = false;
+      this.state.gameOver = true;
+    }
   }
 
   public pause() {
@@ -190,9 +206,15 @@ export class InnovationCatcherGame {
   }
 
   public stop() {
-    this.state.isPlaying = false;
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
+    try {
+      this.state.isPlaying = false;
+      if (this.animationId) {
+        cancelAnimationFrame(this.animationId);
+        this.animationId = null;
+      }
+      console.log('Game stopped');
+    } catch (error) {
+      console.error('Error stopping game:', error);
     }
   }
 

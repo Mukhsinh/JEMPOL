@@ -7,17 +7,28 @@ import supabase from '../config/supabase.js';
  */
 export const submitScore = async (req: Request, res: Response) => {
   try {
+    console.log('=== GAME SCORE SUBMISSION START ===');
+    console.log('Request body:', req.body);
+    
     const { player_name, score, mode, level, duration, device_type } = req.body;
 
     // Validation
-    if (!player_name || score === undefined || !mode || !duration) {
+    if (!player_name || score === undefined || !mode || duration === undefined) {
+      console.error('Missing required fields');
       return res.status(400).json({
         success: false,
         error: 'Data tidak lengkap',
       });
     }
 
-    if (score < 0) {
+    if (typeof player_name !== 'string' || player_name.trim().length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nama pemain harus minimal 2 karakter',
+      });
+    }
+
+    if (typeof score !== 'number' || score < 0) {
       return res.status(400).json({
         success: false,
         error: 'Skor tidak valid',
@@ -31,16 +42,27 @@ export const submitScore = async (req: Request, res: Response) => {
       });
     }
 
+    if (typeof duration !== 'number' || duration < 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Durasi tidak valid',
+      });
+    }
+
+    const insertData = {
+      player_name: player_name.trim(),
+      score,
+      mode,
+      level: level || 1,
+      duration,
+      device_type: device_type || 'desktop',
+    };
+
+    console.log('Inserting game score:', insertData);
+
     const { data, error } = await supabase
       .from('game_scores')
-      .insert({
-        player_name: player_name.trim(),
-        score,
-        mode,
-        level: level || 1,
-        duration,
-        device_type: device_type || 'desktop',
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -49,16 +71,26 @@ export const submitScore = async (req: Request, res: Response) => {
       throw error;
     }
 
+    console.log('Game score saved successfully:', data.id);
+    console.log('=== GAME SCORE SUBMISSION SUCCESS ===');
+
     res.status(201).json({
       success: true,
       data,
       message: 'Skor berhasil disimpan',
     });
   } catch (error: any) {
+    console.error('=== GAME SCORE SUBMISSION ERROR ===');
     console.error('Error submitting score:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+    });
+    
     res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan saat menyimpan skor',
+      error: 'Terjadi kesalahan saat menyimpan skor: ' + (error.message || 'Unknown error'),
     });
   }
 };

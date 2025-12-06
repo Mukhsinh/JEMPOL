@@ -28,7 +28,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 seconds timeout
+  timeout: 60000, // 60 seconds timeout for better stability
   withCredentials: false, // Enable CORS
 });
 
@@ -55,7 +55,9 @@ api.interceptors.response.use(
     if (error.code === 'ECONNABORTED') {
       message = 'Koneksi timeout. Periksa koneksi internet Anda.';
     } else if (error.code === 'ERR_NETWORK') {
-      message = 'Tidak dapat terhubung ke server. Pastikan backend berjalan dan koneksi internet stabil.';
+      message = 'Tidak dapat terhubung ke server. Pastikan koneksi internet stabil.';
+    } else if (error.code === 'ERR_BAD_REQUEST') {
+      message = error.response?.data?.error || 'Permintaan tidak valid';
     } else if (error.response) {
       message = error.response.data?.error || error.message || 'Terjadi kesalahan';
       
@@ -75,7 +77,8 @@ api.interceptors.response.use(
       message,
       code: error.code,
       status: error.response?.status,
-      url: error.config?.url
+      url: error.config?.url,
+      data: error.response?.data
     });
     
     return Promise.reject(new Error(message));

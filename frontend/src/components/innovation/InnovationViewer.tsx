@@ -266,11 +266,21 @@ interface InnovationViewerProps {
 }
 
 export default function InnovationViewer({ item, isOpen, onClose }: InnovationViewerProps) {
+  const [viewError, setViewError] = useState<string | null>(null);
+
   useEffect(() => {
     if (item && isOpen) {
       const id = item._id || item.id;
       if (id) {
-        incrementView(id).catch(console.error);
+        incrementView(id)
+          .then(() => {
+            console.log('View incremented successfully');
+            setViewError(null);
+          })
+          .catch((error) => {
+            console.error('Failed to increment view:', error);
+            setViewError('Gagal mencatat view');
+          });
       }
     }
   }, [item, isOpen]);
@@ -280,6 +290,18 @@ export default function InnovationViewer({ item, isOpen, onClose }: InnovationVi
   const API_BASE_URL = (import.meta as any).env?.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
   const fileUrl = `${API_BASE_URL}${item.fileUrl || item.file_url}`;
   const type = item.type || item.category;
+  
+  console.log('InnovationViewer:', {
+    type,
+    fileUrl,
+    API_BASE_URL,
+    item: {
+      id: item.id || item._id,
+      title: item.title,
+      type: item.type,
+      category: item.category,
+    }
+  });
 
   const descriptionParagraphs = item.description.split('\n').filter(p => p.trim());
 
@@ -338,6 +360,11 @@ export default function InnovationViewer({ item, isOpen, onClose }: InnovationVi
                       🎥 Video JEMPOL dapat diputar langsung di bawah ini
                     </p>
                   </div>
+                  {viewError && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2">
+                      <p className="text-xs text-yellow-800">{viewError}</p>
+                    </div>
+                  )}
                   <div className="bg-black rounded-lg overflow-hidden">
                     <video
                       controls
@@ -346,6 +373,17 @@ export default function InnovationViewer({ item, isOpen, onClose }: InnovationVi
                       className="w-full max-h-[50vh] sm:max-h-[65vh] object-contain"
                       src={fileUrl}
                       style={{ maxWidth: '100%', height: 'auto' }}
+                      onError={(e) => {
+                        console.error('Video load error:', e);
+                        setViewError('Gagal memuat video. Periksa koneksi internet Anda.');
+                      }}
+                      onLoadStart={() => {
+                        console.log('Video loading started');
+                        setViewError(null);
+                      }}
+                      onCanPlay={() => {
+                        console.log('Video can play');
+                      }}
                     >
                       <source src={fileUrl} type="video/mp4" />
                       <source src={fileUrl} type="video/webm" />
@@ -356,10 +394,23 @@ export default function InnovationViewer({ item, isOpen, onClose }: InnovationVi
                 </div>
               ) : type === 'photo' ? (
                 <div className="p-2 sm:p-4">
+                  {viewError && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 mb-2">
+                      <p className="text-xs text-yellow-800">{viewError}</p>
+                    </div>
+                  )}
                   <img
                     src={fileUrl}
                     alt={item.title}
                     className="w-full h-auto max-h-[60vh] sm:max-h-[70vh] object-contain rounded-lg"
+                    onError={(e) => {
+                      console.error('Image load error:', e);
+                      setViewError('Gagal memuat foto. Periksa koneksi internet Anda.');
+                    }}
+                    onLoad={() => {
+                      console.log('Image loaded successfully');
+                      setViewError(null);
+                    }}
                   />
                 </div>
               ) : type === 'pdf' ? (
