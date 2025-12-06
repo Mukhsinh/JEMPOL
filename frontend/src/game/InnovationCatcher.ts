@@ -36,14 +36,10 @@ export class InnovationCatcherGame {
     }
     this.ctx = context;
 
-    // Set canvas size
-    this.resizeCanvas();
-    window.addEventListener('resize', () => this.resizeCanvas());
-
-    // Initialize basket after canvas is sized
+    // Initialize basket with default values first
     this.basket = {
-      x: this.canvas.width / 2 - 40,
-      y: this.canvas.height - 80,
+      x: 0,
+      y: 0,
       width: 80,
       height: 60,
     };
@@ -58,6 +54,16 @@ export class InnovationCatcherGame {
       gameOver: false,
     };
 
+    // Set canvas size and update basket position
+    this.resizeCanvas();
+    
+    // Add resize listener with debounce
+    let resizeTimeout: number;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = window.setTimeout(() => this.resizeCanvas(), 100);
+    });
+
     // Setup controls
     this.setupControls();
     
@@ -70,7 +76,11 @@ export class InnovationCatcherGame {
 
   private resizeCanvas() {
     const container = this.canvas.parentElement;
-    if (container) {
+    if (!container) {
+      // Fallback dimensions
+      this.canvas.width = Math.min(window.innerWidth - 32, 800);
+      this.canvas.height = Math.min(window.innerHeight * 0.6, 600);
+    } else {
       const width = Math.min(container.clientWidth - 32, 800);
       const height = Math.min(window.innerHeight * 0.6, 600);
       
@@ -78,13 +88,19 @@ export class InnovationCatcherGame {
       if (Math.abs(this.canvas.width - width) > 10 || Math.abs(this.canvas.height - height) > 10) {
         this.canvas.width = width;
         this.canvas.height = height;
-        
-        // Update basket position after resize
-        if (this.basket) {
-          this.basket.y = this.canvas.height - 80;
-          this.basket.x = Math.min(this.basket.x, this.canvas.width - this.basket.width);
-        }
       }
+    }
+    
+    // Always update basket position after resize
+    this.basket.y = this.canvas.height - 80;
+    this.basket.x = Math.max(0, Math.min(this.basket.x, this.canvas.width - this.basket.width));
+    
+    // Ensure minimum canvas size for mobile
+    if (this.canvas.width < 300) {
+      this.canvas.width = 300;
+    }
+    if (this.canvas.height < 400) {
+      this.canvas.height = 400;
     }
   }
 
