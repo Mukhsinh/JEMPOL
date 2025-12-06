@@ -76,70 +76,96 @@ export class InnovationCatcherGame {
 
   private resizeCanvas() {
     const container = this.canvas.parentElement;
+    let width: number;
+    let height: number;
+    
     if (!container) {
       // Fallback dimensions
-      this.canvas.width = Math.min(window.innerWidth - 32, 800);
-      this.canvas.height = Math.min(window.innerHeight * 0.6, 600);
+      width = Math.min(window.innerWidth - 32, 800);
+      height = Math.min(window.innerHeight * 0.6, 600);
     } else {
-      const width = Math.min(container.clientWidth - 32, 800);
-      const height = Math.min(window.innerHeight * 0.6, 600);
-      
-      // Only resize if dimensions changed significantly
-      if (Math.abs(this.canvas.width - width) > 10 || Math.abs(this.canvas.height - height) > 10) {
-        this.canvas.width = width;
-        this.canvas.height = height;
-      }
+      width = Math.min(container.clientWidth - 32, 800);
+      height = Math.min(window.innerHeight * 0.6, 600);
+    }
+    
+    // Ensure minimum canvas size for mobile
+    width = Math.max(width, 300);
+    height = Math.max(height, 400);
+    
+    // For mobile devices, use more screen space
+    if (window.innerWidth < 768) {
+      width = Math.min(window.innerWidth - 32, 600);
+      height = Math.min(window.innerHeight * 0.65, 500);
+    }
+    
+    // Only resize if dimensions changed significantly
+    if (Math.abs(this.canvas.width - width) > 10 || Math.abs(this.canvas.height - height) > 10) {
+      this.canvas.width = width;
+      this.canvas.height = height;
+      console.log('Canvas resized:', { width, height });
     }
     
     // Always update basket position after resize
     this.basket.y = this.canvas.height - 80;
     this.basket.x = Math.max(0, Math.min(this.basket.x, this.canvas.width - this.basket.width));
-    
-    // Ensure minimum canvas size for mobile
-    if (this.canvas.width < 300) {
-      this.canvas.width = 300;
-    }
-    if (this.canvas.height < 400) {
-      this.canvas.height = 400;
-    }
   }
 
   private setupControls() {
     // Mouse control
-    this.canvas.addEventListener('mousemove', (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       if (!this.state.isPaused && this.state.isPlaying) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
+        const scaleX = this.canvas.width / rect.width;
+        const x = (e.clientX - rect.left) * scaleX;
         this.basket.x = Math.max(0, Math.min(x - this.basket.width / 2, this.canvas.width - this.basket.width));
       }
-    });
+    };
+
+    this.canvas.addEventListener('mousemove', handleMouseMove);
 
     // Touch start - initialize position
-    this.canvas.addEventListener('touchstart', (e) => {
+    const handleTouchStart = (e: TouchEvent) => {
       if (!this.state.isPaused && this.state.isPlaying) {
         e.preventDefault();
+        e.stopPropagation();
         const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
         const touch = e.touches[0];
-        const x = touch.clientX - rect.left;
+        const x = (touch.clientX - rect.left) * scaleX;
         this.basket.x = Math.max(0, Math.min(x - this.basket.width / 2, this.canvas.width - this.basket.width));
+        console.log('Touch start:', { x, basketX: this.basket.x, canvasWidth: this.canvas.width });
       }
-    }, { passive: false });
+    };
+
+    this.canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
 
     // Touch move control
-    this.canvas.addEventListener('touchmove', (e) => {
+    const handleTouchMove = (e: TouchEvent) => {
       if (!this.state.isPaused && this.state.isPlaying) {
         e.preventDefault();
+        e.stopPropagation();
         const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
         const touch = e.touches[0];
-        const x = touch.clientX - rect.left;
+        const x = (touch.clientX - rect.left) * scaleX;
         this.basket.x = Math.max(0, Math.min(x - this.basket.width / 2, this.canvas.width - this.basket.width));
       }
-    }, { passive: false });
+    };
+
+    this.canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
 
     // Prevent default touch behavior on canvas
-    this.canvas.addEventListener('touchend', (e) => {
+    const handleTouchEnd = (e: TouchEvent) => {
       e.preventDefault();
-    }, { passive: false });
+      e.stopPropagation();
+    };
+
+    this.canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+    // Prevent context menu on long press
+    this.canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+    });
 
     // Click to unpause
     this.canvas.addEventListener('click', () => {

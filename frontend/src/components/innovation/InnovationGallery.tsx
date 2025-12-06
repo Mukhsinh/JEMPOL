@@ -23,10 +23,14 @@ const InnovationGallery = ({ type, onItemClick }: InnovationGalleryProps) => {
     try {
       setIsLoading(true);
       setError(null);
+      console.log('Fetching innovations for type:', type);
       const response = await getAllInnovations(type as any);
+      console.log('Innovations response:', response);
       setItems(response.data || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal memuat data inovasi');
+      console.error('Error fetching innovations:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Gagal memuat data inovasi';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

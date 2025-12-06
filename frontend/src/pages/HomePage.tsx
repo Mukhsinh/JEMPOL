@@ -77,66 +77,66 @@ function HomePage() {
                 </div>
               </div>
 
-              {/* Circular Menu Items - Responsive positioning with proper spacing */}
-              <div className="relative w-full aspect-square max-w-[420px] sm:max-w-[520px] md:max-w-3xl mx-auto">
-                {/* Top - Login */}
-                <a href="/login" className="absolute top-0 left-1/2 transform -translate-x-1/2 group">
+              {/* Circular Menu Items - Responsive positioning with proper spacing and symmetry */}
+              <div className="relative w-full aspect-square max-w-[380px] sm:max-w-[480px] md:max-w-3xl mx-auto">
+                {/* Top - Login (0 degrees) */}
+                <a href="/login" className="absolute left-1/2 transform -translate-x-1/2" style={{ top: '0%' }}>
                   <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-pink-500">
                     <Globe className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-pink-500 mb-1" />
                     <p className="text-[10px] sm:text-xs md:text-base font-bold text-pink-600">Login</p>
                   </div>
                 </a>
 
-                {/* Top Right - Pembayaran Klinik */}
-                <a href="/#services" className="absolute top-[15%] right-[8%] sm:top-[12%] sm:right-[10%] md:top-16 md:right-16 group">
+                {/* Top Right - Pembayaran Klinik (45 degrees) */}
+                <a href="/#services" className="absolute transform -translate-x-1/2 -translate-y-1/2" style={{ top: '14.65%', left: '85.35%' }}>
                   <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-emerald-500">
                     <Heart className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-emerald-600 mb-1" />
                     <p className="text-[9px] sm:text-xs md:text-base font-bold text-emerald-700 text-center px-1 leading-tight">Pembayaran<br/>Klinik</p>
                   </div>
                 </a>
 
-                {/* Right - Laboratorium */}
-                <a href="/#services" className="absolute top-1/2 right-0 transform -translate-y-1/2 group">
+                {/* Right - Laboratorium (90 degrees) */}
+                <a href="/#services" className="absolute top-1/2 transform -translate-y-1/2" style={{ right: '0%' }}>
                   <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-blue-500">
                     <Activity className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-blue-600 mb-1" />
                     <p className="text-[10px] sm:text-xs md:text-base font-bold text-blue-700 text-center px-1">Laboratorium</p>
                   </div>
                 </a>
 
-                {/* Bottom Right - Radiologi */}
-                <a href="/#services" className="absolute bottom-[15%] right-[8%] sm:bottom-[12%] sm:right-[10%] md:bottom-16 md:right-16 group">
+                {/* Bottom Right - Radiologi (135 degrees) */}
+                <a href="/#services" className="absolute transform -translate-x-1/2 -translate-y-1/2" style={{ top: '85.35%', left: '85.35%' }}>
                   <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-purple-500">
                     <FileText className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-purple-600 mb-1" />
                     <p className="text-[10px] sm:text-xs md:text-base font-bold text-purple-700 text-center px-1">Radiologi</p>
                   </div>
                 </a>
 
-                {/* Bottom - Registrasi */}
-                <a href="/#registration" className="absolute bottom-0 left-1/2 transform -translate-x-1/2 group">
+                {/* Bottom - Registrasi (180 degrees) */}
+                <a href="/#registration" className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: '0%' }}>
                   <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-orange-500">
                     <Users className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-orange-600 mb-1" />
                     <p className="text-[9px] sm:text-xs md:text-base font-bold text-orange-700 text-center px-1 leading-tight">Registrasi<br/>Pasien</p>
                   </div>
                 </a>
 
-                {/* Bottom Left - Riwayat */}
-                <a href="/#features" className="absolute bottom-[15%] left-[8%] sm:bottom-[12%] sm:left-[10%] md:bottom-16 md:left-16 group">
+                {/* Bottom Left - Riwayat (225 degrees) */}
+                <a href="/#features" className="absolute transform -translate-x-1/2 -translate-y-1/2" style={{ top: '85.35%', left: '14.65%' }}>
                   <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-teal-500">
                     <Clock className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-teal-600 mb-1" />
                     <p className="text-[9px] sm:text-xs md:text-base font-bold text-teal-700 text-center px-1 leading-tight">Riwayat<br/>Transaksi</p>
                   </div>
                 </a>
 
-                {/* Left - Keamanan */}
-                <a href="/#features" className="absolute top-1/2 left-0 transform -translate-y-1/2 group">
+                {/* Left - Keamanan (270 degrees) */}
+                <a href="/#features" className="absolute top-1/2 transform -translate-y-1/2" style={{ left: '0%' }}>
                   <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-red-500">
                     <Shield className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-red-600 mb-1" />
                     <p className="text-[9px] sm:text-xs md:text-base font-bold text-red-700 text-center px-1 leading-tight">Keamanan<br/>Data</p>
                   </div>
                 </a>
 
-                {/* Top Left - Pembayaran Cepat */}
-                <a href="/#features" className="absolute top-[15%] left-[8%] sm:top-[12%] sm:left-[10%] md:top-16 md:left-16 group">
+                {/* Top Left - Pembayaran Cepat (315 degrees) */}
+                <a href="/#features" className="absolute transform -translate-x-1/2 -translate-y-1/2" style={{ top: '14.65%', left: '14.65%' }}>
                   <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-yellow-500">
                     <Zap className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-yellow-600 mb-1" />
                     <p className="text-[9px] sm:text-xs md:text-base font-bold text-yellow-700 text-center px-1 leading-tight">Pembayaran<br/>Cepat</p>
@@ -252,7 +252,6 @@ function HomePage() {
                 <ul className="space-y-2 text-purple-50">
                   <li className="flex items-center"><CheckCircle className="w-5 h-5 mr-2" /> Rontgen</li>
                   <li className="flex items-center"><CheckCircle className="w-5 h-5 mr-2" /> CT Scan</li>
-                  <li className="flex items-center"><CheckCircle className="w-5 h-5 mr-2" /> MRI</li>
                   <li className="flex items-center"><CheckCircle className="w-5 h-5 mr-2" /> USG</li>
                 </ul>
               </div>

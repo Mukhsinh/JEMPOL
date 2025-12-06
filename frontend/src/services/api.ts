@@ -8,6 +8,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 seconds timeout
+  withCredentials: false, // Enable CORS
 });
 
 // Request interceptor to add auth token
@@ -28,16 +30,33 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<APIResponse>) => {
-    const message = error.response?.data?.error || error.message || 'Terjadi kesalahan';
+    let message = 'Terjadi kesalahan';
     
-    // If unauthorized and trying to access admin endpoints, redirect to login
-    if (error.response?.status === 401) {
-      localStorage.removeItem('adminToken');
-      // Only redirect to login if we're on admin page or trying to access protected resources
-      if (window.location.pathname.startsWith('/admin')) {
-        window.location.href = '/login';
+    if (error.code === 'ECONNABORTED') {
+      message = 'Koneksi timeout. Periksa koneksi internet Anda.';
+    } else if (error.code === 'ERR_NETWORK') {
+      message = 'Tidak dapat terhubung ke server. Pastikan backend berjalan dan koneksi internet stabil.';
+    } else if (error.response) {
+      message = error.response.data?.error || error.message || 'Terjadi kesalahan';
+      
+      // If unauthorized and trying to access admin endpoints, redirect to login
+      if (error.response.status === 401) {
+        localStorage.removeItem('adminToken');
+        // Only redirect to login if we're on admin page or trying to access protected resources
+        if (window.location.pathname.startsWith('/admin')) {
+          window.location.href = '/login';
+        }
       }
+    } else if (error.request) {
+      message = 'Server tidak merespons. Periksa koneksi internet Anda.';
     }
+    
+    console.error('API Error:', {
+      message,
+      code: error.code,
+      status: error.response?.status,
+      url: error.config?.url
+    });
     
     return Promise.reject(new Error(message));
   }
