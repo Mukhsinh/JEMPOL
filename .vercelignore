@@ -10,9 +10,9 @@ node_modules
 *.swo
 *~
 .cache
-dist
-build
 coverage
 .nyc_output
 uploads/*
 !uploads/.gitkeep
+backend/dist
+backend/build

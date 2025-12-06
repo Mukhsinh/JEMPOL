@@ -1,17 +1,12 @@
 {
-  "version": 2,
-  "buildCommand": "npm install && npm run build --workspace=frontend",
+  "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install",
-  "framework": null,
-  "routes": [
+  "devCommand": "cd frontend && npm run dev",
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "https://your-backend-url.vercel.app/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
