@@ -1,0 +1,21 @@
+✅ DEPLOY VERCEL DIPERBAIKI - 6 Desember 2025
+
+MASALAH:
+- Error: "No Output Directory named 'dist' found"
+- Penyebab: .vercelignore mengabaikan folder dist
+
+SOLUSI:
+✅ Update .vercelignore - hapus "dist" dari ignore list
+✅ Update vercel.json - perbaiki konfigurasi build
+✅ Commit dan push ke GitHub berhasil
+
+STATUS:
+✅ Perubahan sudah di-push ke GitHub
+✅ Vercel akan otomatis build ulang
+⏳ Tunggu 2-3 menit untuk deploy selesai
+
+CEK DEPLOY:
+https://vercel.com/dashboard
+
+Commit: 8fd0dbd
+Branch: main
