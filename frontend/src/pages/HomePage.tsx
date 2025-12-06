@@ -77,69 +77,69 @@ function HomePage() {
                 </div>
               </div>
 
-              {/* Circular Menu Items - Responsive positioning */}
-              <div className="relative w-full aspect-square max-w-[500px] md:max-w-3xl mx-auto">
+              {/* Circular Menu Items - Responsive positioning with proper spacing */}
+              <div className="relative w-full aspect-square max-w-[420px] sm:max-w-[520px] md:max-w-3xl mx-auto">
                 {/* Top - Login */}
                 <a href="/login" className="absolute top-0 left-1/2 transform -translate-x-1/2 group">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-pink-500">
-                    <Globe className="w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12 text-pink-500 mb-1" />
-                    <p className="text-xs sm:text-sm md:text-base font-bold text-pink-600">Login</p>
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-pink-500">
+                    <Globe className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-pink-500 mb-1" />
+                    <p className="text-[10px] sm:text-xs md:text-base font-bold text-pink-600">Login</p>
                   </div>
                 </a>
 
                 {/* Top Right - Pembayaran Klinik */}
-                <a href="/#services" className="absolute top-8 right-2 sm:top-12 sm:right-6 md:top-16 md:right-16 group">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-emerald-500">
-                    <Heart className="w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12 text-emerald-600 mb-1" />
-                    <p className="text-xs sm:text-sm md:text-base font-bold text-emerald-700 text-center px-1">Pembayaran<br/>Klinik</p>
+                <a href="/#services" className="absolute top-[15%] right-[8%] sm:top-[12%] sm:right-[10%] md:top-16 md:right-16 group">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-emerald-500">
+                    <Heart className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-emerald-600 mb-1" />
+                    <p className="text-[9px] sm:text-xs md:text-base font-bold text-emerald-700 text-center px-1 leading-tight">Pembayaran<br/>Klinik</p>
                   </div>
                 </a>
 
                 {/* Right - Laboratorium */}
                 <a href="/#services" className="absolute top-1/2 right-0 transform -translate-y-1/2 group">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-blue-500">
-                    <Activity className="w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12 text-blue-600 mb-1" />
-                    <p className="text-xs sm:text-sm md:text-base font-bold text-blue-700 text-center px-1">Laboratorium</p>
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-blue-500">
+                    <Activity className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-blue-600 mb-1" />
+                    <p className="text-[10px] sm:text-xs md:text-base font-bold text-blue-700 text-center px-1">Laboratorium</p>
                   </div>
                 </a>
 
                 {/* Bottom Right - Radiologi */}
-                <a href="/#services" className="absolute bottom-8 right-2 sm:bottom-12 sm:right-6 md:bottom-16 md:right-16 group">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-purple-500">
-                    <FileText className="w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12 text-purple-600 mb-1" />
-                    <p className="text-xs sm:text-sm md:text-base font-bold text-purple-700 text-center px-1">Radiologi</p>
+                <a href="/#services" className="absolute bottom-[15%] right-[8%] sm:bottom-[12%] sm:right-[10%] md:bottom-16 md:right-16 group">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-purple-500">
+                    <FileText className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-purple-600 mb-1" />
+                    <p className="text-[10px] sm:text-xs md:text-base font-bold text-purple-700 text-center px-1">Radiologi</p>
                   </div>
                 </a>
 
                 {/* Bottom - Registrasi */}
                 <a href="/#registration" className="absolute bottom-0 left-1/2 transform -translate-x-1/2 group">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-orange-500">
-                    <Users className="w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12 text-orange-600 mb-1" />
-                    <p className="text-xs sm:text-sm md:text-base font-bold text-orange-700 text-center px-1">Registrasi<br/>Pasien</p>
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-orange-500">
+                    <Users className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-orange-600 mb-1" />
+                    <p className="text-[9px] sm:text-xs md:text-base font-bold text-orange-700 text-center px-1 leading-tight">Registrasi<br/>Pasien</p>
                   </div>
                 </a>
 
                 {/* Bottom Left - Riwayat */}
-                <a href="/#features" className="absolute bottom-8 left-2 sm:bottom-12 sm:left-6 md:bottom-16 md:left-16 group">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-teal-500">
-                    <Clock className="w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12 text-teal-600 mb-1" />
-                    <p className="text-xs sm:text-sm md:text-base font-bold text-teal-700 text-center px-1">Riwayat<br/>Transaksi</p>
+                <a href="/#features" className="absolute bottom-[15%] left-[8%] sm:bottom-[12%] sm:left-[10%] md:bottom-16 md:left-16 group">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-teal-500">
+                    <Clock className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-teal-600 mb-1" />
+                    <p className="text-[9px] sm:text-xs md:text-base font-bold text-teal-700 text-center px-1 leading-tight">Riwayat<br/>Transaksi</p>
                   </div>
                 </a>
 
                 {/* Left - Keamanan */}
                 <a href="/#features" className="absolute top-1/2 left-0 transform -translate-y-1/2 group">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-red-500">
-                    <Shield className="w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12 text-red-600 mb-1" />
-                    <p className="text-xs sm:text-sm md:text-base font-bold text-red-700 text-center px-1">Keamanan<br/>Data</p>
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-red-500">
+                    <Shield className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-red-600 mb-1" />
+                    <p className="text-[9px] sm:text-xs md:text-base font-bold text-red-700 text-center px-1 leading-tight">Keamanan<br/>Data</p>
                   </div>
                 </a>
 
                 {/* Top Left - Pembayaran Cepat */}
-                <a href="/#features" className="absolute top-8 left-2 sm:top-12 sm:left-6 md:top-16 md:left-16 group">
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-yellow-500">
-                    <Zap className="w-7 h-7 sm:w-9 sm:h-9 md:w-12 md:h-12 text-yellow-600 mb-1" />
-                    <p className="text-xs sm:text-sm md:text-base font-bold text-yellow-700 text-center px-1">Pembayaran<br/>Cepat</p>
+                <a href="/#features" className="absolute top-[15%] left-[8%] sm:top-[12%] sm:left-[10%] md:top-16 md:left-16 group">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 md:w-36 md:h-36 bg-white rounded-full shadow-xl flex flex-col items-center justify-center hover:scale-110 transition-all duration-300 border-4 border-yellow-500">
+                    <Zap className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 text-yellow-600 mb-1" />
+                    <p className="text-[9px] sm:text-xs md:text-base font-bold text-yellow-700 text-center px-1 leading-tight">Pembayaran<br/>Cepat</p>
                   </div>
                 </a>
               </div>

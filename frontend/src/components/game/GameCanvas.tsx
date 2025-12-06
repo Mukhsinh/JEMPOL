@@ -136,8 +136,13 @@ const GameCanvas = ({ mode, onGameEnd, onExit }: GameCanvasProps) => {
         <div className="relative">
           <canvas
             ref={canvasRef}
-            className="w-full border-4 border-blue-500/50 rounded-xl shadow-2xl shadow-blue-500/20"
-            style={{ touchAction: 'none' }}
+            className="w-full border-4 border-blue-500/50 rounded-xl shadow-2xl shadow-blue-500/20 max-h-[70vh]"
+            style={{ 
+              touchAction: 'none',
+              WebkitTouchCallout: 'none',
+              WebkitUserSelect: 'none',
+              userSelect: 'none'
+            }}
           />
           {gameState.isPaused && (
             <div className="absolute inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm rounded-xl">

@@ -114,7 +114,18 @@ export class InnovationCatcherGame {
       }
     });
 
-    // Touch control
+    // Touch start - initialize position
+    this.canvas.addEventListener('touchstart', (e) => {
+      if (!this.state.isPaused && this.state.isPlaying) {
+        e.preventDefault();
+        const rect = this.canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = touch.clientX - rect.left;
+        this.basket.x = Math.max(0, Math.min(x - this.basket.width / 2, this.canvas.width - this.basket.width));
+      }
+    }, { passive: false });
+
+    // Touch move control
     this.canvas.addEventListener('touchmove', (e) => {
       if (!this.state.isPaused && this.state.isPlaying) {
         e.preventDefault();
@@ -123,6 +134,11 @@ export class InnovationCatcherGame {
         const x = touch.clientX - rect.left;
         this.basket.x = Math.max(0, Math.min(x - this.basket.width / 2, this.canvas.width - this.basket.width));
       }
+    }, { passive: false });
+
+    // Prevent default touch behavior on canvas
+    this.canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
     }, { passive: false });
 
     // Click to unpause
