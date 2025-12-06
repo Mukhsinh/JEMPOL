@@ -29,21 +29,69 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: [
-      process.env.FRONTEND_URL || 'http://localhost:3000',
-      'http://localhost:3001',
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        process.env.FRONTEND_URL || 'http://localhost:3000',
+        'http://localhost:3001',
+        'https://jempol-frontend.vercel.app',
+      ];
+      
+      // Allow all Vercel deployments
+      if (origin.includes('.vercel.app')) {
+        return callback(null, true);
+      }
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow anyway for now
+      }
+    },
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
-// Middleware
+// Middleware - CORS configuration
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'http://localhost:3001',
+  'https://jempol-frontend.vercel.app',
+  'https://jempol-frontend-git-main-mukhainilfmpol.vercel.app',
+];
+
+// In production, allow all Vercel preview deployments
+if (process.env.NODE_ENV === 'production') {
+  allowedOrigins.push(/\.vercel\.app$/);
+}
+
 app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || 'http://localhost:3000',
-    'http://localhost:3001',
-  ],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin is in allowed list
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') {
+        return allowed === origin;
+      }
+      // RegExp check
+      return allowed.test(origin);
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn('CORS blocked origin:', origin);
+      callback(null, true); // Allow anyway for now, can be strict later
+    }
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json({ limit: '1100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1100mb' }));

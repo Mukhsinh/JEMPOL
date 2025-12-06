@@ -1,7 +1,27 @@
 import axios, { AxiosError } from 'axios';
 import { APIResponse } from '../types';
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api';
+// Determine API base URL based on environment
+const getApiBaseUrl = () => {
+  // Check if VITE_API_URL is set
+  const envApiUrl = (import.meta as any).env?.VITE_API_URL;
+  
+  if (envApiUrl) {
+    return envApiUrl;
+  }
+  
+  // In production (Vercel), use relative path
+  if (import.meta.env.PROD) {
+    return '/api';
+  }
+  
+  // In development, use localhost
+  return 'http://localhost:5000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+console.log('API Base URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,

@@ -12,7 +12,17 @@ export const submitGameScore = async (data: {
   duration: number;
   deviceType: 'mobile' | 'tablet' | 'desktop';
 }): Promise<APIResponse> => {
-  const response = await api.post<APIResponse>('/game/score', data);
+  // Convert camelCase to snake_case for backend
+  const payload = {
+    player_name: data.playerName,
+    score: data.score,
+    mode: data.mode,
+    level: data.level,
+    duration: data.duration,
+    device_type: data.deviceType,
+  };
+  
+  const response = await api.post<APIResponse>('/game/score', payload);
   return response.data;
 };
 

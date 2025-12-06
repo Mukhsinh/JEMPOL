@@ -18,20 +18,56 @@
   ],
   "routes": [
     {
+      "src": "/api/health",
+      "dest": "/backend/src/server.ts",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/api/visitors(.*)",
+      "dest": "/backend/src/server.ts",
+      "methods": ["GET", "POST", "DELETE"]
+    },
+    {
+      "src": "/api/game(.*)",
+      "dest": "/backend/src/server.ts",
+      "methods": ["GET", "POST"]
+    },
+    {
+      "src": "/api/innovations(.*)",
+      "dest": "/backend/src/server.ts",
+      "methods": ["GET", "POST", "DELETE"]
+    },
+    {
+      "src": "/api/auth(.*)",
+      "dest": "/backend/src/server.ts",
+      "methods": ["GET", "POST"]
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/backend/src/server.ts"
     },
     {
       "src": "/uploads/(.*)",
-      "dest": "/backend/uploads/$1"
+      "dest": "/backend/uploads/$1",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+        "Cache-Control": "public, max-age=31536000"
+      }
     },
     {
       "src": "/assets/(.*)",
-      "dest": "/frontend/assets/$1"
+      "dest": "/frontend/assets/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000"
+      }
     },
     {
       "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json|woff|woff2|ttf|eot))",
-      "dest": "/frontend/$1"
+      "dest": "/frontend/$1",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000"
+      }
     },
     {
       "src": "/(.*)",
@@ -40,5 +76,24 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
+    }
+  ]
 }
