@@ -1,0 +1,8 @@
+{
+  "name": "jempol-api",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@vercel/node": "^2.10.3"
+  }
+}
