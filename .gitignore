@@ -33,6 +33,10 @@ Thumbs.db
 backend/uploads/
 uploads/
 
+# Files with sensitive data
+PUSH_SETELAH_BUAT_REPO.bat
+SOLUSI_PUSH_GITHUB.md
+
 # Test coverage
 coverage/
 .nyc_output/
