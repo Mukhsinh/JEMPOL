@@ -22,8 +22,11 @@
     "api/**/*.ts": {
       "runtime": "nodejs20.x",
       "memory": 1024,
-      "maxDuration": 10
+      "maxDuration": 30
     }
   },
-  "framework": null
+  "framework": null,
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
