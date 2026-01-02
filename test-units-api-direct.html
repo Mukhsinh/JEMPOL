@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Units API Direct</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <h1>Test Units API Direct</h1>
+    <button onclick="testUnitsAPI()">Test Units API</button>
+    <button onclick="testUnitTypesAPI()">Test Unit Types API</button>
+    <button onclick="testSupabaseDirect()">Test Supabase Direct</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5001/api';
+        
+        function addResult(title, content, isSuccess = true) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${isSuccess ? 'success' : 'error'}`;
+            resultDiv.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        async function testUnitsAPI() {
+            try {
+                addResult('Testing Units API', 'Fetching from ' + API_BASE_URL + '/units...');
+                
+                const response = await fetch(API_BASE_URL + '/units', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.text();
+                
+                if (response.ok) {
+                    addResult('Units API Success', `Status: ${response.status}\nData: ${data}`, true);
+                } else {
+                    addResult('Units API Error', `Status: ${response.status}\nError: ${data}`, false);
+                }
+            } catch (error) {
+                addResult('Units API Network Error', error.message, false);
+            }
+        }
+
+        async function testUnitTypesAPI() {
+            try {
+                addResult('Testing Unit Types API', 'Fetching from ' + API_BASE_URL + '/units/unit-types...');
+                
+                const response = await fetch(API_BASE_URL + '/units/unit-types', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.text();
+                
+                if (response.ok) {
+                    addResult('Unit Types API Success', `Status: ${response.status}\nData: ${data}`, true);
+                } else {
+                    addResult('Unit Types API Error', `Status: ${response.status}\nError: ${data}`, false);
+                }
+            } catch (error) {
+                addResult('Unit Types API Network Error', error.message, false);
+            }
+        }
+
+        async function testSupabaseDirect() {
+            try {
+                addResult('Testing Supabase Direct', 'Testing direct Supabase connection...');
+                
+                // Import Supabase client
+                const { createClient } = await import('https://cdn.skypack.dev/@supabase/supabase-js');
+                
+                const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+                
+                const supabase = createClient(supabaseUrl, supabaseKey);
+                
+                // Test units query
+                const { data: units, error: unitsError } = await supabase
+                    .from('units')
+                    .select(`
+                        *,
+                        unit_type:unit_types(name, code, color)
+                    `)
+                    .limit(5);
+                
+                if (unitsError) {
+                    addResult('Supabase Units Error', unitsError.message, false);
+                } else {
+                    addResult('Supabase Units Success', JSON.stringify(units, null, 2), true);
+                }
+                
+                // Test unit types query
+                const { data: unitTypes, error: unitTypesError } = await supabase
+                    .from('unit_types')
+                    .select('*')
+                    .eq('is_active', true);
+                
+                if (unitTypesError) {
+                    addResult('Supabase Unit Types Error', unitTypesError.message, false);
+                } else {
+                    addResult('Supabase Unit Types Success', JSON.stringify(unitTypes, null, 2), true);
+                }
+                
+            } catch (error) {
+                addResult('Supabase Direct Error', error.message, false);
+            }
+        }
+    </script>
+</body>
+</html>

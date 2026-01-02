@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supabase Connection</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test Supabase Connection</h1>
+    <div id="result"></div>
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="testLogin()">Test Login</button>
+
+    <script>
+        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+        
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function testConnection() {
+            const result = document.getElementById('result');
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                if (error) {
+                    result.innerHTML = `<p style="color: red;">Connection Error: ${error.message}</p>`;
+                } else {
+                    result.innerHTML = `<p style="color: green;">Connection Success! Session: ${JSON.stringify(data)}</p>`;
+                }
+            } catch (err) {
+                result.innerHTML = `<p style="color: red;">Error: ${err.message}</p>`;
+            }
+        }
+
+        async function testLogin() {
+            const result = document.getElementById('result');
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'admin@jempol.com',
+                    password: 'admin123'
+                });
+                
+                if (error) {
+                    result.innerHTML = `<p style="color: red;">Login Error: ${error.message}</p>`;
+                } else {
+                    result.innerHTML = `<p style="color: green;">Login Success! User: ${JSON.stringify(data.user.email)}</p>`;
+                }
+            } catch (err) {
+                result.innerHTML = `<p style="color: red;">Login Error: ${err.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
+</script>
+</body>
+</html>set="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supabase Connection</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test Supabase Connection</h1>
+    <div id="result"></div>
+    <button onclick="testConnection()">Test Connection</button>
+    <button onclick="testLogin()">Test Login</button>
+
+    <script>
+        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+        
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function testConnection() {
+            const result = document.getElementById('result');
+            try {
+                const { data, error } = await supabase.auth.getSession();
+                if (error) {
+                    result.innerHTML = `<p style="color: red;">Connection Error: ${error.message}</p>`;
+           

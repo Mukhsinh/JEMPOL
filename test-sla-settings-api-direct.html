@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SLA Settings API Direct</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th { background-color: #f8f9fa; }
+        .priority-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .priority-low { background-color: #d4edda; color: #155724; }
+        .priority-medium { background-color: #fff3cd; color: #856404; }
+        .priority-high { background-color: #f8d7da; color: #721c24; }
+        .priority-critical { background-color: #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test SLA Settings API Direct</h1>
+        <p>Test langsung ke API endpoint SLA Settings untuk memverifikasi koneksi dan data.</p>
+        
+        <div>
+            <button onclick="testGetSLASettings()">Test GET SLA Settings</button>
+            <button onclick="testGetDropdownData()">Test Dropdown Data</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        
+        // Simulasi token untuk testing
+        const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzNhYzI4Zi1lNzJkLTQ4YzMtYjI4Ni1mNzE0ZGY4YzQwNzAiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzM1NjM5NzU4LCJleHAiOjE3MzU3MjYxNTh9.Hs8vJOEQGOGjJhKGxOqNkXqY8vP2wL9mR5sT3uV7xZ1';
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function makeRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    headers: {
+                        'Authorization': `Bearer ${TEST_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${data.error || 'Unknown error'}`);
+                }
+
+                return { success: true, data, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testGetSLASettings() {
+            addResult('🔄 Testing GET /master-data/sla-settings...', 'info');
+            
+            const result = await makeRequest('/master-data/sla-settings');
+            
+            if (result.success) {
+                addResult(`✅ GET SLA Settings berhasil! Status: ${result.status}`, 'success');
+                addResult(`📊 Ditemukan ${result.data.length} pengaturan SLA`, 'info');
+                
+                if (result.data.length > 0) {
+                    let tableHtml = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>Prioritas</th>
+                                    <th>Waktu Respon</th>
+                                    <th>Waktu Penyelesaian</th>
+                                    <th>Unit Type</th>
+                                    <th>Service Category</th>
+                                    <th>Patient Type</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    result.data.forEach(sla => {
+                        const priorityClass = `priority-${sla.priority_level}`;
+                        tableHtml += `
+                            <tr>
+                                <td>${sla.name}</td>
+                                <td><span class="priority-badge ${priorityClass}">${sla.priority_level}</span></td>
+                                <td>${sla.response_time_hours}h</td>
+                                <td>${sla.resolution_time_hours}h</td>
+                                <td>${sla.unit_types?.name || '-'}</td>
+                                <td>${sla.service_categories?.name || '-'}</td>
+                                <td>${sla.patient_types?.name || '-'}</td>
+                                <td>${sla.is_active ? '✅ Aktif' : '❌ Nonaktif'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    tableHtml += '</tbody></table>';
+                    addResult(tableHtml, 'success');
+                }
+            } else {
+                addResult(`❌ GET SLA Settings gagal: ${result.error}`, 'error');
+            }
+        }
+
+        async function testGetDropdownData() {
+            addResult('🔄 Testing dropdown data endpoints...', 'info');
+            
+            const endpoints = [
+                { name: 'Unit Types', url: '/master-data/unit-types' },
+                { name: 'Service Categories', url: '/master-data/service-categories' },
+                { name: 'Patient Types', url: '/master-data/patient-types' }
+            ];
+            
+            for (const endpoint of endpoints) {
+                const result = await makeRequest(endpoint.url);
+                
+                if (result.success) {
+                    addResult(`✅ ${endpoint.name}: ${result.data.length} items`, 'success');
+                } else {
+                    addResult(`❌ ${endpoint.name} gagal: ${result.error}`, 'error');
+                }
+            }
+        }
+
+        // Auto test saat halaman dimuat
+        window.onload = function() {
+            addResult('🚀 Halaman dimuat. Siap untuk testing API SLA Settings.', 'info');
+        };
+    </script>
+</body>
+</html>

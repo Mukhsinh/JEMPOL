@@ -1,93 +1,113 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
+import { authService } from '../services/authService';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
-interface Admin {
+interface User {
   id: string;
   username: string;
+  full_name?: string;
+  email?: string;
+  role: string;
 }
 
 interface AuthContextType {
-  admin: Admin | null;
-  token: string | null;
-  login: (username: string, password: string) => Promise<void>;
-  logout: () => void;
+  user: User | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<{ error?: string; success: boolean }>;
+  logout: () => Promise<void>;
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [admin, setAdmin] = useState<Admin | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored token on mount
-    const storedToken = localStorage.getItem('adminToken');
-    if (storedToken) {
-      verifyToken(storedToken);
-    } else {
-      setIsLoading(false);
-    }
+    // Check if user is already logged in
+    const initAuth = async () => {
+      try {
+        const isAuth = await authService.isAuthenticated();
+        if (isAuth) {
+          const response = await authService.verifyToken();
+          if (response.success && response.data) {
+            const userData = response.data.admin;
+            // Ensure role is defined
+            if (userData && userData.role) {
+              setUser(userData as User);
+            } else {
+              await authService.logout();
+            }
+          } else {
+            // Token is invalid, clear it
+            await authService.logout();
+          }
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        await authService.logout();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
   }, []);
 
-  const verifyToken = async (tokenToVerify: string) => {
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      const response = await axios.get(`${API_URL}/auth/verify`, {
-        headers: {
-          Authorization: `Bearer ${tokenToVerify}`,
-        },
-        timeout: 5000, // 5 second timeout
-      });
-
-      if (response.data.success) {
-        setAdmin(response.data.data.admin);
-        setToken(tokenToVerify);
+      const response = await authService.login(email, password);
+      
+      if (response.success && response.data) {
+        const userData = response.data.admin;
+        // Ensure role is defined
+        if (userData && userData.role) {
+          setUser(userData as User);
+          return { success: true };
+        } else {
+          return { 
+            success: false, 
+            error: 'Data pengguna tidak lengkap' 
+          };
+        }
       } else {
-        localStorage.removeItem('adminToken');
+        return { 
+          success: false, 
+          error: response.error || 'Login gagal' 
+        };
       }
     } catch (error: any) {
-      console.error('Token verification failed:', error.message);
-      // Only remove token if it's actually invalid (401), not if backend is down
-      if (error.response?.status === 401) {
-        localStorage.removeItem('adminToken');
-      }
+      return { 
+        success: false, 
+        error: error.message || 'Terjadi kesalahan saat login' 
+      };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const login = async (username: string, password: string) => {
-    try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        username,
-        password,
-      });
-
-      if (response.data.success) {
-        const { token: newToken, admin: adminData } = response.data.data;
-        setToken(newToken);
-        setAdmin(adminData);
-        localStorage.setItem('adminToken', newToken);
-      } else {
-        throw new Error(response.data.error || 'Login gagal');
-      }
-    } catch (error: any) {
-      console.error('Login error:', error);
-      throw new Error(error.response?.data?.error || 'Login gagal');
-    }
+  const logout = async () => {
+    await authService.logout();
+    setUser(null);
   };
 
-  const logout = () => {
-    setAdmin(null);
-    setToken(null);
-    localStorage.removeItem('adminToken');
-  };
+  const isAuthenticated = !!user;
+  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+  const isSuperAdmin = user?.role === 'superadmin';
 
   return (
-    <AuthContext.Provider value={{ admin, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{
+      user,
+      isLoading,
+      isAuthenticated,
+      login,
+      logout,
+      isAdmin,
+      isSuperAdmin
+    }}>
       {children}
     </AuthContext.Provider>
   );

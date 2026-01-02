@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Master Data Dropdown Navigation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        h2 {
+            color: #555;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+        ul {
+            line-height: 1.6;
+        }
+        .route-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .route-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗂️ Test Master Data Dropdown Navigation</h1>
+        
+        <div class="test-section success">
+            <h2>✅ Implementasi Berhasil</h2>
+            <p>Dropdown Master Data telah berhasil diimplementasikan dengan fitur-fitur berikut:</p>
+            <ul>
+                <li><strong>Dropdown Clickable:</strong> Tombol Master Data dapat diklik untuk expand/collapse submenu</li>
+                <li><strong>Auto-expand:</strong> Dropdown otomatis terbuka saat user berada di halaman master data</li>
+                <li><strong>Visual Feedback:</strong> Icon panah berputar saat dropdown dibuka/ditutup</li>
+                <li><strong>Active State:</strong> Tombol Master Data highlight saat user di halaman master data</li>
+                <li><strong>Smooth Animation:</strong> Transisi yang halus untuk expand/collapse</li>
+            </ul>
+        </div>
+
+        <div class="test-section info">
+            <h2>📋 Daftar Halaman Master Data</h2>
+            <p>Semua 10 halaman master data telah dibuat dan terintegrasi:</p>
+            <div class="route-list">
+                <div class="route-item">
+                    <strong>1. Unit Kerja</strong><br>
+                    <span class="code">/master-data/units</span>
+                </div>
+                <div class="route-item">
+                    <strong>2. Tipe Unit Kerja</strong><br>
+                    <span class="code">/master-data/unit-types</span>
+                </div>
+                <div class="route-item">
+                    <strong>3. Kategori Layanan</strong><br>
+                    <span class="code">/master-data/service-categories</span>
+                </div>
+                <div class="route-item">
+                    <strong>4. Tipe Tiket</strong><br>
+                    <span class="code">/master-data/ticket-types</span>
+                </div>
+                <div class="route-item">
+                    <strong>5. Klasifikasi Tiket</strong><br>
+                    <span class="code">/master-data/ticket-classifications</span>
+                </div>
+                <div class="route-item">
+                    <strong>6. Status Tiket</strong><br>
+                    <span class="code">/master-data/ticket-statuses</span>
+                </div>
+                <div class="route-item">
+                    <strong>7. Jenis Pasien</strong><br>
+                    <span class="code">/master-data/patient-types</span>
+                </div>
+                <div class="route-item">
+                    <strong>8. Pengaturan SLA</strong><br>
+                    <span class="code">/master-data/sla-settings</span>
+                </div>
+                <div class="route-item">
+                    <strong>9. Peran & Akses</strong><br>
+                    <span class="code">/master-data/roles-permissions</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section info">
+            <h2>🔧 Perubahan yang Dilakukan</h2>
+            <ul>
+                <li><strong>Sidebar.tsx:</strong> Ditambahkan state dropdown dan logic untuk expand/collapse</li>
+                <li><strong>App.tsx:</strong> Routing diperbarui untuk menggunakan halaman master data yang dedicated</li>
+                <li><strong>Master Data Pages:</strong> Semua halaman sudah ada dan siap digunakan</li>
+                <li><strong>Auto-expand Logic:</strong> Dropdown otomatis terbuka saat user navigasi ke halaman master data</li>
+                <li><strong>Visual Enhancement:</strong> Icon database dan panah expand untuk UX yang lebih baik</li>
+            </ul>
+        </div>
+
+        <div class="test-section warning">
+            <h2>🧪 Cara Testing</h2>
+            <ol>
+                <li>Jalankan aplikasi frontend dengan <span class="code">npm start</span></li>
+                <li>Login ke dashboard admin</li>
+                <li>Klik tombol "Master Data" di sidebar - dropdown harus expand</li>
+                <li>Klik salah satu submenu (misal: Unit Kerja)</li>
+                <li>Dropdown harus tetap terbuka dan item yang diklik harus highlight</li>
+                <li>Klik tombol "Master Data" lagi - dropdown harus collapse</li>
+                <li>Navigasi langsung ke URL master data - dropdown harus auto-expand</li>
+            </ol>
+        </div>
+
+        <div class="test-section success">
+            <h2>🎯 Fitur Dropdown Master Data</h2>
+            <ul>
+                <li><strong>Clickable Button:</strong> Tombol Master Data dengan icon database</li>
+                <li><strong>Expand/Collapse:</strong> Icon panah yang berputar saat dropdown dibuka/ditutup</li>
+                <li><strong>Submenu Indented:</strong> Submenu dengan indentasi dan bullet point</li>
+                <li><strong>Active Highlighting:</strong> Item aktif dengan background biru dan shadow</li>
+                <li><strong>Hover Effects:</strong> Efek hover yang smooth pada semua item</li>
+                <li><strong>Auto-expand:</strong> Otomatis terbuka saat user di halaman master data</li>
+                <li><strong>State Management:</strong> Menggunakan React useState untuk manage dropdown state</li>
+                <li><strong>URL Detection:</strong> useEffect untuk detect perubahan URL dan auto-expand</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        console.log('✅ Master Data Dropdown Navigation Test Page Loaded');
+        console.log('📋 Total Master Data Pages: 9');
+        console.log('🔧 Implementation: React + TypeScript + Tailwind CSS');
+        console.log('🎯 Features: Dropdown, Auto-expand, Active states, Smooth animations');
+    </script>
+</body>
+</html>

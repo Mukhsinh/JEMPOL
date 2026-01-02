@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Management - Simple</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold mb-6">Test QR Management - Simple</h1>
+        
+        <!-- Test Results -->
+        <div id="results" class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Test Results</h2>
+            <div id="resultsList" class="space-y-2"></div>
+        </div>
+        
+        <!-- Test Actions -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Test Actions</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button onclick="testAPI()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Test API Connection
+                </button>
+                <button onclick="testQROperations()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Test QR Operations
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001/api';
+        
+        function addResult(message, type = 'info') {
+            const resultsList = document.getElementById('resultsList');
+            const div = document.createElement('div');
+            div.className = `p-3 rounded ${
+                type === 'success' ? 'bg-green-100 text-green-800' :
+                type === 'error' ? 'bg-red-100 text-red-800' :
+                'bg-blue-100 text-blue-800'
+            }`;
+            div.innerHTML = `
+                <div class="flex items-center">
+                    <span class="material-symbols-outlined mr-2 text-sm">
+                        ${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info'}
+                    </span>
+                    <span class="text-sm">${message}</span>
+                </div>
+            `;
+            resultsList.appendChild(div);
+            resultsList.scrollTop = resultsList.scrollHeight;
+        }
+
+        async function testAPI() {
+            try {
+                addResult('Testing API connection...', 'info');
+                
+                const response = await fetch(`${API_BASE}/qr-codes`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ API connected successfully. Found ${data.qr_codes?.length || 0} QR codes`, 'success');
+                } else {
+                    addResult(`❌ API connection failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ API connection error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testQROperations() {
+            try {
+                addResult('Testing QR operations...', 'info');
+                
+                // Test 1: Get QR codes
+                const response = await fetch(`${API_BASE}/qr-codes?include_analytics=true`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch QR codes: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const qrCodes = data.qr_codes || [];
+                addResult(`✅ Loaded ${qrCodes.length} QR codes`, 'success');
+                
+                if (qrCodes.length === 0) {
+                    addResult('No QR codes found to test operations', 'info');
+                    return;
+                }
+                
+                // Test 2: Toggle status (find first active QR)
+                const activeQR = qrCodes.find(qr => qr.is_active);
+                if (activeQR) {
+                    addResult(`Testing toggle status for QR: ${activeQR.name}`, 'info');
+                    
+                    const toggleResponse = await fetch(`${API_BASE}/qr-codes/${activeQR.id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            is_active: false
+                        })
+                    });
+                    
+                    if (toggleResponse.ok) {
+                        addResult(`✅ Successfully toggled QR status to inactive`, 'success');
+                        
+                        // Toggle back to active
+                        const toggleBackResponse = await fetch(`${API_BASE}/qr-codes/${activeQR.id}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                is_active: true
+                            })
+                        });
+                        
+                        if (toggleBackResponse.ok) {
+                            addResult(`✅ Successfully toggled QR status back to active`, 'success');
+                        }
+                    } else {
+                        addResult(`❌ Failed to toggle QR status: ${toggleResponse.status}`, 'error');
+                    }
+                }
+                
+                // Test 3: Delete operation (find QR with no usage)
+                const unusedQR = qrCodes.find(qr => qr.usage_count === 0);
+                if (unusedQR) {
+                    addResult(`Testing delete for unused QR: ${unusedQR.name}`, 'info');
+                    
+                    const deleteResponse = await fetch(`${API_BASE}/qr-codes/${unusedQR.id}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (deleteResponse.ok) {
+                        addResult(`✅ Successfully deleted QR code: ${unusedQR.name}`, 'success');
+                    } else {
+                        const errorText = await deleteResponse.text();
+                        addResult(`❌ Failed to delete QR code: ${errorText}`, 'error');
+                    }
+                } else {
+                    addResult('No unused QR codes found for safe deletion test', 'info');
+                }
+                
+            } catch (error) {
+                addResult(`❌ QR operations test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            addResult('QR Management test initialized', 'info');
+            testAPI();
+        });
+    </script>
+</body>
+</html>

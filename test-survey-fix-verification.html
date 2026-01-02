@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey Fix Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .test-link:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #155724;
+            background: #d4edda;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
+        }
+        .info {
+            color: #0c5460;
+            background: #d1ecf1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #bee5eb;
+        }
+        .warning {
+            color: #856404;
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #ffeaa7;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Survey Fix Verification</h1>
+    
+    <div class="success">
+        <h3>✅ Perbaikan Berhasil Diterapkan!</h3>
+        <p>Halaman survey telah diperbaiki dengan menambahkan:</p>
+        <ul>
+            <li><strong>SurveyLanding.tsx</strong> - Halaman landing untuk akses survey</li>
+            <li><strong>Routing yang diperbaiki</strong> - /survey untuk landing, /survey/form untuk form</li>
+            <li><strong>Navigation link</strong> - Link "Survei Kepuasan" di sidebar</li>
+            <li><strong>Better UX</strong> - Pencarian tiket dan daftar tiket yang sudah resolved</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>1. Test Halaman Survey Landing (Baru)</h2>
+        <div class="info">
+            <strong>URL Baru:</strong> <code>/survey</code> - Sekarang menampilkan halaman landing dengan daftar tiket yang bisa disurvei
+        </div>
+        <a href="http://localhost:3001/survey" class="test-link" target="_blank">
+            🏠 Test Survey Landing Page
+        </a>
+        <div class="step">
+            <strong>Yang akan Anda lihat:</strong>
+            <ul>
+                <li>Halaman landing dengan pencarian tiket</li>
+                <li>Daftar tiket yang sudah resolved</li>
+                <li>Tombol "Isi Survei" untuk setiap tiket</li>
+                <li>Pesan sukses jika datang dari redirect setelah submit survey</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Survey Form dengan Parameter</h2>
+        <div class="info">
+            <strong>URL Baru:</strong> <code>/survey/form?ticketId=ID</code> - Form survey dengan parameter tiket
+        </div>
+        <a href="http://localhost:3001/survey/form?ticketId=990e8400-e29b-41d4-a716-446655440001" class="test-link" target="_blank">
+            📝 Test Survey Form - Valid Ticket
+        </a>
+        <div class="step">
+            <strong>Yang akan Anda lihat:</strong>
+            <ul>
+                <li>Form survey lengkap dengan rating buttons</li>
+                <li>Informasi tiket yang sudah resolved</li>
+                <li>Form komentar dan saran</li>
+                <li>Tombol submit yang berfungsi</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Error Handling</h2>
+        <div class="warning">
+            <strong>Test Case:</strong> Akses form survey tanpa parameter ticketId
+        </div>
+        <a href="http://localhost:3001/survey/form" class="test-link" target="_blank">
+            ❌ Test Survey Form - No Parameter
+        </a>
+        <div class="step">
+            <strong>Yang akan Anda lihat:</strong>
+            <ul>
+                <li>Pesan error "ID Tiket Diperlukan"</li>
+                <li>Tombol "Kembali ke Beranda"</li>
+                <li>UI yang user-friendly untuk error state</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Navigation Integration</h2>
+        <div class="info">
+            <strong>Sidebar Navigation:</strong> Link "Survei Kepuasan" telah ditambahkan di bagian "Layanan Publik"
+        </div>
+        <a href="http://localhost:3001/dashboard" class="test-link" target="_blank">
+            🧭 Test Dashboard Navigation
+        </a>
+        <div class="step">
+            <strong>Yang akan Anda lihat:</strong>
+            <ul>
+                <li>Link "Survei Kepuasan" di sidebar</li>
+                <li>Icon rate_review untuk survey</li>
+                <li>Active state ketika di halaman survey</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Test Complete Flow</h2>
+        <div class="success">
+            <strong>Complete User Journey:</strong>
+        </div>
+        <div class="step">
+            <strong>Langkah-langkah test:</strong>
+            <ol>
+                <li>Buka dashboard → Klik "Survei Kepuasan" di sidebar</li>
+                <li>Pilih tiket dari daftar atau cari dengan nomor tiket</li>
+                <li>Klik "Isi Survei" → Akan redirect ke form survey</li>
+                <li>Isi rating dan komentar → Submit</li>
+                <li>Akan redirect kembali ke landing dengan pesan sukses</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>6. Database Verification</h2>
+        <button onclick="checkDatabase()" class="test-link">🗄️ Check Survey Data</button>
+        <div id="db-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Summary Perbaikan</h2>
+        <div class="success">
+            <h4>Masalah yang Diperbaiki:</h4>
+            <ul>
+                <li>❌ <strong>Sebelum:</strong> /survey menampilkan "ID Tiket Diperlukan" karena tidak ada parameter</li>
+                <li>✅ <strong>Sesudah:</strong> /survey menampilkan landing page dengan daftar tiket</li>
+            </ul>
+            
+            <h4>Fitur Baru yang Ditambahkan:</h4>
+            <ul>
+                <li>🏠 <strong>Survey Landing Page</strong> - Halaman utama untuk akses survey</li>
+                <li>🔍 <strong>Ticket Search</strong> - Pencarian tiket berdasarkan nomor</li>
+                <li>📋 <strong>Resolved Tickets List</strong> - Daftar tiket yang bisa disurvei</li>
+                <li>🧭 <strong>Navigation Integration</strong> - Link di sidebar</li>
+                <li>✅ <strong>Success Feedback</strong> - Pesan sukses setelah submit</li>
+            </ul>
+
+            <h4>Routing Structure:</h4>
+            <div class="code">
+/survey → SurveyLanding (halaman utama)
+/survey/form?ticketId=ID → SurveyForm (form survey)
+/survey/report → SurveyReport (laporan survey)
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function checkDatabase() {
+            const resultDiv = document.getElementById('db-result');
+            resultDiv.innerHTML = '<p>Checking database...</p>';
+            
+            try {
+                // Check recent surveys
+                const response = await fetch('http://localhost:5000/api/public/tickets/990e8400-e29b-41d4-a716-446655440001');
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ Database Connection OK!</strong>
+                            <p>Sample ticket data:</p>
+                            <div class="code">${JSON.stringify(result, null, 2)}</div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="warning">
+                            <strong>⚠️ API Response:</strong>
+                            <div class="code">${JSON.stringify(result, null, 2)}</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="warning">
+                        <strong>⚠️ Connection Error:</strong>
+                        <p>${error.message}</p>
+                        <p>Make sure backend server is running on port 5000</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

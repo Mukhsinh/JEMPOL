@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SLA Settings Simple</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th { background-color: #f8f9fa; }
+        .sla-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .priority-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .priority-low { background-color: #d4edda; color: #155724; }
+        .priority-medium { background-color: #fff3cd; color: #856404; }
+        .priority-high { background-color: #f8d7da; color: #721c24; }
+        .priority-critical { background-color: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test SLA Settings - Simple Version</h1>
+        <p>Test sederhana untuk memverifikasi halaman SLA Settings berfungsi dengan baik.</p>
+        
+        <div>
+            <button onclick="testSLAAPI()">🔧 Test SLA API</button>
+            <button onclick="simulateSLAPage()">🎨 Simulate SLA Page</button>
+            <button onclick="testCreateSLA()">➕ Test Create SLA</button>
+            <button onclick="clearResults()">🧹 Clear</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        
+        // Token untuk testing
+        const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzNhYzI4Zi1lNzJkLTQ4YzMtYjI4Ni1mNzE0ZGY4YzQwNzAiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzM1NjM5NzU4LCJleHAiOjE3MzU3MjYxNTh9.Hs8vJOEQGOGjJhKGxOqNkXqY8vP2wL9mR5sT3uV7xZ1';
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function makeRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    headers: {
+                        'Authorization': `Bearer ${TEST_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${data.error || 'Unknown error'}`);
+                }
+
+                return { success: true, data, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testSLAAPI() {
+            addResult('🔄 Testing SLA Settings API...', 'info');
+            
+            const result = await makeRequest('/master-data/sla-settings');
+            
+            if (result.success) {
+                addResult(`✅ API Success! Found ${result.data.length} SLA settings`, 'success');
+                
+                if (result.data.length > 0) {
+                    renderSLAData(result.data);
+                } else {
+                    addResult('📝 No SLA settings found in database', 'warning');
+                }
+            } else {
+                addResult(`❌ API Error: ${result.error}`, 'error');
+                
+                // Provide troubleshooting tips
+                if (result.error.includes('Failed to fetch')) {
+                    addResult('💡 Backend server mungkin tidak berjalan. Jalankan: npm run dev', 'warning');
+                } else if (result.error.includes('401')) {
+                    addResult('💡 Token authentication gagal. Coba login ulang.', 'warning');
+                } else if (result.error.includes('404')) {
+                    addResult('💡 Endpoint tidak ditemukan. Periksa routing backend.', 'warning');
+                }
+            }
+        }
+
+        function renderSLAData(slaData) {
+            let html = '<h3>📊 SLA Settings Data:</h3>';
+            
+            slaData.forEach((sla, index) => {
+                const priorityClass = `priority-${sla.priority_level}`;
+                const priorityLabels = {
+                    low: 'Rendah',
+                    medium: 'Sedang', 
+                    high: 'Tinggi',
+                    critical: 'Kritis'
+                };
+                
+                html += `
+                    <div class="sla-card">
+                        <h4>${sla.name}</h4>
+                        <p><strong>Prioritas:</strong> <span class="priority-badge ${priorityClass}">${priorityLabels[sla.priority_level] || sla.priority_level}</span></p>
+                        <p><strong>Waktu Respon:</strong> ${sla.response_time_hours} jam</p>
+                        <p><strong>Waktu Penyelesaian:</strong> ${sla.resolution_time_hours} jam</p>
+                        <p><strong>Unit Type:</strong> ${sla.unit_types?.name || 'Tidak ada'}</p>
+                        <p><strong>Service Category:</strong> ${sla.service_categories?.name || 'Tidak ada'}</p>
+                        <p><strong>Patient Type:</strong> ${sla.patient_types?.name || 'Tidak ada'}</p>
+                        <p><strong>Status:</strong> ${sla.is_active ? '✅ Aktif' : '❌ Nonaktif'}</p>
+                        <p><strong>Jam Kerja Saja:</strong> ${sla.business_hours_only ? 'Ya' : 'Tidak'}</p>
+                    </div>
+                `;
+            });
+            
+            addResult(html, 'success');
+        }
+
+        async function simulateSLAPage() {
+            addResult('🎨 Simulating SLA Settings Page...', 'info');
+            
+            // Simulate React component lifecycle
+            addResult('1️⃣ Component mounting...', 'info');
+            
+            // Simulate useState initialization
+            addResult('2️⃣ Initializing state (loading: true, slaSettings: [], error: null)...', 'info');
+            
+            // Simulate useEffect - loadSLASettings
+            addResult('3️⃣ useEffect triggered - calling loadSLASettings()...', 'info');
+            
+            const result = await makeRequest('/master-data/sla-settings');
+            
+            if (result.success) {
+                addResult('4️⃣ ✅ setSlaSettings(data) - Data loaded successfully', 'success');
+                addResult('5️⃣ ✅ setLoading(false) - Loading state cleared', 'success');
+                
+                if (result.data.length === 0) {
+                    addResult('6️⃣ 📝 Rendering empty state: "Belum ada pengaturan SLA"', 'info');
+                } else {
+                    addResult(`6️⃣ 📋 Rendering table with ${result.data.length} SLA settings`, 'success');
+                    
+                    // Simulate table rendering
+                    let tableHtml = `
+                        <h4>Simulated Table Render:</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>Prioritas</th>
+                                    <th>Waktu Respon</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    result.data.slice(0, 3).forEach(sla => {
+                        const priorityClass = `priority-${sla.priority_level}`;
+                        tableHtml += `
+                            <tr>
+                                <td>${sla.name}</td>
+                                <td><span class="priority-badge ${priorityClass}">${sla.priority_level}</span></td>
+                                <td>${sla.response_time_hours}h</td>
+                                <td>${sla.is_active ? '✅ Aktif' : '❌ Nonaktif'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    if (result.data.length > 3) {
+                        tableHtml += `<tr><td colspan="4">... dan ${result.data.length - 3} lainnya</td></tr>`;
+                    }
+                    
+                    tableHtml += '</tbody></table>';
+                    addResult(tableHtml, 'success');
+                }
+            } else {
+                addResult('4️⃣ ❌ setError("Gagal memuat pengaturan SLA") - Error state set', 'error');
+                addResult('5️⃣ ❌ setLoading(false) - Loading cleared with error', 'error');
+                addResult('6️⃣ 🔴 Rendering error message to user', 'error');
+            }
+        }
+
+        async function testCreateSLA() {
+            addResult('➕ Testing Create SLA functionality...', 'info');
+            
+            // Test dropdown data first
+            addResult('1️⃣ Loading dropdown data...', 'info');
+            
+            const [unitTypes, serviceCategories, patientTypes] = await Promise.all([
+                makeRequest('/master-data/unit-types'),
+                makeRequest('/master-data/service-categories'),
+                makeRequest('/master-data/patient-types')
+            ]);
+            
+            if (unitTypes.success && serviceCategories.success && patientTypes.success) {
+                addResult(`✅ Dropdown data loaded: ${unitTypes.data.length} unit types, ${serviceCategories.data.length} service categories, ${patientTypes.data.length} patient types`, 'success');
+                
+                // Simulate creating a test SLA
+                const testSLA = {
+                    name: `Test SLA ${Date.now()}`,
+                    unit_type_id: unitTypes.data[0]?.id,
+                    service_category_id: serviceCategories.data[0]?.id,
+                    patient_type_id: patientTypes.data[0]?.id,
+                    priority_level: 'medium',
+                    response_time_hours: 2,
+                    resolution_time_hours: 24,
+                    escalation_time_hours: 48,
+                    business_hours_only: true,
+                    is_active: true
+                };
+                
+                addResult('2️⃣ Attempting to create test SLA...', 'info');
+                
+                const createResult = await makeRequest('/master-data/sla-settings', {
+                    method: 'POST',
+                    body: JSON.stringify(testSLA)
+                });
+                
+                if (createResult.success) {
+                    addResult(`✅ Test SLA created successfully! ID: ${createResult.data.id}`, 'success');
+                    
+                    // Clean up - delete the test SLA
+                    addResult('3️⃣ Cleaning up test data...', 'info');
+                    const deleteResult = await makeRequest(`/master-data/sla-settings/${createResult.data.id}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (deleteResult.success) {
+                        addResult('✅ Test SLA cleaned up successfully', 'success');
+                    } else {
+                        addResult(`⚠️ Could not clean up test SLA: ${deleteResult.error}`, 'warning');
+                    }
+                } else {
+                    addResult(`❌ Failed to create test SLA: ${createResult.error}`, 'error');
+                }
+            } else {
+                addResult('❌ Could not load dropdown data for testing', 'error');
+            }
+        }
+
+        // Auto-run basic test when page loads
+        window.onload = function() {
+            addResult('🚀 SLA Settings Simple Test loaded!', 'info');
+            addResult('💡 Click "Test SLA API" to verify the API is working.', 'info');
+        };
+    </script>
+</body>
+</html>

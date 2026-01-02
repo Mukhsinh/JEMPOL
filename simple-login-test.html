@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Login Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Simple Login Test</h1>
+    
+    <div class="form-group">
+        <label>Email:</label>
+        <input type="email" id="email" value="admin@jempol.com">
+    </div>
+    
+    <div class="form-group">
+        <label>Password:</label>
+        <input type="password" id="password" value="admin123">
+    </div>
+    
+    <button onclick="testLogin()">Test Login</button>
+    <button onclick="tryDifferentPasswords()">Try Different Passwords</button>
+    
+    <div id="result" class="result"></div>
+
+    <script>
+        const supabase = supabase.createClient(
+            'https://jxxzbdivafzzwqhagwrf.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg'
+        );
+        
+        function log(message, type = 'info') {
+            const result = document.getElementById('result');
+            result.textContent = message;
+            result.className = `result ${type}`;
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                log('Testing login...', 'info');
+                
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password
+                });
+                
+                if (error) {
+                    log(`Login failed: ${error.message}`, 'error');
+                } else {
+                    log(`Login successful!\nUser: ${data.user.email}\nID: ${data.user.id}`, 'success');
+                }
+            } catch (err) {
+                log(`Error: ${err.message}`, 'error');
+            }
+        }
+
+        async function tryDifferentPasswords() {
+            const email = document.getElementById('email').value;
+            const passwords = ['admin123', 'password', '123456', 'admin', 'test123'];
+            
+            log('Trying different passwords...', 'info');
+            
+            for (const pwd of passwords) {
+                try {
+                    await supabase.auth.signOut(); // Clear session
+                    
+                    const { data, error } = await supabase.auth.signInWithPassword({
+                        email,
+                        password: pwd
+                    });
+                    
+                    if (!error && data.user) {
+                        log(`SUCCESS! Password found: ${pwd}\nUser: ${data.user.email}`, 'success');
+                        return;
+                    }
+                } catch (err) {
+                    // Continue trying
+                }
+            }
+            
+            log('No working password found from common passwords', 'error');
+        }
+    </script>
+</body>
+</html>

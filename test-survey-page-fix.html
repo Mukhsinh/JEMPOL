@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Survey Page Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .test-link:hover {
+            background: #0056b3;
+        }
+        .error {
+            color: #dc3545;
+            background: #f8d7da;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #155724;
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .info {
+            color: #0c5460;
+            background: #d1ecf1;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Survey Page Fix</h1>
+    
+    <div class="info">
+        <strong>Masalah yang ditemukan:</strong> Halaman /survey menampilkan "ID Tiket Diperlukan" karena tidak ada parameter ticketId yang diberikan.
+    </div>
+
+    <div class="test-section">
+        <h2>1. Test Survey dengan Tiket Valid</h2>
+        <p>Menggunakan tiket yang sudah resolved untuk test survey:</p>
+        <a href="http://localhost:3001/survey?ticketId=990e8400-e29b-41d4-a716-446655440001" class="test-link" target="_blank">
+            Test Survey - Tiket TKT-2024-0001
+        </a>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Survey tanpa Parameter (Error Case)</h2>
+        <p>Ini akan menampilkan error "ID Tiket Diperlukan":</p>
+        <a href="http://localhost:3001/survey" class="test-link" target="_blank">
+            Test Survey - Tanpa Parameter
+        </a>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test API Survey Endpoint</h2>
+        <button onclick="testSurveyAPI()" class="test-link">Test API Survey</button>
+        <div id="api-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Solusi yang Direkomendasikan</h2>
+        <div class="success">
+            <strong>Solusi:</strong>
+            <ul>
+                <li>Halaman survey memerlukan parameter <code>ticketId</code> dalam URL</li>
+                <li>Format yang benar: <code>/survey?ticketId=TICKET_ID</code></li>
+                <li>Tiket harus berstatus "resolved" untuk bisa diisi survey</li>
+                <li>Buat halaman landing atau redirect dari dashboard untuk akses survey</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        async function testSurveyAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<p>Testing API...</p>';
+            
+            try {
+                // Test dengan tiket yang valid
+                const ticketId = '990e8400-e29b-41d4-a716-446655440001';
+                const surveyData = {
+                    overall_score: 5,
+                    response_time_score: 4,
+                    solution_quality_score: 5,
+                    staff_courtesy_score: 5,
+                    comments: 'Test survey dari debugging'
+                };
+
+                const response = await fetch(`http://localhost:5000/api/public/surveys/${ticketId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(surveyData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ API Test Berhasil!</strong>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ API Test Gagal!</strong>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ Error:</strong>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

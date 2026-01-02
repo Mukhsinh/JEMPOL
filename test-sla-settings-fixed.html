@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SLA Settings API - Fixed</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        .sla-item { border: 1px solid #eee; margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .priority-badge { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        .priority-low { background: #d4edda; color: #155724; }
+        .priority-medium { background: #fff3cd; color: #856404; }
+        .priority-high { background: #f8d7da; color: #721c24; }
+        .priority-critical { background: #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test SLA Settings API - Fixed</h1>
+        
+        <div class="test-section">
+            <h3>Authentication Status</h3>
+            <div id="auth-status">Checking...</div>
+            <button onclick="checkAuth()">Check Auth</button>
+        </div>
+
+        <div class="test-section">
+            <h3>SLA Settings Management</h3>
+            <button onclick="loadSLASettings()">Load SLA Settings</button>
+            <button onclick="loadDropdownData()">Load Dropdown Data</button>
+            <div id="sla-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Create New SLA Setting</h3>
+            <form id="sla-form">
+                <div style="margin: 10px 0;">
+                    <label>Name: <input type="text" id="sla-name" placeholder="SLA Name" required></label>
+                </div>
+                <div style="margin: 10px 0;">
+                    <label>Unit Type: 
+                        <select id="unit-type-select">
+                            <option value="">Select Unit Type</option>
+                        </select>
+                    </label>
+                </div>
+                <div style="margin: 10px 0;">
+                    <label>Service Category: 
+                        <select id="service-category-select">
+                            <option value="">Select Service Category</option>
+                        </select>
+                    </label>
+                </div>
+                <div style="margin: 10px 0;">
+                    <label>Patient Type: 
+                        <select id="patient-type-select">
+                            <option value="">Select Patient Type</option>
+                        </select>
+                    </label>
+                </div>
+                <div style="margin: 10px 0;">
+                    <label>Priority: 
+                        <select id="priority-select" required>
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </label>
+                </div>
+                <div style="margin: 10px 0;">
+                    <label>Response Time (hours): <input type="number" id="response-time" value="4" min="1" required></label>
+                </div>
+                <div style="margin: 10px 0;">
+                    <label>Resolution Time (hours): <input type="number" id="resolution-time" value="24" min="1" required></label>
+                </div>
+                <div style="margin: 10px 0;">
+                    <label>Escalation Time (hours): <input type="number" id="escalation-time" value="48" min="1"></label>
+                </div>
+                <div style="margin: 10px 0;">
+                    <label><input type="checkbox" id="business-hours" checked> Business Hours Only</label>
+                </div>
+                <div style="margin: 10px 0;">
+                    <label><input type="checkbox" id="is-active" checked> Active</label>
+                </div>
+                <button type="submit">Create SLA Setting</button>
+            </form>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Results</h3>
+            <div id="test-results"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5002/api';
+        let authToken = localStorage.getItem('token');
+
+        async function makeRequest(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                }
+            };
+
+            const response = await fetch(`${API_BASE}${url}`, {
+                ...defaultOptions,
+                ...options,
+                headers: { ...defaultOptions.headers, ...options.headers }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            return response.json();
+        }
+
+        async function checkAuth() {
+            const statusDiv = document.getElementById('auth-status');
+            statusDiv.className = 'loading';
+            statusDiv.innerHTML = 'Checking authentication...';
+
+            try {
+                if (!authToken) {
+                    // Try to login with default admin credentials
+                    const loginResponse = await fetch(`${API_BASE}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: 'admin',
+                            password: 'admin123'
+                        })
+                    });
+
+                    if (loginResponse.ok) {
+                        const loginData = await loginResponse.json();
+                        authToken = loginData.token;
+                        localStorage.setItem('token', authToken);
+                        statusDiv.className = 'success';
+                        statusDiv.innerHTML = 'Successfully logged in as admin';
+                    } else {
+                        throw new Error('Login failed');
+                    }
+                } else {
+                    // Verify existing token
+                    await makeRequest('/auth/verify');
+                    statusDiv.className = 'success';
+                    statusDiv.innerHTML = 'Authentication valid';
+                }
+            } catch (error) {
+                statusDiv.className = 'error';
+                statusDiv.innerHTML = `Authentication failed: ${error.message}`;
+                authToken = null;
+                localStorage.removeItem('token');
+            }
+        }
+
+        async function loadSLASettings() {
+            const resultsDiv = document.getElementById('sla-results');
+            resultsDiv.innerHTML = '<div class="loading">Loading SLA settings...</div>';
+
+            try {
+                const data = await makeRequest('/master-data/sla-settings');
+                
+                let html = `<h4>SLA Settings (${data.length} items)</h4>`;
+                
+                if (data.length === 0) {
+                    html += '<p>No SLA settings found.</p>';
+                } else {
+                    data.forEach(sla => {
+                        const priorityClass = `priority-${sla.priority_level}`;
+                        html += `
+                            <div class="sla-item">
+                                <h5>${sla.name}</h5>
+                                <p><strong>Priority:</strong> <span class="priority-badge ${priorityClass}">${sla.priority_level}</span></p>
+                                <p><strong>Unit Type:</strong> ${sla.unit_types?.name || 'N/A'}</p>
+                                <p><strong>Service Category:</strong> ${sla.service_categories?.name || 'N/A'}</p>
+                                <p><strong>Patient Type:</strong> ${sla.patient_types?.name || 'N/A'}</p>
+                                <p><strong>Times:</strong> Response: ${sla.response_time_hours}h, Resolution: ${sla.resolution_time_hours}h, Escalation: ${sla.escalation_time_hours || 'N/A'}h</p>
+                                <p><strong>Business Hours Only:</strong> ${sla.business_hours_only ? 'Yes' : 'No'}</p>
+                                <p><strong>Status:</strong> ${sla.is_active ? 'Active' : 'Inactive'}</p>
+                                <button onclick="deleteSLASetting('${sla.id}')">Delete</button>
+                            </div>
+                        `;
+                    });
+                }
+                
+                resultsDiv.innerHTML = html;
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">Error loading SLA settings: ${error.message}</div>`;
+            }
+        }
+
+        async function loadDropdownData() {
+            try {
+                const [unitTypes, serviceCategories, patientTypes] = await Promise.all([
+                    makeRequest('/master-data/unit-types'),
+                    makeRequest('/master-data/service-categories'),
+                    makeRequest('/master-data/patient-types')
+                ]);
+
+                // Populate dropdowns
+                const unitTypeSelect = document.getElementById('unit-type-select');
+                unitTypeSelect.innerHTML = '<option value="">Select Unit Type</option>';
+                unitTypes.forEach(type => {
+                    unitTypeSelect.innerHTML += `<option value="${type.id}">${type.name}</option>`;
+                });
+
+                const serviceCategorySelect = document.getElementById('service-category-select');
+                serviceCategorySelect.innerHTML = '<option value="">Select Service Category</option>';
+                serviceCategories.forEach(category => {
+                    serviceCategorySelect.innerHTML += `<option value="${category.id}">${category.name}</option>`;
+                });
+
+                const patientTypeSelect = document.getElementById('patient-type-select');
+                patientTypeSelect.innerHTML = '<option value="">Select Patient Type</option>';
+                patientTypes.forEach(type => {
+                    patientTypeSelect.innerHTML += `<option value="${type.id}">${type.name}</option>`;
+                });
+
+                document.getElementById('test-results').innerHTML = '<div class="success">Dropdown data loaded successfully</div>';
+            } catch (error) {
+                document.getElementById('test-results').innerHTML = `<div class="error">Error loading dropdown data: ${error.message}</div>`;
+            }
+        }
+
+        async function createSLASetting(formData) {
+            try {
+                const data = await makeRequest('/master-data/sla-settings', {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
+                });
+
+                document.getElementById('test-results').innerHTML = '<div class="success">SLA setting created successfully</div>';
+                document.getElementById('sla-form').reset();
+                loadSLASettings(); // Refresh the list
+            } catch (error) {
+                document.getElementById('test-results').innerHTML = `<div class="error">Error creating SLA setting: ${error.message}</div>`;
+            }
+        }
+
+        async function deleteSLASetting(id) {
+            if (!confirm('Are you sure you want to delete this SLA setting?')) return;
+
+            try {
+                await makeRequest(`/master-data/sla-settings/${id}`, {
+                    method: 'DELETE'
+                });
+
+                document.getElementById('test-results').innerHTML = '<div class="success">SLA setting deleted successfully</div>';
+                loadSLASettings(); // Refresh the list
+            } catch (error) {
+                document.getElementById('test-results').innerHTML = `<div class="error">Error deleting SLA setting: ${error.message}</div>`;
+            }
+        }
+
+        // Form submission handler
+        document.getElementById('sla-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                name: document.getElementById('sla-name').value,
+                unit_type_id: document.getElementById('unit-type-select').value || undefined,
+                service_category_id: document.getElementById('service-category-select').value || undefined,
+                patient_type_id: document.getElementById('patient-type-select').value || undefined,
+                priority_level: document.getElementById('priority-select').value,
+                response_time_hours: parseInt(document.getElementById('response-time').value),
+                resolution_time_hours: parseInt(document.getElementById('resolution-time').value),
+                escalation_time_hours: document.getElementById('escalation-time').value ? parseInt(document.getElementById('escalation-time').value) : undefined,
+                business_hours_only: document.getElementById('business-hours').checked,
+                is_active: document.getElementById('is-active').checked
+            };
+
+            await createSLASetting(formData);
+        });
+
+        // Initialize
+        checkAuth();
+    </script>
+</body>
+</html>ataDiv = document.getElementById('slaData');
+            dataDiv.innerHTML = `
+                <h4>📊 Summary Data SLA Settings</h4>
+                <p><strong>Total SLA Settings:</strong> ${data.length}</p>
+                <p><strong>Aktif:</strong> ${data.filter(s => s.is_active).length}</p>
+                <p><strong>Nonaktif:</strong> ${data.filter(s => !s.is_active).length}</p>
+                <p><strong>Prioritas Critical:</strong> ${data.filter(s => s.priority_level === 'critical').length}</p>
+                <p><strong>Prioritas High:</strong> ${data.filter(s => s.priority_level === 'high').length}</p>
+                <p><strong>Prioritas Medium:</strong> ${data.filter(s => s.priority_level === 'medium').length}</p>
+                <p><strong>Prioritas Low:</strong> ${data.filter(s => s.priority_level === 'low').length}</p>
+            `;
+        }
+
+        function getPriorityLabel(priority) {
+            const labels = {
+                low: 'Rendah',
+                medium: 'Sedang', 
+                high: 'Tinggi',
+                critical: 'Kritis'
+            };
+            return labels[priority] || priority;
+        }
+
+        // Auto-run basic test on page load
+        window.onload = function() {
+            testSLASettingsAPI();
+        };
+    </script>
+</body>
+</html>

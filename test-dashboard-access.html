@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Dashboard Access</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Dashboard Access - SARAH System</h1>
+        
+        <div class="info">
+            <strong>Panduan Testing:</strong><br>
+            1. Pastikan backend berjalan di port 5001<br>
+            2. Pastikan frontend berjalan di port 3001<br>
+            3. Test login dengan kredensial admin<br>
+            4. Akses dashboard setelah login berhasil
+        </div>
+
+        <h2>1. Test Koneksi Backend</h2>
+        <button onclick="testBackend()">Test Backend Connection</button>
+        <div id="backendStatus"></div>
+
+        <h2>2. Test Login</h2>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="admin@jempol.com" placeholder="admin@jempol.com">
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="admin123" placeholder="admin123">
+        </div>
+        <button onclick="testLogin()">Test Login</button>
+        <div id="loginStatus"></div>
+
+        <h2>3. Test Dashboard Access</h2>
+        <button onclick="testDashboard()">Test Dashboard Metrics</button>
+        <div id="dashboardStatus"></div>
+
+        <h2>4. Quick Links</h2>
+        <button onclick="window.open('http://localhost:3001', '_blank')">Open Frontend</button>
+        <button onclick="window.open('http://localhost:3001/login', '_blank')">Open Login Page</button>
+        <button onclick="window.open('http://localhost:5001/api/health', '_blank')">Backend Health Check</button>
+    </div>
+
+    <script>
+        let authToken = null;
+
+        async function testBackend() {
+            const statusDiv = document.getElementById('backendStatus');
+            statusDiv.innerHTML = '<div class="info">Testing backend connection...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/health');
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.innerHTML = `<div class="success">✅ Backend connected successfully! Status: ${data.status}</div>`;
+                } else {
+                    statusDiv.innerHTML = `<div class="error">❌ Backend responded with status: ${response.status}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Backend connection failed: ${error.message}</div>`;
+            }
+        }
+
+        async function testLogin() {
+            const statusDiv = document.getElementById('loginStatus');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            statusDiv.innerHTML = '<div class="info">Testing login...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    authToken = data.data.token;
+                    statusDiv.innerHTML = `<div class="success">✅ Login successful! Token received.</div>`;
+                } else {
+                    statusDiv.innerHTML = `<div class="error">❌ Login failed: ${data.error || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Login request failed: ${error.message}</div>`;
+            }
+        }
+
+        async function testDashboard() {
+            const statusDiv = document.getElementById('dashboardStatus');
+            
+            if (!authToken) {
+                statusDiv.innerHTML = '<div class="error">❌ Please login first to get auth token</div>';
+                return;
+            }
+            
+            statusDiv.innerHTML = '<div class="info">Testing dashboard access...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/complaints/dashboard/metrics', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    statusDiv.innerHTML = `<div class="success">✅ Dashboard data loaded successfully!<br>
+                        <strong>Metrics:</strong> ${JSON.stringify(data.data, null, 2)}</div>`;
+                } else {
+                    statusDiv.innerHTML = `<div class="error">❌ Dashboard access failed: ${data.error || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Dashboard request failed: ${error.message}</div>`;
+            }
+        }
+
+        // Auto-test backend on page load
+        window.onload = function() {
+            testBackend();
+        };
+    </script>
+</body>
+</html>

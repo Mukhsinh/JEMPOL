@@ -10,7 +10,7 @@ import VisitorManagement from '../components/admin/VisitorManagement';
 
 function AdminPage() {
   const [activeTab, setActiveTab] = useState<'upload' | 'bulk-photos' | 'visitors'>('upload');
-  const { admin, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -29,7 +29,7 @@ function AdminPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-                <p className="text-gray-600">Kelola konten dan data pengunjung • {admin?.username}</p>
+                <p className="text-gray-600">Kelola konten dan data pengunjung • {user?.full_name}</p>
               </div>
             </div>
             <button
@@ -86,8 +86,8 @@ function AdminPage() {
 
           {/* Content */}
           <div>
-            {activeTab === 'upload' && <UploadForm onUploadSuccess={() => {}} />}
-            {activeTab === 'bulk-photos' && <BulkPhotoUpload onUploadSuccess={() => {}} />}
+            {activeTab === 'upload' && <UploadForm onUploadSuccess={() => { }} />}
+            {activeTab === 'bulk-photos' && <BulkPhotoUpload onUploadSuccess={() => { }} />}
             {activeTab === 'visitors' && <VisitorManagement />}
           </div>
         </Container>

@@ -10,6 +10,21 @@ import visitorRoutes from './routes/visitorRoutes.js';
 import innovationRoutes from './routes/innovationRoutes.js';
 import gameRoutes from './routes/gameRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import complaintRoutes from './routes/complaintRoutes.js';
+import publicRoutes from './routes/publicRoutes.js';
+import escalationRoutes from './routes/escalationRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
+import unitRoutes from './routes/unitRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import masterDataRoutes from './routes/masterDataRoutes.js';
+import rolesRoutes from './routes/rolesRoutes.js';
+import responseTemplatesRoutes from './routes/responseTemplatesRoutes.js';
+import qrCodeRoutes from './routes/qrCodeRoutes.js';
+import aiTrustRoutes from './routes/aiTrustRoutes.js';
+import externalTicketRoutes from './routes/externalTicketRoutes.js';
+import aiEscalationRoutes from './routes/aiEscalationRoutes.js';
+import publicSurveyRoutes from './routes/publicSurveyRoutes.js';
+import appSettingsRoutes from './routes/appSettingsRoutes.js';
 import supabase from './config/supabase.js';
 import { initializeAdminTable, createDefaultAdmin } from './models/Admin.js';
 
@@ -36,6 +51,7 @@ const io = new Server(httpServer, {
       const allowedOrigins = [
         process.env.FRONTEND_URL || 'http://localhost:3000',
         'http://localhost:3001',
+        'http://localhost:3002',
         'https://jempol-frontend.vercel.app',
       ];
       
@@ -59,13 +75,14 @@ const io = new Server(httpServer, {
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000',
   'http://localhost:3001',
+  'http://localhost:3002',
   'https://jempol-frontend.vercel.app',
   'https://jempol-frontend-git-main-mukhainilfmpol.vercel.app',
 ];
 
 // In production, allow all Vercel preview deployments
 if (process.env.NODE_ENV === 'production') {
-  allowedOrigins.push(/\.vercel\.app$/);
+  allowedOrigins.push('*.vercel.app');
 }
 
 app.use(cors({
@@ -76,10 +93,9 @@ app.use(cors({
     // Check if origin is in allowed list
     const isAllowed = allowedOrigins.some(allowed => {
       if (typeof allowed === 'string') {
-        return allowed === origin;
+        return allowed === origin || (allowed === '*.vercel.app' && origin.includes('.vercel.app'));
       }
-      // RegExp check
-      return allowed.test(origin);
+      return false;
     });
     
     if (isAllowed) {
@@ -142,11 +158,170 @@ app.use('/uploads', (req, res, next) => {
   }
 }));
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    success: true, 
+    message: 'Server is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/visitors', visitorRoutes);
 app.use('/api/innovations', innovationRoutes);
 app.use('/api/game', gameRoutes);
+app.use('/api/complaints', complaintRoutes);
+app.use('/api/escalation', escalationRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/units', unitRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/service-categories', unitRoutes);
+app.use('/api/master-data', masterDataRoutes);
+app.use('/api/roles', rolesRoutes);
+app.use('/api/response-templates', responseTemplatesRoutes);
+app.use('/api/qr-codes', qrCodeRoutes);
+app.use('/api/ai-trust-settings', aiTrustRoutes);
+app.use('/api/external-tickets', externalTicketRoutes);
+app.use('/api/ai-escalation', aiEscalationRoutes);
+app.use('/api/app-settings', appSettingsRoutes);
+app.use('/api/public', publicRoutes);
+app.use('/api/public', publicSurveyRoutes);
+
+// Public units endpoint (no auth required) for fallback
+app.get('/api/public/units', async (req, res) => {
+  try {
+    const { search, type, status } = req.query;
+    
+    let query = supabase
+      .from('units')
+      .select(`
+        id, name, code, description, contact_email, contact_phone, 
+        sla_hours, is_active, parent_unit_id, unit_type_id,
+        created_at, updated_at,
+        unit_type:unit_types(id, name, code, color, icon),
+        parent_unit:units!parent_unit_id(name, code)
+      `)
+      .order('name');
+
+    // Apply filters
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%`);
+    }
+
+    if (type && type !== 'Semua Tipe') {
+      const { data: unitTypeData } = await supabase
+        .from('unit_types')
+        .select('id')
+        .eq('name', type)
+        .single();
+      
+      if (unitTypeData?.id) {
+        query = query.eq('unit_type_id', unitTypeData.id);
+      }
+    }
+
+    if (status === 'active' || status === 'Aktif') {
+      query = query.eq('is_active', true);
+    } else if (status === 'inactive' || status === 'Tidak Aktif' || status === 'Pemeliharaan') {
+      query = query.eq('is_active', false);
+    }
+
+    const { data: units, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    // Transform the data to match frontend expectations
+    const transformedUnits = (units || []).map((unit: any) => ({
+      ...unit,
+      unit_type: unit.unit_type ? {
+        id: unit.unit_type.id,
+        name: unit.unit_type.name,
+        code: unit.unit_type.code,
+        color: unit.unit_type.color || '#6B7280',
+        icon: unit.unit_type.icon || 'domain'
+      } : null
+    }));
+
+    res.json(transformedUnits);
+  } catch (error) {
+    console.error('Error fetching public units:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/public/unit-types', async (req, res) => {
+  try {
+    const { data: unitTypes, error } = await supabase
+      .from('unit_types')
+      .select('id, name, code, description, icon, color, is_active')
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      throw error;
+    }
+
+    res.json(unitTypes || []);
+  } catch (error) {
+    console.error('Error fetching public unit types:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Test endpoint for units (no auth)
+app.get('/api/test/units', async (req, res) => {
+  try {
+    const { data: units, error } = await supabase
+      .from('units')
+      .select(`
+        id, name, code, description, contact_email, contact_phone, 
+        sla_hours, is_active, parent_unit_id, unit_type_id,
+        created_at, updated_at,
+        unit_type:unit_types(id, name, code, color, icon),
+        parent_unit:units!parent_unit_id(name, code)
+      `)
+      .order('name')
+      .limit(5);
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data: units,
+      message: 'Test units endpoint working'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+});
+
+// Test endpoint for reports (no auth)
+app.get('/api/test/reports', async (req, res) => {
+  try {
+    const { data: tickets, error } = await supabase
+      .from('tickets')
+      .select(`
+        *,
+        units!inner(name),
+        service_categories(name)
+      `)
+      .limit(5);
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data: tickets,
+      message: 'Test endpoint working'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+});
 
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -184,7 +359,7 @@ io.on('connection', (socket) => {
 // Make io accessible to routes
 app.set('io', io);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3001;
 
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

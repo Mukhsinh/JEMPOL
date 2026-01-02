@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug SLA Settings Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .debug-section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Debug SLA Settings Page</h1>
+        <p>Debugging untuk mengidentifikasi masalah pada halaman SLA Settings yang tidak tampil.</p>
+        
+        <div>
+            <button onclick="checkFrontendServer()">Check Frontend Server</button>
+            <button onclick="checkBackendServer()">Check Backend Server</button>
+            <button onclick="testSLAEndpoint()">Test SLA Endpoint</button>
+            <button onclick="checkConsoleErrors()">Check Console Errors</button>
+            <button onclick="simulateSLAPage()">Simulate SLA Page</button>
+            <button onclick="clearResults()">Clear Results</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const FRONTEND_URL = 'http://localhost:3000';
+        const BACKEND_URL = 'http://localhost:5000';
+        const API_BASE_URL = 'http://localhost:5000/api';
+        
+        // Token untuk testing
+        const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzNhYzI4Zi1lNzJkLTQ4YzMtYjI4Ni1mNzE0ZGY4YzQwNzAiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzM1NjM5NzU4LCJleHAiOjE3MzU3MjYxNTh9.Hs8vJOEQGOGjJhKGxOqNkXqY8vP2wL9mR5sT3uV7xZ1';
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function checkFrontendServer() {
+            addResult('🔄 Checking Frontend Server...', 'info');
+            
+            try {
+                const response = await fetch(FRONTEND_URL, { 
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+                addResult('✅ Frontend server is running on port 3000', 'success');
+            } catch (error) {
+                addResult(`❌ Frontend server error: ${error.message}`, 'error');
+                addResult('💡 Pastikan frontend server berjalan dengan: npm start', 'warning');
+            }
+        }
+
+        async function checkBackendServer() {
+            addResult('🔄 Checking Backend Server...', 'info');
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/health`);
+                if (response.ok) {
+                    addResult('✅ Backend server is running on port 3001', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                addResult(`❌ Backend server error: ${error.message}`, 'error');
+                addResult('💡 Pastikan backend server berjalan dengan: npm run dev', 'warning');
+            }
+        }
+
+        async function testSLAEndpoint() {
+            addResult('🔄 Testing SLA Settings API endpoint...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/master-data/sla-settings`, {
+                    headers: {
+                        'Authorization': `Bearer ${TEST_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ SLA Settings API working! Found ${data.length} records`, 'success');
+                    
+                    if (data.length > 0) {
+                        addResult(`📊 Sample data: ${JSON.stringify(data[0], null, 2)}`, 'info');
+                    }
+                } else {
+                    const errorData = await response.json();
+                    addResult(`❌ SLA Settings API error: HTTP ${response.status} - ${errorData.error}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ SLA Settings API connection error: ${error.message}`, 'error');
+            }
+        }
+
+        function checkConsoleErrors() {
+            addResult('🔄 Checking for console errors...', 'info');
+            
+            // Override console methods to capture errors
+            const originalError = console.error;
+            const originalWarn = console.warn;
+            const errors = [];
+            const warnings = [];
+            
+            console.error = function(...args) {
+                errors.push(args.join(' '));
+                originalError.apply(console, args);
+            };
+            
+            console.warn = function(...args) {
+                warnings.push(args.join(' '));
+                originalWarn.apply(console, args);
+            };
+            
+            // Simulate some common React/API errors
+            setTimeout(() => {
+                if (errors.length > 0) {
+                    addResult(`❌ Console Errors Found: ${errors.length}`, 'error');
+                    errors.forEach(error => {
+                        addResult(`🔴 ${error}`, 'error');
+                    });
+                } else {
+                    addResult('✅ No console errors detected', 'success');
+                }
+                
+                if (warnings.length > 0) {
+                    addResult(`⚠️ Console Warnings Found: ${warnings.length}`, 'warning');
+                    warnings.forEach(warning => {
+                        addResult(`🟡 ${warning}`, 'warning');
+                    });
+                }
+                
+                // Restore original console methods
+                console.error = originalError;
+                console.warn = originalWarn;
+            }, 1000);
+        }
+
+        async function simulateSLAPage() {
+            addResult('🔄 Simulating SLA Settings page behavior...', 'info');
+            
+            // Simulate the React component lifecycle
+            try {
+                // 1. Check if component would mount
+                addResult('1️⃣ Component mounting simulation...', 'info');
+                
+                // 2. Simulate useEffect - loadSLASettings
+                addResult('2️⃣ Simulating loadSLASettings call...', 'info');
+                
+                const response = await fetch(`${API_BASE_URL}/master-data/sla-settings`, {
+                    headers: {
+                        'Authorization': `Bearer ${TEST_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('3️⃣ ✅ Data loaded successfully', 'success');
+                    addResult(`4️⃣ 📊 Would render ${data.length} SLA settings`, 'success');
+                    
+                    // Simulate rendering logic
+                    if (data.length === 0) {
+                        addResult('5️⃣ 📝 Would show "Belum ada pengaturan SLA" message', 'info');
+                    } else {
+                        addResult('5️⃣ 📋 Would render SLA settings table', 'success');
+                    }
+                } else {
+                    const errorData = await response.json();
+                    addResult(`3️⃣ ❌ API Error: ${errorData.error}`, 'error');
+                    addResult('4️⃣ 🔴 Would show error message to user', 'error');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Simulation failed: ${error.message}`, 'error');
+                addResult('💡 This suggests a network or CORS issue', 'warning');
+            }
+        }
+
+        // Check for common issues
+        function checkCommonIssues() {
+            addResult('🔍 Checking for common issues...', 'info');
+            
+            // Check if running on correct ports
+            if (window.location.port !== '3000') {
+                addResult('⚠️ Not running on expected frontend port (3000)', 'warning');
+            }
+            
+            // Check for CORS issues
+            if (window.location.protocol === 'file:') {
+                addResult('⚠️ Running from file:// protocol may cause CORS issues', 'warning');
+            }
+            
+            // Check localStorage for auth token
+            const token = localStorage.getItem('token');
+            if (!token) {
+                addResult('⚠️ No auth token found in localStorage', 'warning');
+                addResult('💡 User might not be logged in', 'info');
+            } else {
+                addResult('✅ Auth token found in localStorage', 'success');
+            }
+        }
+
+        // Auto-run basic checks when page loads
+        window.onload = function() {
+            addResult('🚀 Debug page loaded. Running basic checks...', 'info');
+            checkCommonIssues();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test App Settings Enhanced</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .logo-preview {
+            width: 100px;
+            height: 100px;
+            border: 2px dashed #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            background: #f9f9f9;
+        }
+        .logo-preview img {
+            max-width: 90px;
+            max-height: 90px;
+            object-fit: contain;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Pengaturan Aplikasi Enhanced</h1>
+        <p>Test halaman pengaturan aplikasi dengan field baru: Logo Aplikasi, Footer Aplikasi, dan Alamat Instansi</p>
+        
+        <div id="status"></div>
+
+        <form id="settingsForm">
+            <!-- Logo Aplikasi Section -->
+            <div class="section">
+                <h3>🎨 Logo Aplikasi</h3>
+                <div class="form-group">
+                    <label>Logo Aplikasi (untuk header dan branding)</label>
+                    <div class="logo-preview" id="appLogoPreview">
+                        <span>Belum ada logo</span>
+                    </div>
+                    <input type="file" id="appLogoFile" accept="image/*">
+                    <input type="text" id="app_logo" placeholder="URL logo aplikasi atau base64">
+                </div>
+            </div>
+
+            <!-- Logo Instansi Section -->
+            <div class="section">
+                <h3>🏢 Logo Instansi</h3>
+                <div class="form-group">
+                    <label>Logo Instansi (untuk dokumen resmi)</label>
+                    <div class="logo-preview" id="institutionLogoPreview">
+                        <span>Belum ada logo</span>
+                    </div>
+                    <input type="file" id="institutionLogoFile" accept="image/*">
+                    <input type="text" id="institution_logo" placeholder="URL logo instansi atau base64">
+                </div>
+            </div>
+
+            <!-- Informasi Aplikasi -->
+            <div class="section">
+                <h3>📱 Informasi Aplikasi</h3>
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="app_name">Nama Aplikasi</label>
+                        <input type="text" id="app_name" placeholder="Sistem Pengaduan Masyarakat Terpadu">
+                    </div>
+                    <div class="form-group">
+                        <label for="institution_name">Nama Instansi</label>
+                        <input type="text" id="institution_name" placeholder="RSUD Sehat Sentosa">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="app_footer">Footer Aplikasi</label>
+                    <textarea id="app_footer" placeholder="Copyright © 2025 Nama Instansi. Semua hak dilindungi."></textarea>
+                </div>
+            </div>
+
+            <!-- Informasi Instansi -->
+            <div class="section">
+                <h3>🏛️ Informasi Instansi</h3>
+                <div class="form-group">
+                    <label for="institution_address">Alamat Instansi</label>
+                    <textarea id="institution_address" placeholder="Alamat lengkap instansi..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="description">Deskripsi Instansi</label>
+                    <textarea id="description" placeholder="Deskripsi singkat tentang instansi..."></textarea>
+                </div>
+            </div>
+
+            <!-- Informasi Kontak -->
+            <div class="section">
+                <h3>📞 Informasi Kontak</h3>
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="contact_email">Email Kontak</label>
+                        <input type="email" id="contact_email" placeholder="info@instansi.go.id">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact_phone">Nomor Telepon</label>
+                        <input type="tel" id="contact_phone" placeholder="(021) 1234-5678">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="website">Website Resmi</label>
+                    <input type="url" id="website" placeholder="https://www.instansi.go.id">
+                </div>
+                <div class="form-group">
+                    <label for="address">Alamat Kontak</label>
+                    <textarea id="address" placeholder="Alamat untuk kontak publik..."></textarea>
+                </div>
+            </div>
+
+            <!-- Informasi Pengelola -->
+            <div class="section">
+                <h3>👤 Informasi Pengelola</h3>
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="manager_name">Nama Pengelola</label>
+                        <input type="text" id="manager_name" placeholder="Dr. Budi Santoso">
+                    </div>
+                    <div class="form-group">
+                        <label for="manager_position">Jabatan Pengelola</label>
+                        <input type="text" id="manager_position" placeholder="Kepala Bagian Humas">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="job_title">Jabatan Tambahan</label>
+                    <input type="text" id="job_title" placeholder="Koordinator Sistem Informasi">
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button type="button" class="btn" onclick="loadSettings()">🔄 Muat Data</button>
+                <button type="button" class="btn" onclick="saveSettings()">💾 Simpan</button>
+                <button type="button" class="btn btn-secondary" onclick="testPublicSettings()">🌐 Test Public API</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3003/api';
+        
+        function showStatus(message, type = 'success') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        function getAuthToken() {
+            // Untuk testing, gunakan token dummy atau ambil dari localStorage
+            return localStorage.getItem('token') || 'dummy-token';
+        }
+
+        // Handle file upload untuk logo aplikasi
+        document.getElementById('appLogoFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 2 * 1024 * 1024) {
+                    showStatus('Ukuran file maksimal 2MB', 'error');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const result = e.target.result;
+                    document.getElementById('app_logo').value = result;
+                    
+                    const preview = document.getElementById('appLogoPreview');
+                    preview.innerHTML = `<img src="${result}" alt="Logo Aplikasi">`;
+                    
+                    showStatus('Logo aplikasi berhasil dimuat');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle file upload untuk logo instansi
+        document.getElementById('institutionLogoFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 2 * 1024 * 1024) {
+                    showStatus('Ukuran file maksimal 2MB', 'error');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const result = e.target.result;
+                    document.getElementById('institution_logo').value = result;
+                    
+                    const preview = document.getElementById('institutionLogoPreview');
+                    preview.innerHTML = `<img src="${result}" alt="Logo Instansi">`;
+                    
+                    showStatus('Logo instansi berhasil dimuat');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        async function loadSettings() {
+            try {
+                showStatus('Memuat pengaturan...', 'info');
+                
+                const response = await fetch(`${API_BASE}/app-settings`, {
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const settings = await response.json();
+                console.log('Settings loaded:', settings);
+
+                // Convert array to object
+                const settingsMap = {};
+                settings.forEach(setting => {
+                    settingsMap[setting.setting_key] = setting.setting_value;
+                });
+
+                // Populate form fields
+                const fields = [
+                    'app_name', 'app_logo', 'app_footer',
+                    'institution_name', 'institution_address', 'institution_logo',
+                    'description', 'address', 'contact_email', 'contact_phone', 
+                    'website', 'manager_name', 'manager_position', 'job_title'
+                ];
+
+                fields.forEach(field => {
+                    const element = document.getElementById(field);
+                    if (element && settingsMap[field]) {
+                        element.value = settingsMap[field];
+                    }
+                });
+
+                // Update logo previews
+                if (settingsMap.app_logo) {
+                    document.getElementById('appLogoPreview').innerHTML = 
+                        `<img src="${settingsMap.app_logo}" alt="Logo Aplikasi">`;
+                }
+                
+                if (settingsMap.institution_logo || settingsMap.logo_url) {
+                    const logoUrl = settingsMap.institution_logo || settingsMap.logo_url;
+                    document.getElementById('institutionLogoPreview').innerHTML = 
+                        `<img src="${logoUrl}" alt="Logo Instansi">`;
+                    document.getElementById('institution_logo').value = logoUrl;
+                }
+
+                showStatus('✅ Pengaturan berhasil dimuat');
+            } catch (error) {
+                console.error('Error loading settings:', error);
+                showStatus(`❌ Gagal memuat pengaturan: ${error.message}`, 'error');
+            }
+        }
+
+        async function saveSettings() {
+            try {
+                showStatus('Menyimpan pengaturan...', 'info');
+
+                const formData = {};
+                const fields = [
+                    'app_name', 'app_logo', 'app_footer',
+                    'institution_name', 'institution_address', 'institution_logo',
+                    'description', 'address', 'contact_email', 'contact_phone', 
+                    'website', 'manager_name', 'manager_position', 'job_title'
+                ];
+
+                fields.forEach(field => {
+                    const element = document.getElementById(field);
+                    if (element) {
+                        formData[field] = element.value;
+                    }
+                });
+
+                // Also save as logo_url for backward compatibility
+                if (formData.institution_logo) {
+                    formData.logo_url = formData.institution_logo;
+                }
+
+                console.log('Saving settings:', formData);
+
+                const response = await fetch(`${API_BASE}/app-settings`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Save result:', result);
+
+                showStatus('✅ Pengaturan berhasil disimpan');
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                showStatus(`❌ Gagal menyimpan pengaturan: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPublicSettings() {
+            try {
+                showStatus('Testing public API...', 'info');
+                
+                const response = await fetch(`${API_BASE}/app-settings/public`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('Public settings:', result);
+
+                showStatus(`✅ Public API berhasil: ${Object.keys(result.data || {}).length} pengaturan publik`);
+            } catch (error) {
+                console.error('Error testing public API:', error);
+                showStatus(`❌ Public API gagal: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-load settings on page load
+        window.addEventListener('load', () => {
+            loadSettings();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html class="light" lang="id">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Pengaturan Master Data - Sistem Manajemen Keluhan</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e293b",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem", 
+                        "lg": "0.5rem", 
+                        "xl": "0.75rem", 
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #137fec;
+            cursor: pointer;
+            margin-top: -8px; 
+            box-shadow: 0 0 0 4px rgba(19, 127, 236, 0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden selection:bg-primary/20 selection:text-primary">
+    <div class="flex h-screen w-full">
+        <aside class="w-72 bg-surface-light dark:bg-surface-dark border-r border-slate-200 dark:border-slate-800 flex flex-col flex-shrink-0 z-20">
+            <div class="h-16 flex items-center px-6 border-b border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-3 text-slate-900 dark:text-white">
+                    <div class="size-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                        <span class="material-symbols-outlined">local_hospital</span>
+                    </div>
+                    <h1 class="text-lg font-bold tracking-tight">CMS Admin</h1>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-6">
+                <div>
+                    <h3 class="px-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Menu Utama</h3>
+                    <nav class="flex flex-col gap-1">
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">
+                            <span class="material-symbols-outlined">dashboard</span>
+                            <span class="text-sm font-medium">Dashboard</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">
+                            <span class="material-symbols-outlined">inbox</span>
+                            <span class="text-sm font-medium">Keluhan</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">
+                            <span class="material-symbols-outlined">analytics</span>
+                            <span class="text-sm font-medium">Analitik</span>
+                        </a>
+                    </nav>
+                </div>
+                <div>
+                    <h3 class="px-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Pengaturan Master Data</h3>
+                    <nav class="flex flex-col gap-1">
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary transition-colors" href="#">
+                            <span class="material-symbols-outlined text-[20px] font-variation-settings-'FILL'1">domain</span>
+                            <span class="text-sm font-semibold">Unit Kerja</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+                            <span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">corporate_fare</span>
+                            <span class="text-sm font-medium">Tipe Unit Kerja</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+                            <span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">category</span>
+                            <span class="text-sm font-medium">Kategori Layanan</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+                            <span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">confirmation_number</span>
+                            <span class="text-sm font-medium">Tipe Tiket</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+                            <span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">segment</span>
+                            <span class="text-sm font-medium">Klasifikasi Tiket</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+                            <span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">flag</span>
+                            <span class="text-sm font-medium">Status Tiket</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+                            <span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">accessibility_new</span>
+                            <span class="text-sm font-medium">Jenis Pasien</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+                            <span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">timer</span>
+                            <span class="text-sm font-medium">Pengaturan SLA</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+                            <span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">admin_panel_settings</span>
+                            <span class="text-sm font-medium">Peran &amp; Hak Akses</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+                            <span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">chat</span>
+                            <span class="text-sm font-medium">Template Respon</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group" href="#">
+                            <span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">psychology</span>
+                            <span class="text-sm font-medium">Pengaturan Kepercayaan AI</span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="size-10 rounded-full bg-slate-200 bg-cover bg-center" data-alt="Administrator profile picture" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDhZWFLhjM26KGl8PZ-bgMlD2i-WuJg_0wfxqZ_0Hx4iouJVl_RBYuVGf-SGeZoox_u5G4q8Zo55URHEFZP_vCGvAwV0A_ug5og6CUTQf0tLmQ2Y1zQ1nGGo6I8oDU0c-jUS5GGHr1PMjM2l3eMZ1dKn5CN5zQwa-SYQIrhyudyHO676rMo8bbqIKs0SLoKFTHySO60vLvMx9-xhhGRitkSRlINSzCd-5wcsx59Vxf_IqjJd3sdKKKF0DUVbbiI5CKvnnSyrDuBPuE6');"></div>
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="text-sm font-semibold text-slate-900 dark:text-white truncate">Admin User</span>
+                        <span class="text-xs text-slate-500 truncate">System Administrator</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <main class="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark overflow-hidden">
+            <header class="h-16 flex items-center justify-between px-6 bg-surface-light dark:bg-surface-dark border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
+                <div class="flex items-center gap-2 text-sm text-slate-500">
+                    <span>Pengaturan</span>
+                    <span class="material-symbols-outlined text-xs">chevron_right</span>
+                    <span>Master Data</span>
+                    <span class="material-symbols-outlined text-xs">chevron_right</span>
+                    <span class="font-medium text-slate-900 dark:text-white">Manajemen Unit Kerja</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="relative p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border border-white dark:border-slate-900"></span>
+                    </button>
+                    <button class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <span class="material-symbols-outlined">help</span>
+                    </button>
+                </div>
+            </header>
+            <div class="flex-1 overflow-y-auto p-6 md:p-8">
+                <div class="max-w-7xl mx-auto flex flex-col xl:flex-row gap-6">
+                    <div class="flex-1 flex flex-col gap-6 min-w-0">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Manajemen Unit Kerja</h2>
+                                <p class="text-slate-500 mt-1">Kelola struktur organisasi, hierarki, dan detail unit kerja.</p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button class="inline-flex items-center justify-center gap-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium px-4 py-2 rounded-lg transition-colors text-sm shadow-sm">
+                                    <span class="material-symbols-outlined text-[18px]">file_download</span>Ekspor
+                                </button>
+                                <button class="inline-flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm shadow-sm shadow-blue-500/20">
+                                    <span class="material-symbols-outlined text-[18px]">add</span>Tambah Unit Baru
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+                            <div class="relative w-full md:w-96 group">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="material-symbols-outlined text-slate-400 group-focus-within:text-primary">search</span>
+                                </div>
+                                <input class="block w-full pl-10 pr-3 py-2.5 border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder-slate-400 focus:border-primary focus:ring-1 focus:ring-primary text-sm transition-shadow" placeholder="Cari nama, kode, atau unit induk..." type="text"/>
+                            </div>
+                            <div class="flex items-center gap-2 w-full md:w-auto md:ml-auto">
+                                <select class="form-select block w-full md:w-auto py-2.5 pl-3 pr-10 text-sm border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 focus:border-primary focus:ring-primary cursor-pointer">
+                                    <option>Semua Tipe</option>
+                                    <option>Administratif</option>
+                                    <option>Layanan Medis</option>
+                                    <option>Penunjang Medis</option>
+                                    <option>Teknis</option>
+                                </select>
+                                <select class="form-select block w-full md:w-auto py-2.5 pl-3 pr-10 text-sm border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 focus:border-primary focus:ring-primary cursor-pointer">
+                                    <option>Semua Status</option>
+                                    <option>Aktif</option>
+                                    <option>Tidak Aktif</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm text-left">
+                                    <thead class="text-xs text-slate-500 uppercase bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                                        <tr>
+                                            <th class="px-6 py-4 font-semibold" scope="col">Nama Unit (Hierarki)</th>
+                                            <th class="px-6 py-4 font-semibold" scope="col">Kode</th>
+                                            <th class="px-6 py-4 font-semibold" scope="col">Tipe</th>
+                                            <th class="px-6 py-4 font-semibold" scope="col">Target SLA</th>
+                                            <th class="px-6 py-4 font-semibold" scope="col">Status</th>
+                                            <th class="px-6 py-4 font-semibold text-right" scope="col">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                                            <td class="px-6 py-4 font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                                                <span class="material-symbols-outlined text-slate-400 text-lg">corporate_fare</span>RS Umum Admin
+                                            </td>
+                                            <td class="px-6 py-4 text-slate-500 font-mono text-xs">U-001</td>
+                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-300">Administratif</td>
+                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-300">24 Jam</td>
+                                            <td class="px-6 py-4">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800">
+                                                    <span class="size-1.5 rounded-full bg-emerald-500"></span>Aktif
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button class="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
+                                                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                                                    </button>
+                                                    <button class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
+                                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                                            <td class="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                                                <div class="flex items-center gap-3 pl-4 border-l-2 border-slate-100 dark:border-slate-800 ml-2">
+                                                    <span class="w-2 h-px bg-slate-300 dark:bg-slate-600"></span>
+                                                    <span>IGD (Unit Gawat Darurat)</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-slate-500 font-mono text-xs">U-002</td>
+                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-300">Layanan Medis</td>
+                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-300">1 Jam</td>
+                                            <td class="px-6 py-4">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800">
+                                                    <span class="size-1.5 rounded-full bg-emerald-500"></span>Aktif
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button class="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
+                                                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                                                    </button>
+                                                    <button class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
+                                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                                            <td class="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                                                <div class="flex items-center gap-3 pl-4 border-l-2 border-slate-100 dark:border-slate-800 ml-2">
+                                                    <span class="w-2 h-px bg-slate-300 dark:bg-slate-600"></span>
+                                                    <span>Farmasi</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 text-slate-500 font-mono text-xs">U-003</td>
+                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-300">Penunjang Medis</td>
+                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-300">4 Jam</td>
+                                            <td class="px-6 py-4">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800">
+                                                    <span class="size-1.5 rounded-full bg-emerald-500"></span>Aktif
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button class="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
+                                                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                                                    </button>
+                                                    <button class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
+                                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                                            <td class="px-6 py-4 font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                                                <span class="material-symbols-outlined text-slate-400 text-lg">corporate_fare</span>Pusat IT Support
+                                            </td>
+                                            <td class="px-6 py-4 text-slate-500 font-mono text-xs">U-004</td>
+                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-300">Teknis</td>
+                                            <td class="px-6 py-4 text-slate-600 dark:text-slate-300">2 Jam</td>
+                                            <td class="px-6 py-4">
+                                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-100 dark:border-amber-800">
+                                                    <span class="size-1.5 rounded-full bg-amber-500"></span>Pemeliharaan
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right">
+                                                <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button class="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
+                                                        <span class="material-symbols-outlined text-[18px]">edit</span>
+                                                    </button>
+                                                    <button class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors">
+                                                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                                <span class="text-sm text-slate-500">Menampilkan 1 sampai 4 dari 24 entri</span>
+                                <div class="flex items-center gap-2">
+                                    <button class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-50" disabled="">
+                                        <span class="material-symbols-outlined text-sm">chevron_left</span>
+                                    </button>
+                                    <button class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800">
+                                        <span class="material-symbols-outlined text-sm">chevron_right</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-full xl:w-80 flex flex-col gap-6 flex-shrink-0">
+                        <div class="bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-5 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-3 opacity-10 pointer-events-none">
+                                <span class="material-symbols-outlined text-8xl">smart_toy</span>
+                            </div>
+                            <div class="relative z-10">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <div class="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400">
+                                        <span class="material-symbols-outlined text-[20px]">psychology</span>
+                                    </div>
+                                    <h3 class="font-bold text-slate-900 dark:text-white">Kepercayaan AI</h3>
+                                </div>
+                                <p class="text-xs text-slate-500 mb-6 leading-relaxed">Sesuaikan ambang batas untuk klasifikasi otomatis AI. Permintaan di bawah skor ini akan memerlukan tinjauan manual.</p>
+                                <div class="mb-2 flex justify-between items-end">
+                                    <span class="text-xs font-semibold text-slate-400 uppercase">Ambang Batas</span>
+                                    <span class="text-2xl font-bold text-primary" id="confidence-value">85%</span>
+                                </div>
+                                <div class="relative h-6 mb-2">
+                                    <input class="absolute w-full z-20 opacity-0 cursor-pointer h-full" max="100" min="0" type="range" value="85" id="confidence-slider"/>
+                                    <div class="absolute top-1/2 -translate-y-1/2 w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-blue-400 to-primary rounded-full" id="confidence-fill" style="width: 85%"></div>
+                                    </div>
+                                    <div class="absolute top-1/2 -translate-y-1/2 -ml-3 w-6 h-6 bg-white border-4 border-primary rounded-full shadow-md z-10 pointer-events-none" id="confidence-thumb" style="left: 85%"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                                    <span>0% (Longgar)</span>
+                                    <span>100% (Ketat)</span>
+                                </div>
+                                <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                                        <span class="text-xs font-medium text-slate-600 dark:text-slate-300">Routing Otomatis Aktif</span>
+                                    </div>
+                                    <button class="text-xs text-primary font-medium hover:underline">Konfigurasi</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-5">
+                            <h3 class="font-bold text-slate-900 dark:text-white mb-4 text-sm">Ringkasan Kepatuhan SLA</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-slate-600 dark:text-slate-400">IGD</span>
+                                        <span class="font-medium text-slate-900 dark:text-white">98%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
+                                        <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 98%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-slate-600 dark:text-slate-400">IT Support</span>
+                                        <span class="font-medium text-slate-900 dark:text-white">82%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
+                                        <div class="bg-amber-500 h-1.5 rounded-full" style="width: 82%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs mb-1">
+                                        <span class="text-slate-600 dark:text-slate-400">Admin Umum</span>
+                                        <span class="font-medium text-slate-900 dark:text-white">94%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5">
+                                        <div class="bg-blue-500 h-1.5 rounded-full" style="width: 94%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="w-full mt-5 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors border border-slate-200 dark:border-slate-700">Lihat Laporan Lengkap</button>
+                        </div>
+                        <div class="rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 p-5 text-white shadow-lg relative overflow-hidden">
+                            <div class="absolute -right-4 -bottom-4 opacity-20">
+                                <span class="material-symbols-outlined text-[100px]">support_agent</span>
+                            </div>
+                            <h4 class="font-bold mb-2 relative z-10">Butuh Bantuan?</h4>
+                            <p class="text-xs text-slate-300 mb-4 relative z-10">Cek panduan admin untuk konfigurasi hierarki data master.</p>
+                            <button class="text-xs bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-md transition-colors relative z-10">Buka Dokumentasi</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // AI Confidence Slider functionality
+        const slider = document.getElementById('confidence-slider');
+        const valueDisplay = document.getElementById('confidence-value');
+        const fillBar = document.getElementById('confidence-fill');
+        const thumb = document.getElementById('confidence-thumb');
+
+        slider.addEventListener('input', function() {
+            const value = this.value;
+            valueDisplay.textContent = value + '%';
+            fillBar.style.width = value + '%';
+            thumb.style.left = value + '%';
+        });
+
+        // Search functionality
+        const searchInput = document.querySelector('input[placeholder*="Cari"]');
+        const tableRows = document.querySelectorAll('tbody tr');
+
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            tableRows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Filter functionality
+        const typeFilter = document.querySelector('select:first-of-type');
+        const statusFilter = document.querySelector('select:last-of-type');
+
+        function applyFilters() {
+            const typeValue = typeFilter.value;
+            const statusValue = statusFilter.value;
+
+            tableRows.forEach(row => {
+                const typeCell = row.cells[2]?.textContent || '';
+                const statusCell = row.cells[4]?.textContent || '';
+                
+                let showRow = true;
+
+                if (typeValue && !typeCell.includes(typeValue)) {
+                    showRow = false;
+                }
+
+                if (statusValue === 'Aktif' && !statusCell.includes('Aktif')) {
+                    showRow = false;
+                } else if (statusValue === 'Tidak Aktif' && statusCell.includes('Aktif')) {
+                    showRow = false;
+                }
+
+                row.style.display = showRow ? '' : 'none';
+            });
+        }
+
+        typeFilter.addEventListener('change', applyFilters);
+        statusFilter.addEventListener('change', applyFilters);
+
+        // Dark mode toggle (if needed)
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + K for search focus
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>

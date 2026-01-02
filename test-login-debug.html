@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login Debug</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test Login Debug</h1>
+    
+    <div>
+        <h3>Test Credentials:</h3>
+        <p>Email: admin@jempol.com</p>
+        <p>Password: admin123</p>
+        
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="testAPI()">Test API Health</button>
+    </div>
+    
+    <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+    
+    <script>
+        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing API connection...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/health');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h4>API Test Result:</h4>
+                    <p style="color: green;">✅ API Health: ${JSON.stringify(data)}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h4>API Test Result:</h4>
+                    <p style="color: red;">❌ API Error: ${error.message}</p>
+                `;
+            }
+        }
+        
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing login...</p>';
+            
+            try {
+                // Step 1: Test Supabase Auth
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: 'admin@jempol.com',
+                    password: 'admin123'
+                });
+                
+                if (authError) {
+                    resultDiv.innerHTML = `
+                        <h4>Login Test Result:</h4>
+                        <p style="color: red;">❌ Supabase Auth Error: ${authError.message}</p>
+                    `;
+                    return;
+                }
+                
+                // Step 2: Test Admin Profile
+                const { data: adminData, error: adminError } = await supabase
+                    .from('admins')
+                    .select('*')
+                    .eq('email', 'admin@jempol.com')
+                    .eq('is_active', true)
+                    .single();
+                
+                if (adminError) {
+                    resultDiv.innerHTML = `
+                        <h4>Login Test Result:</h4>
+                        <p style="color: orange;">⚠️ Auth Success but Admin Profile Error: ${adminError.message}</p>
+                        <p>Auth Data: ${JSON.stringify(authData.user?.email)}</p>
+                    `;
+                    return;
+                }
+                
+                resultDiv.innerHTML = `
+                    <h4>Login Test Result:</h4>
+                    <p style="color: green;">✅ Login Successful!</p>
+                    <p><strong>User:</strong> ${authData.user?.email}</p>
+                    <p><strong>Admin:</strong> ${adminData.username} (${adminData.role})</p>
+                    <p><strong>Session:</strong> ${authData.session ? 'Active' : 'None'}</p>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h4>Login Test Result:</h4>
+                    <p style="color: red;">❌ Unexpected Error: ${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

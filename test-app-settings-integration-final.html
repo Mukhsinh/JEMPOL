@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test App Settings Integration - Final</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8 text-center">Test App Settings Integration - Final</h1>
+        
+        <!-- Test Results -->
+        <div id="results" class="space-y-4 mb-8"></div>
+        
+        <!-- Test Controls -->
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold mb-4">Test Controls</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="testGetSettings()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Test Get Settings
+                </button>
+                <button onclick="testUpdateSettings()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    Test Update Settings
+                </button>
+                <button onclick="testPublicSettings()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    Test Public Settings
+                </button>
+            </div>
+        </div>
+
+        <!-- Settings Form Test -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4">Settings Form Test</h2>
+            <form id="settingsForm" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Nama Aplikasi</label>
+                        <input type="text" id="app_name" class="w-full border rounded px-3 py-2" placeholder="Nama Aplikasi">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Nama Instansi</label>
+                        <input type="text" id="institution_name" class="w-full border rounded px-3 py-2" placeholder="Nama Instansi">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Nama Pengelola</label>
+                        <input type="text" id="manager_name" class="w-full border rounded px-3 py-2" placeholder="Nama Pengelola">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Jabatan Pengelola</label>
+                        <input type="text" id="manager_position" class="w-full border rounded px-3 py-2" placeholder="Jabatan Pengelola">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Jabatan Tambahan</label>
+                        <input type="text" id="job_title" class="w-full border rounded px-3 py-2" placeholder="Jabatan Tambahan">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Email Kontak</label>
+                        <input type="email" id="contact_email" class="w-full border rounded px-3 py-2" placeholder="Email Kontak">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Telepon Kontak</label>
+                        <input type="tel" id="contact_phone" class="w-full border rounded px-3 py-2" placeholder="Telepon Kontak">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Website</label>
+                        <input type="url" id="website" class="w-full border rounded px-3 py-2" placeholder="Website">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Alamat</label>
+                    <textarea id="address" class="w-full border rounded px-3 py-2" rows="3" placeholder="Alamat Lengkap"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Deskripsi</label>
+                    <textarea id="description" class="w-full border rounded px-3 py-2" rows="3" placeholder="Deskripsi Instansi"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Logo URL</label>
+                    <input type="url" id="logo_url" class="w-full border rounded px-3 py-2" placeholder="URL Logo">
+                </div>
+                <div class="flex gap-4">
+                    <button type="button" onclick="loadFormData()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        Load Data
+                    </button>
+                    <button type="button" onclick="saveFormData()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        Save Data
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:3001/api';
+        
+        // Get auth token (you may need to set this manually for testing)
+        function getAuthToken() {
+            // For testing, you can set a token manually here
+            return localStorage.getItem('token') || 'your-test-token-here';
+        }
+
+        // Helper function to make API requests
+        async function apiRequest(endpoint, options = {}) {
+            const token = getAuthToken();
+            const url = `${API_BASE}${endpoint}`;
+            
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token && { 'Authorization': `Bearer ${token}` })
+                }
+            };
+
+            try {
+                const response = await fetch(url, {
+                    ...defaultOptions,
+                    ...options,
+                    headers: {
+                        ...defaultOptions.headers,
+                        ...options.headers
+                    }
+                });
+
+                const data = await response.json();
+                
+                return {
+                    success: response.ok,
+                    status: response.status,
+                    data: data
+                };
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        // Display test results
+        function displayResult(testName, result) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `p-4 rounded-lg ${result.success ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'} border`;
+            
+            resultDiv.innerHTML = `
+                <h3 class="font-semibold ${result.success ? 'text-green-800' : 'text-red-800'}">${testName}</h3>
+                <p class="text-sm ${result.success ? 'text-green-600' : 'text-red-600'}">
+                    Status: ${result.success ? 'SUCCESS' : 'FAILED'} ${result.status ? `(${result.status})` : ''}
+                </p>
+                <pre class="text-xs mt-2 overflow-auto">${JSON.stringify(result.data || result.error, null, 2)}</pre>
+            `;
+            
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        // Test functions
+        async function testGetSettings() {
+            console.log('Testing GET /api/app-settings...');
+            const result = await apiRequest('/app-settings');
+            displayResult('GET App Settings', result);
+        }
+
+        async function testUpdateSettings() {
+            console.log('Testing POST /api/app-settings...');
+            const testData = {
+                app_name: 'Test App Name - ' + new Date().toISOString(),
+                institution_name: 'Test Institution - ' + new Date().toISOString(),
+                manager_name: 'Test Manager',
+                manager_position: 'Test Position',
+                job_title: 'Test Job Title',
+                description: 'Test Description',
+                address: 'Test Address',
+                contact_email: 'test@example.com',
+                contact_phone: '123-456-7890',
+                website: 'https://test.example.com',
+                logo_url: 'https://example.com/logo.png'
+            };
+
+            const result = await apiRequest('/app-settings', {
+                method: 'POST',
+                body: JSON.stringify(testData)
+            });
+            displayResult('POST App Settings', result);
+        }
+
+        async function testPublicSettings() {
+            console.log('Testing GET /api/app-settings/public...');
+            const result = await apiRequest('/app-settings/public');
+            displayResult('GET Public Settings', result);
+        }
+
+        // Form functions
+        async function loadFormData() {
+            const result = await apiRequest('/app-settings');
+            if (result.success && result.data) {
+                const settingsMap = {};
+                result.data.forEach(setting => {
+                    settingsMap[setting.setting_key] = setting.setting_value;
+                });
+
+                // Populate form fields
+                document.getElementById('app_name').value = settingsMap.app_name || '';
+                document.getElementById('institution_name').value = settingsMap.institution_name || '';
+                document.getElementById('manager_name').value = settingsMap.manager_name || '';
+                document.getElementById('manager_position').value = settingsMap.manager_position || '';
+                document.getElementById('job_title').value = settingsMap.job_title || '';
+                document.getElementById('description').value = settingsMap.description || '';
+                document.getElementById('address').value = settingsMap.address || '';
+                document.getElementById('contact_email').value = settingsMap.contact_email || '';
+                document.getElementById('contact_phone').value = settingsMap.contact_phone || '';
+                document.getElementById('website').value = settingsMap.website || '';
+                document.getElementById('logo_url').value = settingsMap.logo_url || settingsMap.institution_logo || '';
+
+                displayResult('Load Form Data', { success: true, data: 'Form populated successfully' });
+            } else {
+                displayResult('Load Form Data', result);
+            }
+        }
+
+        async function saveFormData() {
+            const formData = {
+                app_name: document.getElementById('app_name').value,
+                institution_name: document.getElementById('institution_name').value,
+                manager_name: document.getElementById('manager_name').value,
+                manager_position: document.getElementById('manager_position').value,
+                job_title: document.getElementById('job_title').value,
+                description: document.getElementById('description').value,
+                address: document.getElementById('address').value,
+                contact_email: document.getElementById('contact_email').value,
+                contact_phone: document.getElementById('contact_phone').value,
+                website: document.getElementById('website').value,
+                logo_url: document.getElementById('logo_url').value
+            };
+
+            const result = await apiRequest('/app-settings', {
+                method: 'POST',
+                body: JSON.stringify(formData)
+            });
+            displayResult('Save Form Data', result);
+        }
+
+        // Test database connection on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, testing database connection...');
+            
+            // Auto-run basic tests
+            setTimeout(() => {
+                testGetSettings();
+            }, 1000);
+            
+            setTimeout(() => {
+                testPublicSettings();
+            }, 2000);
+        });
+
+        // Add some styling for better UX
+        document.head.insertAdjacentHTML('beforeend', `
+            <style>
+                .fade-in {
+                    animation: fadeIn 0.5s ease-in;
+                }
+                
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                
+                button:hover {
+                    transform: translateY(-1px);
+                    transition: transform 0.2s ease;
+                }
+                
+                pre {
+                    background: rgba(0,0,0,0.05);
+                    padding: 8px;
+                    border-radius: 4px;
+                    max-height: 200px;
+                }
+            </style>
+        `);
+    </script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Frontend API Connection</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Frontend API Connection</h1>
+    
+    <div>
+        <button onclick="testEnvironmentVariables()">Test Environment Variables</button>
+        <button onclick="testAPIConnection()">Test API Connection</button>
+        <button onclick="testTicketsAPI()">Test Tickets API</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        function testEnvironmentVariables() {
+            addResult('Testing environment variables...', 'info');
+            
+            // Check if we can access Vite environment variables
+            const viteApiUrl = import.meta?.env?.VITE_API_URL;
+            const viteProd = import.meta?.env?.PROD;
+            const viteMode = import.meta?.env?.MODE;
+            
+            addResult(`VITE_API_URL: ${viteApiUrl || 'undefined'}`, viteApiUrl ? 'success' : 'error');
+            addResult(`PROD: ${viteProd}`, 'info');
+            addResult(`MODE: ${viteMode}`, 'info');
+            
+            // Test the API URL determination logic
+            let apiUrl;
+            if (viteApiUrl) {
+                apiUrl = viteApiUrl;
+            } else if (viteProd) {
+                apiUrl = '/api';
+            } else {
+                apiUrl = 'http://localhost:5000/api';
+            }
+            
+            addResult(`Determined API URL: ${apiUrl}`, apiUrl.includes('5002') ? 'success' : 'error');
+        }
+        
+        async function testAPIConnection() {
+            addResult('Testing API connection with different URLs...', 'info');
+            
+            const urlsToTest = [
+                'http://localhost:5002/api/health',
+                'http://localhost:5000/api/health',
+                '/api/health'
+            ];
+            
+            for (const url of urlsToTest) {
+                try {
+                    addResult(`Testing: ${url}`, 'info');
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const data = await response.json();
+                        addResult(`✅ Success with ${url}: ${JSON.stringify(data)}`, 'success');
+                        break;
+                    } else {
+                        addResult(`❌ Failed with ${url}: Status ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    addResult(`❌ Error with ${url}: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        async function testTicketsAPI() {
+            addResult('Testing tickets API...', 'info');
+            
+            // Simulate the frontend API call
+            const API_BASE_URL = 'http://localhost:5002/api';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/complaints/tickets`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Tickets API successful: ${JSON.stringify(data).substring(0, 200)}...`, 'success');
+                } else {
+                    addResult(`❌ Tickets API failed: Status ${response.status}`, 'error');
+                    const errorText = await response.text();
+                    addResult(`Error details: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Tickets API error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-test on page load
+        window.onload = function() {
+            addResult('Page loaded, starting tests...', 'info');
+            setTimeout(() => {
+                testEnvironmentVariables();
+                setTimeout(testAPIConnection, 1000);
+            }, 500);
+        };
+    </script>
+</body>
+</html>

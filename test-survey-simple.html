@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Survey Form - Standalone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .rating-button {
+            transition: all 0.2s ease;
+        }
+        .rating-button:hover {
+            transform: scale(1.1);
+        }
+        .rating-button.selected {
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-full mb-4">
+                <span class="material-symbols-outlined text-2xl">rate_review</span>
+            </div>
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Survei Kepuasan Layanan</h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Bantuan Anda sangat berharga untuk meningkatkan kualitas pelayanan kami. 
+                Mohon berikan penilaian yang objektif terhadap layanan yang telah Anda terima.
+            </p>
+        </div>
+
+        <!-- QR Code Info (if accessed via QR) -->
+        <div id="qrInfo" class="max-w-4xl mx-auto mb-8 bg-blue-50 border border-blue-200 rounded-xl p-6 hidden">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-lg bg-blue-100 text-blue-600">
+                    <span class="material-symbols-outlined text-2xl">qr_code</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-blue-900">Akses melalui QR Code</h3>
+                    <p class="text-blue-700">Anda mengakses survei ini melalui QR Code. Silakan isi form di bawah ini.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Form -->
+        <div class="max-w-4xl mx-auto">
+            <form id="surveyForm" class="space-y-8">
+                <!-- Service Information -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-blue-600">business</span>
+                            Informasi Layanan
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-1">Mohon isi informasi tentang layanan yang Anda terima</p>
+                    </div>
+                    
+                    <div class="p-6 space-y-6">
+                        <!-- Unit Selection -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">
+                                    Unit/Bagian yang Memberikan Layanan <span class="text-red-500">*</span>
+                                </label>
+                                <select id="unit_id" name="unit_id" required 
+                                    class="w-full rounded-xl border-gray-300 bg-gray-50 text-gray-900 focus:border-blue-500 focus:ring-blue-500 text-sm p-4">
+                                    <option value="">Pilih Unit/Bagian</option>
+                                    <option value="unit-1">Bagian Pendaftaran</option>
+                                    <option value="unit-2">Bagian Pelayanan Medis</option>
+                                    <option value="unit-3">Bagian Farmasi</option>
+                                    <option value="unit-4">Bagian Laboratorium</option>
+                                    <option value="unit-5">Bagian Radiologi</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">
+                                    Kategori Layanan <span class="text-red-500">*</span>
+                                </label>
+                                <select id="service_category_id" name="service_category_id" required 
+                                    class="w-full rounded-xl border-gray-300 bg-gray-50 text-gray-900 focus:border-blue-500 focus:ring-blue-500 text-sm p-4">
+                                    <option value="">Pilih Kategori Layanan</option>
+                                    <option value="cat-1">Konsultasi Dokter</option>
+                                    <option value="cat-2">Pemeriksaan Laboratorium</option>
+                                    <option value="cat-3">Pemeriksaan Radiologi</option>
+                                    <option value="cat-4">Pelayanan Farmasi</option>
+                                    <option value="cat-5">Administrasi</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Service Description -->
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2">
+                                Deskripsi Layanan yang Diterima <span class="text-red-500">*</span>
+                            </label>
+                            <textarea id="service_description" name="service_description" required rows="3" 
+                                placeholder="Jelaskan layanan yang Anda terima (contoh: Konsultasi dokter umum, Pemeriksaan darah rutin, dll.)"
+                                class="w-full rounded-xl border-gray-300 bg-gray-50 text-gray-900 focus:border-blue-500 focus:ring-blue-500 placeholder:text-gray-400 text-sm p-4"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reporter Information -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-blue-600">person</span>
+                            Informasi Pelapor
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-1">Opsional - Anda dapat mengisi survei secara anonim</p>
+                    </div>
+                    
+                    <div class="p-6 space-y-6">
+                        <!-- Anonymous Option -->
+                        <div class="flex items-center gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <input type="checkbox" id="is_anonymous" name="is_anonymous" 
+                                class="w-4 h-4 text-blue-600 bg-gray-50 border-gray-300 rounded focus:ring-blue-500 focus:ring-2">
+                            <label for="is_anonymous" class="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-yellow-600">visibility_off</span>
+                                Kirim survei secara anonim (tanpa identitas)
+                            </label>
+                        </div>
+
+                        <div id="reporterFields" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Reporter Name -->
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">
+                                    Nama Lengkap
+                                </label>
+                                <input type="text" id="reporter_name" name="reporter_name" 
+                                    placeholder="Masukkan nama lengkap Anda"
+                                    class="w-full rounded-xl border-gray-300 bg-gray-50 text-gray-900 focus:border-blue-500 focus:ring-blue-500 placeholder:text-gray-400 text-sm p-4">
+                            </div>
+
+                            <!-- Reporter Email -->
+                            <div>
+                                <label class="block text-sm font-bold text-gray-900 mb-2">
+                                    Email
+                                </label>
+                                <input type="email" id="reporter_email" name="reporter_email" 
+                                    placeholder="contoh@email.com"
+                                    class="w-full rounded-xl border-gray-300 bg-gray-50 text-gray-900 focus:border-blue-500 focus:ring-blue-500 placeholder:text-gray-400 text-sm p-4">
+                            </div>
+
+                            <!-- Reporter Phone -->
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-bold text-gray-900 mb-2">
+                                    Nomor Telepon
+                                </label>
+                                <input type="tel" id="reporter_phone" name="reporter_phone" 
+                                    placeholder="08xxxxxxxxxx"
+                                    class="w-full rounded-xl border-gray-300 bg-gray-50 text-gray-900 focus:border-blue-500 focus:ring-blue-500 placeholder:text-gray-400 text-sm p-4">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rating Questions -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
+                        <h3 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-blue-600">star_rate</span>
+                            Penilaian Layanan
+                        </h3>
+                        <p class="text-sm text-gray-600 mt-1">Beri penilaian dari 1 (Sangat Buruk) hingga 5 (Sangat Baik)</p>
+                    </div>
+                    
+                    <div class="divide-y divide-gray-200">
+                        <!-- Overall Score -->
+                        <div class="p-6">
+                            <div class="flex flex-col md:flex-row md:items-center gap-4">
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-1">Penilaian Keseluruhan</h4>
+                                    <p class="text-sm font-medium text-gray-900">
+                                        Secara keseluruhan, bagaimana tingkat kepuasan Anda terhadap layanan yang diberikan?
+                                    </p>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 md:gap-4 min-w-[280px]">
+                                    <span class="text-xs font-bold text-gray-400">1</span>
+                                    <div class="flex flex-1 justify-between bg-gray-100 rounded-full p-1">
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="overall_score" type="radio" value="1">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-red-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_very_dissatisfied</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="overall_score" type="radio" value="2">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-orange-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_dissatisfied</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="overall_score" type="radio" value="3">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-yellow-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_neutral</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="overall_score" type="radio" value="4">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-lime-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_satisfied</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="overall_score" type="radio" value="5">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-green-600 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_very_satisfied</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    <span class="text-xs font-bold text-gray-400">5</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Response Time Score -->
+                        <div class="p-6">
+                            <div class="flex flex-col md:flex-row md:items-center gap-4">
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-1">Kecepatan Respon</h4>
+                                    <p class="text-sm font-medium text-gray-900">
+                                        Bagaimana penilaian Anda terhadap kecepatan respon dan penanganan layanan?
+                                    </p>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 md:gap-4 min-w-[280px]">
+                                    <span class="text-xs font-bold text-gray-400">1</span>
+                                    <div class="flex flex-1 justify-between bg-gray-100 rounded-full p-1">
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="response_time_score" type="radio" value="1">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-red-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_very_dissatisfied</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="response_time_score" type="radio" value="2">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-orange-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_dissatisfied</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="response_time_score" type="radio" value="3">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-yellow-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_neutral</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="response_time_score" type="radio" value="4">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-lime-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_satisfied</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="response_time_score" type="radio" value="5">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-green-600 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_very_satisfied</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    <span class="text-xs font-bold text-gray-400">5</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Solution Quality Score -->
+                        <div class="p-6">
+                            <div class="flex flex-col md:flex-row md:items-center gap-4">
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-1">Kualitas Solusi</h4>
+                                    <p class="text-sm font-medium text-gray-900">
+                                        Bagaimana penilaian Anda terhadap kualitas solusi yang diberikan?
+                                    </p>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 md:gap-4 min-w-[280px]">
+                                    <span class="text-xs font-bold text-gray-400">1</span>
+                                    <div class="flex flex-1 justify-between bg-gray-100 rounded-full p-1">
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="solution_quality_score" type="radio" value="1">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-red-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_very_dissatisfied</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="solution_quality_score" type="radio" value="2">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-orange-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_dissatisfied</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="solution_quality_score" type="radio" value="3">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-yellow-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_neutral</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="solution_quality_score" type="radio" value="4">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-lime-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_satisfied</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="solution_quality_score" type="radio" value="5">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-green-600 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_very_satisfied</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    <span class="text-xs font-bold text-gray-400">5</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Staff Courtesy Score -->
+                        <div class="p-6">
+                            <div class="flex flex-col md:flex-row md:items-center gap-4">
+                                <div class="flex-1">
+                                    <h4 class="text-sm font-bold text-blue-600 uppercase tracking-wider mb-1">Keramahan Petugas</h4>
+                                    <p class="text-sm font-medium text-gray-900">
+                                        Bagaimana penilaian Anda terhadap keramahan dan profesionalitas petugas?
+                                    </p>
+                                </div>
+                                <div class="flex items-center justify-between gap-2 md:gap-4 min-w-[280px]">
+                                    <span class="text-xs font-bold text-gray-400">1</span>
+                                    <div class="flex flex-1 justify-between bg-gray-100 rounded-full p-1">
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="staff_courtesy_score" type="radio" value="1">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-red-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_very_dissatisfied</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="staff_courtesy_score" type="radio" value="2">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-orange-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_dissatisfied</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="staff_courtesy_score" type="radio" value="3">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-yellow-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_neutral</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="staff_courtesy_score" type="radio" value="4">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-lime-500 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_satisfied</span>
+                                            </div>
+                                        </label>
+                                        <label class="cursor-pointer group relative z-10">
+                                            <input class="peer sr-only" name="staff_courtesy_score" type="radio" value="5">
+                                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-gray-400 bg-transparent peer-checked:bg-white peer-checked:text-green-600 peer-checked:shadow-sm transition-all hover:bg-white/50 rating-button">
+                                                <span class="material-symbols-outlined text-lg">sentiment_very_satisfied</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                    <span class="text-xs font-bold text-gray-400">5</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comments Section -->
+                <div class="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-blue-600">comment</span>
+                                Komentar dan Saran (Opsional)
+                            </label>
+                            <textarea id="comments" name="comments" rows="4"
+                                placeholder="Berikan komentar, saran, atau masukan untuk perbaikan layanan kami..."
+                                class="w-full rounded-xl border-gray-300 bg-gray-50 text-gray-900 focus:border-blue-500 focus:ring-blue-500 placeholder:text-gray-400 text-sm p-4"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-center pt-4 pb-12">
+                    <button type="submit" 
+                        class="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 group transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed">
+                        <span>Kirim Survei</span>
+                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">send</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="max-w-4xl mx-auto mt-8 bg-green-50 border border-green-200 rounded-xl p-6 hidden">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-lg bg-green-100 text-green-600">
+                    <span class="material-symbols-outlined text-2xl">check_circle</span>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-green-900">Survei Berhasil Dikirim!</h3>
+                    <p class="text-green-700">Terima kasih atas feedback Anda. Penilaian Anda sangat membantu kami untuk meningkatkan kualitas layanan.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if accessed via QR code (simulate)
+            const urlParams = new URLSearchParams(window.location.search);
+            const qrToken = urlParams.get('qr') || urlParams.get('token');
+            
+            if (qrToken) {
+                document.getElementById('qrInfo').classList.remove('hidden');
+            }
+
+            // Handle anonymous checkbox
+            document.getElementById('is_anonymous').addEventListener('change', function() {
+                const reporterFields = document.getElementById('reporterFields');
+                const inputs = reporterFields.querySelectorAll('input');
+                
+                if (this.checked) {
+                    reporterFields.style.opacity = '0.5';
+                    inputs.forEach(input => {
+                        input.disabled = true;
+                        input.value = '';
+                    });
+                } else {
+                    reporterFields.style.opacity = '1';
+                    inputs.forEach(input => input.disabled = false);
+                }
+            });
+
+            // Handle form submission
+            document.getElementById('surveyForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Validation
+                const unitId = document.getElementById('unit_id').value;
+                const serviceCategoryId = document.getElementById('service_category_id').value;
+                const serviceDescription = document.getElementById('service_description').value;
+                
+                if (!unitId || !serviceCategoryId || !serviceDescription.trim()) {
+                    alert('Mohon lengkapi informasi layanan yang wajib diisi');
+                    return;
+                }
+
+                // Check if at least one rating is provided
+                const ratings = ['overall_score', 'response_time_score', 'solution_quality_score', 'staff_courtesy_score'];
+                const hasRating = ratings.some(rating => {
+                    const checked = document.querySelector(`input[name="${rating}"]:checked`);
+                    return checked && checked.value;
+                });
+
+                if (!hasRating) {
+                    alert('Mohon berikan minimal satu penilaian');
+                    return;
+                }
+
+                // Simulate successful submission
+                setTimeout(() => {
+                    document.getElementById('surveyForm').style.display = 'none';
+                    document.getElementById('successMessage').classList.remove('hidden');
+                    
+                    // Scroll to success message
+                    document.getElementById('successMessage').scrollIntoView({ 
+                        behavior: 'smooth' 
+                    });
+                }, 1000);
+
+                // Show loading state
+                const submitButton = document.querySelector('button[type="submit"]');
+                const originalContent = submitButton.innerHTML;
+                submitButton.innerHTML = `
+                    <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Mengirim...</span>
+                `;
+                submitButton.disabled = true;
+            });
+
+            // Add visual feedback for rating buttons
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    // Remove selected class from all buttons in this group
+                    const groupName = this.name;
+                    document.querySelectorAll(`input[name="${groupName}"]`).forEach(r => {
+                        r.parentElement.querySelector('.rating-button').classList.remove('selected');
+                    });
+                    
+                    // Add selected class to current button
+                    this.parentElement.querySelector('.rating-button').classList.add('selected');
+                });
+            });
+        });
+    </script>
+</body>
+</html>

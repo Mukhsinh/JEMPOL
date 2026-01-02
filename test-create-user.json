@@ -1,0 +1,9 @@
+{
+  "full_name": "Test User Baru",
+  "email": "testuser@example.com",
+  "employee_id": "EMP002",
+  "phone": "081234567890",
+  "role": "staff",
+  "password": "password123",
+  "create_admin_account": true
+}

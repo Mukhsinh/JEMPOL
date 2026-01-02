@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Proxy Connection</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Test Proxy Connection</h1>
+    <p>Testing connection from frontend (port 3002) to backend (port 3001) via proxy</p>
+    
+    <div>
+        <button onclick="testProxyConnection()">Test Proxy Connection</button>
+        <button onclick="testDirectConnection()">Test Direct Connection</button>
+        <button onclick="testAppSettings()">Test App Settings</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testProxyConnection() {
+            addResult('Testing proxy connection to /api/health...', 'info');
+            
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.text();
+                
+                if (response.ok) {
+                    addResult(`✅ Proxy connection successful! Status: ${response.status}`, 'success');
+                    addResult(`Response: ${data}`, 'info');
+                } else {
+                    addResult(`❌ Proxy connection failed! Status: ${response.status}`, 'error');
+                    addResult(`Response: ${data}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Proxy connection error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDirectConnection() {
+            addResult('Testing direct connection to backend...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/health');
+                const data = await response.text();
+                
+                if (response.ok) {
+                    addResult(`✅ Direct connection successful! Status: ${response.status}`, 'success');
+                    addResult(`Response: ${data}`, 'info');
+                } else {
+                    addResult(`❌ Direct connection failed! Status: ${response.status}`, 'error');
+                    addResult(`Response: ${data}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Direct connection error: ${error.message}`, 'error');
+                addResult('This might be due to CORS policy', 'warning');
+            }
+        }
+
+        async function testAppSettings() {
+            addResult('Testing app settings endpoint via proxy...', 'info');
+            
+            try {
+                const response = await fetch('/api/app-settings');
+                const data = await response.text();
+                
+                if (response.ok) {
+                    addResult(`✅ App settings endpoint working! Status: ${response.status}`, 'success');
+                    try {
+                        const jsonData = JSON.parse(data);
+                        addResult(`Data received: ${Array.isArray(jsonData) ? jsonData.length : Object.keys(jsonData).length} items`, 'info');
+                        addResult(`<pre>${JSON.stringify(jsonData, null, 2)}</pre>`, 'info');
+                    } catch (e) {
+                        addResult(`Response: ${data}`, 'info');
+                    }
+                } else {
+                    addResult(`❌ App settings endpoint failed! Status: ${response.status}`, 'error');
+                    addResult(`Response: ${data}`, 'error');
+                    
+                    if (response.status === 401) {
+                        addResult('⚠️ Authentication required. This is expected for protected endpoints.', 'warning');
+                    }
+                }
+            } catch (error) {
+                addResult(`❌ App settings error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run tests on page load
+        window.onload = function() {
+            addResult('Page loaded. Running connection tests...', 'info');
+            addResult(`Current URL: ${window.location.href}`, 'info');
+            
+            setTimeout(() => {
+                testProxyConnection();
+                setTimeout(() => {
+                    testDirectConnection();
+                    setTimeout(() => {
+                        testAppSettings();
+                    }, 1000);
+                }, 1000);
+            }, 500);
+        };
+    </script>
+</body>
+</html>

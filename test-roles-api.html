@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Roles API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Roles API</h1>
+        
+        <!-- Login Section -->
+        <div class="section">
+            <h3>1. Login untuk mendapatkan token</h3>
+            <input type="text" id="username" placeholder="Username" value="admin">
+            <input type="password" id="password" placeholder="Password" value="admin123">
+            <button onclick="login()">Login</button>
+            <div id="loginResult" class="result"></div>
+        </div>
+
+        <!-- Get All Roles -->
+        <div class="section">
+            <h3>2. Get All Roles</h3>
+            <button onclick="getAllRoles()">Get All Roles</button>
+            <div id="rolesResult" class="result"></div>
+        </div>
+
+        <!-- Create Role -->
+        <div class="section">
+            <h3>3. Create New Role</h3>
+            <input type="text" id="roleName" placeholder="Role Name" value="Test Role">
+            <input type="text" id="roleCode" placeholder="Role Code" value="TEST">
+            <textarea id="roleDescription" placeholder="Description">Test role untuk testing API</textarea>
+            <button onclick="createRole()">Create Role</button>
+            <div id="createResult" class="result"></div>
+        </div>
+
+        <!-- Update Role -->
+        <div class="section">
+            <h3>4. Update Role</h3>
+            <input type="text" id="updateRoleId" placeholder="Role ID">
+            <input type="text" id="updateRoleName" placeholder="New Role Name" value="Updated Test Role">
+            <button onclick="updateRole()">Update Role</button>
+            <div id="updateResult" class="result"></div>
+        </div>
+
+        <!-- Delete Role -->
+        <div class="section">
+            <h3>5. Delete Role</h3>
+            <input type="text" id="deleteRoleId" placeholder="Role ID">
+            <button onclick="deleteRole()">Delete Role</button>
+            <div id="deleteResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = '';
+        const API_BASE = 'http://localhost:5000/api';
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('loginResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    authToken = result.token;
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `Login berhasil! Token: ${authToken.substring(0, 50)}...`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Login gagal: ${result.message || 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function getAllRoles() {
+            const resultDiv = document.getElementById('rolesResult');
+
+            if (!authToken) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Please login first to get auth token';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/roles`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = JSON.stringify(result, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${result.message || 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function createRole() {
+            const resultDiv = document.getElementById('createResult');
+            const name = document.getElementById('roleName').value;
+            const code = document.getElementById('roleCode').value;
+            const description = document.getElementById('roleDescription').value;
+
+            if (!authToken) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Please login first to get auth token';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/roles`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name,
+                        code,
+                        description,
+                        permissions: {
+                            'tickets.read': true,
+                            'tickets.create': true
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = JSON.stringify(result, null, 2);
+                    // Set the role ID for update/delete operations
+                    if (result.data && result.data.id) {
+                        document.getElementById('updateRoleId').value = result.data.id;
+                        document.getElementById('deleteRoleId').value = result.data.id;
+                    }
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${result.message || 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function updateRole() {
+            const resultDiv = document.getElementById('updateResult');
+            const roleId = document.getElementById('updateRoleId').value;
+            const name = document.getElementById('updateRoleName').value;
+
+            if (!authToken) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Please login first to get auth token';
+                return;
+            }
+
+            if (!roleId) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Please enter Role ID';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/roles/${roleId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name,
+                        permissions: {
+                            'tickets.read': true,
+                            'tickets.create': true,
+                            'tickets.update': true
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = JSON.stringify(result, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${result.message || 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function deleteRole() {
+            const resultDiv = document.getElementById('deleteResult');
+            const roleId = document.getElementById('deleteRoleId').value;
+
+            if (!authToken) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Please login first to get auth token';
+                return;
+            }
+
+            if (!roleId) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Please enter Role ID';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/roles/${roleId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = JSON.stringify(result, null, 2);
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${result.message || 'Unknown error'}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

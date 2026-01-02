@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login Supabase</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test Login Supabase</h1>
+    <div id="status"></div>
+    <button onclick="testLogin()">Test Login</button>
+
+    <script>
+        const { createClient } = supabase;
+        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+        
+        const client = createClient(supabaseUrl, supabaseKey);
+
+        async function testLogin() {
+            const status = document.getElementById('status');
+            status.innerHTML = 'Testing login...';
+            
+            try {
+                const { data, error } = await client.auth.signInWithPassword({
+                    email: 'admin@jempol.com',
+                    password: 'admin123'
+                });
+                
+                if (error) {
+                    status.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                    console.error('Login error:', error);
+                } else {
+                    status.innerHTML = `<p style="color: green;">Success! User: ${data.user.email}</p>`;
+                    console.log('Login success:', data);
+                }
+            } catch (err) {
+                status.innerHTML = `<p style="color: red;">Exception: ${err.message}</p>`;
+                console.error('Exception:', err);
+            }
+        }
+    </script>
+</body>
+</html>

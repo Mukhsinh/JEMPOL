@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Units Page Fixed</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <h1>Test Units Page Fixed</h1>
+    <p>Testing the fixed units page with direct Supabase connection</p>
+    
+    <button onclick="testSupabaseConnection()">Test Supabase Connection</button>
+    <button onclick="testUnitsQuery()">Test Units Query</button>
+    <button onclick="testUnitTypesQuery()">Test Unit Types Query</button>
+    
+    <div id="results"></div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js';
+        
+        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+        
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        function addResult(title, content, isSuccess = true) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${isSuccess ? 'success' : 'error'}`;
+            resultDiv.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        window.testSupabaseConnection = async function() {
+            try {
+                addResult('Testing Supabase Connection', 'Connecting to Supabase...');
+                
+                const { data, error } = await supabase
+                    .from('units')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (error) {
+                    addResult('Supabase Connection Error', error.message, false);
+                } else {
+                    addResult('Supabase Connection Success', `Connected successfully. Total units: ${data}`, true);
+                }
+            } catch (error) {
+                addResult('Supabase Connection Error', error.message, false);
+            }
+        };
+
+        window.testUnitsQuery = async function() {
+            try {
+                addResult('Testing Units Query', 'Fetching units with unit types...');
+                
+                const { data: units, error } = await supabase
+                    .from('units')
+                    .select(`
+                        *,
+                        unit_type:unit_types(name, code, color)
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+                
+                if (error) {
+                    addResult('Units Query Error', error.message, false);
+                } else {
+                    addResult('Units Query Success', JSON.stringify(units, null, 2), true);
+                }
+            } catch (error) {
+                addResult('Units Query Error', error.message, false);
+            }
+        };
+
+        window.testUnitTypesQuery = async function() {
+            try {
+                addResult('Testing Unit Types Query', 'Fetching unit types...');
+                
+                const { data: unitTypes, error } = await supabase
+                    .from('unit_types')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('name');
+                
+                if (error) {
+                    addResult('Unit Types Query Error', error.message, false);
+                } else {
+                    addResult('Unit Types Query Success', JSON.stringify(unitTypes, null, 2), true);
+                }
+            } catch (error) {
+                addResult('Unit Types Query Error', error.message, false);
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Survey Page - Fixed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            color: #333;
+            margin-top: 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .ticket-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .survey-link {
+            background-color: #28a745;
+            color: white;
+            padding: 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .survey-link:hover {
+            background-color: #218838;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Survey Page - Fixed</h1>
+        <p>Testing halaman survey dengan tiket yang sudah resolved dan perbaikan endpoint.</p>
+
+        <div class="test-section">
+            <h3>1. Cek Tiket Resolved</h3>
+            <button onclick="checkResolvedTickets()">Cek Tiket Resolved</button>
+            <div id="resolved-tickets-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test Public Ticket Endpoint</h3>
+            <button onclick="testPublicTicketEndpoint()">Test Endpoint</button>
+            <div id="public-endpoint-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test Survey Form dengan Tiket ID</h3>
+            <button onclick="testSurveyForm()">Test Survey Form</button>
+            <div id="survey-form-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test Submit Survey</h3>
+            <button onclick="testSubmitSurvey()">Test Submit Survey</button>
+            <div id="submit-survey-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Akses Langsung ke Survey</h3>
+            <div id="direct-access-links"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let resolvedTicketId = null;
+
+        async function checkResolvedTickets() {
+            const resultDiv = document.getElementById('resolved-tickets-result');
+            resultDiv.innerHTML = '<div class="info">Mengecek tiket resolved...</div>';
+
+            try {
+                // Cek tiket resolved dari database
+                const response = await fetch(`${API_BASE}/complaints/tickets?status=resolved`);
+                const result = await response.json();
+
+                if (result.success && result.data && result.data.length > 0) {
+                    resolvedTicketId = result.data[0].id;
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Ditemukan ${result.data.length} tiket resolved</div>
+                        <div class="ticket-info">
+                            <strong>Tiket Pertama:</strong><br>
+                            ID: ${result.data[0].id}<br>
+                            Nomor: ${result.data[0].ticket_number}<br>
+                            Judul: ${result.data[0].title}<br>
+                            Status: ${result.data[0].status}<br>
+                            Resolved At: ${result.data[0].resolved_at}
+                        </div>
+                    `;
+                    
+                    // Update direct access links
+                    updateDirectAccessLinks();
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ Tidak ada tiket resolved ditemukan</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testPublicTicketEndpoint() {
+            const resultDiv = document.getElementById('public-endpoint-result');
+            
+            if (!resolvedTicketId) {
+                resultDiv.innerHTML = '<div class="error">❌ Silakan cek tiket resolved terlebih dahulu</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="info">Testing public ticket endpoint...</div>';
+
+            try {
+                const response = await fetch(`${API_BASE}/public/tickets/${resolvedTicketId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Public endpoint berhasil</div>
+                        <div class="ticket-info">
+                            <strong>Data Tiket:</strong><br>
+                            ID: ${result.data.id}<br>
+                            Nomor: ${result.data.ticket_number}<br>
+                            Judul: ${result.data.title}<br>
+                            Status: ${result.data.status}<br>
+                            Unit: ${result.data.units?.name || 'N/A'}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Error: ${result.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testSurveyForm() {
+            const resultDiv = document.getElementById('survey-form-result');
+            
+            if (!resolvedTicketId) {
+                resultDiv.innerHTML = '<div class="error">❌ Silakan cek tiket resolved terlebih dahulu</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="info">Testing survey form access...</div>';
+
+            try {
+                // Test akses ke halaman survey dengan ticketId
+                const surveyUrl = `http://localhost:3001/survey?ticketId=${resolvedTicketId}`;
+                
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Survey form URL generated</div>
+                    <div class="ticket-info">
+                        <strong>Survey URL:</strong><br>
+                        <a href="${surveyUrl}" target="_blank" class="survey-link">
+                            Buka Survey Form
+                        </a><br>
+                        <small>URL: ${surveyUrl}</small>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        async function testSubmitSurvey() {
+            const resultDiv = document.getElementById('submit-survey-result');
+            
+            if (!resolvedTicketId) {
+                resultDiv.innerHTML = '<div class="error">❌ Silakan cek tiket resolved terlebih dahulu</div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<div class="info">Testing survey submission...</div>';
+
+            try {
+                const surveyData = {
+                    overall_score: 5,
+                    response_time_score: 4,
+                    solution_quality_score: 5,
+                    staff_courtesy_score: 5,
+                    comments: 'Test survey submission - pelayanan sangat baik!'
+                };
+
+                const response = await fetch(`${API_BASE}/public/surveys/${resolvedTicketId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(surveyData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Survey berhasil dikirim</div>
+                        <div class="ticket-info">
+                            <strong>Response:</strong><br>
+                            ${result.message}<br>
+                            Survey ID: ${result.data.id}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Error: ${result.error}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function updateDirectAccessLinks() {
+            const linksDiv = document.getElementById('direct-access-links');
+            
+            if (resolvedTicketId) {
+                const surveyUrl = `http://localhost:3001/survey?ticketId=${resolvedTicketId}`;
+                const reportUrl = `http://localhost:3001/survey/report`;
+                
+                linksDiv.innerHTML = `
+                    <div class="success">✅ Link akses langsung tersedia</div>
+                    <div class="ticket-info">
+                        <strong>Survey Form:</strong><br>
+                        <a href="${surveyUrl}" target="_blank" class="survey-link">
+                            🔗 Buka Survey Form
+                        </a><br><br>
+                        
+                        <strong>Survey Report:</strong><br>
+                        <a href="${reportUrl}" target="_blank" class="survey-link">
+                            📊 Buka Survey Report
+                        </a>
+                    </div>
+                `;
+            } else {
+                linksDiv.innerHTML = '<div class="info">Silakan cek tiket resolved terlebih dahulu untuk mendapatkan link akses.</div>';
+            }
+        }
+
+        // Auto-run initial check
+        window.onload = function() {
+            checkResolvedTickets();
+        };
+    </script>
+</body>
+</html>

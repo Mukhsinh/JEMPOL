@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tickets & Survey Dropdown Navigation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-8 text-center">Test Tickets & Survey Dropdown Navigation</h1>
+        
+        <div class="bg-white rounded-lg shadow-lg p-6 max-w-md mx-auto">
+            <h2 class="text-xl font-semibold mb-4">Navigation Test</h2>
+            
+            <!-- Tickets Dropdown Test -->
+            <div class="mb-6">
+                <h3 class="text-lg font-medium mb-2">Tickets Dropdown</h3>
+                <div class="space-y-2">
+                    <div class="p-2 bg-blue-50 rounded">
+                        <strong>Main Button:</strong> Tickets
+                        <div class="ml-4 mt-2 space-y-1 text-sm">
+                            <div>• /tickets (Semua Tiket)</div>
+                            <div>• /tickets/create/internal (Buat Tiket Internal)</div>
+                            <div>• /tickets/create/external (Buat Tiket Eksternal)</div>
+                            <div>• /tickets/escalation (Eskalasi)</div>
+                            <div>• /tickets/qr-codes (Kode QR Unit)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Survey Dropdown Test -->
+            <div class="mb-6">
+                <h3 class="text-lg font-medium mb-2">Survey Dropdown</h3>
+                <div class="space-y-2">
+                    <div class="p-2 bg-green-50 rounded">
+                        <strong>Main Button:</strong> Survei Kepuasan
+                        <div class="ml-4 mt-2 space-y-1 text-sm">
+                            <div>• /survey (Survei Kepuasan)</div>
+                            <div>• /survey/report (Laporan Survei)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test Results -->
+            <div class="mt-8 p-4 bg-gray-50 rounded">
+                <h3 class="font-semibold mb-2">Implementation Status:</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center">
+                        <span class="w-4 h-4 bg-green-500 rounded-full mr-2"></span>
+                        <span>Sidebar dropdown state management added</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-4 h-4 bg-green-500 rounded-full mr-2"></span>
+                        <span>Tickets dropdown structure implemented</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-4 h-4 bg-green-500 rounded-full mr-2"></span>
+                        <span>Survey dropdown structure implemented</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-4 h-4 bg-green-500 rounded-full mr-2"></span>
+                        <span>Auto-expand functionality added</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-4 h-4 bg-green-500 rounded-full mr-2"></span>
+                        <span>All required routes exist in App.tsx</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

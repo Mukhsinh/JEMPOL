@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test App Settings - Fixed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        .settings-display {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        pre {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Halaman App Settings - Perbaikan</h1>
+        
+        <div id="status" class="status info">
+            Memulai test koneksi ke backend...
+        </div>
+
+        <div class="form-group">
+            <button onclick="testConnection()">Test Koneksi Backend</button>
+            <button onclick="testAppSettingsAPI()">Test API App Settings</button>
+            <button onclick="loadSettings()">Load Settings</button>
+            <button onclick="testSaveSettings()">Test Save Settings</button>
+        </div>
+
+        <div id="settingsForm" style="display: none;">
+            <h3>Form Pengaturan Aplikasi</h3>
+            <div class="form-group">
+                <label for="app_name">Nama Aplikasi:</label>
+                <input type="text" id="app_name" value="Sistem Pengaduan Masyarakat Terpadu">
+            </div>
+            <div class="form-group">
+                <label for="institution_name">Nama Instansi:</label>
+                <input type="text" id="institution_name" value="RSUD Sehat Sentosa">
+            </div>
+            <div class="form-group">
+                <label for="manager_name">Nama Pengelola:</label>
+                <input type="text" id="manager_name" value="">
+            </div>
+            <div class="form-group">
+                <label for="contact_email">Email Kontak:</label>
+                <input type="email" id="contact_email" value="">
+            </div>
+            <div class="form-group">
+                <label for="description">Deskripsi:</label>
+                <textarea id="description"></textarea>
+            </div>
+        </div>
+
+        <div id="results" class="settings-display" style="display: none;">
+            <h3>Hasil Test:</h3>
+            <pre id="resultsContent"></pre>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3003/api';
+        let authToken = null;
+
+        // Function to get auth token
+        async function getAuthToken() {
+            if (authToken) return authToken;
+            
+            try {
+                // Try to get token from localStorage first
+                const storedToken = localStorage.getItem('token');
+                if (storedToken) {
+                    authToken = storedToken;
+                    return authToken;
+                }
+
+                // If no stored token, try to login with default admin
+                const loginResponse = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+
+                if (loginResponse.ok) {
+                    const loginData = await loginResponse.json();
+                    authToken = loginData.token;
+                    localStorage.setItem('token', authToken);
+                    return authToken;
+                }
+            } catch (error) {
+                console.error('Error getting auth token:', error);
+            }
+            return null;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function showResults(data) {
+            const resultsDiv = document.getElementById('results');
+            const resultsContent = document.getElementById('resultsContent');
+            resultsContent.textContent = JSON.stringify(data, null, 2);
+            resultsDiv.style.display = 'block';
+        }
+
+        async function testConnection() {
+            updateStatus('Testing koneksi ke backend...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateStatus('✅ Koneksi backend berhasil!', 'success');
+                    showResults(data);
+                } else {
+                    updateStatus('❌ Backend merespons tapi ada error', 'error');
+                    showResults(data);
+                }
+            } catch (error) {
+                updateStatus(`❌ Gagal terhubung ke backend: ${error.message}`, 'error');
+                showResults({ error: error.message });
+            }
+        }
+
+        async function testAppSettingsAPI() {
+            updateStatus('Testing API app settings...', 'info');
+            
+            try {
+                const token = await getAuthToken();
+                if (!token) {
+                    updateStatus('❌ Gagal mendapatkan token autentikasi', 'error');
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/app-settings`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateStatus('✅ API app settings berhasil!', 'success');
+                    showResults(data);
+                } else {
+                    updateStatus(`❌ API app settings error: ${response.status}`, 'error');
+                    showResults(data);
+                }
+            } catch (error) {
+                updateStatus(`❌ Error testing API: ${error.message}`, 'error');
+                showResults({ error: error.message });
+            }
+        }
+
+        async function loadSettings() {
+            updateStatus('Loading settings...', 'info');
+            
+            try {
+                const token = await getAuthToken();
+                if (!token) {
+                    updateStatus('❌ Gagal mendapatkan token autentikasi', 'error');
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE_URL}/app-settings`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStatus('✅ Settings berhasil dimuat!', 'success');
+                    
+                    // Convert array to object for easier access
+                    const settingsMap = {};
+                    data.forEach(setting => {
+                        settingsMap[setting.setting_key] = setting.setting_value;
+                    });
+
+                    // Populate form
+                    document.getElementById('app_name').value = settingsMap.app_name || 'Sistem Pengaduan Masyarakat Terpadu';
+                    document.getElementById('institution_name').value = settingsMap.institution_name || 'RSUD Sehat Sentosa';
+                    document.getElementById('manager_name').value = settingsMap.manager_name || '';
+                    document.getElementById('contact_email').value = settingsMap.contact_email || '';
+                    document.getElementById('description').value = settingsMap.description || '';
+
+                    document.getElementById('settingsForm').style.display = 'block';
+                    showResults(settingsMap);
+                } else {
+                    const errorData = await response.json();
+                    updateStatus(`❌ Gagal memuat settings: ${response.status}`, 'error');
+                    showResults(errorData);
+                }
+            } catch (error) {
+                updateStatus(`❌ Error loading settings: ${error.message}`, 'error');
+                showResults({ error: error.message });
+            }
+        }
+
+        async function testSaveSettings() {
+            updateStatus('Testing save settings...', 'info');
+            
+            try {
+                const token = await getAuthToken();
+                if (!token) {
+                    updateStatus('❌ Gagal mendapatkan token autentikasi', 'error');
+                    return;
+                }
+
+                const settings = {
+                    app_name: document.getElementById('app_name').value,
+                    institution_name: document.getElementById('institution_name').value,
+                    manager_name: document.getElementById('manager_name').value,
+                    contact_email: document.getElementById('contact_email').value,
+                    description: document.getElementById('description').value
+                };
+
+                const response = await fetch(`${API_BASE_URL}/app-settings`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateStatus('✅ Settings berhasil disimpan!', 'success');
+                    showResults(data);
+                } else {
+                    updateStatus(`❌ Gagal menyimpan settings: ${response.status}`, 'error');
+                    showResults(data);
+                }
+            } catch (error) {
+                updateStatus(`❌ Error saving settings: ${error.message}`, 'error');
+                showResults({ error: error.message });
+            }
+        }
+
+        // Auto test connection on load
+        window.onload = function() {
+            setTimeout(testConnection, 1000);
+        };
+    </script>
+</body>
+</html>

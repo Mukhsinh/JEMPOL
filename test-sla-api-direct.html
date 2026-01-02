@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SLA Settings API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .result { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test SLA Settings API</h1>
+        
+        <div>
+            <button onclick="testGetSLASettings()">Test GET SLA Settings</button>
+            <button onclick="testGetUnitTypes()">Test GET Unit Types</button>
+            <button onclick="testGetServiceCategories()">Test GET Service Categories</button>
+            <button onclick="testGetPatientTypes()">Test GET Patient Types</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+        
+        // Get token from localStorage (assuming user is logged in)
+        function getAuthToken() {
+            return localStorage.getItem('token') || 'test-token';
+        }
+
+        function addResult(title, data, isError = false) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${isError ? 'error' : 'success'}`;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            results.appendChild(div);
+        }
+
+        async function makeRequest(endpoint, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    }
+                };
+
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(`${API_BASE}${endpoint}`, options);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${data.error || 'Unknown error'}`);
+                }
+
+                return data;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function testGetSLASettings() {
+            try {
+                const data = await makeRequest('/master-data/sla-settings');
+                addResult('GET SLA Settings - SUCCESS', data);
+            } catch (error) {
+                addResult('GET SLA Settings - ERROR', { error: error.message }, true);
+            }
+        }
+
+        async function testGetUnitTypes() {
+            try {
+                const data = await makeRequest('/master-data/unit-types');
+                addResult('GET Unit Types - SUCCESS', data);
+            } catch (error) {
+                addResult('GET Unit Types - ERROR', { error: error.message }, true);
+            }
+        }
+
+        async function testGetServiceCategories() {
+            try {
+                const data = await makeRequest('/master-data/service-categories');
+                addResult('GET Service Categories - SUCCESS', data);
+            } catch (error) {
+                addResult('GET Service Categories - ERROR', { error: error.message }, true);
+            }
+        }
+
+        async function testGetPatientTypes() {
+            try {
+                const data = await makeRequest('/master-data/patient-types');
+                addResult('GET Patient Types - SUCCESS', data);
+            } catch (error) {
+                addResult('GET Patient Types - ERROR', { error: error.message }, true);
+            }
+        }
+
+        // Auto test on load
+        window.onload = function() {
+            console.log('Testing SLA Settings API...');
+            setTimeout(() => {
+                testGetSLASettings();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

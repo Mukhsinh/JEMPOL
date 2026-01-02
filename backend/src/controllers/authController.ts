@@ -1,75 +1,75 @@
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
-import { verifyAdmin } from '../models/Admin.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-const JWT_EXPIRES_IN = '24h';
-
-// Hardcoded admin for development (fallback if database not set up)
-const FALLBACK_ADMIN = {
-  id: 'dev-admin-001',
-  username: 'admin',
-  password: 'admin123', // Plain text for fallback only
-};
+import supabase from '../config/supabase.js';
 
 /**
- * Admin login
+ * Admin login with Supabase Auth
  * POST /api/auth/login
  */
 export const login = async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!username || !password) {
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        error: 'Username dan password harus diisi',
+        error: 'Email dan password harus diisi',
       });
     }
 
-    // Try database first
-    let admin = await verifyAdmin(username, password);
+    // Sign in with Supabase Auth
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    // Fallback to hardcoded admin if database not available
-    if (!admin && username === FALLBACK_ADMIN.username && password === FALLBACK_ADMIN.password) {
-      console.log('⚠️  Using fallback admin (database not configured)');
-      admin = {
-        id: FALLBACK_ADMIN.id,
-        username: FALLBACK_ADMIN.username,
-        password_hash: '',
-        created_at: new Date().toISOString(),
-      };
-    }
-
-    if (!admin) {
+    if (error) {
+      console.error('Login error:', error);
       return res.status(401).json({
         success: false,
-        error: 'Username atau password salah',
+        error: 'Email atau password salah',
       });
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        id: admin.id, 
-        username: admin.username,
-        role: admin.role || 'admin'
-      },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
+    if (!data.user || !data.session) {
+      return res.status(401).json({
+        success: false,
+        error: 'Login gagal',
+      });
+    }
+
+    // Get admin profile from admins table
+    const { data: adminProfile, error: profileError } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('email', email)
+      .eq('is_active', true)
+      .single();
+
+    if (profileError || !adminProfile) {
+      console.error('Profile error:', profileError);
+      return res.status(401).json({
+        success: false,
+        error: 'Admin tidak ditemukan atau tidak aktif',
+      });
+    }
+
+    // Update last login
+    await supabase
+      .from('admins')
+      .update({ last_login: new Date().toISOString() })
+      .eq('id', adminProfile.id);
 
     res.json({
       success: true,
       data: {
-        token,
+        session: data.session,
+        user: data.user,
         admin: {
-          id: admin.id,
-          username: admin.username,
-          full_name: admin.full_name,
-          email: admin.email,
-          role: admin.role || 'admin',
+          id: adminProfile.id,
+          username: adminProfile.username,
+          full_name: adminProfile.full_name,
+          email: adminProfile.email,
+          role: adminProfile.role || 'admin',
         },
       },
       message: 'Login berhasil',
@@ -84,28 +84,56 @@ export const login = async (req: Request, res: Response) => {
 };
 
 /**
- * Verify token
+ * Verify token with Supabase Auth
  * GET /api/auth/verify
  */
 export const verifyToken = async (req: Request, res: Response) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-
-    if (!token) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
         error: 'Token tidak ditemukan',
       });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const token = authHeader.replace('Bearer ', '');
+
+    // Verify token with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Token tidak valid',
+      });
+    }
+
+    // Get admin profile
+    const { data: adminProfile, error: profileError } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('email', user.email)
+      .eq('is_active', true)
+      .single();
+
+    if (profileError || !adminProfile) {
+      return res.status(401).json({
+        success: false,
+        error: 'Admin tidak ditemukan',
+      });
+    }
 
     res.json({
       success: true,
       data: {
+        user,
         admin: {
-          id: decoded.id,
-          username: decoded.username,
+          id: adminProfile.id,
+          username: adminProfile.username,
+          full_name: adminProfile.full_name,
+          email: adminProfile.email,
+          role: adminProfile.role || 'admin',
         },
       },
     });
@@ -119,12 +147,28 @@ export const verifyToken = async (req: Request, res: Response) => {
 };
 
 /**
- * Logout (client-side only, just for consistency)
+ * Logout with Supabase Auth
  * POST /api/auth/logout
  */
 export const logout = async (req: Request, res: Response) => {
-  res.json({
-    success: true,
-    message: 'Logout berhasil',
-  });
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '');
+      
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+    }
+
+    res.json({
+      success: true,
+      message: 'Logout berhasil',
+    });
+  } catch (error: any) {
+    console.error('Error in logout:', error);
+    res.json({
+      success: true,
+      message: 'Logout berhasil',
+    });
+  }
 };

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Roles API - Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        .loading { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Roles API - Perbaikan Error 500</h1>
+        
+        <div class="test-section info">
+            <h3>Status Koneksi</h3>
+            <p id="connectionStatus" class="loading">Mengecek koneksi...</p>
+        </div>
+
+        <div class="test-section">
+            <h3>1. Test GET /api/roles</h3>
+            <button onclick="testGetRoles()">Test Get All Roles</button>
+            <div id="getRolesResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test GET /api/roles/:id/users</h3>
+            <button onclick="testGetUsersByRole()">Test Get Users by Role</button>
+            <div id="getUsersByRoleResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test POST /api/roles (Create Role)</h3>
+            <button onclick="testCreateRole()">Test Create Role</button>
+            <div id="createRoleResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test PUT /api/roles/:id (Update Role)</h3>
+            <button onclick="testUpdateRole()">Test Update Role</button>
+            <div id="updateRoleResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Test DELETE /api/roles/:id</h3>
+            <button onclick="testDeleteRole()">Test Delete Role</button>
+            <div id="deleteRoleResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001';
+        let testToken = null;
+        let testRoleId = null;
+
+        // Check connection and get token
+        async function checkConnection() {
+            try {
+                // Try to get token from localStorage first
+                testToken = localStorage.getItem('token');
+                
+                if (!testToken) {
+                    // Try to login with admin credentials
+                    const loginResponse = await fetch(`${API_BASE}/api/auth/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: 'admin',
+                            password: 'admin123'
+                        })
+                    });
+
+                    if (loginResponse.ok) {
+                        const loginResult = await loginResponse.json();
+                        testToken = loginResult.token;
+                        localStorage.setItem('token', testToken);
+                    }
+                }
+
+                if (testToken) {
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<span style="color: green;">✓ Koneksi berhasil dan token tersedia</span>';
+                } else {
+                    document.getElementById('connectionStatus').innerHTML = 
+                        '<span style="color: orange;">⚠ Koneksi berhasil tapi tidak ada token (akan test tanpa auth)</span>';
+                }
+            } catch (error) {
+                document.getElementById('connectionStatus').innerHTML = 
+                    `<span style="color: red;">✗ Gagal terhubung: ${error.message}</span>`;
+            }
+        }
+
+        async function testGetRoles() {
+            const resultDiv = document.getElementById('getRolesResult');
+            resultDiv.innerHTML = '<p class="loading">Testing...</p>';
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (testToken) {
+                    headers['Authorization'] = `Bearer ${testToken}`;
+                }
+
+                const response = await fetch(`${API_BASE}/api/roles`, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✓ Berhasil (${response.status})</h4>
+                            <p>Ditemukan ${result.data?.length || 0} peran</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>✗ Gagal (${response.status})</h4>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>✗ Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testGetUsersByRole() {
+            const resultDiv = document.getElementById('getUsersByRoleResult');
+            resultDiv.innerHTML = '<p class="loading">Testing...</p>';
+
+            // Use first role ID (Administrator)
+            const roleId = 'aa5687ff-8ed3-40d0-bc83-db052b72e481';
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (testToken) {
+                    headers['Authorization'] = `Bearer ${testToken}`;
+                }
+
+                const response = await fetch(`${API_BASE}/api/roles/${roleId}/users`, {
+                    method: 'GET',
+                    headers: headers
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✓ Berhasil (${response.status})</h4>
+                            <p>${result.message}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>✗ Gagal (${response.status})</h4>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>✗ Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testCreateRole() {
+            const resultDiv = document.getElementById('createRoleResult');
+            resultDiv.innerHTML = '<p class="loading">Testing...</p>';
+
+            const newRole = {
+                name: 'Test Role',
+                code: 'TEST_ROLE',
+                description: 'Role untuk testing API',
+                permissions: {
+                    test_permission: true,
+                    view_test: true
+                }
+            };
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (testToken) {
+                    headers['Authorization'] = `Bearer ${testToken}`;
+                }
+
+                const response = await fetch(`${API_BASE}/api/roles`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(newRole)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    testRoleId = result.data?.id;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✓ Berhasil (${response.status})</h4>
+                            <p>${result.message}</p>
+                            <p>Role ID: ${testRoleId}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>✗ Gagal (${response.status})</h4>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>✗ Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testUpdateRole() {
+            const resultDiv = document.getElementById('updateRoleResult');
+            resultDiv.innerHTML = '<p class="loading">Testing...</p>';
+
+            if (!testRoleId) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>✗ Error</h4>
+                        <p>Tidak ada test role ID. Jalankan Create Role terlebih dahulu.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const updateData = {
+                description: 'Role untuk testing API - Updated',
+                permissions: {
+                    test_permission: true,
+                    view_test: true,
+                    updated_permission: true
+                }
+            };
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (testToken) {
+                    headers['Authorization'] = `Bearer ${testToken}`;
+                }
+
+                const response = await fetch(`${API_BASE}/api/roles/${testRoleId}`, {
+                    method: 'PUT',
+                    headers: headers,
+                    body: JSON.stringify(updateData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✓ Berhasil (${response.status})</h4>
+                            <p>${result.message}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>✗ Gagal (${response.status})</h4>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>✗ Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testDeleteRole() {
+            const resultDiv = document.getElementById('deleteRoleResult');
+            resultDiv.innerHTML = '<p class="loading">Testing...</p>';
+
+            if (!testRoleId) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>✗ Error</h4>
+                        <p>Tidak ada test role ID. Jalankan Create Role terlebih dahulu.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (testToken) {
+                    headers['Authorization'] = `Bearer ${testToken}`;
+                }
+
+                const response = await fetch(`${API_BASE}/api/roles/${testRoleId}`, {
+                    method: 'DELETE',
+                    headers: headers
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✓ Berhasil (${response.status})</h4>
+                            <p>${result.message}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                    testRoleId = null; // Reset test role ID
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>✗ Gagal (${response.status})</h4>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>✗ Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize
+        checkConnection();
+    </script>
+</body>
+</html>

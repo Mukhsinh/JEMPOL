@@ -16,9 +16,16 @@
     "vercel-build": "cd frontend && npm install && npm run build",
     "test": "npm run test --workspaces",
     "test:frontend": "npm run test --workspace=frontend",
-    "test:backend": "npm run test --workspace=backend"
+    "test:backend": "npm run test --workspace=backend",
+    "convert-ebooks": "node scripts/convert-to-pdf.js",
+    "generate-pdfs": "node scripts/generate-pdfs.js",
+    "generate-ebook-pdfs": "node scripts/generate-ebook-pdfs.js"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "puppeteer": "^21.11.0"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
   }
 }

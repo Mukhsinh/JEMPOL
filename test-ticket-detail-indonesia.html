@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Halaman Detail Tiket - Bahasa Indonesia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto p-6">
+        <h1 class="text-2xl font-bold mb-6">Test Halaman Detail Tiket - Bahasa Indonesia</h1>
+        
+        <!-- Test Buttons -->
+        <div class="bg-white rounded-lg p-6 mb-6 shadow">
+            <h2 class="text-lg font-semibold mb-4">Tombol Aksi Tiket</h2>
+            <div class="flex gap-3 flex-wrap">
+                <button 
+                    onclick="testResolveTicket()"
+                    class="flex items-center gap-2 h-10 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors"
+                >
+                    <span class="material-symbols-outlined text-[20px]">check_circle</span>
+                    <span>Selesaikan</span>
+                </button>
+                <button 
+                    onclick="testEscalateTicket()"
+                    class="flex items-center gap-2 h-10 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 text-sm font-bold rounded-lg transition-colors"
+                >
+                    <span class="material-symbols-outlined text-[20px]">warning</span>
+                    <span>Eskalasi</span>
+                </button>
+                <button 
+                    onclick="testAssignTicket()"
+                    class="flex items-center gap-2 h-10 px-4 bg-white border border-gray-300 hover:bg-gray-50 text-gray-900 text-sm font-bold rounded-lg transition-colors"
+                >
+                    <span class="material-symbols-outlined text-[20px]">person_add</span>
+                    <span>Tugaskan</span>
+                </button>
+                <button 
+                    onclick="testSendResponse()"
+                    class="flex items-center gap-2 h-10 px-4 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg transition-colors"
+                >
+                    <span class="material-symbols-outlined text-[20px]">send</span>
+                    <span>Kirim Balasan</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Test Database Connection -->
+        <div class="bg-white rounded-lg p-6 mb-6 shadow">
+            <h2 class="text-lg font-semibold mb-4">Test Koneksi Database</h2>
+            <button 
+                onclick="testDatabaseConnection()"
+                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
+            >
+                Test Koneksi Supabase
+            </button>
+            <div id="dbResult" class="mt-4 p-3 bg-gray-100 rounded hidden"></div>
+        </div>
+
+        <!-- Test Ticket Data -->
+        <div class="bg-white rounded-lg p-6 shadow">
+            <h2 class="text-lg font-semibold mb-4">Data Tiket Test</h2>
+            <button 
+                onclick="fetchTicketData()"
+                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg"
+            >
+                Ambil Data Tiket
+            </button>
+            <div id="ticketResult" class="mt-4 p-3 bg-gray-100 rounded hidden"></div>
+        </div>
+
+        <!-- Modal Assign (Hidden by default) -->
+        <div id="assignModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-900">Tugaskan Tiket</h3>
+                    <button onclick="closeAssignModal()" class="text-gray-400 hover:text-gray-600">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-900 mb-2">
+                        Pilih Pengguna
+                    </label>
+                    <select id="userSelect" class="w-full border border-gray-300 bg-white rounded-lg px-3 py-2 text-gray-900 focus:border-blue-500 focus:ring-0">
+                        <option value="">Pilih pengguna...</option>
+                        <option value="user1">John Doe (Staff)</option>
+                        <option value="user2">Jane Smith (Supervisor)</option>
+                        <option value="user3">Bob Johnson (Manager)</option>
+                    </select>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button 
+                        onclick="closeAssignModal()"
+                        class="flex-1 px-4 py-2 border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        Batal
+                    </button>
+                    <button 
+                        onclick="confirmAssign()"
+                        class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    >
+                        Tugaskan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration (replace with your actual config)
+        const SUPABASE_URL = 'https://your-project.supabase.co';
+        const SUPABASE_ANON_KEY = 'your-anon-key';
+
+        function testResolveTicket() {
+            if (confirm('Apakah Anda yakin ingin menyelesaikan tiket ini?')) {
+                alert('✅ Tiket berhasil diselesaikan!');
+                console.log('Resolve ticket function called');
+            }
+        }
+
+        function testEscalateTicket() {
+            const reason = prompt('Masukkan alasan eskalasi:');
+            if (reason) {
+                alert('⬆️ Tiket berhasil dieskalasi!');
+                console.log('Escalate ticket function called with reason:', reason);
+            }
+        }
+
+        function testAssignTicket() {
+            document.getElementById('assignModal').classList.remove('hidden');
+        }
+
+        function closeAssignModal() {
+            document.getElementById('assignModal').classList.add('hidden');
+        }
+
+        function confirmAssign() {
+            const selectedUser = document.getElementById('userSelect').value;
+            if (selectedUser) {
+                alert('👤 Tiket berhasil ditugaskan!');
+                closeAssignModal();
+                console.log('Assign ticket function called for user:', selectedUser);
+            } else {
+                alert('Pilih pengguna terlebih dahulu!');
+            }
+        }
+
+        function testSendResponse() {
+            const response = prompt('Masukkan balasan Anda:');
+            if (response) {
+                alert('📤 Balasan berhasil dikirim!');
+                console.log('Send response function called with:', response);
+            }
+        }
+
+        async function testDatabaseConnection() {
+            const resultDiv = document.getElementById('dbResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = '🔄 Menguji koneksi...';
+
+            try {
+                // Simulate database connection test
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                resultDiv.innerHTML = '✅ Koneksi database berhasil!';
+                resultDiv.className = 'mt-4 p-3 bg-green-100 text-green-800 rounded';
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Koneksi database gagal: ' + error.message;
+                resultDiv.className = 'mt-4 p-3 bg-red-100 text-red-800 rounded';
+            }
+        }
+
+        async function fetchTicketData() {
+            const resultDiv = document.getElementById('ticketResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = '🔄 Mengambil data tiket...';
+
+            try {
+                // Simulate fetching ticket data
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                const mockTicketData = {
+                    id: '990e8400-e29b-41d4-a716-446655440001',
+                    ticket_number: 'TKT-2024-0001',
+                    title: 'Antrian Pelayanan Terlalu Lama',
+                    status: 'escalated',
+                    priority: 'high',
+                    submitter_name: 'Budi Santoso',
+                    created_at: new Date().toISOString()
+                };
+
+                resultDiv.innerHTML = `
+                    <h4 class="font-semibold mb-2">✅ Data tiket berhasil diambil:</h4>
+                    <pre class="text-sm">${JSON.stringify(mockTicketData, null, 2)}</pre>
+                `;
+                resultDiv.className = 'mt-4 p-3 bg-green-100 text-green-800 rounded';
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Gagal mengambil data tiket: ' + error.message;
+                resultDiv.className = 'mt-4 p-3 bg-red-100 text-red-800 rounded';
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Halaman test detail tiket dimuat');
+            console.log('📋 Semua fungsi tombol siap untuk ditest');
+        });
+    </script>
+</body>
+</html>

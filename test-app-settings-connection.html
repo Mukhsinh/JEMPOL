@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test App Settings Connection</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Test App Settings API Connection</h1>
+    
+    <div>
+        <button onclick="testConnection()">Test Connection</button>
+        <button onclick="testWithAuth()">Test With Auth</button>
+        <button onclick="testPublicEndpoint()">Test Public Endpoint</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testConnection() {
+            addResult('Testing basic connection to /api/app-settings...', 'info');
+            
+            try {
+                const response = await fetch('/api/app-settings');
+                const data = await response.text();
+                
+                if (response.ok) {
+                    addResult(`✅ Connection successful! Status: ${response.status}`, 'success');
+                    addResult(`<pre>${data}</pre>`, 'info');
+                } else {
+                    addResult(`❌ Connection failed! Status: ${response.status}`, 'error');
+                    addResult(`Response: ${data}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Network error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWithAuth() {
+            addResult('Testing with authentication token...', 'info');
+            
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (!token) {
+                addResult('❌ No authentication token found in localStorage or sessionStorage', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/app-settings', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.text();
+                
+                if (response.ok) {
+                    addResult(`✅ Authenticated request successful! Status: ${response.status}`, 'success');
+                    addResult(`<pre>${data}</pre>`, 'info');
+                } else {
+                    addResult(`❌ Authenticated request failed! Status: ${response.status}`, 'error');
+                    addResult(`Response: ${data}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Network error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPublicEndpoint() {
+            addResult('Testing public app settings endpoint...', 'info');
+            
+            try {
+                const response = await fetch('/api/app-settings/public');
+                const data = await response.text();
+                
+                if (response.ok) {
+                    addResult(`✅ Public endpoint successful! Status: ${response.status}`, 'success');
+                    addResult(`<pre>${data}</pre>`, 'info');
+                } else {
+                    addResult(`❌ Public endpoint failed! Status: ${response.status}`, 'error');
+                    addResult(`Response: ${data}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Network error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test different backend URLs
+        async function testBackendUrls() {
+            const urls = [
+                'http://localhost:3001/api/app-settings',
+                'http://localhost:5000/api/app-settings',
+                '/api/app-settings'
+            ];
+
+            for (const url of urls) {
+                addResult(`Testing URL: ${url}`, 'info');
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        addResult(`✅ ${url} - Success!`, 'success');
+                    } else {
+                        addResult(`❌ ${url} - Status: ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    addResult(`❌ ${url} - Error: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Auto-run tests on page load
+        window.onload = function() {
+            addResult('Page loaded. Click buttons to test API endpoints.', 'info');
+            
+            // Show current token status
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (token) {
+                addResult(`Token found: ${token.substring(0, 20)}...`, 'info');
+            } else {
+                addResult('No authentication token found', 'info');
+            }
+        };
+    </script>
+</body>
+</html>

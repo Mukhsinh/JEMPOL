@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test App Settings Integration</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        .form-group { margin: 10px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Test App Settings Integration</h1>
+    
+    <div class="test-section info">
+        <h3>🔧 Test Configuration</h3>
+        <p>Testing app settings API integration with database</p>
+        <p><strong>API Base:</strong> <span id="api-base">http://localhost:3001</span></p>
+        <p><strong>Token:</strong> <span id="token-status">Checking...</span></p>
+    </div>
+
+    <div class="test-section">
+        <h3>1. Authentication Test</h3>
+        <button onclick="testAuth()">Test Authentication</button>
+        <div id="auth-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Fetch Current Settings</h3>
+        <button onclick="fetchSettings()">Fetch Settings</button>
+        <div id="fetch-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Update Settings Test</h3>
+        <div class="form-group">
+            <label>App Name:</label>
+            <input type="text" id="test-app-name" value="Test App Name Update">
+        </div>
+        <div class="form-group">
+            <label>Institution Name:</label>
+            <input type="text" id="test-institution-name" value="Test Institution Update">
+        </div>
+        <div class="form-group">
+            <label>Manager Name:</label>
+            <input type="text" id="test-manager-name" value="Test Manager Update">
+        </div>
+        <div class="form-group">
+            <label>Job Title:</label>
+            <input type="text" id="test-job-title" value="Test Job Title Update">
+        </div>
+        <button onclick="updateSettings()">Update Settings</button>
+        <div id="update-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Logo Upload Test</h3>
+        <input type="file" id="logo-file" accept="image/*">
+        <button onclick="uploadLogo()">Upload Logo</button>
+        <div id="upload-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. Public Settings Test</h3>
+        <button onclick="fetchPublicSettings()">Fetch Public Settings</button>
+        <div id="public-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>6. Database Direct Query Test</h3>
+        <button onclick="testDatabaseQuery()">Test Database Query</button>
+        <div id="db-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001';
+        let authToken = null;
+
+        // Check for existing token
+        function checkToken() {
+            authToken = localStorage.getItem('token') || sessionStorage.getItem('token');
+            const tokenStatus = document.getElementById('token-status');
+            
+            if (authToken) {
+                tokenStatus.textContent = 'Found ✓';
+                tokenStatus.style.color = 'green';
+            } else {
+                tokenStatus.textContent = 'Not found - will try to login';
+                tokenStatus.style.color = 'orange';
+            }
+        }
+
+        // Test authentication
+        async function testAuth() {
+            const resultDiv = document.getElementById('auth-result');
+            resultDiv.innerHTML = '<p>Testing authentication...</p>';
+
+            try {
+                if (!authToken) {
+                    // Try to login first
+                    const loginResponse = await fetch(`${API_BASE}/api/auth/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: 'admin',
+                            password: 'admin123'
+                        })
+                    });
+
+                    if (loginResponse.ok) {
+                        const loginData = await loginResponse.json();
+                        authToken = loginData.token;
+                        localStorage.setItem('token', authToken);
+                        resultDiv.innerHTML = '<div class="success"><p>✓ Login successful</p></div>';
+                    } else {
+                        throw new Error('Login failed');
+                    }
+                }
+
+                // Test token validity
+                const testResponse = await fetch(`${API_BASE}/api/app-settings`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (testResponse.ok) {
+                    resultDiv.innerHTML += '<div class="success"><p>✓ Token is valid</p></div>';
+                } else {
+                    throw new Error(`Token validation failed: ${testResponse.status}`);
+                }
+
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><p>✗ Authentication failed: ${error.message}</p></div>`;
+            }
+        }
+
+        // Fetch current settings
+        async function fetchSettings() {
+            const resultDiv = document.getElementById('fetch-result');
+            resultDiv.innerHTML = '<p>Fetching settings...</p>';
+
+            try {
+                if (!authToken) {
+                    await testAuth();
+                }
+
+                const response = await fetch(`${API_BASE}/api/app-settings`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <p>✓ Settings fetched successfully</p>
+                        <p><strong>Count:</strong> ${Array.isArray(data) ? data.length : 'Not an array'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+
+                // Populate form with current values
+                if (Array.isArray(data)) {
+                    data.forEach(setting => {
+                        const element = document.getElementById(`test-${setting.setting_key.replace('_', '-')}`);
+                        if (element) {
+                            element.value = setting.setting_value || '';
+                        }
+                    });
+                }
+
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><p>✗ Failed to fetch settings: ${error.message}</p></div>`;
+            }
+        }
+
+        // Update settings
+        async function updateSettings() {
+            const resultDiv = document.getElementById('update-result');
+            resultDiv.innerHTML = '<p>Updating settings...</p>';
+
+            try {
+                if (!authToken) {
+                    await testAuth();
+                }
+
+                const settings = {
+                    app_name: document.getElementById('test-app-name').value,
+                    institution_name: document.getElementById('test-institution-name').value,
+                    manager_name: document.getElementById('test-manager-name').value,
+                    job_title: document.getElementById('test-job-title').value
+                };
+
+                const response = await fetch(`${API_BASE}/api/app-settings`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(settings)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <p>✓ Settings updated successfully</p>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><p>✗ Failed to update settings: ${error.message}</p></div>`;
+            }
+        }
+
+        // Upload logo
+        async function uploadLogo() {
+            const resultDiv = document.getElementById('upload-result');
+            const fileInput = document.getElementById('logo-file');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = '<div class="error"><p>Please select a file first</p></div>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<p>Uploading logo...</p>';
+
+            try {
+                if (!authToken) {
+                    await testAuth();
+                }
+
+                const formData = new FormData();
+                formData.append('logo', fileInput.files[0]);
+
+                const response = await fetch(`${API_BASE}/api/app-settings/upload-logo`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <p>✓ Logo uploaded successfully</p>
+                        <p><strong>Logo URL:</strong> ${result.logoUrl}</p>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><p>✗ Failed to upload logo: ${error.message}</p></div>`;
+            }
+        }
+
+        // Fetch public settings
+        async function fetchPublicSettings() {
+            const resultDiv = document.getElementById('public-result');
+            resultDiv.innerHTML = '<p>Fetching public settings...</p>';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/app-settings/public`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <p>✓ Public settings fetched successfully</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><p>✗ Failed to fetch public settings: ${error.message}</p></div>`;
+            }
+        }
+
+        // Test database query
+        async function testDatabaseQuery() {
+            const resultDiv = document.getElementById('db-result');
+            resultDiv.innerHTML = '<p>Testing database query...</p>';
+
+            try {
+                // This would be a direct database test - for now just show what we expect
+                resultDiv.innerHTML = `
+                    <div class="info">
+                        <p>Database should contain app_settings table with these keys:</p>
+                        <ul>
+                            <li>app_name</li>
+                            <li>institution_name</li>
+                            <li>manager_name</li>
+                            <li>job_title</li>
+                            <li>institution_logo</li>
+                            <li>logo_url</li>
+                            <li>contact_email</li>
+                            <li>contact_phone</li>
+                            <li>address</li>
+                            <li>website</li>
+                            <li>description</li>
+                        </ul>
+                        <p>Use the fetch settings button to verify database content.</p>
+                    </div>
+                `;
+
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><p>✗ Database test failed: ${error.message}</p></div>`;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            checkToken();
+            
+            // Auto-test authentication if token exists
+            if (authToken) {
+                testAuth();
+            }
+        });
+    </script>
+</body>
+</html>

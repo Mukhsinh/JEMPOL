@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Roles & Permissions API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #2563eb;
+        }
+        .button.danger {
+            background: #ef4444;
+        }
+        .button.danger:hover {
+            background: #dc2626;
+        }
+        .button.success {
+            background: #10b981;
+        }
+        .button.success:hover {
+            background: #059669;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #fee;
+            border-color: #fcc;
+            color: #c33;
+        }
+        .success {
+            background: #efe;
+            border-color: #cfc;
+            color: #363;
+        }
+        .role-item {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+        }
+        .role-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .role-name {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .role-code {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .role-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .permissions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .permission-badge {
+            background: #e1f5fe;
+            color: #0277bd;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+        .permission-badge.all {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status-active {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        .status-inactive {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: black;
+        }
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Roles & Permissions API</h1>
+    
+    <!-- API Configuration -->
+    <div class="container">
+        <h2>Konfigurasi API</h2>
+        <div class="form-group">
+            <label>Base URL:</label>
+            <input type="text" id="baseUrl" value="http://localhost:3001/api">
+        </div>
+        <div class="form-group">
+            <label>Token (Bearer):</label>
+            <input type="text" id="token" placeholder="Masukkan token jika diperlukan">
+        </div>
+    </div>
+
+    <!-- Test Buttons -->
+    <div class="container">
+        <h2>Test API Endpoints</h2>
+        <button class="button" onclick="getAllRoles()">Get All Roles</button>
+        <button class="button success" onclick="showCreateModal()">Create New Role</button>
+        <button class="button" onclick="testRoleOperations()">Test All Operations</button>
+    </div>
+
+    <!-- Results -->
+    <div class="container">
+        <h2>API Response</h2>
+        <div id="result" class="result"></div>
+    </div>
+
+    <!-- Roles List -->
+    <div class="container">
+        <h2>Daftar Peran</h2>
+        <div id="rolesList"></div>
+    </div>
+
+    <!-- Create/Edit Role Modal -->
+    <div id="roleModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle">Tambah Peran Baru</h2>
+            <form id="roleForm">
+                <div class="form-group">
+                    <label>Nama Peran:</label>
+                    <input type="text" id="roleName" required>
+                </div>
+                <div class="form-group">
+                    <label>Kode Peran:</label>
+                    <input type="text" id="roleCode" required style="text-transform: uppercase;">
+                </div>
+                <div class="form-group">
+                    <label>Deskripsi:</label>
+                    <textarea id="roleDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Hak Akses:</label>
+                    <div class="checkbox-group" id="permissionsGroup">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_tickets_read" value="tickets.read">
+                            <label for="perm_tickets_read">Melihat Tiket</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_tickets_create" value="tickets.create">
+                            <label for="perm_tickets_create">Membuat Tiket</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_tickets_update" value="tickets.update">
+                            <label for="perm_tickets_update">Mengupdate Tiket</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_tickets_delete" value="tickets.delete">
+                            <label for="perm_tickets_delete">Menghapus Tiket</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_reports_read" value="reports.read">
+                            <label for="perm_reports_read">Melihat Laporan</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_users_manage" value="users.manage">
+                            <label for="perm_users_manage">Mengelola Pengguna</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_settings_manage" value="settings.manage">
+                            <label for="perm_settings_manage">Mengelola Pengaturan</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="perm_escalate" value="escalate">
+                            <label for="perm_escalate">Eskalasi Tiket</label>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <button type="submit" class="button success">Simpan</button>
+                    <button type="button" class="button" onclick="closeModal()">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentRoleId = null;
+        let currentMode = 'create';
+
+        function getHeaders() {
+            const token = document.getElementById('token').value;
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            return headers;
+        }
+
+        function showResult(data, isError = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+            resultDiv.className = `result ${isError ? 'error' : 'success'}`;
+        }
+
+        async function getAllRoles() {
+            try {
+                const baseUrl = document.getElementById('baseUrl').value;
+                const response = await fetch(`${baseUrl}/roles`, {
+                    headers: getHeaders()
+                });
+                
+                const data = await response.json();
+                showResult(data, !response.ok);
+                
+                if (response.ok && data.success) {
+                    displayRoles(data.data);
+                }
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        }
+
+        function displayRoles(roles) {
+            const rolesList = document.getElementById('rolesList');
+            rolesList.innerHTML = '';
+            
+            roles.forEach(role => {
+                const roleDiv = document.createElement('div');
+                roleDiv.className = 'role-item';
+                
+                const permissions = role.permissions || {};
+                let permissionBadges = '';
+                
+                if (permissions.all) {
+                    permissionBadges = '<span class="permission-badge all">Semua Akses</span>';
+                } else {
+                    Object.keys(permissions).forEach(key => {
+                        if (permissions[key]) {
+                            permissionBadges += `<span class="permission-badge">${key}</span>`;
+                        }
+                    });
+                }
+                
+                roleDiv.innerHTML = `
+                    <div class="role-header">
+                        <div>
+                            <span class="role-name">${role.name}</span>
+                            <span class="role-code">${role.code}</span>
+                            <span class="status-badge ${role.is_active ? 'status-active' : 'status-inactive'}">
+                                ${role.is_active ? 'Aktif' : 'Nonaktif'}
+                            </span>
+                        </div>
+                        <div class="role-actions">
+                            <button class="button" onclick="editRole('${role.id}')" ${role.is_system_role ? 'disabled' : ''}>
+                                Edit
+                            </button>
+                            <button class="button" onclick="toggleRoleStatus('${role.id}', ${!role.is_active})">
+                                ${role.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                            </button>
+                            <button class="button danger" onclick="deleteRole('${role.id}')" ${role.is_system_role ? 'disabled' : ''}>
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                    <div><strong>Deskripsi:</strong> ${role.description || '-'}</div>
+                    <div class="permissions">${permissionBadges}</div>
+                `;
+                
+                rolesList.appendChild(roleDiv);
+            });
+        }
+
+        function showCreateModal() {
+            currentMode = 'create';
+            currentRoleId = null;
+            document.getElementById('modalTitle').textContent = 'Tambah Peran Baru';
+            document.getElementById('roleForm').reset();
+            document.getElementById('roleModal').style.display = 'block';
+        }
+
+        async function editRole(roleId) {
+            try {
+                const baseUrl = document.getElementById('baseUrl').value;
+                const response = await fetch(`${baseUrl}/roles/${roleId}`, {
+                    headers: getHeaders()
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    const role = data.data;
+                    currentMode = 'edit';
+                    currentRoleId = roleId;
+                    
+                    document.getElementById('modalTitle').textContent = 'Edit Peran';
+                    document.getElementById('roleName').value = role.name;
+                    document.getElementById('roleCode').value = role.code;
+                    document.getElementById('roleDescription').value = role.description || '';
+                    
+                    // Set permissions checkboxes
+                    const checkboxes = document.querySelectorAll('#permissionsGroup input[type="checkbox"]');
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = role.permissions && role.permissions[checkbox.value];
+                    });
+                    
+                    document.getElementById('roleModal').style.display = 'block';
+                } else {
+                    showResult(data, true);
+                }
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        }
+
+        async function toggleRoleStatus(roleId, newStatus) {
+            try {
+                const baseUrl = document.getElementById('baseUrl').value;
+                const response = await fetch(`${baseUrl}/roles/${roleId}`, {
+                    method: 'PUT',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ is_active: newStatus })
+                });
+                
+                const data = await response.json();
+                showResult(data, !response.ok);
+                
+                if (response.ok && data.success) {
+                    getAllRoles(); // Refresh list
+                }
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        }
+
+        async function deleteRole(roleId) {
+            if (!confirm('Apakah Anda yakin ingin menghapus peran ini?')) {
+                return;
+            }
+            
+            try {
+                const baseUrl = document.getElementById('baseUrl').value;
+                const response = await fetch(`${baseUrl}/roles/${roleId}`, {
+                    method: 'DELETE',
+                    headers: getHeaders()
+                });
+                
+                const data = await response.json();
+                showResult(data, !response.ok);
+                
+                if (response.ok && data.success) {
+                    getAllRoles(); // Refresh list
+                }
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('roleModal').style.display = 'none';
+        }
+
+        document.getElementById('roleForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('roleName').value;
+            const code = document.getElementById('roleCode').value;
+            const description = document.getElementById('roleDescription').value;
+            
+            // Get selected permissions
+            const permissions = {};
+            const checkboxes = document.querySelectorAll('#permissionsGroup input[type="checkbox"]:checked');
+            checkboxes.forEach(checkbox => {
+                permissions[checkbox.value] = true;
+            });
+            
+            const roleData = {
+                name,
+                code: code.toUpperCase(),
+                description,
+                permissions
+            };
+            
+            try {
+                const baseUrl = document.getElementById('baseUrl').value;
+                const url = currentMode === 'create' ? `${baseUrl}/roles` : `${baseUrl}/roles/${currentRoleId}`;
+                const method = currentMode === 'create' ? 'POST' : 'PUT';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: getHeaders(),
+                    body: JSON.stringify(roleData)
+                });
+                
+                const data = await response.json();
+                showResult(data, !response.ok);
+                
+                if (response.ok && data.success) {
+                    closeModal();
+                    getAllRoles(); // Refresh list
+                }
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        });
+
+        async function testRoleOperations() {
+            showResult({ message: 'Starting comprehensive role operations test...' });
+            
+            // Test 1: Get all roles
+            await getAllRoles();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Test 2: Create a test role
+            const testRole = {
+                name: 'Test Role',
+                code: 'TEST',
+                description: 'Role untuk testing',
+                permissions: {
+                    'tickets.read': true,
+                    'reports.read': true
+                }
+            };
+            
+            try {
+                const baseUrl = document.getElementById('baseUrl').value;
+                const createResponse = await fetch(`${baseUrl}/roles`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(testRole)
+                });
+                
+                const createData = await createResponse.json();
+                showResult({ step: 'Create Test Role', result: createData });
+                
+                if (createResponse.ok && createData.success) {
+                    const testRoleId = createData.data.id;
+                    
+                    // Test 3: Update the test role
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    const updateResponse = await fetch(`${baseUrl}/roles/${testRoleId}`, {
+                        method: 'PUT',
+                        headers: getHeaders(),
+                        body: JSON.stringify({
+                            description: 'Updated test role description',
+                            permissions: {
+                                'tickets.read': true,
+                                'tickets.create': true,
+                                'reports.read': true
+                            }
+                        })
+                    });
+                    
+                    const updateData = await updateResponse.json();
+                    showResult({ step: 'Update Test Role', result: updateData });
+                    
+                    // Test 4: Delete the test role
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    const deleteResponse = await fetch(`${baseUrl}/roles/${testRoleId}`, {
+                        method: 'DELETE',
+                        headers: getHeaders()
+                    });
+                    
+                    const deleteData = await deleteResponse.json();
+                    showResult({ step: 'Delete Test Role', result: deleteData });
+                    
+                    // Refresh the list
+                    await getAllRoles();
+                }
+            } catch (error) {
+                showResult({ error: error.message }, true);
+            }
+        }
+
+        // Load roles on page load
+        window.onload = function() {
+            getAllRoles();
+        };
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('roleModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        };
+    </script>
+</body>
+</html>

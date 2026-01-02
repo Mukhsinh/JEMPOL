@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tickets API Connection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { border-color: #4CAF50; background-color: #f8fff8; }
+        .error { border-color: #f44336; background-color: #fff8f8; }
+        .warning { border-color: #ff9800; background-color: #fffaf0; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.online { background: #4CAF50; color: white; }
+        .status.offline { background: #f44336; color: white; }
+        .status.unknown { background: #ff9800; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Tickets API Connection</h1>
+        <p>Tool untuk menguji koneksi API halaman tickets dan mengidentifikasi masalah.</p>
+
+        <div class="test-section">
+            <h3>📊 Status Koneksi</h3>
+            <p>Backend API: <span id="apiStatus" class="status unknown">Checking...</span></p>
+            <p>Frontend URL: <span id="frontendUrl"></span></p>
+            <p>API Base URL: <span id="apiBaseUrl"></span></p>
+            <button onclick="checkConnection()">🔄 Cek Koneksi</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 Test Authentication</h3>
+            <p>Status Login: <span id="authStatus" class="status unknown">Unknown</span></p>
+            <button onclick="testLogin()">🔑 Test Login</button>
+            <button onclick="checkAuthToken()">🎫 Cek Token</button>
+            <div id="authResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎫 Test Tickets API</h3>
+            <button onclick="testTicketsEndpoint()">📋 Test /complaints/tickets</button>
+            <button onclick="testTicketsWithAuth()">🔒 Test dengan Auth</button>
+            <button onclick="testDirectSupabase()">🗄️ Test Direct DB</button>
+            <div id="ticketsResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🐛 Debug Information</h3>
+            <button onclick="showDebugInfo()">🔍 Show Debug Info</button>
+            <div id="debugInfo"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Test Results</h3>
+            <div id="testResults"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000/api' 
+            : '/api';
+
+        document.getElementById('frontendUrl').textContent = window.location.origin;
+        document.getElementById('apiBaseUrl').textContent = API_BASE_URL;
+
+        let authToken = null;
+
+        // Utility functions
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const resultDiv = document.getElementById('testResults');
+            const logEntry = document.createElement('div');
+            logEntry.className = `test-section ${type}`;
+            logEntry.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+            resultDiv.appendChild(logEntry);
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+        }
+
+        function updateStatus(elementId, status, text) {
+            const element = document.getElementById(elementId);
+            element.className = `status ${status}`;
+            element.textContent = text;
+        }
+
+        // Test functions
+        async function checkConnection() {
+            log('🔄 Checking backend connection...', 'warning');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStatus('apiStatus', 'online', 'Online');
+                    log('✅ Backend connection successful', 'success');
+                    log(`Response: ${JSON.stringify(data)}`, 'success');
+                } else {
+                    updateStatus('apiStatus', 'offline', 'Error');
+                    log(`❌ Backend connection failed: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                updateStatus('apiStatus', 'offline', 'Offline');
+                log(`❌ Backend connection error: ${error.message}`, 'error');
+                log('💡 Pastikan backend server berjalan di port 5000', 'warning');
+            }
+        }
+
+        async function testLogin() {
+            log('🔑 Testing login...', 'warning');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'admin@jempol.com',
+                        password: 'password'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    authToken = data.token;
+                    updateStatus('authStatus', 'online', 'Logged In');
+                    log('✅ Login successful', 'success');
+                    log(`Token: ${authToken.substring(0, 20)}...`, 'success');
+                    
+                    // Store token for other tests
+                    localStorage.setItem('auth_token', authToken);
+                } else {
+                    updateStatus('authStatus', 'offline', 'Failed');
+                    log(`❌ Login failed: ${data.error || 'Unknown error'}`, 'error');
+                }
+                
+                document.getElementById('authResult').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                updateStatus('authStatus', 'offline', 'Error');
+                log(`❌ Login error: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkAuthToken() {
+            const token = localStorage.getItem('auth_token') || authToken;
+            
+            if (!token) {
+                log('❌ No auth token found. Please login first.', 'error');
+                return;
+            }
+
+            log('🎫 Checking auth token...', 'warning');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    updateStatus('authStatus', 'online', 'Valid Token');
+                    log('✅ Token is valid', 'success');
+                } else {
+                    updateStatus('authStatus', 'offline', 'Invalid Token');
+                    log(`❌ Token validation failed: ${data.error || 'Unknown error'}`, 'error');
+                }
+                
+                document.getElementById('authResult').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                log(`❌ Token check error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testTicketsEndpoint() {
+            log('📋 Testing tickets endpoint...', 'warning');
+            
+            try {
+                // First test without auth
+                const response = await fetch(`${API_BASE_URL}/complaints/test`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log('✅ Test endpoint successful', 'success');
+                    document.getElementById('ticketsResult').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    log(`❌ Test endpoint failed: ${response.status} ${response.statusText}`, 'error');
+                    document.getElementById('ticketsResult').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                log(`❌ Test endpoint error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testTicketsWithAuth() {
+            const token = localStorage.getItem('auth_token') || authToken;
+            
+            if (!token) {
+                log('❌ No auth token. Please login first.', 'error');
+                return;
+            }
+
+            log('🔒 Testing tickets with authentication...', 'warning');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/complaints/tickets`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    log(`✅ Tickets API successful - Found ${data.data?.length || 0} tickets`, 'success');
+                } else {
+                    log(`❌ Tickets API failed: ${data.error || 'Unknown error'}`, 'error');
+                }
+                
+                document.getElementById('ticketsResult').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                log(`❌ Tickets API error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDirectSupabase() {
+            log('🗄️ Testing direct database connection...', 'warning');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/test/reports`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    log('✅ Direct DB test successful', 'success');
+                } else {
+                    log(`❌ Direct DB test failed: ${data.error || 'Unknown error'}`, 'error');
+                }
+                
+                document.getElementById('ticketsResult').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                log(`❌ Direct DB test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function showDebugInfo() {
+            const debugInfo = {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                url: window.location.href,
+                apiBaseUrl: API_BASE_URL,
+                localStorage: {
+                    authToken: localStorage.getItem('auth_token') ? 'Present' : 'Not found'
+                },
+                environment: {
+                    hostname: window.location.hostname,
+                    port: window.location.port,
+                    protocol: window.location.protocol
+                }
+            };
+
+            document.getElementById('debugInfo').innerHTML = `<pre>${JSON.stringify(debugInfo, null, 2)}</pre>`;
+            log('🔍 Debug information displayed', 'success');
+        }
+
+        // Auto-run connection check on load
+        window.addEventListener('load', () => {
+            log('🚀 Starting API connection tests...', 'warning');
+            checkConnection();
+        });
+    </script>
+</body>
+</html>

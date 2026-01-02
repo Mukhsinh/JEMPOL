@@ -10,7 +10,8 @@
         "get_publishable_keys",
         "get_logs",
         "execute_sql",
-        "get_advisors"
+        "get_advisors",
+        "search_docs"
       ]
     }
   }

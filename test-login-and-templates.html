@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login dan Response Templates</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Login dan Response Templates</h1>
+        
+        <div class="section">
+            <h3>1. Login dengan Supabase</h3>
+            <input type="email" id="email" placeholder="Email" value="admin@jempol.com">
+            <input type="password" id="password" placeholder="Password" value="admin123">
+            <button onclick="loginWithSupabase()">Login</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="section">
+            <h3>2. Test Response Templates API</h3>
+            <button onclick="testResponseTemplates()">Get Templates</button>
+            <div id="templatesResult"></div>
+        </div>
+
+        <div class="section">
+            <h3>3. Buka Halaman Frontend</h3>
+            <button onclick="openFrontendPage()">Buka Response Templates Page</button>
+            <div id="pageResult"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js';
+        
+        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+        
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        
+        window.supabase = supabase;
+        
+        window.loginWithSupabase = async function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
+                
+                const resultDiv = document.getElementById('loginResult');
+                
+                if (error) {
+                    resultDiv.innerHTML = `<div class="error">Login error: ${error.message}</div>`;
+                    return;
+                }
+                
+                if (data.user && data.session) {
+                    // Store admin data
+                    const adminData = {
+                        id: data.user.id,
+                        email: data.user.email,
+                        role: 'admin'
+                    };
+                    localStorage.setItem('adminUser', JSON.stringify(adminData));
+                    
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>Login berhasil!</strong><br>
+                            User ID: ${data.user.id}<br>
+                            Email: ${data.user.email}<br>
+                            Token: ${data.session.access_token.substring(0, 20)}...
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">Login gagal: No user or session</div>`;
+                }
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        };
+        
+        window.testResponseTemplates = async function() {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                
+                if (!session) {
+                    document.getElementById('templatesResult').innerHTML = '<div class="error">Tidak ada session. Login dulu!</div>';
+                    return;
+                }
+                
+                const response = await fetch('/api/response-templates', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('templatesResult');
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>Templates berhasil diambil (${result.data.length} items):</strong>
+                            <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">API Error: ${result.message || result.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('templatesResult').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        };
+        
+        window.openFrontendPage = function() {
+            window.open('http://localhost:3001/settings/response-templates', '_blank');
+            document.getElementById('pageResult').innerHTML = '<div class="success">Halaman dibuka di tab baru. Sekarang seharusnya bisa akses API.</div>';
+        };
+    </script>
+</body>
+</html>

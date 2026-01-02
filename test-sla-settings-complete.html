@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SLA Settings Complete</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th { background-color: #f8f9fa; }
+        .priority-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .priority-low { background-color: #d4edda; color: #155724; }
+        .priority-medium { background-color: #fff3cd; color: #856404; }
+        .priority-high { background-color: #f8d7da; color: #721c24; }
+        .priority-critical { background-color: #f5c6cb; color: #721c24; }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test SLA Settings Complete</h1>
+        <p>Test komprehensif untuk halaman SLA Settings - API, Frontend, dan Integrasi.</p>
+        
+        <div>
+            <button onclick="runAllTests()">🚀 Run All Tests</button>
+            <button onclick="testBackendAPI()">🔧 Test Backend API</button>
+            <button onclick="testFrontendComponents()">🎨 Test Frontend</button>
+            <button onclick="testDataIntegrity()">📊 Test Data Integrity</button>
+            <button onclick="clearResults()">🧹 Clear Results</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5000/api';
+        const FRONTEND_URL = 'http://localhost:3000';
+        
+        // Token untuk testing (gunakan token yang valid)
+        const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI5NzNhYzI4Zi1lNzJkLTQ4YzMtYjI4Ni1mNzE0ZGY4YzQwNzAiLCJ1c2VybmFtZSI6ImFkbWluIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzM1NjM5NzU4LCJleHAiOjE3MzU3MjYxNTh9.Hs8vJOEQGOGjJhKGxOqNkXqY8vP2wL9mR5sT3uV7xZ1';
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+            
+            // Auto scroll to bottom
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function makeRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    headers: {
+                        'Authorization': `Bearer ${TEST_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${data.error || 'Unknown error'}`);
+                }
+
+                return { success: true, data, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function runAllTests() {
+            addResult('🚀 Starting comprehensive SLA Settings tests...', 'info');
+            
+            await testBackendAPI();
+            await testFrontendComponents();
+            await testDataIntegrity();
+            
+            addResult('✅ All tests completed!', 'success');
+        }
+
+        async function testBackendAPI() {
+            addResult('<div class="test-section"><h3>🔧 Backend API Tests</h3></div>', 'info');
+            
+            // Test 1: Health check
+            addResult('1️⃣ Testing backend health...', 'info');
+            try {
+                const response = await fetch(`http://localhost:3001/health`);
+                if (response.ok) {
+                    addResult('✅ Backend server is healthy', 'success');
+                } else {
+                    addResult('❌ Backend server health check failed', 'error');
+                    return;
+                }
+            } catch (error) {
+                addResult(`❌ Backend server not accessible: ${error.message}`, 'error');
+                return;
+            }
+
+            // Test 2: SLA Settings endpoint
+            addResult('2️⃣ Testing SLA Settings API endpoint...', 'info');
+            const slaResult = await makeRequest('/master-data/sla-settings');
+            
+            if (slaResult.success) {
+                addResult(`✅ SLA Settings API working! Found ${slaResult.data.length} records`, 'success');
+                
+                if (slaResult.data.length > 0) {
+                    const sampleSLA = slaResult.data[0];
+                    addResult(`📊 Sample SLA: ${sampleSLA.name} (${sampleSLA.priority_level})`, 'info');
+                    
+                    // Validate data structure
+                    const requiredFields = ['id', 'name', 'priority_level', 'response_time_hours', 'resolution_time_hours'];
+                    const missingFields = requiredFields.filter(field => !sampleSLA.hasOwnProperty(field));
+                    
+                    if (missingFields.length === 0) {
+                        addResult('✅ SLA data structure is valid', 'success');
+                    } else {
+                        addResult(`⚠️ Missing fields in SLA data: ${missingFields.join(', ')}`, 'warning');
+                    }
+                }
+            } else {
+                addResult(`❌ SLA Settings API failed: ${slaResult.error}`, 'error');
+            }
+
+            // Test 3: Dropdown data endpoints
+            addResult('3️⃣ Testing dropdown data endpoints...', 'info');
+            const dropdownEndpoints = [
+                { name: 'Unit Types', url: '/master-data/unit-types' },
+                { name: 'Service Categories', url: '/master-data/service-categories' },
+                { name: 'Patient Types', url: '/master-data/patient-types' }
+            ];
+            
+            for (const endpoint of dropdownEndpoints) {
+                const result = await makeRequest(endpoint.url);
+                if (result.success) {
+                    addResult(`✅ ${endpoint.name}: ${result.data.length} items available`, 'success');
+                } else {
+                    addResult(`❌ ${endpoint.name} failed: ${result.error}`, 'error');
+                }
+            }
+        }
+
+        async function testFrontendComponents() {
+            addResult('<div class="test-section"><h3>🎨 Frontend Component Tests</h3></div>', 'info');
+            
+            // Test 1: Frontend server accessibility
+            addResult('1️⃣ Testing frontend server...', 'info');
+            try {
+                const response = await fetch(FRONTEND_URL, { 
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+                addResult('✅ Frontend server is accessible', 'success');
+            } catch (error) {
+                addResult(`❌ Frontend server error: ${error.message}`, 'error');
+                addResult('💡 Make sure frontend is running: npm start', 'warning');
+            }
+
+            // Test 2: Check localStorage for auth
+            addResult('2️⃣ Checking authentication state...', 'info');
+            const token = localStorage.getItem('token');
+            if (token) {
+                addResult('✅ Auth token found in localStorage', 'success');
+                
+                // Try to decode token (basic check)
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    const isExpired = payload.exp * 1000 < Date.now();
+                    
+                    if (isExpired) {
+                        addResult('⚠️ Auth token is expired', 'warning');
+                    } else {
+                        addResult(`✅ Auth token is valid (user: ${payload.username})`, 'success');
+                    }
+                } catch (e) {
+                    addResult('⚠️ Could not decode auth token', 'warning');
+                }
+            } else {
+                addResult('⚠️ No auth token found - user may need to login', 'warning');
+            }
+
+            // Test 3: Simulate React component behavior
+            addResult('3️⃣ Simulating SLA Settings component lifecycle...', 'info');
+            
+            // Simulate useEffect - loadSLASettings
+            const slaData = await makeRequest('/master-data/sla-settings');
+            if (slaData.success) {
+                addResult('✅ Component would load SLA data successfully', 'success');
+                
+                // Simulate rendering logic
+                if (slaData.data.length === 0) {
+                    addResult('📝 Component would show "Belum ada pengaturan SLA" message', 'info');
+                } else {
+                    addResult(`📋 Component would render table with ${slaData.data.length} SLA settings`, 'success');
+                }
+            } else {
+                addResult('❌ Component would show error state', 'error');
+            }
+
+            // Test 4: Check for common frontend issues
+            addResult('4️⃣ Checking for common frontend issues...', 'info');
+            
+            if (window.location.protocol === 'file:') {
+                addResult('⚠️ Running from file:// protocol may cause CORS issues', 'warning');
+            }
+            
+            // Check if Material Symbols are available (used in the UI)
+            const testIcon = document.createElement('span');
+            testIcon.className = 'material-symbols-outlined';
+            testIcon.textContent = 'settings';
+            testIcon.style.position = 'absolute';
+            testIcon.style.visibility = 'hidden';
+            document.body.appendChild(testIcon);
+            
+            setTimeout(() => {
+                const computedStyle = window.getComputedStyle(testIcon);
+                if (computedStyle.fontFamily.includes('Material Symbols')) {
+                    addResult('✅ Material Symbols icons are loaded', 'success');
+                } else {
+                    addResult('⚠️ Material Symbols icons may not be loaded properly', 'warning');
+                }
+                document.body.removeChild(testIcon);
+            }, 100);
+        }
+
+        async function testDataIntegrity() {
+            addResult('<div class="test-section"><h3>📊 Data Integrity Tests</h3></div>', 'info');
+            
+            // Test 1: SLA Settings data validation
+            addResult('1️⃣ Validating SLA Settings data integrity...', 'info');
+            
+            const slaResult = await makeRequest('/master-data/sla-settings');
+            if (slaResult.success && slaResult.data.length > 0) {
+                let validCount = 0;
+                let invalidCount = 0;
+                
+                slaResult.data.forEach((sla, index) => {
+                    const issues = [];
+                    
+                    // Check required fields
+                    if (!sla.name || sla.name.trim() === '') issues.push('Empty name');
+                    if (!sla.priority_level) issues.push('Missing priority level');
+                    if (!sla.response_time_hours || sla.response_time_hours <= 0) issues.push('Invalid response time');
+                    if (!sla.resolution_time_hours || sla.resolution_time_hours <= 0) issues.push('Invalid resolution time');
+                    
+                    // Check logical constraints
+                    if (sla.response_time_hours >= sla.resolution_time_hours) {
+                        issues.push('Response time should be less than resolution time');
+                    }
+                    
+                    if (issues.length === 0) {
+                        validCount++;
+                    } else {
+                        invalidCount++;
+                        addResult(`⚠️ SLA "${sla.name}": ${issues.join(', ')}`, 'warning');
+                    }
+                });
+                
+                addResult(`✅ Data validation complete: ${validCount} valid, ${invalidCount} with issues`, 
+                    invalidCount === 0 ? 'success' : 'warning');
+            }
+
+            // Test 2: Foreign key relationships
+            addResult('2️⃣ Testing foreign key relationships...', 'info');
+            
+            const [unitTypes, serviceCategories, patientTypes] = await Promise.all([
+                makeRequest('/master-data/unit-types'),
+                makeRequest('/master-data/service-categories'),
+                makeRequest('/master-data/patient-types')
+            ]);
+            
+            if (unitTypes.success && serviceCategories.success && patientTypes.success) {
+                addResult('✅ All reference data endpoints are accessible', 'success');
+                
+                // Check if SLA settings reference valid IDs
+                if (slaResult.success) {
+                    const unitTypeIds = new Set(unitTypes.data.map(ut => ut.id));
+                    const serviceCategoryIds = new Set(serviceCategories.data.map(sc => sc.id));
+                    const patientTypeIds = new Set(patientTypes.data.map(pt => pt.id));
+                    
+                    let orphanedReferences = 0;
+                    
+                    slaResult.data.forEach(sla => {
+                        if (sla.unit_type_id && !unitTypeIds.has(sla.unit_type_id)) {
+                            addResult(`⚠️ SLA "${sla.name}" references invalid unit type ID`, 'warning');
+                            orphanedReferences++;
+                        }
+                        if (sla.service_category_id && !serviceCategoryIds.has(sla.service_category_id)) {
+                            addResult(`⚠️ SLA "${sla.name}" references invalid service category ID`, 'warning');
+                            orphanedReferences++;
+                        }
+                        if (sla.patient_type_id && !patientTypeIds.has(sla.patient_type_id)) {
+                            addResult(`⚠️ SLA "${sla.name}" references invalid patient type ID`, 'warning');
+                            orphanedReferences++;
+                        }
+                    });
+                    
+                    if (orphanedReferences === 0) {
+                        addResult('✅ All foreign key references are valid', 'success');
+                    } else {
+                        addResult(`⚠️ Found ${orphanedReferences} orphaned references`, 'warning');
+                    }
+                }
+            } else {
+                addResult('❌ Could not verify foreign key relationships', 'error');
+            }
+
+            // Test 3: Performance check
+            addResult('3️⃣ Performance check...', 'info');
+            const startTime = performance.now();
+            
+            await makeRequest('/master-data/sla-settings');
+            
+            const endTime = performance.now();
+            const responseTime = endTime - startTime;
+            
+            if (responseTime < 1000) {
+                addResult(`✅ API response time: ${responseTime.toFixed(2)}ms (Good)`, 'success');
+            } else if (responseTime < 3000) {
+                addResult(`⚠️ API response time: ${responseTime.toFixed(2)}ms (Acceptable)`, 'warning');
+            } else {
+                addResult(`❌ API response time: ${responseTime.toFixed(2)}ms (Slow)`, 'error');
+            }
+        }
+
+        // Auto-run basic checks when page loads
+        window.onload = function() {
+            addResult('🚀 SLA Settings Test Suite loaded. Ready for testing!', 'info');
+            addResult('💡 Click "Run All Tests" to start comprehensive testing.', 'info');
+        };
+    </script>
+</body>
+</html>

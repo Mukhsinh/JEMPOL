@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Response Templates API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Response Templates API</h1>
+        
+        <div class="section">
+            <h3>1. Login Admin</h3>
+            <input type="text" id="username" placeholder="Email" value="admin@jempol.com">
+            <input type="password" id="password" placeholder="Password" value="admin123">
+            <button onclick="loginAdmin()">Login</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="section">
+            <h3>2. Test Get Templates</h3>
+            <button onclick="getTemplates()">Get All Templates</button>
+            <div id="templatesResult"></div>
+        </div>
+
+        <div class="section">
+            <h3>3. Test Create Template</h3>
+            <input type="text" id="templateName" placeholder="Template Name" value="Test Template">
+            <input type="text" id="templateSubject" placeholder="Subject" value="Test Subject">
+            <textarea id="templateContent" placeholder="Content" rows="3">Test content with {{variable}}</textarea>
+            <input type="text" id="templateCategory" placeholder="Category" value="AUTO_REPLY">
+            <input type="text" id="templateVariables" placeholder="Variables (comma separated)" value="variable, test_var">
+            <button onclick="createTemplate()">Create Template</button>
+            <div id="createResult"></div>
+        </div>
+
+        <div class="section">
+            <h3>4. Server Status</h3>
+            <button onclick="checkServerStatus()">Check Status</button>
+            <div id="statusResult"></div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = '';
+        const API_BASE = 'http://localhost:5001/api';
+
+        async function loginAdmin() {
+            const email = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('loginResult');
+                
+                if (result.success && result.data && result.data.session) {
+                    authToken = result.data.session.access_token;
+                    resultDiv.innerHTML = `<div class="success">Login berhasil! Token: ${authToken.substring(0, 20)}...</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">Login gagal: ${result.message || 'Unknown error'}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function getTemplates() {
+            try {
+                const response = await fetch(`${API_BASE}/response-templates`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('templatesResult');
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>Templates berhasil diambil (${result.data.length} items):</strong>
+                            <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">Error: ${result.message || result.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('templatesResult').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function createTemplate() {
+            const name = document.getElementById('templateName').value;
+            const subject = document.getElementById('templateSubject').value;
+            const content = document.getElementById('templateContent').value;
+            const category = document.getElementById('templateCategory').value;
+            const variables = document.getElementById('templateVariables').value.split(',').map(v => v.trim());
+            
+            try {
+                const response = await fetch(`${API_BASE}/response-templates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        name,
+                        subject,
+                        content,
+                        category,
+                        variables,
+                        is_active: true
+                    })
+                });
+                
+                const result = await response.json();
+                const resultDiv = document.getElementById('createResult');
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>Template berhasil dibuat:</strong>
+                            <pre>${JSON.stringify(result.data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">Error: ${result.message || result.error}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('createResult').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        async function checkServerStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const result = await response.json();
+                const resultDiv = document.getElementById('statusResult');
+                
+                if (result.success) {
+                    resultDiv.innerHTML = `<div class="success">Server berjalan normal: ${result.message}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">Server error: ${result.message}</div>`;
+                }
+            } catch (error) {
+                document.getElementById('statusResult').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // Auto check server status on load
+        window.onload = function() {
+            checkServerStatus();
+        };
+    </script>
+</body>
+</html>
