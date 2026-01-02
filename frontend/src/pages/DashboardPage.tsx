@@ -5,7 +5,7 @@ import { supabase } from '../utils/supabaseClient';
 import Modal from '../components/ui/Modal';
 import { Database } from '../types/supabase';
 import unitService, { Unit } from '../services/unitService';
-import { masterDataService, ServiceCategory, TicketStatus } from '../services/masterDataService';
+import { masterDataService, ServiceCategory } from '../services/masterDataService';
 
 type Ticket = Database['public']['Tables']['tickets']['Row'] & {
     unit?: { name: string } | null;
@@ -80,8 +80,8 @@ export default function DashboardPage() {
             setServiceCategories(categoriesResponse || []);
             
             // Fetch ticket statuses
-            const statusesResponse = await masterDataService.getTicketStatuses();
-            setTicketStatuses(statusesResponse || []);
+            // const statusesResponse = await masterDataService.getTicketStatuses();
+            // setTicketStatuses(statusesResponse || []);
         } catch (error) {
             console.error('Error fetching master data:', error);
         }
