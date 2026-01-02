@@ -16,3 +16,5 @@ uploads/*
 !uploads/.gitkeep
 backend/dist
 backend/build
+# Keep frontend/dist for deployment
+!frontend/dist

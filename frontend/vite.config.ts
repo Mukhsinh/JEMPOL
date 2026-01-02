@@ -14,9 +14,18 @@ export default defineConfig({
     },
   },
   build: {
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: undefined,
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          router: ['react-router-dom'],
+          ui: ['lucide-react'],
+          game: ['phaser'],
+          http: ['axios'],
+          supabase: ['@supabase/supabase-js'],
+          socket: ['socket.io-client']
+        },
       },
     },
   },
