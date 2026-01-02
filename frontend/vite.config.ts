@@ -15,17 +15,17 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom'],
-          ui: ['lucide-react'],
-          game: ['phaser'],
-          http: ['axios'],
-          supabase: ['@supabase/supabase-js'],
-          socket: ['socket.io-client']
+          'react-vendor': ['react', 'react-dom'],
+          'router': ['react-router-dom'],
+          'ui-components': ['lucide-react'],
+          'game-engine': ['phaser'],
+          'http-client': ['axios'],
+          'supabase-client': ['@supabase/supabase-js'],
+          'socket-client': ['socket.io-client']
         },
       },
     },
