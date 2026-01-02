@@ -11,7 +11,8 @@
         "get_logs",
         "execute_sql",
         "get_advisors",
-        "search_docs"
+        "search_docs",
+        "list_edge_functions"
       ]
     }
   }

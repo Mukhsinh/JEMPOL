@@ -23,9 +23,11 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "puppeteer": "^21.11.0"
+    "puppeteer": "^24.34.0"
   },
   "dependencies": {
-    "node-fetch": "^3.3.2"
+    "cloudinary": "2.8.0",
+    "node-fetch": "^3.3.2",
+    "vite": "7.3.0"
   }
 }
