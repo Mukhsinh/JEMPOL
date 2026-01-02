@@ -359,7 +359,7 @@ io.on('connection', (socket) => {
 // Make io accessible to routes
 app.set('io', io);
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3003;
 
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

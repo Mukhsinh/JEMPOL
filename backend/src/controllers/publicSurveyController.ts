@@ -99,10 +99,17 @@ export const submitPublicSurvey = async (req: Request, res: Response) => {
 
         // Update QR code usage jika ada
         if (qr_code) {
+            // Get current usage count first
+            const { data: currentQR } = await supabase
+                .from('qr_codes')
+                .select('usage_count')
+                .eq('code', qr_code)
+                .single();
+
             await supabase
                 .from('qr_codes')
                 .update({ 
-                    usage_count: supabase.raw('usage_count + 1'),
+                    usage_count: (currentQR?.usage_count || 0) + 1,
                     updated_at: new Date().toISOString()
                 })
                 .eq('code', qr_code);

@@ -36,15 +36,15 @@ export const createEscalationRule = async (req: Request, res: Response) => {
     }
 
     // Validate escalation logic
-    const roleHierarchy = { staff: 1, supervisor: 2, manager: 3, director: 4 };
-    if (roleHierarchy[from_role] >= roleHierarchy[to_role]) {
+    const roleHierarchy: { [key: string]: number } = { staff: 1, supervisor: 2, manager: 3, director: 4 };
+    if (roleHierarchy[from_role as string] >= roleHierarchy[to_role as string]) {
       return res.status(400).json({
         error: 'Eskalasi harus ke role yang lebih tinggi'
       });
     }
 
     // Get current user ID (from auth middleware)
-    const created_by = req.user?.id;
+    const created_by = (req as any).user?.id;
 
     const { data: rule, error } = await supabase
       .from('ai_escalation_rules')
@@ -422,12 +422,19 @@ export const executeEscalationRule = async (req: Request, res: Response) => {
           to_role: rule.to_role
         });
 
+      // Get current rule statistics first
+      const { data: currentRule } = await supabase
+        .from('ai_escalation_rules')
+        .select('execution_count, success_count')
+        .eq('id', rule_id)
+        .single();
+
       // Update rule statistics
       await supabase
         .from('ai_escalation_rules')
         .update({
-          execution_count: supabase.sql`execution_count + 1`,
-          success_count: supabase.sql`success_count + 1`,
+          execution_count: (currentRule?.execution_count || 0) + 1,
+          success_count: (currentRule?.success_count || 0) + 1,
           updated_at: new Date().toISOString()
         })
         .eq('id', rule_id);
@@ -456,11 +463,18 @@ export const executeEscalationRule = async (req: Request, res: Response) => {
           error_message: executionError instanceof Error ? executionError.message : 'Unknown error'
         });
 
+      // Get current rule statistics first
+      const { data: currentRule2 } = await supabase
+        .from('ai_escalation_rules')
+        .select('execution_count')
+        .eq('id', rule_id)
+        .single();
+
       // Update rule statistics
       await supabase
         .from('ai_escalation_rules')
         .update({
-          execution_count: supabase.sql`execution_count + 1`,
+          execution_count: (currentRule2?.execution_count || 0) + 1,
           updated_at: new Date().toISOString()
         })
         .eq('id', rule_id);
@@ -760,12 +774,19 @@ const executeEscalationForTicket = async (rule: any, ticket: any) => {
       to_role: rule.to_role
     });
 
+  // Get current rule statistics first
+  const { data: currentRule3 } = await supabase
+    .from('ai_escalation_rules')
+    .select('execution_count, success_count')
+    .eq('id', rule.id)
+    .single();
+
   // Update rule statistics
   await supabase
     .from('ai_escalation_rules')
     .update({
-      execution_count: supabase.sql`execution_count + 1`,
-      success_count: supabase.sql`success_count + 1`,
+      execution_count: (currentRule3?.execution_count || 0) + 1,
+      success_count: (currentRule3?.success_count || 0) + 1,
       updated_at: new Date().toISOString()
     })
     .eq('id', rule.id);

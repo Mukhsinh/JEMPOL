@@ -15,8 +15,8 @@ const getApiBaseUrl = () => {
     return '/api';
   }
   
-  // In development, use localhost
-  return 'http://localhost:5000/api';
+  // In development, use localhost with correct port
+  return 'http://localhost:3003/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();

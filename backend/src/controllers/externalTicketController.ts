@@ -445,65 +445,64 @@ export const getExternalTicketStats = async (req: Request, res: Response) => {
   try {
     const { unit_id, date_from, date_to } = req.query;
 
-    let baseQuery = supabase.from('external_tickets');
+    let query = supabase.from('external_tickets').select('*');
     
     if (unit_id) {
-      baseQuery = baseQuery.eq('unit_id', unit_id);
+      query = query.eq('unit_id', unit_id);
     }
     
     if (date_from) {
-      baseQuery = baseQuery.gte('created_at', date_from);
+      query = query.gte('created_at', date_from);
     }
     
     if (date_to) {
-      baseQuery = baseQuery.lte('created_at', date_to);
+      query = query.lte('created_at', date_to);
     }
 
     // Get counts by status
-    const { data: statusCounts } = await baseQuery
-      .select('status')
-      .then(result => {
-        const counts = result.data?.reduce((acc: any, ticket: any) => {
-          acc[ticket.status] = (acc[ticket.status] || 0) + 1;
-          return acc;
-        }, {});
-        return { data: counts };
-      });
+    const { data: statusData } = await query.select('status');
+    const statusCounts = statusData?.reduce((acc: any, ticket: any) => {
+      acc[ticket.status] = (acc[ticket.status] || 0) + 1;
+      return acc;
+    }, {}) || {};
 
     // Get counts by service type
-    const { data: serviceCounts } = await baseQuery
-      .select('service_type')
-      .then(result => {
-        const counts = result.data?.reduce((acc: any, ticket: any) => {
-          acc[ticket.service_type] = (acc[ticket.service_type] || 0) + 1;
-          return acc;
-        }, {});
-        return { data: counts };
-      });
+    let serviceQuery = supabase.from('external_tickets').select('service_type');
+    if (unit_id) serviceQuery = serviceQuery.eq('unit_id', unit_id);
+    if (date_from) serviceQuery = serviceQuery.gte('created_at', date_from);
+    if (date_to) serviceQuery = serviceQuery.lte('created_at', date_to);
+    
+    const { data: serviceData } = await serviceQuery;
+    const serviceCounts = serviceData?.reduce((acc: any, ticket: any) => {
+      acc[ticket.service_type] = (acc[ticket.service_type] || 0) + 1;
+      return acc;
+    }, {}) || {};
 
     // Get average response time
-    const { data: avgResponseTime } = await baseQuery
-      .select('created_at, first_response_at')
-      .not('first_response_at', 'is', null)
-      .then(result => {
-        if (!result.data || result.data.length === 0) return { data: 0 };
-        
-        const totalTime = result.data.reduce((sum: number, ticket: any) => {
-          const created = new Date(ticket.created_at);
-          const responded = new Date(ticket.first_response_at);
-          return sum + (responded.getTime() - created.getTime());
-        }, 0);
-        
-        const avgMs = totalTime / result.data.length;
-        const avgHours = avgMs / (1000 * 60 * 60);
-        return { data: Math.round(avgHours * 100) / 100 };
-      });
+    let responseQuery = supabase.from('external_tickets').select('created_at, first_response_at').not('first_response_at', 'is', null);
+    if (unit_id) responseQuery = responseQuery.eq('unit_id', unit_id);
+    if (date_from) responseQuery = responseQuery.gte('created_at', date_from);
+    if (date_to) responseQuery = responseQuery.lte('created_at', date_to);
+    
+    const { data: responseData } = await responseQuery;
+    let avgResponseTime = 0;
+    
+    if (responseData && responseData.length > 0) {
+      const totalTime = responseData.reduce((sum: number, ticket: any) => {
+        const created = new Date(ticket.created_at);
+        const responded = new Date(ticket.first_response_at);
+        return sum + (responded.getTime() - created.getTime());
+      }, 0);
+      
+      const avgMs = totalTime / responseData.length;
+      avgResponseTime = Math.round((avgMs / (1000 * 60 * 60)) * 100) / 100;
+    }
 
     res.json({
-      status_counts: statusCounts || {},
-      service_type_counts: serviceCounts || {},
-      average_response_time_hours: avgResponseTime || 0,
-      total_tickets: Object.values(statusCounts || {}).reduce((sum: number, count: any) => sum + count, 0)
+      status_counts: statusCounts,
+      service_type_counts: serviceCounts,
+      average_response_time_hours: avgResponseTime,
+      total_tickets: Object.values(statusCounts).reduce((sum: number, count: any) => sum + count, 0)
     });
 
   } catch (error) {
