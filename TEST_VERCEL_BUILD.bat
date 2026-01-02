@@ -1,42 +1,45 @@
 @echo off
-echo ========================================
-echo TEST VERCEL BUILD - LOKAL
-echo ========================================
+echo Testing Vercel Build Process...
 echo.
 
-echo [1/3] Membersihkan build sebelumnya...
-if exist frontend\dist rmdir /s /q frontend\dist
-echo ✓ Selesai
-echo.
-
-echo [2/3] Menjalankan build script...
-call npm run vercel-build
+echo Step 1: Installing root dependencies...
+call npm install
 if %errorlevel% neq 0 (
-    echo.
-    echo ❌ BUILD GAGAL!
-    echo Periksa error di atas.
+    echo ERROR: Root npm install failed
     pause
     exit /b 1
 )
-echo ✓ Selesai
-echo.
 
-echo [3/3] Memeriksa hasil build...
-if exist frontend\dist\index.html (
-    echo ✓ Build berhasil! File index.html ditemukan.
-    echo.
-    echo 📁 Lokasi build: frontend\dist
-    dir frontend\dist
-) else (
-    echo ❌ Build gagal! File index.html tidak ditemukan.
+echo.
+echo Step 2: Building frontend...
+call npm run build:frontend
+if %errorlevel% neq 0 (
+    echo ERROR: Frontend build failed
+    pause
+    exit /b 1
 )
 
 echo.
-echo ========================================
-echo TEST SELESAI
-echo ========================================
+echo Step 3: Checking build output...
+if exist "frontend\dist" (
+    echo SUCCESS: Frontend dist folder exists
+    dir "frontend\dist"
+) else (
+    echo ERROR: Frontend dist folder not found
+    pause
+    exit /b 1
+)
+
 echo.
-echo Jika build berhasil, Anda siap deploy ke Vercel!
-echo Jalankan: git add . && git commit -m "fix: vercel config" && git push
+echo Step 4: Testing vercel-build script...
+call npm run vercel-build
+if %errorlevel% neq 0 (
+    echo ERROR: Vercel build script failed
+    pause
+    exit /b 1
+)
+
 echo.
+echo SUCCESS: All build steps completed successfully!
+echo Ready for Vercel deployment.
 pause
