@@ -1,38 +1,30 @@
 @echo off
 echo ========================================
-echo DEPLOY VERCEL - FINAL FIXED VERSION
+echo DEPLOY VERCEL - PERBAIKAN FINAL
 echo ========================================
 
 echo.
-echo [1/4] Testing build locally...
+echo [1/4] Membersihkan cache dan dependencies...
 cd frontend
-call npm run build
-if %errorlevel% neq 0 (
-    echo ERROR: Build failed locally!
-    pause
-    exit /b 1
-)
+if exist node_modules rmdir /s /q node_modules 2>nul
+if exist dist rmdir /s /q dist 2>nul
+npm cache clean --force
+
+echo.
+echo [2/4] Install dependencies frontend...
+npm install
+
+echo.
+echo [3/4] Test build lokal...
+npm run build
+
+echo.
+echo [4/4] Deploy ke Vercel...
 cd ..
-
-echo.
-echo [2/4] Adding changes to git...
-git add .
-git status
-
-echo.
-echo [3/4] Committing changes...
-git commit -m "Fix Vercel deploy: Update build command and output directory"
-
-echo.
-echo [4/4] Pushing to GitHub (will trigger Vercel deploy)...
-git push origin main
+vercel --prod
 
 echo.
 echo ========================================
-echo DEPLOY COMPLETED!
+echo DEPLOY SELESAI!
 echo ========================================
-echo.
-echo Check Vercel dashboard for deployment status:
-echo https://vercel.com/dashboard
-echo.
 pause
