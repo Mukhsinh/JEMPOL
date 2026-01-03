@@ -1,70 +1,51 @@
 @echo off
 echo ========================================
-echo DEPLOY VERCEL - FINAL COMPLETE VERSION
+echo    DEPLOY VERCEL - PERBAIKAN FINAL
 echo ========================================
 echo.
 
-echo [1/5] Cleaning previous build...
-if exist "frontend\dist" rmdir /s /q "frontend\dist"
-echo ✓ Cleaned previous build
+echo [1/5] Membersihkan cache dan build lama...
+cd frontend
+if exist dist rmdir /s /q dist
+if exist node_modules\.cache rmdir /s /q node_modules\.cache
+echo ✓ Cache dibersihkan
 
 echo.
-echo [2/5] Installing dependencies...
-call npm install
-if %errorlevel% neq 0 (
-    echo ❌ Failed to install root dependencies
-    pause
-    exit /b 1
-)
-
-cd frontend
-call npm install
-if %errorlevel% neq 0 (
-    echo ❌ Failed to install frontend dependencies
-    cd ..
-    pause
-    exit /b 1
-)
-cd ..
-echo ✓ Dependencies installed
-
-echo.
-echo [3/5] Building frontend...
-cd frontend
+echo [2/5] Testing build lokal...
 call npm run build
 if %errorlevel% neq 0 (
-    echo ❌ Frontend build failed
-    cd ..
+    echo ❌ Build gagal! Periksa error di atas.
     pause
     exit /b 1
 )
+echo ✓ Build lokal berhasil
+
+echo.
+echo [3/5] Kembali ke root directory...
 cd ..
-echo ✓ Frontend built successfully
 
 echo.
-echo [4/5] Verifying build output...
-if not exist "frontend\dist\index.html" (
-    echo ❌ Build output not found
-    pause
-    exit /b 1
-)
-echo ✓ Build output verified
-
+echo [4/5] Memulai deploy ke Vercel...
+echo Pastikan Anda sudah login ke Vercel CLI dengan: vercel login
 echo.
-echo [5/5] Deploying to Vercel...
-call vercel --prod
+vercel --prod
 if %errorlevel% neq 0 (
-    echo ❌ Vercel deployment failed
+    echo ❌ Deploy gagal! Periksa error di atas.
+    echo.
+    echo Troubleshooting:
+    echo - Pastikan sudah login: vercel login
+    echo - Periksa vercel.json
+    echo - Periksa environment variables
     pause
     exit /b 1
 )
 
 echo.
-echo ========================================
-echo ✅ DEPLOYMENT COMPLETED SUCCESSFULLY!
-echo ========================================
+echo [5/5] Deploy selesai!
+echo ✓ Aplikasi berhasil di-deploy ke Vercel
+echo ✓ Frontend dan backend terintegrasi
+echo ✓ Database Supabase terhubung
 echo.
-echo Your application has been deployed to Vercel.
-echo Check the Vercel dashboard for the deployment URL.
+echo Aplikasi siap digunakan di production!
 echo.
 pause

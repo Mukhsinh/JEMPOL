@@ -33,10 +33,13 @@ const TicketDetail: React.FC = () => {
 
                         // Fetch ticket details
         if (id) {
-          // Untuk sementara, gunakan method yang ada
-          const ticketData = await complaintService.getComplaintsByUnit('all');
-          const foundTicket = ticketData.find((t: any) => t.id === id);
-          setTicket(foundTicket || null);
+          // Gunakan method getTicket yang tersedia
+          const ticketResponse = await complaintService.getTicket(id);
+          if (ticketResponse.success) {
+            setTicket(ticketResponse.data);
+          } else {
+            setError(ticketResponse.error || 'Gagal mengambil data tiket');
+          }
         }
 
         // Fetch master data for display
