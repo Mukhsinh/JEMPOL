@@ -17,6 +17,39 @@ export interface ReportData {
     name: string;
     code: string;
   };
+  // KPI data
+  kpi?: {
+    totalComplaints: number;
+    totalComplaintsChange: number;
+    resolvedComplaints: number;
+    resolvedComplaintsChange: number;
+    averageResponseTime: number;
+    averageResponseTimeChange: number;
+    projectedNextWeek: number;
+  };
+  // Trend data
+  trends?: Array<{
+    date: string;
+    complaints: number;
+    resolved: number;
+  }>;
+  // Risk analysis
+  riskAnalysis?: Array<{
+    category: string;
+    level: string;
+    count: number;
+    description: string;
+  }>;
+  // Detailed reports
+  detailedReports?: Array<{
+    id: string;
+    title: string;
+    status: string;
+    priority: string;
+    created_at: string;
+  }>;
+  // Pagination
+  totalReports?: number;
 }
 
 export interface ReportFilters {

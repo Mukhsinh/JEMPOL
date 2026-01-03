@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContextOptimized';
+import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
 
 interface NavigationItem {

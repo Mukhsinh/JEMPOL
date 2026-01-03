@@ -1,4 +1,4 @@
-import { supabase } from '../utils/supabaseClientOptimized';
+import { supabase } from '../utils/supabaseClient';
 
 export interface LoginCredentials {
   email: string;
@@ -31,7 +31,7 @@ class AuthService {
 
       // Clear any existing session
       await supabase.auth.signOut();
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // Validate input
       const cleanEmail = email.trim().toLowerCase();
@@ -44,11 +44,20 @@ class AuthService {
 
       console.log('📧 Login attempt for:', cleanEmail);
 
-      // Attempt login with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      // Attempt login with Supabase Auth dengan timeout
+      const loginPromise = supabase.auth.signInWithPassword({
         email: cleanEmail,
         password: password,
       });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Login timeout')), 15000);
+      });
+
+      const { data: authData, error: authError } = await Promise.race([
+        loginPromise,
+        timeoutPromise
+      ]) as any;
 
       if (authError) {
         console.error('❌ Auth error:', authError);
@@ -57,6 +66,8 @@ class AuthService {
           errorMessage = 'Email atau password salah';
         } else if (authError.message?.includes('Email not confirmed')) {
           errorMessage = 'Email belum dikonfirmasi';
+        } else if (authError.message?.includes('timeout')) {
+          errorMessage = 'Koneksi timeout, coba lagi';
         }
         return {
           success: false,
@@ -73,13 +84,22 @@ class AuthService {
 
       console.log('✅ Auth successful, fetching admin profile...');
 
-      // Get admin profile from admins table
-      const { data: adminProfile, error: profileError } = await supabase
+      // Get admin profile from admins table dengan timeout
+      const profilePromise = supabase
         .from('admins')
         .select('*')
         .eq('email', cleanEmail)
         .eq('is_active', true)
         .single();
+
+      const profileTimeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000);
+      });
+
+      const { data: adminProfile, error: profileError } = await Promise.race([
+        profilePromise,
+        profileTimeoutPromise
+      ]) as any;
 
       if (profileError || !adminProfile) {
         console.error('❌ Profile error:', profileError);
@@ -113,9 +133,13 @@ class AuthService {
       };
     } catch (error: any) {
       console.error('❌ Unexpected login error:', error);
+      let errorMessage = 'Terjadi kesalahan yang tidak terduga';
+      if (error.message?.includes('timeout')) {
+        errorMessage = 'Koneksi timeout, silakan coba lagi';
+      }
       return {
         success: false,
-        error: error.message || 'Terjadi kesalahan yang tidak terduga',
+        error: errorMessage,
       };
     }
   }

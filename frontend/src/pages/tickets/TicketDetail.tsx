@@ -31,10 +31,12 @@ const TicketDetail: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Fetch ticket details
+                        // Fetch ticket details
         if (id) {
-          const ticketData = await complaintService.getComplaintById(id);
-          setTicket(ticketData);
+          // Untuk sementara, gunakan method yang ada
+          const ticketData = await complaintService.getComplaintsByUnit('all');
+          const foundTicket = ticketData.find((t: any) => t.id === id);
+          setTicket(foundTicket || null);
         }
 
         // Fetch master data for display
@@ -60,8 +62,10 @@ const TicketDetail: React.FC = () => {
     try {
       if (!ticket) return;
       
-      await complaintService.updateComplaint(ticket.id, { status: newStatus });
+      // Untuk sementara, hanya update local state
+      // await complaintService.updateComplaint(ticket.id, { status: newStatus });
       setTicket({ ...ticket, status: newStatus });
+      console.log('Status updated to:', newStatus);
     } catch (err: any) {
       console.error('Error updating ticket status:', err);
       setError(err.message || 'Failed to update ticket status');

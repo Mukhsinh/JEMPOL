@@ -65,42 +65,6 @@ export interface UpdateUserData {
 }
 
 class UserService {
-  // Helper function untuk fallback ke public endpoint
-  private async withPublicFallback<T>(
-    primaryEndpoint: string,
-    publicEndpoint: string,
-    defaultData: T[] = []
-  ): Promise<T[]> {
-    try {
-      const response = await api.get(primaryEndpoint);
-      return response.data?.data || [];
-    } catch (error) {
-      console.warn(`Primary endpoint ${primaryEndpoint} failed, trying public fallback...`, error);
-      try {
-        const fallbackResponse = await api.get(publicEndpoint);
-        return fallbackResponse.data?.data || []; // Assuming public endpoint returns { data: [] } or just []? 
-        // Wait, publicDataRoutes returns res.json(transformedUnits). So it's an array directly?
-        // Let's check publicDataRoutes.ts again.
-        // res.json(transformedUnits); -> Array.
-        // So response.data IS the array.
-        // But api.ts response interceptor returns response.
-        // So fallbackResponse.data IS the array.
-        // But wait, the original code used fallbackResponse.data?.data || [].
-        // If the original code was wrong about the structure, that's another issue.
-        // Let's check publicDataRoutes.ts output structure.
-        // res.json(transformedUnits) -> [ ... ]
-        // So response.data is [ ... ]. response.data.data is undefined.
-        // So the fallback was probably failing because of that too?
-        // But let's stick to fixing the URL first. 
-        // Actually, if I change the URL, I should also check the response structure.
-        // publicDataRoutes.ts returns array directly.
-        // So it should be fallbackResponse.data.
-      } catch (fallbackError) {
-        console.error(`Public fallback ${publicEndpoint} also failed:`, fallbackError);
-        return defaultData;
-      }
-    }
-  }
 
   async getUsers(): Promise<User[]> {
     try {

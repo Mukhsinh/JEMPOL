@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '../../utils/supabaseClientOptimized';
+import { supabase } from '../../utils/supabaseClient';
 
 interface ResolvedTicket {
     id: string;
@@ -49,7 +49,7 @@ const SurveyLanding = () => {
             if (error) throw error;
             
             // Transform data to match interface
-            const transformedData = (data || []).map(ticket => ({
+            const transformedData = (data || []).map((ticket: any) => ({
                 ...ticket,
                 units: ticket.units ? ticket.units[0] : null,
                 service_categories: ticket.service_categories ? ticket.service_categories[0] : null

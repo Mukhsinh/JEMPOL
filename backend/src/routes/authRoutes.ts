@@ -1,5 +1,5 @@
 import express from 'express';
-import { login, logout } from '../controllers/authControllerSimple.js';
+import { login, logout } from '../controllers/authController.js';
 import { authenticateSupabase } from '../middleware/supabaseAuthMiddleware.js';
 
 

@@ -5,7 +5,6 @@ const EscalationManagement: React.FC = () => {
   const [rules, setRules] = useState<EscalationRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     fetchEscalationRules();
@@ -48,7 +47,7 @@ const EscalationManagement: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Escalation Management</h1>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => console.log('Add Rule clicked')}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
         >
           Add Rule

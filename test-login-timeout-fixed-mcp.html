@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login - Timeout Fixed</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test Login - Timeout Fixed</h1>
+        <p>Test login dengan konfigurasi timeout yang telah diperbaiki</p>
+        
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="admin@jempol.com" placeholder="Masukkan email admin">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="admin123" placeholder="Masukkan password">
+        </div>
+        
+        <button onclick="testConnection()">Test Koneksi</button>
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="clearLog()">Clear Log</button>
+        
+        <div id="status"></div>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        // Konfigurasi Supabase dengan timeout yang diperbaiki
+        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+        
+        // Buat Supabase client dengan konfigurasi timeout yang diperbaiki
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: false,
+                flowType: 'pkce',
+                storage: window.localStorage,
+                storageKey: 'supabase.auth.token',
+                debug: false
+            },
+            global: {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                },
+                fetch: (url, options = {}) => {
+                    // Timeout yang lebih panjang (30 detik)
+                    return fetch(url, {
+                        ...options,
+                        signal: AbortSignal.timeout(30000)
+                    });
+                }
+            },
+            realtime: {
+                params: {
+                    eventsPerSecond: 10
+                }
+            }
+        });
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('log');
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logElement.textContent += logEntry;
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            console.log(message);
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+            document.getElementById('status').textContent = '';
+            document.getElementById('status').className = '';
+        }
+
+        async function testConnection() {
+            log('🔄 Testing koneksi ke Supabase...');
+            showStatus('Testing koneksi...', 'info');
+            
+            try {
+                const startTime = Date.now();
+                
+                // Test koneksi dengan timeout yang lebih panjang
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Connection timeout after 30 seconds')), 30000);
+                });
+                
+                const connectionPromise = supabase.from('admins').select('count').limit(1);
+                
+                const { data, error } = await Promise.race([connectionPromise, timeoutPromise]);
+                
+                const duration = Date.now() - startTime;
+                
+                if (error) {
+                    log(`❌ Connection failed: ${error.message}`, 'error');
+                    showStatus(`Connection failed: ${error.message}`, 'error');
+                } else {
+                    log(`✅ Connection berhasil dalam ${duration}ms`);
+                    showStatus(`Connection berhasil dalam ${duration}ms`, 'success');
+                }
+            } catch (error) {
+                log(`❌ Connection error: ${error.message}`, 'error');
+                showStatus(`Connection error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showStatus('Email dan password harus diisi', 'error');
+                return;
+            }
+            
+            log(`🔄 Attempting login untuk: ${email}`);
+            showStatus('Sedang login...', 'info');
+            
+            try {
+                const startTime = Date.now();
+                
+                // Clear existing session first
+                await supabase.auth.signOut();
+                log('🧹 Cleared existing session');
+                
+                // Wait a moment for cleanup
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Login dengan timeout yang lebih panjang
+                const loginPromise = supabase.auth.signInWithPassword({
+                    email: email.toLowerCase(),
+                    password: password,
+                });
+                
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Login timeout after 30 seconds')), 30000);
+                });
+                
+                const { data: authData, error: authError } = await Promise.race([loginPromise, timeoutPromise]);
+                
+                const loginDuration = Date.now() - startTime;
+                
+                if (authError) {
+                    log(`❌ Auth error: ${authError.message}`, 'error');
+                    showStatus(`Login gagal: ${authError.message}`, 'error');
+                    return;
+                }
+                
+                if (!authData?.user || !authData?.session) {
+                    log('❌ No user data returned', 'error');
+                    showStatus('Login gagal - tidak ada data user', 'error');
+                    return;
+                }
+                
+                log(`✅ Auth berhasil dalam ${loginDuration}ms`);
+                log(`👤 User: ${authData.user.email}`);
+                
+                // Get admin profile dengan retry mechanism
+                log('🔄 Fetching admin profile...');
+                let profileData = null;
+                let profileError = null;
+                
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        const profileStartTime = Date.now();
+                        
+                        const profilePromise = supabase
+                            .from('admins')
+                            .select('id, username, full_name, email, role, is_active')
+                            .eq('email', email.toLowerCase())
+                            .eq('is_active', true)
+                            .single();
+                        
+                        const profileTimeoutPromise = new Promise((_, reject) => {
+                            setTimeout(() => reject(new Error('Profile fetch timeout')), 15000);
+                        });
+                        
+                        const { data, error } = await Promise.race([profilePromise, profileTimeoutPromise]);
+                        
+                        const profileDuration = Date.now() - profileStartTime;
+                        
+                        if (!error && data) {
+                            profileData = data;
+                            log(`✅ Profile fetched dalam ${profileDuration}ms (attempt ${attempt})`);
+                            break;
+                        } else {
+                            profileError = error;
+                            log(`⚠️ Profile fetch attempt ${attempt} failed: ${error?.message || 'Unknown error'}`);
+                            
+                            if (attempt < 3) {
+                                await new Promise(resolve => setTimeout(resolve, 1000));
+                            }
+                        }
+                    } catch (err) {
+                        profileError = err;
+                        log(`⚠️ Profile fetch attempt ${attempt} error: ${err.message}`);
+                        
+                        if (attempt < 3) {
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                    }
+                }
+                
+                if (!profileData) {
+                    log(`❌ Profile error after all attempts: ${profileError?.message || 'Unknown error'}`, 'error');
+                    showStatus('Admin tidak ditemukan atau tidak aktif', 'error');
+                    await supabase.auth.signOut();
+                    return;
+                }
+                
+                const totalDuration = Date.now() - startTime;
+                
+                log(`✅ Login berhasil dalam ${totalDuration}ms total`);
+                log(`👤 Admin: ${profileData.username} (${profileData.role})`);
+                log(`📧 Email: ${profileData.email}`);
+                log(`🆔 ID: ${profileData.id}`);
+                
+                showStatus(`Login berhasil! Welcome ${profileData.username}`, 'success');
+                
+            } catch (error) {
+                log(`❌ Unexpected login error: ${error.message}`, 'error');
+                showStatus(`Login error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test koneksi saat halaman dimuat
+        window.addEventListener('load', () => {
+            log('🚀 Halaman dimuat, siap untuk testing');
+            log('⚙️ Konfigurasi timeout: 30 detik untuk semua operasi');
+            log('🔧 Menggunakan konfigurasi yang telah diperbaiki');
+        });
+    </script>
+</body>
+</html>

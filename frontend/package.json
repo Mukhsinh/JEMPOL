@@ -9,7 +9,9 @@
     "vercel-build": "npm run build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "dev:fast": "vite --host 0.0.0.0 --port 3002 --open --force",
+    "build:fast": "vite build --mode production --minify false"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",

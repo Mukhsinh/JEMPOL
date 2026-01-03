@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Settings, Upload as UploadIcon, Users, Image, LogOut } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContextOptimized';
+import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/layout/Layout';
 import Container from '../components/layout/Container';
 import UploadForm from '../components/admin/UploadForm';

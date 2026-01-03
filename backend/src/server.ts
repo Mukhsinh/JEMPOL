@@ -1,8 +1,10 @@
 import express from 'express';
-
-
 import cors from 'cors';
 import dotenv from 'dotenv';
+
+// Load environment variables first
+dotenv.config();
+
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import path from 'path';
@@ -30,11 +32,12 @@ import publicSurveyRoutes from './routes/publicSurveyRoutes.js';
 import appSettingsRoutes from './routes/appSettingsRoutes.js';
 import ebookRoutes from './routes/ebookRoutes.js';
 import notificationSettingsRoutes from './routes/notificationSettingsRoutes.js';
-import supabase from './config/supabase.js';
+import { testConnection } from './config/supabase.js';
 import { authenticateToken } from './middleware/auth.js';
 import { initializeAdminTable, createDefaultAdmin } from './models/Admin.js';
 
-dotenv.config();
+// Import supabase after dotenv is loaded
+import supabase from './config/supabase.js';
 
 if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
   console.warn('⚠️ WARNING: SUPABASE_SERVICE_ROLE_KEY is missing. Admin operations requiring elevated privileges might fail.');

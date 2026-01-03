@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContextOptimized';
+import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/authService';
 
 export default function AuthDebug() {

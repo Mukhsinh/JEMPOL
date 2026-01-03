@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContextOptimized';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -16,34 +16,60 @@ function ProtectedRoute({
   const { isAuthenticated, isAdmin, isSuperAdmin, isLoading } = useAuth();
   const location = useLocation();
   const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
+  const [showRefreshButton, setShowRefreshButton] = useState(false);
 
-  // Show timeout message after 10 seconds
+  // Show timeout message after 5 seconds, refresh button after 8 seconds
   useEffect(() => {
     if (isLoading) {
-      const timeout = setTimeout(() => {
+      const timeoutMessage = setTimeout(() => {
         setShowTimeoutMessage(true);
-      }, 10000);
+      }, 5000);
 
-      return () => clearTimeout(timeout);
+      const refreshButton = setTimeout(() => {
+        setShowRefreshButton(true);
+      }, 8000);
+
+      return () => {
+        clearTimeout(timeoutMessage);
+        clearTimeout(refreshButton);
+      };
     } else {
       setShowTimeoutMessage(false);
+      setShowRefreshButton(false);
     }
   }, [isLoading]);
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
   // Show loading spinner while checking authentication
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
-        <div className="flex flex-col items-center space-y-4">
+        <div className="flex flex-col items-center space-y-4 max-w-md text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           <p className="text-slate-600 dark:text-slate-400">Memverifikasi akses...</p>
-          <div className="text-xs text-slate-500 mt-2">
-            Jika loading terlalu lama, silakan refresh halaman
-          </div>
+          
           {showTimeoutMessage && (
-            <div className="text-xs text-orange-500 mt-2 text-center max-w-md">
-              ⚠️ Proses verifikasi memakan waktu lebih lama dari biasanya. 
-              Ini bisa terjadi karena koneksi internet yang lambat atau server sedang sibuk.
+            <div className="text-sm text-orange-600 dark:text-orange-400 mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+              ⚠️ Proses verifikasi memakan waktu lebih lama dari biasanya.
+              <br />
+              Ini bisa terjadi karena koneksi internet yang lambat.
+            </div>
+          )}
+          
+          {showRefreshButton && (
+            <div className="mt-4 space-y-2">
+              <button
+                onClick={handleRefresh}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors"
+              >
+                Refresh Halaman
+              </button>
+              <p className="text-xs text-slate-500">
+                Atau coba buka di tab baru jika masalah berlanjut
+              </p>
             </div>
           )}
         </div>

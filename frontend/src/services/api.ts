@@ -16,7 +16,7 @@ const getApiBaseUrl = () => {
   }
 
   // In development, use localhost with correct port
-  return 'http://localhost:3003/api';
+  return 'http://localhost:3004/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();

@@ -11,7 +11,8 @@ interface UserModalProps {
 }
 
 interface FormData extends UpdateUserData {
-  // All fields from UpdateUserData are available
+  create_admin_account?: boolean;
+  update_admin_password?: boolean;
 }
 
 const UserModal: React.FC<UserModalProps> = ({
@@ -72,13 +73,13 @@ const UserModal: React.FC<UserModalProps> = ({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.full_name.trim()) {
+    if (!formData.full_name?.trim()) {
       newErrors.full_name = 'Nama lengkap wajib diisi';
     }
 
-    if (!formData.email.trim()) {
+    if (!formData.email?.trim()) {
       newErrors.email = 'Email wajib diisi';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    } else if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Format email tidak valid';
     }
 

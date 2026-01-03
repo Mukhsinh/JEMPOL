@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Auth Timeout Fixed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .timer {
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Auth Timeout Fixed</h1>
+        <p>Test untuk memverifikasi perbaikan masalah auth timeout</p>
+
+        <div id="status" class="status info">
+            ⏳ Siap untuk testing...
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="admin@jempol.com" placeholder="Masukkan email admin">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="admin123" placeholder="Masukkan password">
+        </div>
+
+        <button onclick="testAuthTimeout()">🔍 Test Auth Timeout</button>
+        <button onclick="testQuickLogin()">⚡ Test Quick Login</button>
+        <button onclick="testConnectionSpeed()">📡 Test Connection Speed</button>
+        <button onclick="clearLogs()">🧹 Clear Logs</button>
+
+        <div id="timer" class="timer" style="display: none;"></div>
+
+        <div id="logs" class="log"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+
+        const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey, {
+            global: {
+                fetch: (url, options = {}) => {
+                    return fetch(url, {
+                        ...options,
+                        signal: AbortSignal.timeout(10000) // 10 detik timeout
+                    });
+                }
+            }
+        });
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('logs');
+            const statusElement = document.getElementById('status');
+            
+            const logMessage = `[${timestamp}] ${message}`;
+            logElement.innerHTML += logMessage + '\n';
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            // Update status
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = message;
+            
+            console.log(logMessage);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            document.getElementById('status').className = 'status info';
+            document.getElementById('status').textContent = '⏳ Logs cleared, siap untuk testing...';
+        }
+
+        function startTimer() {
+            const timerElement = document.getElementById('timer');
+            timerElement.style.display = 'block';
+            let seconds = 0;
+            
+            const interval = setInterval(() => {
+                seconds++;
+                timerElement.textContent = `⏱️ Waktu: ${seconds} detik`;
+            }, 1000);
+            
+            return () => {
+                clearInterval(interval);
+                timerElement.style.display = 'none';
+            };
+        }
+
+        async function testConnectionSpeed() {
+            log('🚀 Testing connection speed...', 'info');
+            const stopTimer = startTimer();
+            
+            try {
+                const startTime = Date.now();
+                
+                // Test basic connection
+                const { data, error } = await supabase.from('admins').select('count').limit(1);
+                
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                if (error) {
+                    log(`❌ Connection failed: ${error.message}`, 'error');
+                } else {
+                    log(`✅ Connection successful in ${duration}ms`, 'success');
+                    
+                    if (duration < 2000) {
+                        log('🚀 Connection speed: Excellent (< 2s)', 'success');
+                    } else if (duration < 5000) {
+                        log('⚡ Connection speed: Good (< 5s)', 'warning');
+                    } else {
+                        log('🐌 Connection speed: Slow (> 5s)', 'error');
+                    }
+                }
+            } catch (error) {
+                log(`❌ Connection test error: ${error.message}`, 'error');
+            } finally {
+                stopTimer();
+            }
+        }
+
+        async function testAuthTimeout() {
+            log('🔍 Testing auth timeout behavior...', 'info');
+            const stopTimer = startTimer();
+            
+            try {
+                // Clear any existing session
+                await supabase.auth.signOut();
+                log('🧹 Cleared existing session', 'info');
+                
+                // Test session check with timeout
+                log('📡 Testing session check...', 'info');
+                const sessionStart = Date.now();
+                
+                const sessionPromise = supabase.auth.getSession();
+                const sessionTimeout = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Session check timeout (5s)')), 5000);
+                });
+                
+                const { data: sessionData, error: sessionError } = await Promise.race([sessionPromise, sessionTimeout]);
+                const sessionDuration = Date.now() - sessionStart;
+                
+                if (sessionError) {
+                    log(`❌ Session check failed: ${sessionError.message}`, 'error');
+                } else {
+                    log(`✅ Session check completed in ${sessionDuration}ms`, 'success');
+                }
+                
+                // Test admin table access with timeout
+                log('👤 Testing admin table access...', 'info');
+                const adminStart = Date.now();
+                
+                const adminPromise = supabase
+                    .from('admins')
+                    .select('id, username, email, is_active')
+                    .eq('is_active', true)
+                    .limit(1);
+                
+                const adminTimeout = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Admin table timeout (5s)')), 5000);
+                });
+                
+                const { data: adminData, error: adminError } = await Promise.race([adminPromise, adminTimeout]);
+                const adminDuration = Date.now() - adminStart;
+                
+                if (adminError) {
+                    log(`❌ Admin table access failed: ${adminError.message}`, 'error');
+                } else {
+                    log(`✅ Admin table access completed in ${adminDuration}ms`, 'success');
+                    log(`📊 Found ${adminData?.length || 0} active admins`, 'info');
+                }
+                
+                log('✅ Auth timeout test completed successfully!', 'success');
+                
+            } catch (error) {
+                log(`❌ Auth timeout test error: ${error.message}`, 'error');
+            } finally {
+                stopTimer();
+            }
+        }
+
+        async function testQuickLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                log('❌ Email dan password harus diisi', 'error');
+                return;
+            }
+            
+            log(`🔐 Testing quick login for: ${email}`, 'info');
+            const stopTimer = startTimer();
+            
+            try {
+                // Clear existing session
+                await supabase.auth.signOut();
+                log('🧹 Cleared existing session', 'info');
+                
+                // Attempt login with timeout
+                const loginStart = Date.now();
+                
+                const loginPromise = supabase.auth.signInWithPassword({
+                    email: email.trim().toLowerCase(),
+                    password: password
+                });
+                
+                const loginTimeout = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Login timeout (10s)')), 10000);
+                });
+                
+                const { data: authData, error: authError } = await Promise.race([loginPromise, loginTimeout]);
+                const loginDuration = Date.now() - loginStart;
+                
+                if (authError) {
+                    log(`❌ Login failed: ${authError.message}`, 'error');
+                    if (authError.message.includes('Invalid login credentials')) {
+                        log('💡 Tip: Pastikan menggunakan admin@jempol.com / admin123', 'warning');
+                    }
+                    return;
+                }
+                
+                log(`✅ Login successful in ${loginDuration}ms`, 'success');
+                
+                // Test profile fetch
+                log('👤 Fetching admin profile...', 'info');
+                const profileStart = Date.now();
+                
+                const profilePromise = supabase
+                    .from('admins')
+                    .select('id, username, full_name, email, role, is_active')
+                    .eq('email', email.trim().toLowerCase())
+                    .eq('is_active', true)
+                    .single();
+                
+                const profileTimeout = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Profile fetch timeout (5s)')), 5000);
+                });
+                
+                const { data: profileData, error: profileError } = await Promise.race([profilePromise, profileTimeout]);
+                const profileDuration = Date.now() - profileStart;
+                
+                if (profileError) {
+                    log(`❌ Profile fetch failed: ${profileError.message}`, 'error');
+                } else {
+                    log(`✅ Profile fetched in ${profileDuration}ms`, 'success');
+                    log(`👤 User: ${profileData.username} (${profileData.role})`, 'info');
+                }
+                
+                // Sign out
+                await supabase.auth.signOut();
+                log('👋 Signed out successfully', 'info');
+                
+                const totalDuration = Date.now() - loginStart;
+                log(`🎉 Quick login test completed in ${totalDuration}ms total`, 'success');
+                
+            } catch (error) {
+                log(`❌ Quick login test error: ${error.message}`, 'error');
+            } finally {
+                stopTimer();
+            }
+        }
+
+        // Initialize
+        log('🚀 Auth timeout test ready', 'info');
+        log('📋 Perbaikan yang diterapkan:', 'info');
+        log('   • Auth initialization timeout: 30s → 10s', 'info');
+        log('   • Session check timeout: 5s', 'info');
+        log('   • Profile fetch timeout: 5s', 'info');
+        log('   • Supabase client timeout: 30s → 10s', 'info');
+    </script>
+</body>
+</html>

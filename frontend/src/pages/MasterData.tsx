@@ -15,7 +15,6 @@ type TabType = 'units' | 'unit-types' | 'service-categories' | 'ticket-types' | 
 
 const MasterData: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('units');
-    const [isExpanded, setIsExpanded] = useState(true);
 
     const organizationTabs = [
         { id: 'units', name: 'Unit Kerja', icon: 'domain' },
@@ -70,5 +69,106 @@ const MasterData: React.FC = () => {
         const allTabs = [...organizationTabs, ...ticketTabs, ...systemTabs];
         return allTabs.find(tab => tab.id === activeTab)?.name || 'Unit Kerja';
     };
+
+    return (
+        <div className="min-h-screen bg-gray-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="bg-white rounded-lg shadow-sm">
+                    <div className="border-b border-gray-200 px-6 py-4">
+                        <h1 className="text-2xl font-bold text-gray-900">Master Data</h1>
+                        <p className="text-gray-600 mt-1">Kelola data master sistem</p>
+                    </div>
+                    
+                    <div className="flex">
+                        {/* Sidebar Navigation */}
+                        <div className="w-64 border-r border-gray-200 bg-gray-50">
+                            <div className="p-4">
+                                <div className="space-y-6">
+                                    {/* Organization Section */}
+                                    <div>
+                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                                            Organisasi
+                                        </h3>
+                                        <div className="space-y-1">
+                                            {organizationTabs.map((tab) => (
+                                                <button
+                                                    key={tab.id}
+                                                    onClick={() => setActiveTab(tab.id as TabType)}
+                                                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                                        activeTab === tab.id
+                                                            ? 'bg-blue-100 text-blue-700'
+                                                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                                                    }`}
+                                                >
+                                                    {tab.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Ticket Section */}
+                                    <div>
+                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                                            Tiket
+                                        </h3>
+                                        <div className="space-y-1">
+                                            {ticketTabs.map((tab) => (
+                                                <button
+                                                    key={tab.id}
+                                                    onClick={() => setActiveTab(tab.id as TabType)}
+                                                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                                        activeTab === tab.id
+                                                            ? 'bg-blue-100 text-blue-700'
+                                                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                                                    }`}
+                                                >
+                                                    {tab.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* System Section */}
+                                    <div>
+                                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                                            Sistem
+                                        </h3>
+                                        <div className="space-y-1">
+                                            {systemTabs.map((tab) => (
+                                                <button
+                                                    key={tab.id}
+                                                    onClick={() => setActiveTab(tab.id as TabType)}
+                                                    className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                                                        activeTab === tab.id
+                                                            ? 'bg-blue-100 text-blue-700'
+                                                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                                                    }`}
+                                                >
+                                                    {tab.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Main Content */}
+                        <div className="flex-1">
+                            <div className="p-6">
+                                <div className="mb-4">
+                                    <h2 className="text-lg font-semibold text-gray-900">
+                                        {getCurrentTabName()}
+                                    </h2>
+                                </div>
+                                {renderTabContent()}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default MasterData;

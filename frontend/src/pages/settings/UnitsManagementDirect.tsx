@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import unitService, { Unit, UnitType } from '../../services/unitService';
+import unitService from '../../services/unitService';
 import UnitModal from '../../components/UnitModal';
+import { supabase } from '../../utils/supabaseClient';
 
 export interface Unit {
   id: string;
