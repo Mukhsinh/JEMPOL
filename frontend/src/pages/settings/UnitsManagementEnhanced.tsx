@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import unitService, { Unit, UnitType } from '../../services/unitService';
 import UnitModal from '../../components/UnitModal';
-import { supabase } from '../../utils/supabaseClient';
+import { supabase } from '../../utils/supabaseClientOptimized';
 
 interface UnitsManagementProps {
     embedded?: boolean;

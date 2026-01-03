@@ -311,6 +311,246 @@ router.get('/service-categories', async (req: Request, res: Response) => {
   }
 });
 
+// Get unit types for public forms
+router.get('/unit-types', async (req: Request, res: Response) => {
+  try {
+    const { data: unitTypes, error } = await supabase
+      .from('unit_types')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching unit types:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil data tipe unit'
+      });
+    }
+
+    res.json(unitTypes);
+  } catch (error) {
+    console.error('Error in get unit types:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
+
+// Get ticket classifications for public forms
+router.get('/ticket-classifications', async (req: Request, res: Response) => {
+  try {
+    const { data: classifications, error } = await supabase
+      .from('ticket_classifications')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching ticket classifications:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil data klasifikasi tiket'
+      });
+    }
+
+    res.json(classifications);
+  } catch (error) {
+    console.error('Error in get ticket classifications:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
+
+// Get ticket statuses for public forms
+router.get('/ticket-statuses', async (req: Request, res: Response) => {
+  try {
+    const { data: statuses, error } = await supabase
+      .from('ticket_statuses')
+      .select('*')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching ticket statuses:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil data status tiket'
+      });
+    }
+
+    res.json(statuses);
+  } catch (error) {
+    console.error('Error in get ticket statuses:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
+
+// Get patient types for public forms
+router.get('/patient-types', async (req: Request, res: Response) => {
+  try {
+    const { data: patientTypes, error } = await supabase
+      .from('patient_types')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching patient types:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil data tipe pasien'
+      });
+    }
+
+    res.json(patientTypes);
+  } catch (error) {
+    console.error('Error in get patient types:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
+
+// Get QR codes for public forms
+router.get('/qr-codes', async (req: Request, res: Response) => {
+  try {
+    const { page = 1, limit = 10, unit_id, is_active, search, include_analytics } = req.query;
+    
+    let query = supabase
+      .from('qr_codes')
+      .select(`
+        id, code, token, name, description, is_active, usage_count, 
+        created_at, updated_at, unit_id,
+        units:unit_id(id, name, code, description)
+      `)
+      .order('created_at', { ascending: false });
+
+    // Apply filters
+    if (unit_id) {
+      query = query.eq('unit_id', unit_id);
+    }
+
+    if (is_active !== undefined) {
+      query = query.eq('is_active', is_active === 'true');
+    }
+
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%,description.ilike.%${search}%`);
+    }
+
+    // Apply pagination
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const offset = (pageNum - 1) * limitNum;
+    
+    query = query.range(offset, offset + limitNum - 1);
+
+    const { data: qrCodes, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching public QR codes:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil data QR codes'
+      });
+    }
+
+    // Add mock analytics if requested
+    const qrCodesWithAnalytics = (qrCodes || []).map((qr: any) => ({
+      ...qr,
+      analytics: include_analytics === 'true' ? {
+        scans_30d: qr.usage_count || 0,
+        tickets_30d: Math.floor((qr.usage_count || 0) * 0.7),
+        trend: Array.from({ length: 7 }, () => Math.floor(Math.random() * 10))
+      } : undefined
+    }));
+
+    const totalPages = Math.ceil((count || qrCodes?.length || 0) / limitNum);
+
+    res.json({
+      qr_codes: qrCodesWithAnalytics,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: count || qrCodes?.length || 0,
+        pages: totalPages
+      }
+    });
+  } catch (error) {
+    console.error('Error in get public QR codes:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
+
+router.get('/roles', async (req: Request, res: Response) => {
+  try {
+    const { data: roles, error } = await supabase
+      .from('roles')
+      .select('id, name, code, description')
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching roles:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil data peran'
+      });
+    }
+
+    res.json(roles);
+  } catch (error) {
+    console.error('Error in get roles:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
+
+// Get SLA settings for public forms
+router.get('/sla-settings', async (req: Request, res: Response) => {
+  try {
+    const { data: slaSettings, error } = await supabase
+      .from('sla_settings')
+      .select(`
+        *,
+        unit_types:unit_type_id(name, code),
+        service_categories:service_category_id(name, code),
+        patient_types:patient_type_id(name, code)
+      `)
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching SLA settings:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil data pengaturan SLA'
+      });
+    }
+
+    res.json(slaSettings);
+  } catch (error) {
+    console.error('Error in get SLA settings:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
+
 // Submit satisfaction survey
 router.post('/surveys/:ticketId', async (req: Request, res: Response) => {
   try {

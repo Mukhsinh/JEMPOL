@@ -52,8 +52,8 @@ const AIEscalationManagement: React.FC = () => {
   const fetchEscalationData = async () => {
     try {
       const [rulesResponse, statsResponse] = await Promise.all([
-        fetch('/api/escalation-rules'),
-        fetch('/api/escalation-stats')
+        fetch('/api/escalation/rules'),
+        fetch('/api/escalation/stats')
       ]);
 
       if (rulesResponse.ok) {
@@ -74,7 +74,7 @@ const AIEscalationManagement: React.FC = () => {
 
   const toggleRuleStatus = async (id: string, currentStatus: boolean) => {
     try {
-      const response = await fetch(`/api/escalation-rules/${id}`, {
+      const response = await fetch(`/api/escalation/rules/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

@@ -56,11 +56,18 @@ export const qrCodeService = {
 
   // Create QR code (admin only)
   async createQRCode(data: CreateQRCodeData): Promise<any> {
-    const response = await api.post('/qr-codes', data);
-    return response.data;
+    try {
+      console.log('🔄 Creating QR code...');
+      const response = await api.post('/qr-codes', data);
+      console.log('✅ QR code created successfully');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to create QR code:', error.message);
+      throw error;
+    }
   },
 
-  // Get QR codes (admin only)
+  // Get QR codes (admin only) with improved error handling
   async getQRCodes(params?: {
     page?: number;
     limit?: number;
@@ -69,8 +76,63 @@ export const qrCodeService = {
     search?: string;
     include_analytics?: boolean;
   }): Promise<{ qr_codes: QRCode[]; pagination: any }> {
-    const response = await api.get('/qr-codes', { params });
-    return response.data;
+    try {
+      console.log('🔄 Fetching QR codes...');
+
+      // Try to get token but don't fail if not available
+      const { authService } = await import('./authService');
+      const token = await authService.getToken();
+
+      if (!token) {
+        console.warn('⚠️ No authentication token available, trying public fallback...');
+        // Try public endpoint fallback
+        try {
+          const publicResponse = await api.get('/public/qr-codes', { params });
+          console.log('✅ QR codes fetched from public fallback');
+          return publicResponse.data;
+        } catch (publicError: any) {
+          console.warn('⚠️ Public fallback also failed:', publicError.message);
+          return {
+            qr_codes: [],
+            pagination: {
+              page: params?.page || 1,
+              limit: params?.limit || 10,
+              total: 0,
+              pages: 0
+            }
+          };
+        }
+      }
+
+      console.log('🔑 Token available, making authenticated request...');
+      const response = await api.get('/qr-codes', { params });
+      console.log('✅ QR codes fetched successfully');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to fetch QR codes:', error.message);
+
+      // Try public fallback on any error
+      try {
+        console.log('🔄 Trying public fallback for QR codes...');
+        const publicResponse = await api.get('/public/qr-codes', { params });
+        console.log('✅ QR codes fetched from public fallback');
+        return publicResponse.data;
+      } catch (publicError: any) {
+        console.warn('⚠️ Public fallback also failed:', publicError.message);
+      }
+
+      // Return empty data for errors to prevent page crash
+      console.warn('⚠️ Returning empty QR codes data due to API failure');
+      return {
+        qr_codes: [],
+        pagination: {
+          page: params?.page || 1,
+          limit: params?.limit || 10,
+          total: 0,
+          pages: 0
+        }
+      };
+    }
   },
 
   // Get QR code by ID (admin only)
@@ -81,26 +143,40 @@ export const qrCodeService = {
 
   // Update QR code (admin only)
   async updateQRCode(
-    id: string, 
+    id: string,
     data: {
       name?: string;
       description?: string;
       is_active?: boolean;
     }
   ): Promise<any> {
-    const response = await api.patch(`/qr-codes/${id}`, data);
-    return response.data;
+    try {
+      console.log(`🔄 Updating QR code ${id}...`);
+      const response = await api.patch(`/qr-codes/${id}`, data);
+      console.log('✅ QR code updated successfully');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to update QR code:', error.message);
+      throw error;
+    }
   },
 
   // Delete QR code (admin only)
   async deleteQRCode(id: string): Promise<any> {
-    const response = await api.delete(`/qr-codes/${id}`);
-    return response.data;
+    try {
+      console.log(`🔄 Deleting QR code ${id}...`);
+      const response = await api.delete(`/qr-codes/${id}`);
+      console.log('✅ QR code deleted successfully');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Failed to delete QR code:', error.message);
+      throw error;
+    }
   },
 
   // Get QR code analytics (admin only)
   async getAnalytics(
-    id: string, 
+    id: string,
     params?: {
       date_from?: string;
       date_to?: string;

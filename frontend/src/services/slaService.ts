@@ -50,12 +50,21 @@ class SLAService {
   async getSLASettings(): Promise<SLASetting[]> {
     console.log('SLAService: Getting SLA settings...');
     try {
-      const response = await api.get('/master-data/sla-settings');
+      // Try main endpoint first
+      let response;
+      try {
+        response = await api.get('/master-data/sla-settings');
+      } catch (error) {
+        console.log('Main endpoint failed, trying public endpoint...');
+        response = await api.get('/master-data/public/sla-settings');
+      }
+      
       console.log('SLAService: SLA settings response:', response.data);
-      return response.data;
+      return response.data || [];
     } catch (error) {
       console.error('SLAService: Error getting SLA settings:', error);
-      throw error;
+      // Return empty array instead of throwing error
+      return [];
     }
   }
 

@@ -1,0 +1,30 @@
+// Update untuk memastikan semua endpoints menggunakan supabaseAdmin
+// Ini akan memastikan RLS bypass untuk admin operations
+
+// Contoh untuk getPatientTypes yang sudah benar:
+export const getPatientTypes = async (req: Request, res: Response) => {
+  try {
+    console.log('🔍 Getting patient types with service role access...');
+    
+    const { data, error } = await supabaseAdmin
+      .from('patient_types')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      console.error('❌ Patient types query error:', error);
+      throw error;
+    }
+    
+    console.log('✅ Patient types retrieved:', data?.length || 0, 'records');
+    return res.json({ success: true, data: data || [] });
+  } catch (error: any) {
+    console.error('❌ Patient types error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Gagal mengambil data patient types',
+      details: error.message
+    });
+  }
+};

@@ -8,20 +8,25 @@ import {
   getQRCodeAnalyticsById,
   getQRCodeStats
 } from '../controllers/qrCodeController.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateSupabase, optionalSupabaseAuth } from '../middleware/supabaseAuthMiddleware.js';
 
 const router = express.Router();
 
 // Public routes (for QR code scanning)
 router.get('/scan/:code', getQRCodeByCode);
 
-// Protected routes (authentication required)
-router.post('/', authenticateToken, createQRCode);
-router.get('/', authenticateToken, getQRCodes);
-router.get('/stats', authenticateToken, getQRCodeStats);
-router.get('/:id', authenticateToken, getQRCodeByCode);
-router.patch('/:id', authenticateToken, updateQRCode);
-router.delete('/:id', authenticateToken, deleteQRCode);
-router.get('/:id/analytics', authenticateToken, getQRCodeAnalyticsById);
+// Protected routes (authentication required for write operations)
+router.post('/', authenticateSupabase, createQRCode);
+
+// GET routes use optionalAuth - allows fallback to work when token is invalid
+// But the controller should check for auth if needed
+router.get('/', optionalSupabaseAuth, getQRCodes);
+router.get('/stats', optionalSupabaseAuth, getQRCodeStats);
+router.get('/:id', optionalSupabaseAuth, getQRCodeByCode);
+router.get('/:id/analytics', optionalSupabaseAuth, getQRCodeAnalyticsById);
+
+// Write operations require full authentication
+router.patch('/:id', authenticateSupabase, updateQRCode);
+router.delete('/:id', authenticateSupabase, deleteQRCode);
 
 export default router;

@@ -6,7 +6,7 @@ import {
   incrementView,
 } from '../controllers/innovationController.js';
 import { upload } from '../config/multer.js';
-import { authenticateAdmin } from '../middleware/auth.js';
+import { authenticateSupabase } from '../middleware/supabaseAuthMiddleware.js';
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ const router = express.Router();
 router.get('/', getAllInnovations);
 
 // POST /api/innovations/bulk-photos - Upload multiple photos (must be before /:id routes)
-router.post('/bulk-photos', authenticateAdmin, (req: Request, res: Response, next: NextFunction) => {
+router.post('/bulk-photos', authenticateSupabase, (req: Request, res: Response, next: NextFunction) => {
   upload.array('files', 10)(req, res, (err: any) => {
     if (err) {
       console.error('Multer error:', err);
@@ -34,7 +34,7 @@ router.post('/bulk-photos', authenticateAdmin, (req: Request, res: Response, nex
 }, uploadInnovation);
 
 // POST /api/innovations - Upload new innovation
-router.post('/', authenticateAdmin, (req: Request, res: Response, next: NextFunction) => {
+router.post('/', authenticateSupabase, (req: Request, res: Response, next: NextFunction) => {
   upload.single('file')(req, res, (err: any) => {
     if (err) {
       console.error('Multer error:', err);
@@ -54,7 +54,7 @@ router.post('/', authenticateAdmin, (req: Request, res: Response, next: NextFunc
 }, uploadInnovation);
 
 // DELETE /api/innovations/:id - Delete innovation
-router.delete('/:id', authenticateAdmin, deleteInnovation);
+router.delete('/:id', authenticateSupabase, deleteInnovation);
 
 // POST /api/innovations/:id/view - Increment view count
 router.post('/:id/view', incrementView);

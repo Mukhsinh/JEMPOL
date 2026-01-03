@@ -1,4 +1,4 @@
-import { supabase } from '../utils/supabaseClient';
+import { supabase } from '../utils/supabaseClientOptimized';
 
 export interface LoginCredentials {
   email: string;
@@ -22,55 +22,67 @@ export interface LoginResponse {
   message?: string;
 }
 
-export interface VerifyTokenResponse {
-  success: boolean;
-  data?: {
-    user: any;
-    admin: {
-      id: string;
-      username: string;
-      full_name?: string;
-      email?: string;
-      role?: string;
-    };
-  };
-  error?: string;
-}
-
 class AuthService {
   private userKey = 'adminUser';
 
   async login(email: string, password: string): Promise<LoginResponse> {
     try {
-      // Sign in with Supabase Auth
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      console.log('🔄 AuthService: Attempting login...');
+
+      // Clear any existing session
+      await supabase.auth.signOut();
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      // Validate input
+      const cleanEmail = email.trim().toLowerCase();
+      if (!cleanEmail || !password) {
+        return {
+          success: false,
+          error: 'Email dan password harus diisi',
+        };
+      }
+
+      console.log('📧 Login attempt for:', cleanEmail);
+
+      // Attempt login with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
+        password: password,
       });
 
-      if (error) {
+      if (authError) {
+        console.error('❌ Auth error:', authError);
+        let errorMessage = 'Login gagal';
+        if (authError.message?.includes('Invalid login credentials')) {
+          errorMessage = 'Email atau password salah';
+        } else if (authError.message?.includes('Email not confirmed')) {
+          errorMessage = 'Email belum dikonfirmasi';
+        }
         return {
           success: false,
-          error: 'Email atau password salah',
+          error: errorMessage,
         };
       }
 
-      if (!data.user || !data.session) {
+      if (!authData?.user || !authData?.session) {
         return {
           success: false,
-          error: 'Login gagal',
+          error: 'Login gagal - tidak ada data user',
         };
       }
+
+      console.log('✅ Auth successful, fetching admin profile...');
 
       // Get admin profile from admins table
       const { data: adminProfile, error: profileError } = await supabase
         .from('admins')
         .select('*')
-        .eq('email', email)
+        .eq('email', cleanEmail)
         .eq('is_active', true)
         .single();
 
       if (profileError || !adminProfile) {
+        console.error('❌ Profile error:', profileError);
         await supabase.auth.signOut();
         return {
           success: false,
@@ -78,7 +90,7 @@ class AuthService {
         };
       }
 
-      // Store user data
+      // Store user data in localStorage
       const adminData = {
         id: adminProfile.id,
         username: adminProfile.username,
@@ -89,75 +101,21 @@ class AuthService {
 
       localStorage.setItem(this.userKey, JSON.stringify(adminData));
 
+      console.log('✅ Login successful:', adminData.email, 'Role:', adminData.role);
       return {
         success: true,
         data: {
-          session: data.session,
-          user: data.user,
+          session: authData.session,
+          user: authData.user,
           admin: adminData,
         },
         message: 'Login berhasil',
       };
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('❌ Unexpected login error:', error);
       return {
         success: false,
-        error: error.message || 'Login gagal',
-      };
-    }
-  }
-
-  async verifyToken(): Promise<VerifyTokenResponse> {
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-
-      if (error || !user) {
-        this.logout();
-        return {
-          success: false,
-          error: 'Token tidak valid',
-        };
-      }
-
-      // Get admin profile
-      const { data: adminProfile, error: profileError } = await supabase
-        .from('admins')
-        .select('*')
-        .eq('email', user.email)
-        .eq('is_active', true)
-        .single();
-
-      if (profileError || !adminProfile) {
-        this.logout();
-        return {
-          success: false,
-          error: 'Admin tidak ditemukan',
-        };
-      }
-
-      const adminData = {
-        id: adminProfile.id,
-        username: adminProfile.username,
-        full_name: adminProfile.full_name,
-        email: adminProfile.email,
-        role: adminProfile.role || 'admin',
-      };
-
-      localStorage.setItem(this.userKey, JSON.stringify(adminData));
-
-      return {
-        success: true,
-        data: {
-          user,
-          admin: adminData,
-        },
-      };
-    } catch (error: any) {
-      console.error('Token verification error:', error);
-      this.logout();
-      return {
-        success: false,
-        error: error.message || 'Token tidak valid',
+        error: error.message || 'Terjadi kesalahan yang tidak terduga',
       };
     }
   }
@@ -165,9 +123,10 @@ class AuthService {
   async logout(): Promise<void> {
     try {
       await supabase.auth.signOut();
+      localStorage.removeItem(this.userKey);
+      console.log('✅ Logout successful');
     } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
+      console.error('❌ Logout error:', error);
       localStorage.removeItem(this.userKey);
     }
   }
@@ -188,8 +147,12 @@ class AuthService {
   }
 
   async isAuthenticated(): Promise<boolean> {
-    const { data: { user } } = await supabase.auth.getUser();
-    return !!user;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      return !!user;
+    } catch (error) {
+      return false;
+    }
   }
 
   isAdmin(): boolean {

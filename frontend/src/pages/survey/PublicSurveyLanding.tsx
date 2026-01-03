@@ -14,7 +14,7 @@ const PublicSurveyLanding = () => {
 
     const loadSurveyStats = async () => {
         try {
-            const response = await fetch('/api/public/survey/stats');
+            const response = await fetch('/api/public/surveys/stats');
             if (response.ok) {
                 const result = await response.json();
                 setStats(result.data);
@@ -58,13 +58,13 @@ const PublicSurveyLanding = () => {
                     <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white mb-6">
                         <span className="material-symbols-outlined text-4xl">sentiment_satisfied</span>
                     </div>
-                    
+
                     <h2 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
                         Survei Kepuasan Layanan
                     </h2>
-                    
+
                     <p className="text-xl text-slate-600 dark:text-slate-400 max-w-3xl mx-auto leading-relaxed">
-                        Bantuan Anda sangat berharga untuk meningkatkan kualitas pelayanan kami. 
+                        Bantuan Anda sangat berharga untuk meningkatkan kualitas pelayanan kami.
                         Mohon luangkan waktu sebentar untuk memberikan penilaian terhadap layanan yang telah Anda terima.
                     </p>
 
@@ -77,7 +77,7 @@ const PublicSurveyLanding = () => {
                             <span>Mulai Survei</span>
                             <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                         </button>
-                        
+
                         <div className="text-sm text-slate-500 flex items-center gap-2">
                             <span className="material-symbols-outlined text-lg">schedule</span>
                             <span>Hanya membutuhkan 2-3 menit</span>
@@ -92,7 +92,7 @@ const PublicSurveyLanding = () => {
                             <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Statistik Kepuasan Layanan</h3>
                             <p className="text-slate-600 dark:text-slate-400">Berdasarkan {stats.total_surveys} survei yang telah terkumpul</p>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             <div className="text-center p-6 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-200 dark:border-green-800">
                                 <div className="w-12 h-12 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center mx-auto mb-3">

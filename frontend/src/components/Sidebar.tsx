@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContextOptimized';
 import { useState, useEffect } from 'react';
 
 export default function Sidebar() {
@@ -55,9 +55,9 @@ export default function Sidebar() {
     };
 
     return (
-        <aside className="w-64 flex-shrink-0 bg-surface-light dark:bg-surface-dark border-r border-slate-200 dark:border-slate-800 flex flex-col justify-between h-full transition-colors duration-200 z-20">
-            <div className="flex flex-col gap-6 p-4">
-                {/* Brand */}
+        <aside className="w-64 flex-shrink-0 bg-surface-light dark:bg-surface-dark border-r border-slate-200 dark:border-slate-800 flex flex-col h-full transition-colors duration-200 z-20">
+            {/* Brand - Fixed at top */}
+            <div className="flex-shrink-0 p-4 pb-2">
                 <div className="flex items-center gap-3 px-2">
                     <div className="bg-primary/10 flex items-center justify-center rounded-lg h-10 w-10 shrink-0">
                         <span className="material-symbols-outlined text-primary text-2xl">local_hospital</span>
@@ -67,8 +67,10 @@ export default function Sidebar() {
                         <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">Sistem Manajemen</p>
                     </div>
                 </div>
+            </div>
 
-                {/* Navigation */}
+            {/* Navigation - Scrollable */}
+            <div className="flex-1 overflow-y-auto px-4 pb-4 sidebar-scroll">
                 <nav className="flex flex-col gap-1">
                     <Link
                         to="/"
@@ -481,8 +483,8 @@ export default function Sidebar() {
                 </nav>
             </div>
 
-            {/* Profile */}
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+            {/* Profile - Fixed at bottom */}
+            <div className="flex-shrink-0 p-4 border-t border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer group relative">
                     <div className="bg-center bg-no-repeat bg-cover rounded-full h-9 w-9 ring-2 ring-slate-100 dark:ring-slate-700 bg-slate-200 flex items-center justify-center">
                         <span className="material-symbols-outlined text-slate-500">person</span>

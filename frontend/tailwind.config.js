@@ -13,6 +13,10 @@ export default {
         "background-dark": "#101922",
         "surface-light": "#ffffff",
         "surface-dark": "#1a2632",
+        "border-light": "#e7edf3",
+        "border-dark": "#2a3b4d",
+        "text-main": "#0d141b",
+        "text-sub": "#4c739a",
       },
       fontFamily: {
         "display": ["Public Sans", "sans-serif"]

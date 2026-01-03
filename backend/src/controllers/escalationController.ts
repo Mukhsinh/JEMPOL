@@ -219,6 +219,73 @@ export const getEscalationLogs = async (req: AuthenticatedRequest, res: Response
   }
 };
 
+// Mendapatkan statistik eskalasi
+export const getEscalationStats = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    // Ambil statistik aturan eskalasi
+    const { data: rulesStats, error: rulesError } = await supabase
+      .from('escalation_rules')
+      .select('is_active');
+
+    if (rulesError) throw rulesError;
+
+    const totalRules = rulesStats?.length || 0;
+    const activeRules = rulesStats?.filter(rule => rule.is_active).length || 0;
+    const inactiveRules = totalRules - activeRules;
+
+    // Ambil statistik log eskalasi (30 hari terakhir)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: logsStats, error: logsError } = await supabase
+      .from('escalation_logs')
+      .select('execution_status, executed_at')
+      .gte('executed_at', thirtyDaysAgo.toISOString());
+
+    if (logsError) throw logsError;
+
+    const totalExecutions = logsStats?.length || 0;
+    const successfulExecutions = logsStats?.filter(log => log.execution_status === 'success').length || 0;
+    const failedExecutions = logsStats?.filter(log => log.execution_status === 'failed').length || 0;
+    const partialExecutions = logsStats?.filter(log => log.execution_status === 'partial').length || 0;
+
+    // Ambil statistik tiket yang dieskalasi (30 hari terakhir)
+    const { data: ticketsStats, error: ticketsError } = await supabase
+      .from('tickets')
+      .select('status, created_at')
+      .eq('status', 'escalated')
+      .gte('created_at', thirtyDaysAgo.toISOString());
+
+    if (ticketsError) throw ticketsError;
+
+    const escalatedTickets = ticketsStats?.length || 0;
+
+    const stats = {
+      rules: {
+        total: totalRules,
+        active: activeRules,
+        inactive: inactiveRules
+      },
+      executions: {
+        total: totalExecutions,
+        successful: successfulExecutions,
+        failed: failedExecutions,
+        partial: partialExecutions,
+        successRate: totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0
+      },
+      tickets: {
+        escalated: escalatedTickets
+      },
+      period: '30 days'
+    };
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching escalation stats:', error);
+    res.status(500).json({ error: 'Gagal mengambil statistik eskalasi' });
+  }
+};
+
 // Eksekusi manual aturan eskalasi
 export const executeEscalationRule = async (req: AuthenticatedRequest, res: Response) => {
   try {

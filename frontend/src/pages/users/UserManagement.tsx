@@ -152,7 +152,7 @@ const UserManagement = () => {
     };
 
     // Filtering
-    const filteredUsers = users.filter(user => {
+    const filteredUsers = (Array.isArray(users) ? users : []).filter(user => {
         const matchesSearch =
             user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -362,12 +362,11 @@ const UserManagement = () => {
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
-                                                        user.role === 'admin' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' :
-                                                        user.role === 'manager' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' :
-                                                        user.role === 'supervisor' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' :
-                                                        'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600'
-                                                    }`}>
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${user.role === 'admin' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' :
+                                                            user.role === 'manager' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' :
+                                                                user.role === 'supervisor' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' :
+                                                                    'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600'
+                                                        }`}>
                                                         {user.role}
                                                     </span>
                                                 </td>
@@ -380,7 +379,7 @@ const UserManagement = () => {
                                                         <span className={`font-medium text-xs px-2 py-0.5 rounded-md border ${user.is_active
                                                             ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 border-emerald-100 dark:border-emerald-800'
                                                             : 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600'
-                                                        }`}>
+                                                            }`}>
                                                             {user.is_active ? 'Aktif' : 'Nonaktif'}
                                                         </span>
                                                     </div>
@@ -436,7 +435,7 @@ const UserManagement = () => {
                                         className={`size-9 flex items-center justify-center rounded-lg font-medium text-sm transition-colors ${currentPage === page
                                             ? 'bg-primary text-white shadow-sm shadow-blue-200 dark:shadow-none'
                                             : 'border border-transparent text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-text-main dark:hover:text-white'
-                                        }`}
+                                            }`}
                                     >
                                         {page}
                                     </button>
@@ -467,7 +466,7 @@ const UserManagement = () => {
                                 <input
                                     type="text"
                                     value={formData.full_name}
-                                    onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                     placeholder="Masukkan nama lengkap"
                                 />
@@ -477,7 +476,7 @@ const UserManagement = () => {
                                 <input
                                     type="email"
                                     value={formData.email}
-                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                     placeholder="Masukkan email"
                                 />
@@ -487,7 +486,7 @@ const UserManagement = () => {
                                 <input
                                     type="text"
                                     value={formData.employee_id}
-                                    onChange={(e) => setFormData({...formData, employee_id: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                     placeholder="Masukkan NIP (opsional)"
                                 />
@@ -497,7 +496,7 @@ const UserManagement = () => {
                                 <input
                                     type="text"
                                     value={formData.phone}
-                                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                     placeholder="Masukkan nomor telepon"
                                 />
@@ -506,7 +505,7 @@ const UserManagement = () => {
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Unit Kerja</label>
                                 <select
                                     value={formData.unit_id}
-                                    onChange={(e) => setFormData({...formData, unit_id: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, unit_id: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                 >
                                     <option value="">Pilih Unit Kerja</option>
@@ -519,7 +518,7 @@ const UserManagement = () => {
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Peran</label>
                                 <select
                                     value={formData.role}
-                                    onChange={(e) => setFormData({...formData, role: e.target.value as any})}
+                                    onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                 >
                                     <option value="staff">Staff</option>
@@ -534,7 +533,7 @@ const UserManagement = () => {
                                 <input
                                     type="password"
                                     value={formData.password}
-                                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                     placeholder="Masukkan password untuk akses login"
                                 />
@@ -574,7 +573,7 @@ const UserManagement = () => {
                                 <input
                                     type="text"
                                     value={formData.full_name}
-                                    onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                 />
                             </div>
@@ -583,7 +582,7 @@ const UserManagement = () => {
                                 <input
                                     type="email"
                                     value={formData.email}
-                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                 />
                             </div>
@@ -592,7 +591,7 @@ const UserManagement = () => {
                                 <input
                                     type="text"
                                     value={formData.employee_id}
-                                    onChange={(e) => setFormData({...formData, employee_id: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                 />
                             </div>
@@ -601,7 +600,7 @@ const UserManagement = () => {
                                 <input
                                     type="text"
                                     value={formData.phone}
-                                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                 />
                             </div>
@@ -609,7 +608,7 @@ const UserManagement = () => {
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Unit Kerja</label>
                                 <select
                                     value={formData.unit_id}
-                                    onChange={(e) => setFormData({...formData, unit_id: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, unit_id: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                 >
                                     <option value="">Pilih Unit Kerja</option>
@@ -622,7 +621,7 @@ const UserManagement = () => {
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Peran</label>
                                 <select
                                     value={formData.role}
-                                    onChange={(e) => setFormData({...formData, role: e.target.value as any})}
+                                    onChange={(e) => setFormData({ ...formData, role: e.target.value as any })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                 >
                                     <option value="staff">Staff</option>
@@ -637,7 +636,7 @@ const UserManagement = () => {
                                 <input
                                     type="password"
                                     value={formData.password}
-                                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary"
                                     placeholder="Kosongkan jika tidak ingin mengubah password"
                                 />

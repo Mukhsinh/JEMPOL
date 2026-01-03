@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { qrCodeService, QRCode, CreateQRCodeData } from '../../services/qrCodeService';
 import unitService from '../../services/unitService';
 
@@ -41,7 +42,7 @@ const QRManagement: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      
+
       // Load units for dropdown
       const unitsResponse = await unitService.getUnits();
       setUnits(unitsResponse.units || []);
@@ -88,7 +89,7 @@ const QRManagement: React.FC = () => {
     try {
       const newStatus = !currentStatus;
       const statusText = newStatus ? 'mengaktifkan' : 'menonaktifkan';
-      
+
       if (confirm(`Apakah Anda yakin ingin ${statusText} QR Code ini?`)) {
         await qrCodeService.updateQRCode(id, { is_active: newStatus });
         loadData();
@@ -165,21 +166,21 @@ const QRManagement: React.FC = () => {
             </h2>
           </div>
           <nav className="hidden md:flex items-center gap-1">
-            <a className="text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors" href="/dashboard">
+            <Link className="text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors" to="/dashboard">
               Dashboard
-            </a>
-            <a className="text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors" href="/tickets">
+            </Link>
+            <Link className="text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors" to="/tickets">
               Keluhan
-            </a>
-            <a className="text-primary bg-primary/10 px-3 py-2 rounded-lg text-sm font-medium transition-colors" href="/qr-codes">
+            </Link>
+            <Link className="text-primary bg-primary/10 px-3 py-2 rounded-lg text-sm font-medium transition-colors" to="/qr-codes">
               Unit & QR Code
-            </a>
-            <a className="text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors" href="/reports">
+            </Link>
+            <Link className="text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors" to="/reports">
               Laporan
-            </a>
-            <a className="text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors" href="/settings">
+            </Link>
+            <Link className="text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors" to="/settings">
               Pengaturan
-            </a>
+            </Link>
           </nav>
         </div>
       </header>
@@ -188,9 +189,9 @@ const QRManagement: React.FC = () => {
       <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-8">
         {/* Breadcrumbs */}
         <div className="flex items-center gap-2 mb-6 text-sm">
-          <a className="text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" href="/dashboard">
+          <Link className="text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" to="/dashboard">
             Dashboard
-          </a>
+          </Link>
           <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
           <span className="text-slate-900 dark:text-white font-medium">Manajemen QR Code</span>
         </div>
@@ -369,11 +370,10 @@ const QRManagement: React.FC = () => {
                   </button>
                   <button
                     onClick={() => toggleQRStatus(qrCode.id, qrCode.is_active)}
-                    className={`p-2 rounded-lg transition-colors ${
-                      qrCode.is_active 
-                        ? 'text-orange-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-slate-700' 
+                    className={`p-2 rounded-lg transition-colors ${qrCode.is_active
+                        ? 'text-orange-500 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-slate-700'
                         : 'text-green-500 hover:text-green-600 hover:bg-green-50 dark:hover:bg-slate-700'
-                    }`}
+                      }`}
                     title={qrCode.is_active ? "Nonaktifkan QR Code" : "Aktifkan QR Code"}
                   >
                     <span className="material-symbols-outlined">

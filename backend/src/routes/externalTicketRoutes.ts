@@ -6,8 +6,8 @@ import {
   updateExternalTicketStatus,
   getExternalTicketStats,
   uploadMiddleware
-} from '../controllers/externalTicketController';
-import { authenticateToken } from '../middleware/auth';
+} from '../controllers/externalTicketController.js';
+import { authenticateSupabase } from '../middleware/supabaseAuthMiddleware.js';
 
 const router = express.Router();
 
@@ -15,9 +15,9 @@ const router = express.Router();
 router.post('/', uploadMiddleware, createExternalTicket);
 
 // Protected routes (authentication required)
-router.get('/', authenticateToken, getExternalTickets);
-router.get('/stats', authenticateToken, getExternalTicketStats);
-router.get('/:id', authenticateToken, getExternalTicketById);
-router.patch('/:id/status', authenticateToken, updateExternalTicketStatus);
+router.get('/', authenticateSupabase, getExternalTickets);
+router.get('/stats', authenticateSupabase, getExternalTicketStats);
+router.get('/:id', authenticateSupabase, getExternalTicketById);
+router.patch('/:id/status', authenticateSupabase, updateExternalTicketStatus);
 
 export default router;

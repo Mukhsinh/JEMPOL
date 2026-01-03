@@ -13,20 +13,20 @@ interface ReportFilters {
 
 export const getReportData = async (req: Request, res: Response) => {
   try {
-    const { 
-      dateRange = 'month', 
-      unitId, 
-      categoryId, 
-      status, 
+    const {
+      dateRange = 'month',
+      unitId,
+      categoryId,
+      status,
       priority,
       page = 1,
-      limit = 10 
+      limit = 10
     } = req.query as any;
 
     // Calculate date range
     const now = new Date();
     let startDate: Date;
-    
+
     switch (dateRange) {
       case 'week':
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -79,7 +79,7 @@ export const getReportData = async (req: Request, res: Response) => {
     // Calculate KPIs
     const totalComplaints = tickets?.length || 0;
     const resolvedComplaints = tickets?.filter(t => t.status === 'resolved' || t.status === 'closed').length || 0;
-    
+
     // Calculate average response time
     const responseTimes = tickets?.map(ticket => {
       if (ticket.first_response_at && ticket.created_at) {
@@ -88,7 +88,7 @@ export const getReportData = async (req: Request, res: Response) => {
       return null;
     }).filter(time => time !== null) || [];
 
-    const averageResponseTime = responseTimes.length > 0 
+    const averageResponseTime = responseTimes.length > 0
       ? Math.round(responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length / (1000 * 60)) // in minutes
       : 0;
 
@@ -107,7 +107,7 @@ export const getReportData = async (req: Request, res: Response) => {
       unitName: ticket.units?.name || 'N/A',
       categoryName: ticket.service_categories?.name || 'N/A',
       status: ticket.status,
-      responseTime: ticket.first_response_at 
+      responseTime: ticket.first_response_at
         ? Math.round((new Date(ticket.first_response_at).getTime() - new Date(ticket.created_at).getTime()) / (1000 * 60))
         : null,
       title: ticket.title
@@ -153,11 +153,11 @@ const calculateTrends = async (startDate: Date, unitId?: string, categoryId?: st
     // Group by week for the last 4 weeks
     const weeks = [];
     const now = new Date();
-    
+
     for (let i = 3; i >= 0; i--) {
       const weekStart = new Date(now.getTime() - (i * 7 * 24 * 60 * 60 * 1000));
       const weekEnd = new Date(weekStart.getTime() + (7 * 24 * 60 * 60 * 1000));
-      
+
       const weekTickets = tickets?.filter(ticket => {
         const ticketDate = new Date(ticket.created_at);
         return ticketDate >= weekStart && ticketDate < weekEnd;
@@ -205,7 +205,7 @@ const calculateRiskAnalysis = async (startDate: Date) => {
         }).length;
 
         const riskPercentage = totalTickets > 0 ? Math.round((overdueTickets / totalTickets) * 100) : 0;
-        
+
         let riskLevel: 'low' | 'medium' | 'high' | 'critical' = 'low';
         if (riskPercentage >= 80) riskLevel = 'critical';
         else if (riskPercentage >= 60) riskLevel = 'high';
@@ -228,16 +228,16 @@ const calculateRiskAnalysis = async (startDate: Date) => {
 
 // Helper function to get report data for export
 const getReportDataForExport = async (
-  dateRange: string = 'month', 
-  unitId?: string, 
-  categoryId?: string, 
-  status?: string, 
+  dateRange: string = 'month',
+  unitId?: string,
+  categoryId?: string,
+  status?: string,
   priority?: string
 ) => {
   // Calculate date range
   const now = new Date();
   let startDate: Date;
-  
+
   switch (dateRange) {
     case 'week':
       startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -290,7 +290,7 @@ const getReportDataForExport = async (
   // Calculate KPIs
   const totalComplaints = tickets?.length || 0;
   const resolvedComplaints = tickets?.filter(t => t.status === 'resolved' || t.status === 'closed').length || 0;
-  
+
   // Calculate average response time
   const responseTimes = tickets?.map(ticket => {
     if (ticket.first_response_at && ticket.created_at) {
@@ -299,7 +299,7 @@ const getReportDataForExport = async (
     return null;
   }).filter(time => time !== null) || [];
 
-  const averageResponseTime = responseTimes.length > 0 
+  const averageResponseTime = responseTimes.length > 0
     ? Math.round(responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length / (1000 * 60)) // in minutes
     : 0;
 
@@ -317,7 +317,7 @@ const getReportDataForExport = async (
     unitName: ticket.units?.name || 'N/A',
     categoryName: ticket.service_categories?.name || 'N/A',
     status: ticket.status,
-    responseTime: ticket.first_response_at 
+    responseTime: ticket.first_response_at
       ? Math.round((new Date(ticket.first_response_at).getTime() - new Date(ticket.created_at).getTime()) / (1000 * 60))
       : null,
     title: ticket.title
@@ -344,7 +344,7 @@ const getReportDataForExport = async (
 // Helper function to get period text
 const getPeriodText = (dateRange: string): string => {
   const now = new Date();
-  
+
   switch (dateRange) {
     case 'week':
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -364,12 +364,12 @@ const getPeriodText = (dateRange: string): string => {
 
 export const exportToPDF = async (req: Request, res: Response) => {
   try {
-    const { 
-      dateRange = 'month', 
-      unitId, 
-      categoryId, 
-      status, 
-      priority 
+    const {
+      dateRange = 'month',
+      unitId,
+      categoryId,
+      status,
+      priority
     } = req.query as any;
 
     // Get report data
@@ -377,11 +377,11 @@ export const exportToPDF = async (req: Request, res: Response) => {
 
     // Create PDF document
     const doc = new PDFDocument({ margin: 50 });
-    
+
     // Set response headers
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=laporan-keluhan-${dateRange}-${new Date().toISOString().split('T')[0]}.pdf`);
-    
+
     // Pipe PDF to response
     doc.pipe(res);
 
@@ -412,7 +412,7 @@ export const exportToPDF = async (req: Request, res: Response) => {
     const tableTop = doc.y;
     const tableLeft = 50;
     const colWidths = [80, 120, 80, 80, 60, 80];
-    
+
     doc.fontSize(10);
     doc.text('No. Tiket', tableLeft, tableTop);
     doc.text('Tanggal', tableLeft + colWidths[0], tableTop);
@@ -423,8 +423,8 @@ export const exportToPDF = async (req: Request, res: Response) => {
 
     // Draw line under headers
     doc.moveTo(tableLeft, tableTop + 15)
-       .lineTo(tableLeft + colWidths.reduce((a, b) => a + b, 0), tableTop + 15)
-       .stroke();
+      .lineTo(tableLeft + colWidths.reduce((a, b) => a + b, 0), tableTop + 15)
+      .stroke();
 
     // Add data rows
     let currentY = tableTop + 25;
@@ -440,7 +440,7 @@ export const exportToPDF = async (req: Request, res: Response) => {
       doc.text(report.categoryName || '-', tableLeft + colWidths[0] + colWidths[1] + colWidths[2], currentY);
       doc.text(report.status || '-', tableLeft + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], currentY);
       doc.text(report.responseTime ? `${report.responseTime}` : '-', tableLeft + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4], currentY);
-      
+
       currentY += 20;
     });
 
@@ -458,12 +458,12 @@ export const exportToPDF = async (req: Request, res: Response) => {
 
 export const exportToExcel = async (req: Request, res: Response) => {
   try {
-    const { 
-      dateRange = 'month', 
-      unitId, 
-      categoryId, 
-      status, 
-      priority 
+    const {
+      dateRange = 'month',
+      unitId,
+      categoryId,
+      status,
+      priority
     } = req.query as any;
 
     // Get report data
@@ -471,17 +471,17 @@ export const exportToExcel = async (req: Request, res: Response) => {
 
     // Create workbook
     const workbook = new ExcelJS.Workbook();
-    
+
     // Add KPI worksheet
     const kpiSheet = workbook.addWorksheet('Ringkasan KPI');
-    
+
     // Add KPI data
     kpiSheet.addRow(['Metrik', 'Nilai']);
     kpiSheet.addRow(['Total Keluhan', reportData.kpi.totalComplaints]);
     kpiSheet.addRow(['Keluhan Terselesaikan', reportData.kpi.resolvedComplaints]);
     kpiSheet.addRow(['Rata-rata Waktu Respons (menit)', reportData.kpi.averageResponseTime]);
     kpiSheet.addRow(['Proyeksi Minggu Depan', reportData.kpi.projectedNextWeek]);
-    
+
     // Style KPI sheet
     kpiSheet.getRow(1).font = { bold: true };
     kpiSheet.columns = [
@@ -491,7 +491,7 @@ export const exportToExcel = async (req: Request, res: Response) => {
 
     // Add detailed reports worksheet
     const detailSheet = workbook.addWorksheet('Detail Laporan');
-    
+
     // Add headers
     detailSheet.addRow([
       'No. Tiket',
@@ -531,12 +531,12 @@ export const exportToExcel = async (req: Request, res: Response) => {
     // Add trends worksheet if data exists
     if (reportData.trends && reportData.trends.length > 0) {
       const trendsSheet = workbook.addWorksheet('Tren');
-      
+
       trendsSheet.addRow(['Periode', 'Jumlah Keluhan', 'Terselesaikan']);
       reportData.trends.forEach((trend: any) => {
         trendsSheet.addRow([trend.date, trend.complaints, trend.resolved]);
       });
-      
+
       trendsSheet.getRow(1).font = { bold: true };
       trendsSheet.columns = [
         { width: 15 },
@@ -548,12 +548,12 @@ export const exportToExcel = async (req: Request, res: Response) => {
     // Add risk analysis worksheet if data exists
     if (reportData.riskAnalysis && reportData.riskAnalysis.length > 0) {
       const riskSheet = workbook.addWorksheet('Analisis Risiko');
-      
+
       riskSheet.addRow(['Unit', 'Persentase Risiko (%)', 'Level Risiko']);
       reportData.riskAnalysis.forEach((risk: any) => {
         riskSheet.addRow([risk.unitName, risk.riskPercentage, risk.riskLevel]);
       });
-      
+
       riskSheet.getRow(1).font = { bold: true };
       riskSheet.columns = [
         { width: 25 },
@@ -611,6 +611,95 @@ export const getCategories = async (req: Request, res: Response) => {
     res.json(categories || []);
   } catch (error) {
     console.error('Error fetching service categories:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getSurveyReports = async (req: Request, res: Response) => {
+  try {
+    const { start_date, end_date } = req.query as any;
+
+    let query = supabase
+      .from('standalone_surveys')
+      .select(`
+        *,
+        units(name),
+        service_categories(name)
+      `)
+      .order('submitted_at', { ascending: false });
+
+    if (start_date) {
+      query = query.gte('submitted_at', start_date);
+    }
+    if (end_date) {
+      const endDateObj = new Date(end_date);
+      endDateObj.setHours(23, 59, 59, 999);
+      query = query.lte('submitted_at', endDateObj.toISOString());
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    res.json(data || []);
+  } catch (error) {
+    console.error('Error fetching survey reports:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getSurveyStats = async (req: Request, res: Response) => {
+  try {
+    const { start_date, end_date } = req.query as any;
+
+    let query = supabase
+      .from('standalone_surveys')
+      .select(`
+        id,
+        overall_score,
+        response_time_score,
+        solution_quality_score,
+        staff_courtesy_score,
+        submitted_at
+      `);
+
+    if (start_date) {
+      query = query.gte('submitted_at', start_date);
+    }
+    if (end_date) {
+      const endDateObj = new Date(end_date);
+      endDateObj.setHours(23, 59, 59, 999);
+      query = query.lte('submitted_at', endDateObj.toISOString());
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    const totalSurveys = data?.length || 0;
+    const avgOverallScore = data?.reduce((sum, survey) => sum + (survey.overall_score || 0), 0) / totalSurveys || 0;
+    const avgResponseTimeScore = data?.reduce((sum, survey) => sum + (survey.response_time_score || 0), 0) / totalSurveys || 0;
+    const avgSolutionQualityScore = data?.reduce((sum, survey) => sum + (survey.solution_quality_score || 0), 0) / totalSurveys || 0;
+    const avgStaffCourtesyScore = data?.reduce((sum, survey) => sum + (survey.staff_courtesy_score || 0), 0) / totalSurveys || 0;
+
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+    const activeSurveys = data?.filter(s => new Date(s.submitted_at) >= oneDayAgo).length || 0;
+
+    res.json({
+      total_surveys: totalSurveys,
+      total_responses: totalSurveys,
+      average_completion_rate: 100,
+      active_surveys: activeSurveys,
+      average_scores: {
+        overall: Math.round(avgOverallScore * 100) / 100,
+        response_time: Math.round(avgResponseTimeScore * 100) / 100,
+        solution_quality: Math.round(avgSolutionQualityScore * 100) / 100,
+        staff_courtesy: Math.round(avgStaffCourtesyScore * 100) / 100
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching survey stats:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

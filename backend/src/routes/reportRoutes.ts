@@ -1,20 +1,26 @@
 import express from 'express';
-import { 
-  getReportData, 
-  exportToPDF, 
-  exportToExcel, 
-  getUnits, 
-  getCategories 
+import {
+  getReportData,
+  exportToPDF,
+  exportToExcel,
+  getUnits,
+  getCategories,
+  getSurveyReports,
+  getSurveyStats
 } from '../controllers/reportController.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateSupabase } from '../middleware/supabaseAuthMiddleware.js';
 
 const router = express.Router();
 
 // All report routes require authentication
-router.use(authenticateToken);
+router.use(authenticateSupabase);
 
 // Get report data with filters
 router.get('/', getReportData);
+
+// Survey routes
+router.get('/surveys', getSurveyReports);
+router.get('/surveys/stats', getSurveyStats);
 
 // Export routes
 router.get('/export/pdf', exportToPDF);

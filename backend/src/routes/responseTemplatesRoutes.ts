@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { responseTemplatesController } from '../controllers/responseTemplatesController.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateSupabase } from '../middleware/supabaseAuthMiddleware.js';
 
 const router = Router();
 
 // Apply authentication middleware to all routes
-router.use(authenticateToken);
+router.use(authenticateSupabase);
 
 // GET /api/response-templates - Get all templates
 router.get('/', responseTemplatesController.getAllTemplates);

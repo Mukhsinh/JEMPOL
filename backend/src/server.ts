@@ -1,4 +1,6 @@
 import express from 'express';
+
+
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
@@ -10,6 +12,7 @@ import visitorRoutes from './routes/visitorRoutes.js';
 import innovationRoutes from './routes/innovationRoutes.js';
 import gameRoutes from './routes/gameRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import authVerifyRoutes from './routes/authVerifyRoutes.js';
 import complaintRoutes from './routes/complaintRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
 import escalationRoutes from './routes/escalationRoutes.js';
@@ -25,10 +28,17 @@ import externalTicketRoutes from './routes/externalTicketRoutes.js';
 import aiEscalationRoutes from './routes/aiEscalationRoutes.js';
 import publicSurveyRoutes from './routes/publicSurveyRoutes.js';
 import appSettingsRoutes from './routes/appSettingsRoutes.js';
+import ebookRoutes from './routes/ebookRoutes.js';
+import notificationSettingsRoutes from './routes/notificationSettingsRoutes.js';
 import supabase from './config/supabase.js';
+import { authenticateToken } from './middleware/auth.js';
 import { initializeAdminTable, createDefaultAdmin } from './models/Admin.js';
 
 dotenv.config();
+
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  console.warn('⚠️ WARNING: SUPABASE_SERVICE_ROLE_KEY is missing. Admin operations requiring elevated privileges might fail.');
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,19 +57,19 @@ const io = new Server(httpServer, {
     origin: (origin, callback) => {
       // Allow requests with no origin
       if (!origin) return callback(null, true);
-      
+
       const allowedOrigins = [
         process.env.FRONTEND_URL || 'http://localhost:3000',
         'http://localhost:3001',
         'http://localhost:3002',
         'https://jempol-frontend.vercel.app',
       ];
-      
+
       // Allow all Vercel deployments
       if (origin.includes('.vercel.app')) {
         return callback(null, true);
       }
-      
+
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -89,7 +99,7 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
+
     // Check if origin is in allowed list
     const isAllowed = allowedOrigins.some(allowed => {
       if (typeof allowed === 'string') {
@@ -97,7 +107,7 @@ app.use(cors({
       }
       return false;
     });
-    
+
     if (isAllowed) {
       callback(null, true);
     } else {
@@ -134,12 +144,12 @@ app.use('/uploads', (req, res, next) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
-  
+
   // Handle preflight
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
-  
+
   next();
 }, express.static(path.join(__dirname, '../../uploads'), {
   setHeaders: (res, filePath) => {
@@ -160,8 +170,8 @@ app.use('/uploads', (req, res, next) => {
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    success: true, 
+  res.json({
+    success: true,
     message: 'Server is running',
     timestamp: new Date().toISOString()
   });
@@ -169,6 +179,7 @@ app.get('/api/health', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', authVerifyRoutes);
 app.use('/api/visitors', visitorRoutes);
 app.use('/api/innovations', innovationRoutes);
 app.use('/api/game', gameRoutes);
@@ -188,12 +199,135 @@ app.use('/api/ai-escalation', aiEscalationRoutes);
 app.use('/api/app-settings', appSettingsRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/public', publicSurveyRoutes);
+app.use('/api/ebooks', ebookRoutes);
+app.use('/api/notification-settings', notificationSettingsRoutes);
+
+// Import public data routes
+import publicDataRoutes from './routes/publicDataRoutes.js';
+app.use('/api/public', publicDataRoutes);
+
+// Additional endpoints for frontend compatibility
+app.use('/api/escalation-rules', escalationRoutes);
+app.use('/api/escalation-stats', escalationRoutes);
+
+// Route aliases for frontend compatibility
+app.get('/api/escalation-rules', authenticateToken, async (req, res) => {
+  try {
+    const { data: rules, error } = await supabase
+      .from('escalation_rules')
+      .select(`
+        *,
+        creator:created_by(full_name, email)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(rules || []);
+  } catch (error) {
+    console.error('Error fetching escalation rules:', error);
+    res.status(500).json({ error: 'Gagal mengambil aturan eskalasi' });
+  }
+});
+
+app.get('/api/escalation-stats', authenticateToken, async (req, res) => {
+  try {
+    // Ambil statistik aturan eskalasi
+    const { data: rulesStats, error: rulesError } = await supabase
+      .from('escalation_rules')
+      .select('is_active');
+
+    if (rulesError) throw rulesError;
+
+    const totalRules = rulesStats?.length || 0;
+    const activeRules = rulesStats?.filter(rule => rule.is_active).length || 0;
+    const inactiveRules = totalRules - activeRules;
+
+    // Ambil statistik log eskalasi (30 hari terakhir)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const { data: logsStats, error: logsError } = await supabase
+      .from('escalation_logs')
+      .select('execution_status, executed_at')
+      .gte('executed_at', thirtyDaysAgo.toISOString());
+
+    if (logsError) throw logsError;
+
+    const totalExecutions = logsStats?.length || 0;
+    const successfulExecutions = logsStats?.filter(log => log.execution_status === 'success').length || 0;
+    const failedExecutions = logsStats?.filter(log => log.execution_status === 'failed').length || 0;
+    const partialExecutions = logsStats?.filter(log => log.execution_status === 'partial').length || 0;
+
+    // Ambil statistik tiket yang dieskalasi (30 hari terakhir)
+    const { data: ticketsStats, error: ticketsError } = await supabase
+      .from('tickets')
+      .select('status, created_at')
+      .eq('status', 'escalated')
+      .gte('created_at', thirtyDaysAgo.toISOString());
+
+    if (ticketsError) throw ticketsError;
+
+    const escalatedTickets = ticketsStats?.length || 0;
+
+    const stats = {
+      rules: {
+        total: totalRules,
+        active: activeRules,
+        inactive: inactiveRules
+      },
+      executions: {
+        total: totalExecutions,
+        successful: successfulExecutions,
+        failed: failedExecutions,
+        partial: partialExecutions,
+        successRate: totalExecutions > 0 ? Math.round((successfulExecutions / totalExecutions) * 100) : 0
+      },
+      tickets: {
+        escalated: escalatedTickets
+      },
+      period: '30 days'
+    };
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching escalation stats:', error);
+    res.status(500).json({ error: 'Gagal mengambil statistik eskalasi' });
+  }
+});
+
+app.patch('/api/escalation-rules/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { is_active } = req.body;
+
+    const { data: rule, error } = await supabase
+      .from('escalation_rules')
+      .update({
+        is_active,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    if (!rule) {
+      return res.status(404).json({ error: 'Aturan eskalasi tidak ditemukan' });
+    }
+
+    res.json(rule);
+  } catch (error) {
+    console.error('Error toggling escalation rule:', error);
+    res.status(500).json({ error: 'Gagal mengubah status aturan eskalasi' });
+  }
+});
 
 // Public units endpoint (no auth required) for fallback
 app.get('/api/public/units', async (req, res) => {
   try {
     const { search, type, status } = req.query;
-    
+
     let query = supabase
       .from('units')
       .select(`
@@ -216,7 +350,7 @@ app.get('/api/public/units', async (req, res) => {
         .select('id')
         .eq('name', type)
         .single();
-      
+
       if (unitTypeData?.id) {
         query = query.eq('unit_type_id', unitTypeData.id);
       }
@@ -323,10 +457,79 @@ app.get('/api/test/reports', async (req, res) => {
   }
 });
 
+// Test endpoint for SLA settings (no auth)
+app.get('/api/test/sla-settings', async (req, res) => {
+  try {
+    const { data: slaSettings, error } = await supabase
+      .from('sla_settings')
+      .select(`
+        *,
+        unit_types(name, code),
+        service_categories(name, code),
+        patient_types(name, code)
+      `)
+      .order('name')
+      .limit(5);
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data: slaSettings,
+      message: 'Test SLA settings endpoint working',
+      count: slaSettings?.length || 0
+    });
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+});
+
+// Test endpoint for SLA settings with admin client (no auth, bypasses RLS)
+app.get('/api/test/sla-settings-admin', async (req, res) => {
+  try {
+    // Coba query langsung dengan raw SQL untuk bypass RLS
+    const { data: slaSettings, error } = await supabase.rpc('get_sla_settings_public');
+
+    if (error) {
+      console.error('RPC error:', error);
+      // Fallback ke query biasa
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from('sla_settings')
+        .select(`
+          *,
+          unit_types(name, code),
+          service_categories(name, code),
+          patient_types(name, code)
+        `)
+        .order('name')
+        .limit(5);
+
+      if (fallbackError) throw fallbackError;
+
+      res.json({
+        success: true,
+        data: fallbackData,
+        message: 'Test SLA settings fallback endpoint working',
+        count: fallbackData?.length || 0
+      });
+    } else {
+      res.json({
+        success: true,
+        data: slaSettings,
+        message: 'Test SLA settings RPC endpoint working',
+        count: slaSettings?.length || 0
+      });
+    }
+  } catch (error) {
+    console.error('Admin endpoint error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+});
+
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Global error handler:', err);
-  
+
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(400).json({
       success: false,

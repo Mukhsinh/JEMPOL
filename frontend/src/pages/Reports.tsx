@@ -183,7 +183,7 @@ const Reports = () => {
                     <div className="text-red-500 text-6xl mb-4">⚠️</div>
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Terjadi Kesalahan</h2>
                     <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-                    <button 
+                    <button
                         onClick={loadReportData}
                         className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors"
                     >
@@ -209,14 +209,14 @@ const Reports = () => {
                         <p className="text-[#4c739a] dark:text-slate-400 text-base font-normal">Wawasan mendalam mengenai tren komplain dan performa pelayanan RS.</p>
                     </div>
                     <div className="flex gap-2">
-                        <button 
+                        <button
                             onClick={exportToPDF}
                             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface-dark border border-[#e7edf3] dark:border-slate-700 rounded-lg text-[#0d141b] dark:text-white text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
                         >
                             <span className="material-symbols-outlined text-[20px]">picture_as_pdf</span>
                             Ekspor PDF
                         </button>
-                        <button 
+                        <button
                             onClick={exportToExcel}
                             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface-dark border border-[#e7edf3] dark:border-slate-700 rounded-lg text-[#0d141b] dark:text-white text-sm font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
                         >
@@ -233,7 +233,7 @@ const Reports = () => {
                     <div className="flex flex-wrap gap-3 flex-1 w-full">
                         {/* Date Range Filter */}
                         <div className="relative">
-                            <button 
+                            <button
                                 onClick={() => setShowFilters(prev => ({ ...prev, dateRange: !prev.dateRange }))}
                                 className="flex h-10 shrink-0 items-center justify-between gap-x-2 rounded-lg bg-[#f6f7f8] dark:bg-slate-800 hover:bg-[#eef2f6] dark:hover:bg-slate-700 px-4 min-w-[180px] text-left transition-colors"
                             >
@@ -268,7 +268,7 @@ const Reports = () => {
 
                         {/* Unit Filter */}
                         <div className="relative">
-                            <button 
+                            <button
                                 onClick={() => setShowFilters(prev => ({ ...prev, unit: !prev.unit }))}
                                 className="flex h-10 shrink-0 items-center justify-between gap-x-2 rounded-lg bg-[#f6f7f8] dark:bg-slate-800 hover:bg-[#eef2f6] dark:hover:bg-slate-700 px-4 min-w-[160px] text-left transition-colors"
                             >
@@ -307,7 +307,7 @@ const Reports = () => {
 
                         {/* Category Filter */}
                         <div className="relative">
-                            <button 
+                            <button
                                 onClick={() => setShowFilters(prev => ({ ...prev, category: !prev.category }))}
                                 className="flex h-10 shrink-0 items-center justify-between gap-x-2 rounded-lg bg-[#f6f7f8] dark:bg-slate-800 hover:bg-[#eef2f6] dark:hover:bg-slate-700 px-4 min-w-[160px] text-left transition-colors"
                             >
@@ -344,7 +344,7 @@ const Reports = () => {
                             )}
                         </div>
                     </div>
-                    <button 
+                    <button
                         onClick={applyFilters}
                         className="h-10 px-6 bg-primary hover:bg-blue-600 text-white text-sm font-medium rounded-lg shadow-sm transition-colors w-full md:w-auto"
                     >
@@ -362,15 +362,14 @@ const Reports = () => {
                             <div className="bg-blue-50 dark:bg-blue-900/20 text-primary p-2 rounded-lg">
                                 <span className="material-symbols-outlined">inbox</span>
                             </div>
-                            <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${
-                                reportData.kpi.totalComplaintsChange >= 0 
+                            <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${(reportData.kpi?.totalComplaintsChange ?? 0) >= 0
                                     ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                                     : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                            }`}>
+                                }`}>
                                 <span className="material-symbols-outlined text-[14px]">
-                                    {reportData.kpi.totalComplaintsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}
-                                </span> 
-                                {Math.abs(reportData.kpi.totalComplaintsChange)}%
+                                    {(reportData.kpi?.totalComplaintsChange ?? 0) >= 0 ? 'arrow_upward' : 'arrow_downward'}
+                                </span>
+                                {Math.abs(reportData.kpi?.totalComplaintsChange ?? 0)}%
                             </span>
                         </div>
                         <div>
@@ -378,21 +377,20 @@ const Reports = () => {
                             <h3 className="text-[#0d141b] dark:text-white text-2xl font-bold">{reportData.kpi.totalComplaints.toLocaleString()}</h3>
                         </div>
                     </div>
-                    
+
                     {/* Card 2 */}
                     <div className="bg-white dark:bg-surface-dark p-5 rounded-xl border border-[#e7edf3] dark:border-slate-700 shadow-sm flex flex-col gap-2">
                         <div className="flex justify-between items-start">
                             <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 p-2 rounded-lg">
                                 <span className="material-symbols-outlined">check_circle</span>
                             </div>
-                            <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${
-                                reportData.kpi.resolvedComplaintsChange >= 0 
+                            <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${reportData.kpi.resolvedComplaintsChange >= 0
                                     ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                                     : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                            }`}>
+                                }`}>
                                 <span className="material-symbols-outlined text-[14px]">
                                     {reportData.kpi.resolvedComplaintsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}
-                                </span> 
+                                </span>
                                 {Math.abs(reportData.kpi.resolvedComplaintsChange)}%
                             </span>
                         </div>
@@ -401,21 +399,20 @@ const Reports = () => {
                             <h3 className="text-[#0d141b] dark:text-white text-2xl font-bold">{reportData.kpi.resolvedComplaints.toLocaleString()}</h3>
                         </div>
                     </div>
-                    
+
                     {/* Card 3 */}
                     <div className="bg-white dark:bg-surface-dark p-5 rounded-xl border border-[#e7edf3] dark:border-slate-700 shadow-sm flex flex-col gap-2">
                         <div className="flex justify-between items-start">
                             <div className="bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 p-2 rounded-lg">
                                 <span className="material-symbols-outlined">timer</span>
                             </div>
-                            <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${
-                                reportData.kpi.averageResponseTimeChange <= 0 
+                            <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${reportData.kpi.averageResponseTimeChange <= 0
                                     ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                                     : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                            }`}>
+                                }`}>
                                 <span className="material-symbols-outlined text-[14px]">
                                     {reportData.kpi.averageResponseTimeChange <= 0 ? 'arrow_downward' : 'arrow_upward'}
-                                </span> 
+                                </span>
                                 {Math.abs(reportData.kpi.averageResponseTimeChange)}m
                             </span>
                         </div>
@@ -424,7 +421,7 @@ const Reports = () => {
                             <h3 className="text-[#0d141b] dark:text-white text-2xl font-bold">{reportData.kpi.averageResponseTime} Menit</h3>
                         </div>
                     </div>
-                    
+
                     {/* Card 4 AI Prediction */}
                     <div className="bg-gradient-to-br from-primary/5 to-white dark:to-surface-dark p-5 rounded-xl border border-primary/20 shadow-sm flex flex-col gap-2 relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-2 opacity-10">
@@ -474,7 +471,7 @@ const Reports = () => {
                                     const height = maxValue > 0 ? (trend.complaints / maxValue) * 100 : 0;
                                     return (
                                         <div key={index} className="flex flex-col items-center flex-1">
-                                            <div 
+                                            <div
                                                 className="w-full bg-primary rounded-t-sm min-h-[4px]"
                                                 style={{ height: `${height}%` }}
                                                 title={`${trend.complaints} komplain`}
@@ -505,15 +502,14 @@ const Reports = () => {
                                 <div key={index} className="flex flex-col gap-1">
                                     <div className="flex justify-between text-sm">
                                         <span className="font-medium text-gray-700 dark:text-gray-300">{risk.unitName}</span>
-                                        <span className={`font-bold ${
-                                            risk.riskLevel === 'critical' ? 'text-red-600' :
-                                            risk.riskLevel === 'high' ? 'text-orange-500' :
-                                            risk.riskLevel === 'medium' ? 'text-yellow-500' :
-                                            'text-primary'
-                                        }`}>{risk.riskPercentage}%</span>
+                                        <span className={`font-bold ${risk.riskLevel === 'critical' ? 'text-red-600' :
+                                                risk.riskLevel === 'high' ? 'text-orange-500' :
+                                                    risk.riskLevel === 'medium' ? 'text-yellow-500' :
+                                                        'text-primary'
+                                            }`}>{risk.riskPercentage}%</span>
                                     </div>
                                     <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5">
-                                        <div 
+                                        <div
                                             className={`h-2.5 rounded-full ${getRiskColor(risk.riskLevel)}`}
                                             style={{ width: `${risk.riskPercentage}%` }}
                                         ></div>
@@ -564,11 +560,10 @@ const Reports = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             {report.responseTime !== null ? (
-                                                <span className={`font-medium ${
-                                                    report.responseTime > 60 
-                                                        ? 'text-red-600 dark:text-red-400' 
+                                                <span className={`font-medium ${report.responseTime > 60
+                                                        ? 'text-red-600 dark:text-red-400'
                                                         : 'text-green-600 dark:text-green-400'
-                                                }`}>
+                                                    }`}>
                                                     {report.responseTime} Menit {report.responseTime > 60 ? '(Lambat)' : ''}
                                                 </span>
                                             ) : (
@@ -585,14 +580,14 @@ const Reports = () => {
                             Menampilkan {((currentPage - 1) * 10) + 1}-{Math.min(currentPage * 10, reportData.totalReports)} dari {reportData.totalReports} laporan
                         </span>
                         <div className="flex gap-1">
-                            <button 
+                            <button
                                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                 disabled={currentPage === 1}
                                 className="size-8 flex items-center justify-center rounded border border-[#e7edf3] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#4c739a] dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-50"
                             >
                                 <span className="material-symbols-outlined text-[18px]">chevron_left</span>
                             </button>
-                            
+
                             {/* Page numbers */}
                             {Array.from({ length: Math.min(3, Math.ceil(reportData.totalReports / 10)) }, (_, i) => {
                                 const pageNum = currentPage + i - 1;
@@ -601,18 +596,17 @@ const Reports = () => {
                                     <button
                                         key={pageNum}
                                         onClick={() => setCurrentPage(pageNum)}
-                                        className={`size-8 flex items-center justify-center rounded border text-sm font-medium ${
-                                            pageNum === currentPage
+                                        className={`size-8 flex items-center justify-center rounded border text-sm font-medium ${pageNum === currentPage
                                                 ? 'border-primary bg-primary text-white'
                                                 : 'border-[#e7edf3] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#0d141b] dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                                        }`}
+                                            }`}
                                     >
                                         {pageNum}
                                     </button>
                                 );
                             })}
-                            
-                            <button 
+
+                            <button
                                 onClick={() => setCurrentPage(prev => Math.min(Math.ceil(reportData.totalReports / 10), prev + 1))}
                                 disabled={currentPage >= Math.ceil(reportData.totalReports / 10)}
                                 className="size-8 flex items-center justify-center rounded border border-[#e7edf3] dark:border-slate-700 bg-white dark:bg-slate-800 text-[#4c739a] dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 disabled:opacity-50"

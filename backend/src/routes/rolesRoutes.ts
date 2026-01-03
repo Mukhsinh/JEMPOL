@@ -1,11 +1,14 @@
 import { Router } from 'express';
 import { rolesController } from '../controllers/rolesController.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateSupabase } from '../middleware/supabaseAuthMiddleware.js';
 
 const router = Router();
 
-// Apply authentication middleware to all routes
-router.use(authenticateToken);
+// Public endpoints (no auth required) for basic data
+router.get('/public', rolesController.getAllRoles);
+
+// Apply authentication middleware to protected routes
+router.use(authenticateSupabase);
 
 // GET /api/roles - Get all roles
 router.get('/', rolesController.getAllRoles);

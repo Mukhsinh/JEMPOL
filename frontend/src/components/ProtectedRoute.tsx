@@ -1,6 +1,6 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContextOptimized';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -15,6 +15,20 @@ function ProtectedRoute({
 }: ProtectedRouteProps) {
   const { isAuthenticated, isAdmin, isSuperAdmin, isLoading } = useAuth();
   const location = useLocation();
+  const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
+
+  // Show timeout message after 10 seconds
+  useEffect(() => {
+    if (isLoading) {
+      const timeout = setTimeout(() => {
+        setShowTimeoutMessage(true);
+      }, 10000);
+
+      return () => clearTimeout(timeout);
+    } else {
+      setShowTimeoutMessage(false);
+    }
+  }, [isLoading]);
 
   // Show loading spinner while checking authentication
   if (isLoading) {
@@ -23,6 +37,15 @@ function ProtectedRoute({
         <div className="flex flex-col items-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           <p className="text-slate-600 dark:text-slate-400">Memverifikasi akses...</p>
+          <div className="text-xs text-slate-500 mt-2">
+            Jika loading terlalu lama, silakan refresh halaman
+          </div>
+          {showTimeoutMessage && (
+            <div className="text-xs text-orange-500 mt-2 text-center max-w-md">
+              ⚠️ Proses verifikasi memakan waktu lebih lama dari biasanya. 
+              Ini bisa terjadi karena koneksi internet yang lambat atau server sedang sibuk.
+            </div>
+          )}
         </div>
       </div>
     );

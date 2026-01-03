@@ -1,9 +1,9 @@
 import express from 'express';
-import { AppSettingsController } from '../controllers/appSettingsController';
+import { AppSettingsController } from '../controllers/appSettingsController.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { authenticateJWT } from '../middleware/jwtAuth';
+import { authenticateJWT } from '../middleware/jwtAuth.js';
 
 const router = express.Router();
 const appSettingsController = new AppSettingsController();

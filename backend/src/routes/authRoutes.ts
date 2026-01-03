@@ -1,5 +1,7 @@
 import express from 'express';
-import { login, verifyToken, logout } from '../controllers/authControllerSimple.js';
+import { login, logout } from '../controllers/authControllerSimple.js';
+import { authenticateSupabase } from '../middleware/supabaseAuthMiddleware.js';
+
 
 const router = express.Router();
 
@@ -7,7 +9,12 @@ const router = express.Router();
 router.post('/login', login);
 
 // GET /api/auth/verify - Verify token
-router.get('/verify', verifyToken);
+router.get('/verify', authenticateSupabase, (req: any, res: any) => {
+    res.json({
+        success: true,
+        user: req.user || req.admin
+    });
+});
 
 // POST /api/auth/logout - Logout
 router.post('/logout', logout);

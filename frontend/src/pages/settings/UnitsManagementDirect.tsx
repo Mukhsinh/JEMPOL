@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../utils/supabaseClient';
+import unitService, { Unit, UnitType } from '../../services/unitService';
 import UnitModal from '../../components/UnitModal';
 
 export interface Unit {
@@ -64,26 +64,17 @@ const UnitsManagementDirect = ({ embedded = false }: UnitsManagementProps) => {
             setLoading(true);
             setError(null);
             
-            // Fetch units with unit_type relation
-            const { data: unitsData, error: unitsError } = await supabase
-                .from('units')
-                .select(`
-                    *,
-                    unit_type:unit_types(name, code, color)
-                `)
-                .order('created_at', { ascending: false });
+            // Fetch units using service
+            const unitsResponse = await unitService.getUnits({
+                search: searchTerm,
+                type: typeFilter,
+                status: statusFilter
+            });
 
-            // Fetch unit types
-            const { data: unitTypesData, error: unitTypesError } = await supabase
-                .from('unit_types')
-                .select('*')
-                .eq('is_active', true)
-                .order('name');
+            // Fetch unit types using service
+            const unitTypesData = await unitService.getUnitTypes();
 
-            if (unitsError) throw unitsError;
-            if (unitTypesError) throw unitTypesError;
-
-            setUnits(unitsData || []);
+            setUnits(unitsResponse.units || []);
             setUnitTypes(unitTypesData || []);
         } catch (error: any) {
             console.error('Error fetching data:', error);
@@ -95,43 +86,14 @@ const UnitsManagementDirect = ({ embedded = false }: UnitsManagementProps) => {
 
     const fetchUnits = async () => {
         try {
-            // Build query with filters
-            let query = supabase
-                .from('units')
-                .select(`
-                    *,
-                    unit_type:unit_types(name, code, color)
-                `);
-
-            // Apply filters
-            if (searchTerm) {
-                query = query.or(`name.ilike.%${searchTerm}%,code.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
-            }
+            // Use service to fetch units with filters
+            const unitsResponse = await unitService.getUnits({
+                search: searchTerm,
+                type: typeFilter,
+                status: statusFilter
+            });
             
-            if (statusFilter) {
-                if (statusFilter === 'active') {
-                    query = query.eq('is_active', true);
-                } else if (statusFilter === 'inactive') {
-                    query = query.eq('is_active', false);
-                }
-            }
-
-            query = query.order('created_at', { ascending: false });
-
-            const { data: unitsData, error } = await query;
-            
-            if (error) throw error;
-            
-            let filteredUnits = unitsData || [];
-            
-            // Apply type filter manually since we can't filter on joined table easily
-            if (typeFilter) {
-                filteredUnits = filteredUnits.filter(unit => 
-                    unit.unit_type?.code === typeFilter
-                );
-            }
-            
-            setUnits(filteredUnits);
+            setUnits(unitsResponse.units || []);
         } catch (error: any) {
             console.error('Error fetching units:', error);
             setError('Gagal memuat data unit kerja.');
@@ -144,13 +106,7 @@ const UnitsManagementDirect = ({ embedded = false }: UnitsManagementProps) => {
         }
 
         try {
-            const { error } = await supabase
-                .from('units')
-                .delete()
-                .eq('id', unitId);
-            
-            if (error) throw error;
-            
+            await unitService.deleteUnit(unitId);
             await fetchUnits();
             alert('Unit kerja berhasil dihapus.');
         } catch (error: any) {

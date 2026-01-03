@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Auth Fix Final</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        .status { font-weight: bold; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Auth Fix Final</h1>
+        
+        <div class="test-section info">
+            <h3>Status Koneksi</h3>
+            <div id="connectionStatus">Checking...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>1. Test Login Admin</h3>
+            <button onclick="testLogin()">Test Login</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test API Endpoints</h3>
+            <button onclick="testTickets()">Test Tickets</button>
+            <button onclick="testUnits()">Test Units</button>
+            <button onclick="testCategories()">Test Categories</button>
+            <button onclick="testDashboard()">Test Dashboard</button>
+            <div id="apiResults"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test Public Endpoints (No Auth)</h3>
+            <button onclick="testPublicEndpoints()">Test Public Endpoints</button>
+            <div id="publicResults"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+        const API_BASE_URL = 'http://localhost:3003/api/complaints';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let currentToken = null;
+
+        // Check connection status
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/test`);
+                const data = await response.json();
+                
+                document.getElementById('connectionStatus').innerHTML = `
+                    <div class="status success">✅ Backend Connected</div>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                document.getElementById('connectionStatus').innerHTML = `
+                    <div class="status error">❌ Backend Connection Failed</div>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('loginResult');
+            resultDiv.innerHTML = '<div>Testing login...</div>';
+
+            try {
+                // Test login with admin@jempol.com
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'admin@jempol.com',
+                    password: 'admin123'
+                });
+
+                if (error) {
+                    resultDiv.innerHTML = `
+                        <div class="status error">❌ Login Failed</div>
+                        <pre>${JSON.stringify(error, null, 2)}</pre>
+                    `;
+                    return;
+                }
+
+                currentToken = data.session.access_token;
+                
+                resultDiv.innerHTML = `
+                    <div class="status success">✅ Login Successful</div>
+                    <pre>User: ${data.user.email}
+Token: ${currentToken.substring(0, 50)}...</pre>
+                `;
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status error">❌ Login Exception</div>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+
+        async function testApiCall(endpoint, name) {
+            if (!currentToken) {
+                return `<div class="error">❌ ${name}: No token available. Please login first.</div>`;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    return `
+                        <div class="success">✅ ${name}: Success (${data.data?.length || 0} items)</div>
+                        <pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                    `;
+                } else {
+                    return `
+                        <div class="error">❌ ${name}: Failed (${response.status})</div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                return `
+                    <div class="error">❌ ${name}: Exception</div>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+
+        async function testTickets() {
+            const result = await testApiCall('/tickets?limit=5', 'Tickets');
+            document.getElementById('apiResults').innerHTML = result;
+        }
+
+        async function testUnits() {
+            const result = await testApiCall('/units', 'Units');
+            document.getElementById('apiResults').innerHTML = result;
+        }
+
+        async function testCategories() {
+            const result = await testApiCall('/categories', 'Categories');
+            document.getElementById('apiResults').innerHTML = result;
+        }
+
+        async function testDashboard() {
+            const result = await testApiCall('/dashboard/metrics/filtered?dateRange=last_7_days&unit_id=all&status=all&category_id=all', 'Dashboard');
+            document.getElementById('apiResults').innerHTML = result;
+        }
+
+        async function testPublicEndpoints() {
+            const resultDiv = document.getElementById('publicResults');
+            resultDiv.innerHTML = '<div>Testing public endpoints...</div>';
+
+            const endpoints = [
+                { url: '/public/tickets', name: 'Public Tickets' },
+                { url: '/public/units', name: 'Public Units' },
+                { url: '/public/categories', name: 'Public Categories' }
+            ];
+
+            let results = '';
+
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}${endpoint.url}`);
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        results += `
+                            <div class="success">✅ ${endpoint.name}: Success (${data.data?.length || 0} items)</div>
+                        `;
+                    } else {
+                        results += `
+                            <div class="error">❌ ${endpoint.name}: Failed (${response.status})</div>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        `;
+                    }
+                } catch (error) {
+                    results += `
+                        <div class="error">❌ ${endpoint.name}: Exception</div>
+                        <pre>${error.message}</pre>
+                    `;
+                }
+            }
+
+            resultDiv.innerHTML = results;
+        }
+
+        // Initialize
+        checkConnection();
+    </script>
+</body>
+</html>

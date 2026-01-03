@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../utils/supabaseClient';
+import { useAuth } from '../contexts/AuthContextOptimized';
+import { supabase } from '../utils/supabaseClientOptimized';
 import Modal from '../components/ui/Modal';
 import { Database } from '../types/supabase';
 import unitService, { Unit } from '../services/unitService';

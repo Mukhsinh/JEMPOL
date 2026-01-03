@@ -9,8 +9,8 @@ import {
   getEscalationStats,
   getEscalationLogs,
   checkAutoEscalation
-} from '../controllers/aiEscalationController';
-import { authenticateToken } from '../middleware/auth';
+} from '../controllers/aiEscalationController.js';
+import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 

@@ -25,9 +25,10 @@ const PatientTypes: React.FC = () => {
         try {
             setLoading(true);
             const data = await masterDataService.getPatientTypes();
-            setPatientTypes(data);
+            setPatientTypes(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Error fetching patient types:', error);
+            setPatientTypes([]); // Set empty array on error
         } finally {
             setLoading(false);
         }
@@ -85,19 +86,21 @@ const PatientTypes: React.FC = () => {
         });
     };
 
-    const filteredTypes = patientTypes.filter(type => {
+    // Ensure patientTypes is an array before filtering
+    const safePatientTypes = Array.isArray(patientTypes) ? patientTypes : [];
+    const filteredTypes = safePatientTypes.filter(type => {
         const matchesSearch = type.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            type.code.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || 
-                            (statusFilter === 'active' && type.is_active) ||
-                            (statusFilter === 'inactive' && !type.is_active);
+            type.code.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'all' ||
+            (statusFilter === 'active' && type.is_active) ||
+            (statusFilter === 'inactive' && !type.is_active);
         return matchesSearch && matchesStatus;
     });
 
     const getPriorityLabel = (level: number) => {
         const labels = {
             1: 'Sangat Rendah',
-            2: 'Rendah', 
+            2: 'Rendah',
             3: 'Normal',
             4: 'Tinggi',
             5: 'Sangat Tinggi'
@@ -213,11 +216,10 @@ const PatientTypes: React.FC = () => {
                                         {type.default_sla_hours} jam
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                            type.is_active 
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                        }`}>
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${type.is_active
+                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                            }`}>
                                             {type.is_active ? 'Aktif' : 'Tidak Aktif'}
                                         </span>
                                     </td>

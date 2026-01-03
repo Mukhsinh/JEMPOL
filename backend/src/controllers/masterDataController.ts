@@ -1,14 +1,16 @@
-import { Request, Response } from 'express';
-import { supabase } from '../config/supabase.js';
+import { Request, Response } from 'express'; // Trigger restart
+
+import supabase, { supabaseAdmin } from '../config/supabase.js';
 
 // Unit Types
 export const getUnitTypes = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('unit_types')
       .select('*')
+      .eq('is_active', true)
       .order('name');
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -19,12 +21,12 @@ export const getUnitTypes = async (req: Request, res: Response) => {
 
 export const createUnitType = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('unit_types')
       .insert(req.body)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.status(201).json(data);
   } catch (error) {
@@ -36,13 +38,13 @@ export const createUnitType = async (req: Request, res: Response) => {
 export const updateUnitType = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('unit_types')
       .update({ ...req.body, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -54,11 +56,11 @@ export const updateUnitType = async (req: Request, res: Response) => {
 export const deleteUnitType = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('unit_types')
       .delete()
       .eq('id', id);
-    
+
     if (error) throw error;
     res.status(204).send();
   } catch (error) {
@@ -70,11 +72,12 @@ export const deleteUnitType = async (req: Request, res: Response) => {
 // Service Categories
 export const getServiceCategories = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('service_categories')
       .select('*')
+      .eq('is_active', true)
       .order('name');
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -85,12 +88,12 @@ export const getServiceCategories = async (req: Request, res: Response) => {
 
 export const createServiceCategory = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('service_categories')
       .insert(req.body)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.status(201).json(data);
   } catch (error) {
@@ -108,7 +111,7 @@ export const updateServiceCategory = async (req: Request, res: Response) => {
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -124,7 +127,7 @@ export const deleteServiceCategory = async (req: Request, res: Response) => {
       .from('service_categories')
       .delete()
       .eq('id', id);
-    
+
     if (error) throw error;
     res.status(204).send();
   } catch (error) {
@@ -136,11 +139,11 @@ export const deleteServiceCategory = async (req: Request, res: Response) => {
 // Ticket Types
 export const getTicketTypes = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('ticket_types')
       .select('*')
       .order('name');
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -151,12 +154,12 @@ export const getTicketTypes = async (req: Request, res: Response) => {
 
 export const createTicketType = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('ticket_types')
       .insert(req.body)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.status(201).json(data);
   } catch (error) {
@@ -168,13 +171,13 @@ export const createTicketType = async (req: Request, res: Response) => {
 export const updateTicketType = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('ticket_types')
       .update({ ...req.body, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -186,11 +189,11 @@ export const updateTicketType = async (req: Request, res: Response) => {
 export const deleteTicketType = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('ticket_types')
       .delete()
       .eq('id', id);
-    
+
     if (error) throw error;
     res.status(204).send();
   } catch (error) {
@@ -207,7 +210,7 @@ export const getTicketClassifications = async (req: Request, res: Response) => {
       .select('*')
       .order('level', { ascending: true })
       .order('name');
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -223,7 +226,7 @@ export const createTicketClassification = async (req: Request, res: Response) =>
       .insert(req.body)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.status(201).json(data);
   } catch (error) {
@@ -241,7 +244,7 @@ export const updateTicketClassification = async (req: Request, res: Response) =>
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -257,7 +260,7 @@ export const deleteTicketClassification = async (req: Request, res: Response) =>
       .from('ticket_classifications')
       .delete()
       .eq('id', id);
-    
+
     if (error) throw error;
     res.status(204).send();
   } catch (error) {
@@ -273,7 +276,7 @@ export const getTicketStatuses = async (req: Request, res: Response) => {
       .from('ticket_statuses')
       .select('*')
       .order('display_order');
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -289,7 +292,7 @@ export const createTicketStatus = async (req: Request, res: Response) => {
       .insert(req.body)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.status(201).json(data);
   } catch (error) {
@@ -307,7 +310,7 @@ export const updateTicketStatus = async (req: Request, res: Response) => {
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -323,7 +326,7 @@ export const deleteTicketStatus = async (req: Request, res: Response) => {
       .from('ticket_statuses')
       .delete()
       .eq('id', id);
-    
+
     if (error) throw error;
     res.status(204).send();
   } catch (error) {
@@ -335,27 +338,41 @@ export const deleteTicketStatus = async (req: Request, res: Response) => {
 // Patient Types
 export const getPatientTypes = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    console.log('🔍 Getting patient types...');
+
+    // Gunakan supabaseAdmin yang sudah dikonfigurasi dengan fallback
+    const { data, error } = await supabaseAdmin
       .from('patient_types')
       .select('*')
-      .order('priority_level');
-    
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching patient types:', error);
-    res.status(500).json({ error: 'Failed to fetch patient types' });
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      console.error('❌ Patient types query error:', error);
+      throw error;
+    }
+
+    console.log('✅ Patient types retrieved:', data?.length || 0, 'records');
+
+    res.json(data || []);
+
+  } catch (error: any) {
+    console.error('❌ Patient types error:', error);
+    res.status(500).json({
+      error: 'Gagal mengambil data patient types',
+      details: error.message
+    });
   }
 };
 
 export const createPatientType = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('patient_types')
       .insert(req.body)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.status(201).json(data);
   } catch (error) {
@@ -367,13 +384,13 @@ export const createPatientType = async (req: Request, res: Response) => {
 export const updatePatientType = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('patient_types')
       .update({ ...req.body, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -385,11 +402,11 @@ export const updatePatientType = async (req: Request, res: Response) => {
 export const deletePatientType = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('patient_types')
       .delete()
       .eq('id', id);
-    
+
     if (error) throw error;
     res.status(204).send();
   } catch (error) {
@@ -401,6 +418,8 @@ export const deletePatientType = async (req: Request, res: Response) => {
 // SLA Settings
 export const getSLASettings = async (req: Request, res: Response) => {
   try {
+    console.log('Fetching SLA settings, path:', req.path);
+
     const { data, error } = await supabase
       .from('sla_settings')
       .select(`
@@ -410,9 +429,14 @@ export const getSLASettings = async (req: Request, res: Response) => {
         patient_types(name, code)
       `)
       .order('name');
-    
-    if (error) throw error;
-    res.json(data);
+
+    if (error) {
+      console.error('SLA Settings query error:', error);
+      throw error;
+    }
+
+    console.log('SLA Settings data fetched:', data?.length || 0, 'records');
+    res.json(data || []);
   } catch (error) {
     console.error('Error fetching SLA settings:', error);
     res.status(500).json({ error: 'Failed to fetch SLA settings' });
@@ -426,7 +450,7 @@ export const createSLASetting = async (req: Request, res: Response) => {
       .insert(req.body)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.status(201).json(data);
   } catch (error) {
@@ -444,7 +468,7 @@ export const updateSLASetting = async (req: Request, res: Response) => {
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -460,7 +484,7 @@ export const deleteSLASetting = async (req: Request, res: Response) => {
       .from('sla_settings')
       .delete()
       .eq('id', id);
-    
+
     if (error) throw error;
     res.status(204).send();
   } catch (error) {
@@ -476,7 +500,7 @@ export const getRoles = async (req: Request, res: Response) => {
       .from('roles')
       .select('*')
       .order('name');
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -492,7 +516,7 @@ export const createRole = async (req: Request, res: Response) => {
       .insert(req.body)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.status(201).json(data);
   } catch (error) {
@@ -510,7 +534,7 @@ export const updateRole = async (req: Request, res: Response) => {
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -526,7 +550,7 @@ export const deleteRole = async (req: Request, res: Response) => {
       .from('roles')
       .delete()
       .eq('id', id);
-    
+
     if (error) throw error;
     res.status(204).send();
   } catch (error) {
@@ -543,7 +567,7 @@ export const getResponseTemplates = async (req: Request, res: Response) => {
       .select('*')
       .order('category', { ascending: true })
       .order('name');
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -559,7 +583,7 @@ export const createResponseTemplate = async (req: Request, res: Response) => {
       .insert(req.body)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.status(201).json(data);
   } catch (error) {
@@ -577,7 +601,7 @@ export const updateResponseTemplate = async (req: Request, res: Response) => {
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -593,7 +617,7 @@ export const deleteResponseTemplate = async (req: Request, res: Response) => {
       .from('response_templates')
       .delete()
       .eq('id', id);
-    
+
     if (error) throw error;
     res.status(204).send();
   } catch (error) {
@@ -609,7 +633,7 @@ export const getAITrustSettings = async (req: Request, res: Response) => {
       .from('ai_trust_settings')
       .select('*')
       .order('setting_name');
-    
+
     if (error) throw error;
     res.json(data);
   } catch (error) {
@@ -621,7 +645,7 @@ export const getAITrustSettings = async (req: Request, res: Response) => {
 export const updateAITrustSettings = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     if (id) {
       // Update specific setting by ID
       const { data, error } = await supabase
@@ -630,11 +654,11 @@ export const updateAITrustSettings = async (req: Request, res: Response) => {
         .eq('id', id)
         .select()
         .single();
-      
+
       if (error) throw error;
       return res.json(data);
     }
-    
+
     // If no ID provided, update the first (default) setting
     const { data: existingData, error: fetchError } = await supabase
       .from('ai_trust_settings')
@@ -655,24 +679,24 @@ export const updateAITrustSettings = async (req: Request, res: Response) => {
         .eq('id', existingData.id)
         .select()
         .single();
-      
+
       if (updateError) throw updateError;
       data = updatedData;
     } else {
       // Create new setting if none exists
       const { data: newData, error: createError } = await supabase
         .from('ai_trust_settings')
-        .insert({ 
+        .insert({
           setting_name: 'default',
-          ...req.body 
+          ...req.body
         })
         .select()
         .single();
-      
+
       if (createError) throw createError;
       data = newData;
     }
-    
+
     res.json(data);
   } catch (error) {
     console.error('Error updating AI trust settings:', error);

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import userController from '../controllers/userController.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateSupabase } from '../middleware/supabaseAuthMiddleware.js';
 
 const router = Router();
 
@@ -14,7 +14,7 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 // Apply authentication middleware to all protected routes
-router.use(authenticateToken);
+router.use(authenticateSupabase);
 
 // Get all users
 router.get('/', userController.getUsers.bind(userController));
