@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login Fix - 406 Error</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test Login Fix - 406 Error</h1>
+    <div id="status">Testing...</div>
+    <div id="results"></div>
+
+    <script>
+        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+        
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey, {
+            global: {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                }
+            }
+        });
+
+        async function testLogin() {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                statusDiv.innerHTML = '🔄 Testing login...';
+                
+                // Test 1: Check if admin exists in database
+                console.log('Test 1: Checking admin in database...');
+                const { data: adminCheck, error: adminError } = await supabase
+                    .from('admins')
+                    .select('id, username, email, role, is_active')
+                    .eq('email', 'admin@jempol.com')
+                    .eq('is_active', true)
+                    .maybeSingle();
+                
+                if (adminError) {
+                    console.error('❌ Admin check error:', adminError);
+                    resultsDiv.innerHTML += `<p>❌ Admin check failed: ${adminError.message}</p>`;
+                    return;
+                }
+                
+                if (!adminCheck) {
+                    resultsDiv.innerHTML += `<p>❌ Admin not found in database</p>`;
+                    return;
+                }
+                
+                console.log('✅ Admin found:', adminCheck);
+                resultsDiv.innerHTML += `<p>✅ Admin found: ${adminCheck.email} (${adminCheck.role})</p>`;
+                
+                // Test 2: Attempt login
+                console.log('Test 2: Attempting login...');
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: 'admin@jempol.com',
+                    password: 'admin123'
+                });
+                
+                if (authError) {
+                    console.error('❌ Auth error:', authError);
+                    resultsDiv.innerHTML += `<p>❌ Login failed: ${authError.message}</p>`;
+                    return;
+                }
+                
+                console.log('✅ Login successful:', authData);
+                resultsDiv.innerHTML += `<p>✅ Login successful for: ${authData.user.email}</p>`;
+                
+                // Test 3: Query admin profile after login
+                console.log('Test 3: Querying admin profile after login...');
+                const { data: profileData, error: profileError } = await supabase
+                    .from('admins')
+                    .select('id, username, full_name, email, role, is_active')
+                    .eq('email', 'admin@jempol.com')
+                    .eq('is_active', true)
+                    .maybeSingle();
+                
+                if (profileError) {
+                    console.error('❌ Profile query error:', profileError);
+                    resultsDiv.innerHTML += `<p>❌ Profile query failed: ${profileError.message}</p>`;
+                    return;
+                }
+                
+                console.log('✅ Profile query successful:', profileData);
+                resultsDiv.innerHTML += `<p>✅ Profile query successful: ${profileData.full_name}</p>`;
+                
+                statusDiv.innerHTML = '✅ All tests passed!';
+                
+            } catch (error) {
+                console.error('❌ Unexpected error:', error);
+                statusDiv.innerHTML = '❌ Test failed';
+                resultsDiv.innerHTML += `<p>❌ Unexpected error: ${error.message}</p>`;
+            }
+        }
+
+        // Run test when page loads
+        window.addEventListener('load', testLogin);
+    </script>
+</body>
+</html>

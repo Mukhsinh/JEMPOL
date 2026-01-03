@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Management Auth Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        .status { font-weight: bold; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test QR Management Auth Fix</h1>
+        
+        <div class="test-section info">
+            <h3>📋 Test Status</h3>
+            <div id="status">Ready to test...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔐 Authentication Test</h3>
+            <button onclick="testLogin()">Test Login</button>
+            <button onclick="testToken()">Test Token</button>
+            <div id="authResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 QR Codes API Test</h3>
+            <button onclick="testQRCodesAPI()">Test QR Codes Fetch</button>
+            <button onclick="testQRCodesWithAuth()">Test with Auth Header</button>
+            <div id="qrResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Direct Database Test</h3>
+            <button onclick="testDirectDB()">Test Direct DB Access</button>
+            <div id="dbResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Test Results</h3>
+            <div id="testResults"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3003/api';
+        let authToken = null;
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<span class="${type}">${message}</span>`;
+        }
+
+        function addResult(section, message, type = 'info') {
+            const resultDiv = document.getElementById(section);
+            const timestamp = new Date().toLocaleTimeString();
+            resultDiv.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+        }
+
+        async function testLogin() {
+            updateStatus('Testing login...', 'info');
+            addResult('authResult', 'Starting login test...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@jempol.com',
+                        password: 'admin123'
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    authToken = data.token;
+                    addResult('authResult', '✅ Login successful!', 'success');
+                    addResult('authResult', `Token: ${authToken?.substring(0, 20)}...`, 'info');
+                    updateStatus('Login successful', 'success');
+                } else {
+                    addResult('authResult', `❌ Login failed: ${data.error || 'Unknown error'}`, 'error');
+                    updateStatus('Login failed', 'error');
+                }
+            } catch (error) {
+                addResult('authResult', `❌ Login error: ${error.message}`, 'error');
+                updateStatus('Login error', 'error');
+            }
+        }
+
+        async function testToken() {
+            if (!authToken) {
+                addResult('authResult', '⚠️ No token available. Please login first.', 'error');
+                return;
+            }
+
+            updateStatus('Testing token validation...', 'info');
+            addResult('authResult', 'Testing token validation...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/verify`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    addResult('authResult', '✅ Token validation successful!', 'success');
+                    addResult('authResult', `User: ${data.data?.admin?.email}`, 'info');
+                    updateStatus('Token valid', 'success');
+                } else {
+                    addResult('authResult', `❌ Token validation failed: ${data.error}`, 'error');
+                    updateStatus('Token invalid', 'error');
+                }
+            } catch (error) {
+                addResult('authResult', `❌ Token validation error: ${error.message}`, 'error');
+                updateStatus('Token validation error', 'error');
+            }
+        }
+
+        async function testQRCodesAPI() {
+            updateStatus('Testing QR Codes API...', 'info');
+            addResult('qrResult', 'Testing QR Codes API without auth...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/qr-codes?page=1&limit=5`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('qrResult', '✅ QR Codes API accessible!', 'success');
+                    addResult('qrResult', `Found ${data.qr_codes?.length || 0} QR codes`, 'info');
+                } else {
+                    addResult('qrResult', `❌ QR Codes API failed: ${data.error || response.statusText}`, 'error');
+                    addResult('qrResult', `Status: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                addResult('qrResult', `❌ QR Codes API error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testQRCodesWithAuth() {
+            if (!authToken) {
+                addResult('qrResult', '⚠️ No token available. Please login first.', 'error');
+                return;
+            }
+
+            updateStatus('Testing QR Codes API with auth...', 'info');
+            addResult('qrResult', 'Testing QR Codes API with authentication...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/qr-codes?page=1&limit=5&include_analytics=true`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult('qrResult', '✅ Authenticated QR Codes API successful!', 'success');
+                    addResult('qrResult', `Found ${data.qr_codes?.length || 0} QR codes with analytics`, 'info');
+                    updateStatus('QR Codes API working', 'success');
+                } else {
+                    addResult('qrResult', `❌ Authenticated QR Codes API failed: ${data.error || response.statusText}`, 'error');
+                    addResult('qrResult', `Status: ${response.status}`, 'error');
+                    updateStatus('QR Codes API failed', 'error');
+                }
+            } catch (error) {
+                addResult('qrResult', `❌ Authenticated QR Codes API error: ${error.message}`, 'error');
+                updateStatus('QR Codes API error', 'error');
+            }
+        }
+
+        async function testDirectDB() {
+            updateStatus('Testing direct database access...', 'info');
+            addResult('dbResult', 'Testing direct database access...', 'info');
+
+            // This would require a backend endpoint to test direct DB access
+            addResult('dbResult', '⚠️ Direct DB test requires backend implementation', 'info');
+        }
+
+        // Auto-run basic tests on page load
+        window.onload = function() {
+            updateStatus('Page loaded. Ready to test QR Management authentication.', 'info');
+        };
+    </script>
+</body>
+</html>

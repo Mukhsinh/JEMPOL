@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Sidebar Scroll</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <style>
+        /* Custom scrollbar for sidebar */
+        .sidebar-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgb(203 213 225) transparent;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+            background-color: rgb(203 213 225);
+            border-radius: 3px;
+            transition: background-color 0.2s ease;
+        }
+
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+            background-color: rgb(148 163 184);
+        }
+
+        /* Dark mode scrollbar */
+        .dark .sidebar-scroll {
+            scrollbar-color: rgb(71 85 105) transparent;
+        }
+
+        .dark .sidebar-scroll::-webkit-scrollbar-thumb {
+            background-color: rgb(71 85 105);
+        }
+
+        .dark .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+            background-color: rgb(100 116 139);
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 flex-shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
+        <!-- Brand - Fixed at top -->
+        <div class="flex-shrink-0 p-4 pb-2">
+            <div class="flex items-center gap-3 px-2">
+                <div class="bg-blue-100 flex items-center justify-center rounded-lg h-10 w-10 shrink-0">
+                    <span class="material-symbols-outlined text-blue-600 text-2xl">local_hospital</span>
+                </div>
+                <div class="flex flex-col">
+                    <h1 class="text-gray-900 text-base font-bold leading-tight">Rumah Sakit Kota</h1>
+                    <p class="text-gray-500 text-xs font-medium">Sistem Manajemen</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation - Scrollable -->
+        <div class="flex-1 overflow-y-auto px-4 pb-4 sidebar-scroll">
+            <nav class="flex flex-col gap-1">
+                <!-- Dashboard -->
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-600 text-white shadow-md">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <p class="text-sm font-medium">Dasbor</p>
+                </a>
+
+                <!-- Section Header -->
+                <div class="pt-2 pb-1">
+                    <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Layanan Publik</p>
+                </div>
+
+                <!-- Ticket Tracker -->
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100">
+                    <span class="material-symbols-outlined">search</span>
+                    <p class="text-sm font-medium">Lacak Tiket</p>
+                </a>
+
+                <!-- Section Header -->
+                <div class="pt-2 pb-1">
+                    <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Operasional</p>
+                </div>
+
+                <!-- Tickets Dropdown -->
+                <div class="mb-2">
+                    <button class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined">confirmation_number</span>
+                            <p class="text-sm font-medium">Tickets</p>
+                        </div>
+                        <span class="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+                    
+                    <!-- Submenu -->
+                    <div class="mt-2 ml-6 flex flex-col gap-1">
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Semua Tiket</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Buat Tiket Internal</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Tiket Eksternal</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">QR Code Management</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">AI Driven Eskalasi</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Eskalasi</p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Survey Dropdown -->
+                <div class="mb-2">
+                    <button class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined">sentiment_satisfied</span>
+                            <p class="text-sm font-medium">Survei Kepuasan</p>
+                        </div>
+                        <span class="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+                    
+                    <!-- Submenu -->
+                    <div class="mt-2 ml-6 flex flex-col gap-1">
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Survei Kepuasan</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Laporan Survei</p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Section Header -->
+                <div class="pt-2 pb-1">
+                    <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Manajemen</p>
+                </div>
+
+                <!-- Master Data Dropdown -->
+                <div class="mb-2">
+                    <button class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined">database</span>
+                            <p class="text-sm font-medium">Master Data</p>
+                        </div>
+                        <span class="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+                    
+                    <!-- Submenu -->
+                    <div class="mt-2 ml-6 flex flex-col gap-1">
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Unit Kerja</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Tipe Unit Kerja</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Kategori Layanan</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Tipe Tiket</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Klasifikasi Tiket</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Status Tiket</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Jenis Pasien</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Pengaturan SLA</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                            <p class="text-sm font-medium">Peran & Akses</p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- More menu items -->
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100">
+                    <span class="material-symbols-outlined">assessment</span>
+                    <p class="text-sm font-medium">Laporan & Analitik</p>
+                </a>
+
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100">
+                    <span class="material-symbols-outlined">group</span>
+                    <p class="text-sm font-medium">Pengguna</p>
+                </a>
+
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100">
+                    <span class="material-symbols-outlined">notifications</span>
+                    <p class="text-sm font-medium">Notifikasi</p>
+                </a>
+
+                <!-- Section Header -->
+                <div class="pt-2 pb-1">
+                    <p class="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Dokumentasi</p>
+                </div>
+
+                <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100">
+                    <span class="material-symbols-outlined">menu_book</span>
+                    <p class="text-sm font-medium">Buku Petunjuk</p>
+                </a>
+
+                <!-- Settings Dropdown -->
+                <div class="mb-2">
+                    <button class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100">
+                        <div class="flex items-center gap-3">
+                            <span class="material-symbols-outlined">settings</span>
+                            <p class="text-sm font-medium">Pengaturan</p>
+                        </div>
+                        <span class="material-symbols-outlined text-sm">expand_more</span>
+                    </button>
+                    
+                    <!-- Submenu -->
+                    <div class="mt-2 ml-6 flex flex-col gap-1">
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="material-symbols-outlined text-green-500">settings_applications</span>
+                            <p class="text-sm font-medium">Pengaturan Aplikasi</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="material-symbols-outlined text-blue-500">security</span>
+                            <p class="text-sm font-medium">Peran & Hak Akses</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="material-symbols-outlined text-gray-600">chat</span>
+                            <p class="text-sm font-medium">Template Respon</p>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                            <span class="material-symbols-outlined text-purple-500">psychology</span>
+                            <p class="text-sm font-medium">Pengaturan Kepercayaan AI</p>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Profile - Fixed at bottom -->
+        <div class="flex-shrink-0 p-4 border-t border-gray-200">
+            <div class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-100 cursor-pointer">
+                <div class="bg-gray-200 rounded-full h-9 w-9 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-gray-500">person</span>
+                </div>
+                <div class="flex flex-col overflow-hidden">
+                    <p class="text-gray-900 text-sm font-medium truncate">Admin User</p>
+                    <p class="text-gray-500 text-xs truncate">Administrator</p>
+                </div>
+                <button class="ml-auto p-1.5 text-gray-400 hover:text-red-500">
+                    <span class="material-symbols-outlined text-[20px]">logout</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-8">
+        <div class="max-w-4xl">
+            <h1 class="text-3xl font-bold text-gray-900 mb-6">Test Sidebar Scroll</h1>
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-xl font-semibold mb-4">Instruksi Test:</h2>
+                <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                    <li>Sidebar sekarang memiliki struktur yang benar dengan area scroll</li>
+                    <li>Header (brand) tetap di atas</li>
+                    <li>Area navigasi dapat di-scroll naik turun</li>
+                    <li>Profile tetap di bawah</li>
+                    <li>Scrollbar memiliki styling custom yang tipis dan elegan</li>
+                    <li>Hover pada scrollbar akan mengubah warna</li>
+                </ol>
+                
+                <div class="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <h3 class="font-semibold text-green-800 mb-2">✅ Perbaikan yang Diterapkan:</h3>
+                    <ul class="list-disc list-inside space-y-1 text-green-700">
+                        <li>Mengubah struktur sidebar dari <code>justify-between</code> menjadi <code>flex-col</code></li>
+                        <li>Memisahkan brand sebagai <code>flex-shrink-0</code> (fixed di atas)</li>
+                        <li>Area navigasi menggunakan <code>flex-1 overflow-y-auto</code> (scrollable)</li>
+                        <li>Profile sebagai <code>flex-shrink-0</code> (fixed di bawah)</li>
+                        <li>Menambahkan custom scrollbar styling yang responsif</li>
+                        <li>Scrollbar tipis (6px) dengan warna yang sesuai tema</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

@@ -1,58 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <title>Simple Login Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login Simple Fix</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
 </head>
 <body>
-    <h1>Simple Login Test</h1>
-    <button onclick="testLogin()">Test Login admin@jempol.com</button>
-    <button onclick="testLogin2()">Test Login mukhsin9@gmail.com</button>
-    <div id="result"></div>
+    <div class="container">
+        <h1>🔐 Test Login Simple Fix</h1>
+        
+        <button onclick="testLogin()">🚀 Test Login</button>
+        <button onclick="clearResults()">🧹 Clear</button>
+        
+        <div id="results"></div>
+    </div>
 
     <script>
-        const supabase = window.supabase.createClient(
-            'https://jxxzbdivafzzwqhagwrf.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg'
-        );
+        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
 
         async function testLogin() {
-            const result = document.getElementById('result');
-            result.innerHTML = 'Testing admin@jempol.com...';
+            addResult('🚀 Starting login test...', 'info');
             
             try {
-                const { data, error } = await supabase.auth.signInWithPassword({
+                // Clear session
+                await supabase.auth.signOut();
+                
+                // Login
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                     email: 'admin@jempol.com',
                     password: 'admin123'
                 });
                 
-                if (error) {
-                    result.innerHTML = `❌ Error: ${error.message}`;
-                } else {
-                    result.innerHTML = `✅ Success! User: ${data.user.email}`;
+                if (authError) {
+                    addResult(`❌ Auth error: ${authError.message}`, 'error');
+                    return;
                 }
-            } catch (err) {
-                result.innerHTML = `❌ Exception: ${err.message}`;
-            }
-        }
-
-        async function testLogin2() {
-            const result = document.getElementById('result');
-            result.innerHTML = 'Testing mukhsin9@gmail.com...';
-            
-            try {
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email: 'mukhsin9@gmail.com',
-                    password: 'mukhsin123'
-                });
                 
-                if (error) {
-                    result.innerHTML = `❌ Error: ${error.message}`;
+                addResult('✅ Authentication successful!', 'success');
+                
+                // Wait for session
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Query admin profile
+                const { data: adminData, error: adminError } = await supabase
+                    .from('admins')
+                    .select('*')
+                    .eq('email', 'admin@jempol.com')
+                    .eq('is_active', true)
+                    .single();
+                
+                if (adminError) {
+                    addResult(`❌ Admin query error: ${adminError.message}`, 'error');
+                    addResult(`<pre>${JSON.stringify(adminError, null, 2)}</pre>`, 'error');
                 } else {
-                    result.innerHTML = `✅ Success! User: ${data.user.email}`;
+                    addResult('✅ Admin profile query successful!', 'success');
+                    addResult(`<pre>${JSON.stringify(adminData, null, 2)}</pre>`, 'success');
                 }
-            } catch (err) {
-                result.innerHTML = `❌ Exception: ${err.message}`;
+                
+            } catch (error) {
+                addResult(`❌ Unexpected error: ${error.message}`, 'error');
             }
         }
     </script>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Backend Status</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Backend Connection Status</h1>
+    
+    <button onclick="testAllEndpoints()">Test Semua Endpoint</button>
+    <button onclick="clearResults()">Clear Results</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:3003/api';
+        
+        function addResult(title, success, message, data = null) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${success ? 'success' : 'error'}`;
+            
+            let content = `<h3>${title}</h3><p>${message}</p>`;
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            div.innerHTML = content;
+            results.appendChild(div);
+        }
+        
+        function addLoading(title) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = 'test-result loading';
+            div.id = `loading-${title.replace(/\s+/g, '-')}`;
+            div.innerHTML = `<h3>${title}</h3><p>Testing...</p>`;
+            results.appendChild(div);
+        }
+        
+        function removeLoading(title) {
+            const loadingDiv = document.getElementById(`loading-${title.replace(/\s+/g, '-')}`);
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+        }
+        
+        async function testEndpoint(title, url, options = {}) {
+            addLoading(title);
+            
+            try {
+                const response = await fetch(url, {
+                    method: options.method || 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    body: options.body ? JSON.stringify(options.body) : undefined
+                });
+                
+                removeLoading(title);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(title, true, `✅ Success (${response.status})`, data);
+                    return { success: true, data };
+                } else {
+                    const errorData = await response.text();
+                    addResult(title, false, `❌ HTTP ${response.status}: ${response.statusText}`, errorData);
+                    return { success: false, error: errorData };
+                }
+            } catch (error) {
+                removeLoading(title);
+                addResult(title, false, `❌ Connection Error: ${error.message}`);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        async function testAllEndpoints() {
+            document.getElementById('results').innerHTML = '';
+            
+            // Test basic health check
+            await testEndpoint('Health Check', `${API_BASE}/health`);
+            
+            // Test public endpoints
+            await testEndpoint('Public Units', `${API_BASE}/public/units`);
+            await testEndpoint('Public Unit Types', `${API_BASE}/public/unit-types`);
+            
+            // Test specific endpoints that were failing
+            await testEndpoint('Test Units', `${API_BASE}/test/units`);
+            await testEndpoint('Test Reports', `${API_BASE}/test/reports`);
+            
+            // Test master data endpoints
+            await testEndpoint('Master Data - Units', `${API_BASE}/master-data/units`);
+            await testEndpoint('Master Data - Unit Types', `${API_BASE}/master-data/unit-types`);
+            await testEndpoint('Master Data - Service Categories', `${API_BASE}/master-data/service-categories`);
+            
+            // Test other critical endpoints
+            await testEndpoint('Units API', `${API_BASE}/units`);
+            await testEndpoint('Complaints API', `${API_BASE}/complaints`);
+            await testEndpoint('Escalation API', `${API_BASE}/escalation`);
+            await testEndpoint('Reports API', `${API_BASE}/reports`);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // Auto-test on page load
+        window.onload = () => {000);
+        };
+    </script>
+</body>
+</html>
+            setTimeout(testAllEndpoints, 1000);
+        };
+    </script>
+</body>
+</html>

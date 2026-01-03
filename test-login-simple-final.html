@@ -4,126 +4,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Login Test</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 500px; margin: 0 auto; }
+        input, button { width: 100%; padding: 10px; margin: 5px 0; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+    </style>
 </head>
 <body>
-    <h1>Simple Login Test</h1>
-    <div id="results"></div>
-    
-    <div style="margin: 20px 0;">
-        <input type="email" id="email" placeholder="Email" value="admin@jempol.com" style="margin-right: 10px; padding: 5px;">
-        <input type="password" id="password" placeholder="Password" value="password" style="margin-right: 10px; padding: 5px;">
-        <button onclick="testLogin()">Login</button>
-        <button onclick="testApiCall()">Test API</button>
-        <button onclick="checkSession()">Check Session</button>
+    <div class="container">
+        <h2>Simple Login Test</h2>
+        <input type="email" id="email" placeholder="Email" value="admin@jempol.com">
+        <input type="password" id="password" placeholder="Password" value="admin123">
+        <button onclick="testLogin()">Test Login</button>
+        <div id="result"></div>
     </div>
-    
+
     <script>
-        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
-        
-        const { createClient } = supabase;
-        const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-        
-        function log(message) {
-            const results = document.getElementById('results');
-            results.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${message}</p>`;
-            console.log(message);
+        const supabase = window.supabase.createClient(
+            'https://jxxzbdivafzzwqhagwrf.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg'
+        );
+
+        function showResult(message, type = 'info') {
+            document.getElementById('result').innerHTML = `<div class="result ${type}">${message}</div>`;
         }
-        
+
         async function testLogin() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
-            
-            log(`Attempting login with ${email}...`);
-            
+
             try {
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email,
-                    password
+                showResult('Logging in...', 'info');
+
+                // Clear auth state
+                await supabase.auth.signOut();
+                localStorage.clear();
+                sessionStorage.clear();
+
+                // Wait
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Login
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: email.trim(),
+                    password: password
                 });
-                
-                if (error) {
-                    log(`❌ Login failed: ${error.message}`);
-                } else {
-                    log(`✅ Login successful for ${data.user.email}`);
-                    log(`Token: ${data.session.access_token.substring(0, 50)}...`);
-                    
-                    // Store admin data like the app does
-                    const adminData = {
-                        id: 'test-id',
-                        username: 'admin',
-                        full_name: 'Administrator',
-                        email: data.user.email,
-                        role: 'superadmin'
-                    };
-                    localStorage.setItem('adminUser', JSON.stringify(adminData));
-                    log('✅ Admin data stored in localStorage');
-                }
-            } catch (err) {
-                log(`❌ Login exception: ${err.message}`);
-            }
-        }
-        
-        async function testApiCall() {
-            log('Testing API call...');
-            
-            try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                
-                if (!session) {
-                    log('❌ No session found - please login first');
+
+                if (authError) {
+                    showResult(`Auth Error: ${authError.message}`, 'error');
                     return;
                 }
-                
-                log(`Using token: ${session.access_token.substring(0, 50)}...`);
-                
-                const response = await fetch('http://localhost:5001/api/complaints/tickets', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${session.access_token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                log(`API Response Status: ${response.status}`);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    log(`✅ API Success: Found ${data.data?.length || 0} tickets`);
-                } else {
-                    const errorText = await response.text();
-                    log(`❌ API Error: ${errorText}`);
+
+                showResult('Auth successful, checking admin profile...', 'info');
+
+                // Wait for session
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                // Get admin profile
+                const { data: adminData, error: adminError } = await supabase
+                    .from('admins')
+                    .select('*')
+                    .eq('email', email.trim())
+                    .eq('is_active', true)
+                    .single();
+
+                if (adminError) {
+                    showResult(`Admin Error: ${adminError.message}`, 'error');
+                    return;
                 }
-                
-            } catch (err) {
-                log(`❌ API call exception: ${err.message}`);
+
+                if (!adminData) {
+                    showResult('No admin found', 'error');
+                    return;
+                }
+
+                showResult(`✅ Login successful! Welcome ${adminData.username} (${adminData.role})`, 'success');
+
+            } catch (error) {
+                showResult(`Exception: ${error.message}`, 'error');
             }
         }
-        
-        async function checkSession() {
-            log('Checking current session...');
-            
-            try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                
-                if (session) {
-                    log(`✅ Active session found for ${session.user.email}`);
-                    log(`Token expires: ${new Date(session.expires_at * 1000).toLocaleString()}`);
-                } else {
-                    log('❌ No active session');
-                }
-                
-                const adminUser = localStorage.getItem('adminUser');
-                log(`LocalStorage adminUser: ${adminUser ? 'Found' : 'Not found'}`);
-                
-            } catch (err) {
-                log(`❌ Session check error: ${err.message}`);
-            }
-        }
-        
-        // Check session on load
-        checkSession();
     </script>
 </body>
 </html>

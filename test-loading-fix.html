@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Loading Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { border-color: #4CAF50; background-color: #f8fff8; }
+        .error { border-color: #f44336; background-color: #fff8f8; }
+        .warning { border-color: #ff9800; background-color: #fffaf0; }
+        .loading { border-color: #2196F3; background-color: #f0f8ff; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Perbaikan Loading Issue</h1>
+        <p>Script ini akan menguji apakah perbaikan loading issue berhasil diterapkan.</p>
+
+        <div id="frontend-test" class="test-section loading">
+            <h3>1️⃣ Test Frontend Accessibility</h3>
+            <p>Status: <span id="frontend-status">Testing...</span></p>
+            <button onclick="testFrontend()">Test Ulang</button>
+            <div id="frontend-log" class="log"></div>
+        </div>
+
+        <div id="backend-test" class="test-section loading">
+            <h3>2️⃣ Test Backend API</h3>
+            <p>Status: <span id="backend-status">Testing...</span></p>
+            <button onclick="testBackend()">Test Ulang</button>
+            <div id="backend-log" class="log"></div>
+        </div>
+
+        <div id="supabase-test" class="test-section loading">
+            <h3>3️⃣ Test Supabase Connection</h3>
+            <p>Status: <span id="supabase-status">Testing...</span></p>
+            <button onclick="testSupabase()">Test Ulang</button>
+            <div id="supabase-log" class="log"></div>
+        </div>
+
+        <div id="auth-test" class="test-section loading">
+            <h3>4️⃣ Test Auth Flow</h3>
+            <p>Status: <span id="auth-status">Testing...</span></p>
+            <button onclick="testAuth()">Test Ulang</button>
+            <div id="auth-log" class="log"></div>
+        </div>
+
+        <div id="summary" class="test-section" style="display: none;">
+            <h3>📋 Ringkasan Test</h3>
+            <div id="summary-content"></div>
+            <button onclick="runAllTests()">Run All Tests</button>
+            <button onclick="openApp()">Buka Aplikasi</button>
+        </div>
+    </div>
+
+    <script>
+        let testResults = {
+            frontend: false,
+            backend: false,
+            supabase: false,
+            auth: false
+        };
+
+        function log(elementId, message) {
+            const logElement = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function updateStatus(testName, status, success) {
+            const statusElement = document.getElementById(`${testName}-status`);
+            const sectionElement = document.getElementById(`${testName}-test`);
+            
+            statusElement.textContent = status;
+            sectionElement.className = `test-section ${success ? 'success' : 'error'}`;
+            testResults[testName] = success;
+            
+            updateSummary();
+        }
+
+        async function testFrontend() {
+            log('frontend-log', 'Testing frontend accessibility...');
+            
+            try {
+                const response = await fetch('http://localhost:3001', {
+                    method: 'GET',
+                    timeout: 5000
+                });
+                
+                if (response.ok) {
+                    log('frontend-log', '✅ Frontend accessible');
+                    updateStatus('frontend', '✅ Accessible', true);
+                } else {
+                    log('frontend-log', `❌ Frontend returned status: ${response.status}`);
+                    updateStatus('frontend', '❌ Not accessible', false);
+                }
+            } catch (error) {
+                log('frontend-log', `❌ Frontend error: ${error.message}`);
+                updateStatus('frontend', '❌ Connection failed', false);
+            }
+        }
+
+        async function testBackend() {
+            log('backend-log', 'Testing backend API...');
+            
+            try {
+                const response = await fetch('http://localhost:3003/api/health', {
+                    method: 'GET',
+                    timeout: 5000
+                });
+                
+                if (response.ok) {
+                    log('backend-log', '✅ Backend API accessible');
+                    updateStatus('backend', '✅ API Working', true);
+                } else {
+                    log('backend-log', `❌ Backend returned status: ${response.status}`);
+                    updateStatus('backend', '❌ API Error', false);
+                }
+            } catch (error) {
+                log('backend-log', `❌ Backend error: ${error.message}`);
+                updateStatus('backend', '❌ Connection failed', false);
+            }
+        }
+
+        async function testSupabase() {
+            log('supabase-log', 'Testing Supabase connection...');
+            
+            try {
+                const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+                
+                const response = await fetch(`${supabaseUrl}/rest/v1/admins?select=count`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': supabaseKey,
+                        'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 8000
+                });
+                
+                if (response.ok) {
+                    log('supabase-log', '✅ Supabase connection successful');
+                    updateStatus('supabase', '✅ Connected', true);
+                } else {
+                    log('supabase-log', `❌ Supabase returned status: ${response.status}`);
+                    updateStatus('supabase', '❌ Connection error', false);
+                }
+            } catch (error) {
+                log('supabase-log', `❌ Supabase error: ${error.message}`);
+                updateStatus('supabase', '❌ Connection failed', false);
+            }
+        }
+
+        async function testAuth() {
+            log('auth-log', 'Testing auth endpoint...');
+            
+            try {
+                const response = await fetch('http://localhost:3003/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'test'
+                    }),
+                    timeout: 5000
+                });
+                
+                // Auth endpoint should return 400/401 for invalid credentials
+                if (response.status === 400 || response.status === 401) {
+                    log('auth-log', '✅ Auth endpoint responding correctly');
+                    updateStatus('auth', '✅ Endpoint working', true);
+                } else if (response.status === 200) {
+                    log('auth-log', '✅ Auth endpoint working (unexpected success)');
+                    updateStatus('auth', '✅ Working', true);
+                } else {
+                    log('auth-log', `❌ Auth returned unexpected status: ${response.status}`);
+                    updateStatus('auth', '❌ Unexpected response', false);
+                }
+            } catch (error) {
+                log('auth-log', `❌ Auth error: ${error.message}`);
+                updateStatus('auth', '❌ Connection failed', false);
+            }
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            const content = document.getElementById('summary-content');
+            
+            const totalTests = Object.keys(testResults).length;
+            const passedTests = Object.values(testResults).filter(result => result).length;
+            
+            let summaryHTML = `<p><strong>Test Results: ${passedTests}/${totalTests} passed</strong></p>`;
+            
+            if (passedTests === totalTests) {
+                summaryHTML += '<p style="color: green;">🎉 Semua test berhasil! Aplikasi siap digunakan.</p>';
+            } else {
+                summaryHTML += '<p style="color: orange;">⚠️ Ada beberapa masalah yang perlu diperbaiki:</p><ul>';
+                
+                Object.entries(testResults).forEach(([test, result]) => {
+                    if (!result) {
+                        summaryHTML += `<li>${test}: Gagal</li>`;
+                    }
+                });
+                
+                summaryHTML += '</ul>';
+            }
+            
+            content.innerHTML = summaryHTML;
+            summary.style.display = 'block';
+        }
+
+        async function runAllTests() {
+            await testFrontend();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testBackend();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testSupabase();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testAuth();
+        }
+
+        function openApp() {
+            window.open('http://localhost:3001', '_blank');
+        }
+
+        // Run all tests on page load
+        window.onload = function() {
+            setTimeout(runAllTests, 1000);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bersihkan Cache dan Test Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .danger {
+            background-color: #dc3545;
+        }
+        .danger:hover {
+            background-color: #c82333;
+        }
+        .success-btn {
+            background-color: #28a745;
+        }
+        .success-btn:hover {
+            background-color: #218838;
+        }
+        #output {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .login-form {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Perbaikan Login - Bersihkan Cache dan Test</h1>
+        
+        <div class="step">
+            <h3>📋 Informasi Konfigurasi yang Benar:</h3>
+            <p><strong>Supabase URL:</strong> https://jxxzbdivafzzwqhagwrf.supabase.co</p>
+            <p><strong>Email:</strong> admin@jempol.com</p>
+            <p><strong>Password:</strong> admin123</p>
+        </div>
+
+        <div class="step">
+            <h3>🧹 Langkah 1: Bersihkan Cache Browser</h3>
+            <button onclick="clearAllCache()" class="danger">Bersihkan Semua Cache</button>
+            <button onclick="clearLocalStorage()">Bersihkan Local Storage</button>
+            <button onclick="clearSessionStorage()">Bersihkan Session Storage</button>
+        </div>
+
+        <div class="step">
+            <h3>🔍 Langkah 2: Test Koneksi Supabase</h3>
+            <button onclick="testSupabaseConnection()">Test Koneksi</button>
+            <button onclick="checkCurrentConfig()">Cek Konfigurasi Saat Ini</button>
+        </div>
+
+        <div class="step">
+            <h3>🔑 Langkah 3: Test Login</h3>
+            <div class="login-form">
+                <input type="email" id="email" placeholder="Email" value="admin@jempol.com">
+                <input type="password" id="password" placeholder="Password" value="admin123">
+                <button onclick="testLogin()" class="success-btn">Test Login</button>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>📊 Output:</h3>
+            <div id="output"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+
+        function clearAllCache() {
+            try {
+                // Clear all storage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Clear cookies
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                // Clear cache if supported
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => {
+                            caches.delete(name);
+                        });
+                    });
+                }
+                
+                log('✅ Semua cache berhasil dibersihkan');
+                log('🔄 Silakan refresh halaman untuk memastikan cache benar-benar bersih');
+            } catch (error) {
+                log('❌ Error membersihkan cache: ' + error.message);
+            }
+        }
+
+        function clearLocalStorage() {
+            localStorage.clear();
+            log('✅ Local Storage dibersihkan');
+        }
+
+        function clearSessionStorage() {
+            sessionStorage.clear();
+            log('✅ Session Storage dibersihkan');
+        }
+
+        function checkCurrentConfig() {
+            log('🔍 Memeriksa konfigurasi saat ini...');
+            
+            // Check environment variables (if available)
+            const currentUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+            const currentKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+            
+            log('📋 Konfigurasi yang akan digunakan:');
+            log('   URL: ' + currentUrl);
+            log('   Key: ' + currentKey.substring(0, 50) + '...');
+            
+            // Check localStorage for any old configs
+            const keys = Object.keys(localStorage);
+            if (keys.length > 0) {
+                log('⚠️ Item di localStorage:');
+                keys.forEach(key => {
+                    if (key.includes('supabase') || key.includes('auth')) {
+                        log('   ' + key + ': ' + localStorage.getItem(key)?.substring(0, 100) + '...');
+                    }
+                });
+            } else {
+                log('✅ localStorage kosong');
+            }
+        }
+
+        async function testSupabaseConnection() {
+            log('🔍 Testing koneksi ke Supabase...');
+            
+            try {
+                const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+                
+                const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                
+                log('✅ Supabase client berhasil dibuat');
+                log('🌐 URL yang digunakan: ' + supabaseUrl);
+                
+                // Test simple query
+                const { data, error } = await supabase
+                    .from('admins')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    log('❌ Error testing koneksi: ' + error.message);
+                    log('🔍 Error details: ' + JSON.stringify(error, null, 2));
+                } else {
+                    log('✅ Koneksi ke database berhasil');
+                    log('📊 Test query berhasil');
+                }
+                
+            } catch (error) {
+                log('❌ Error dalam test koneksi: ' + error.message);
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            log('🔑 Mencoba login dengan: ' + email);
+            
+            try {
+                const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+                
+                const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+                
+                // Clear any existing session
+                await supabase.auth.signOut();
+                log('🧹 Session lama dibersihkan');
+                
+                // Attempt login
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    log('❌ Login gagal: ' + error.message);
+                    log('🔍 Error details: ' + JSON.stringify(error, null, 2));
+                    
+                    // Check if it's a URL mismatch issue
+                    if (error.message.includes('Invalid login credentials')) {
+                        log('💡 Kemungkinan penyebab:');
+                        log('   1. Password salah atau belum di-reset');
+                        log('   2. User tidak ada di auth.users');
+                        log('   3. Email belum dikonfirmasi');
+                    }
+                } else {
+                    log('✅ Login berhasil!');
+                    log('👤 User: ' + data.user?.email);
+                    log('🔑 Session: ' + (data.session ? 'Ada' : 'Tidak ada'));
+                    
+                    // Test getting admin profile
+                    const { data: adminData, error: adminError } = await supabase
+                        .from('admins')
+                        .select('*')
+                        .eq('email', email)
+                        .single();
+                    
+                    if (adminError) {
+                        log('⚠️ Error mengambil profil admin: ' + adminError.message);
+                    } else {
+                        log('✅ Profil admin ditemukan: ' + adminData.username);
+                        log('👑 Role: ' + adminData.role);
+                    }
+                    
+                    // Sign out after test
+                    await supabase.auth.signOut();
+                    log('👋 Signed out setelah test');
+                }
+                
+            } catch (error) {
+                log('❌ Error dalam test login: ' + error.message);
+            }
+        }
+
+        // Initialize
+        log('🚀 Halaman test login siap');
+        log('📋 Gunakan tombol di atas untuk membersihkan cache dan test login');
+    </script>
+</body>
+</html>

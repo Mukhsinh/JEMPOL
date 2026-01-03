@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Management Token Fix</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test QR Management Token Fix</h1>
+        <p>Tool untuk menguji dan memperbaiki masalah token authentication pada halaman QR Management.</p>
+    </div>
+
+    <div class="container">
+        <h2>📋 Status Koneksi</h2>
+        <div id="connectionStatus" class="status info">Belum diuji</div>
+        <button onclick="testConnection()">Test Koneksi Backend</button>
+    </div>
+
+    <div class="container">
+        <h2>🔐 Login Test</h2>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" placeholder="admin@example.com" value="admin@jempol.com">
+        </div>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="Password" value="TempPassword123!">
+        </div>
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="testLogout()">Logout</button>
+        <div id="loginStatus" class="status info">Belum login</div>
+    </div>
+
+    <div class="container">
+        <h2>🎯 Token Validation Test</h2>
+        <button onclick="testTokenValidation()">Test Token Validation</button>
+        <button onclick="testQRManagementEndpoints()">Test QR Management Endpoints</button>
+        <div id="tokenStatus" class="status info">Belum diuji</div>
+    </div>
+
+    <div class="container">
+        <h2>📊 API Endpoints Test</h2>
+        <button onclick="testAllEndpoints()">Test Semua Endpoints</button>
+        <div id="endpointStatus" class="status info">Belum diuji</div>
+    </div>
+
+    <div class="container">
+        <h2>📝 Log Output</h2>
+        <button onclick="clearLog()">Clear Log</button>
+        <div id="logOutput" class="log">Siap untuk testing...\n</div>
+    </div>
+
+    <script>
+        // Configuration
+        const SUPABASE_URL = 'https://ixqhqjqjqjqjqjqjqjqj.supabase.co'; // Replace with your URL
+        const SUPABASE_ANON_KEY = 'your-anon-key'; // Replace with your key
+        const API_BASE_URL = 'http://localhost:3003/api';
+
+        // Initialize Supabase (will be set after getting config)
+        let supabase = null;
+
+        // Logging function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logOutput = document.getElementById('logOutput');
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logOutput.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            logOutput.scrollTop = logOutput.scrollHeight;
+            console.log(`${prefix} ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('logOutput').textContent = 'Log cleared...\n';
+        }
+
+        // Initialize Supabase client
+        async function initializeSupabase() {
+            try {
+                // Try to get config from backend
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (response.ok) {
+                    log('Backend connection successful', 'success');
+                }
+
+                // For now, use placeholder values - user needs to update these
+                if (SUPABASE_URL.includes('ixqhqjqjqjqjqjqjqjqj')) {
+                    log('⚠️ Please update SUPABASE_URL and SUPABASE_ANON_KEY in the script', 'warning');
+                    return false;
+                }
+
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                log('Supabase client initialized', 'success');
+                return true;
+            } catch (error) {
+                log(`Failed to initialize Supabase: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Test backend connection
+        async function testConnection() {
+            const statusDiv = document.getElementById('connectionStatus');
+            
+            try {
+                log('Testing backend connection...');
+                
+                const response = await fetch(`${API_BASE_URL}/health`);
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = `✅ Backend connected successfully - ${data.message}`;
+                    log('Backend connection test passed', 'success');
+                } else {
+                    throw new Error(`Backend responded with error: ${data.message || 'Unknown error'}`);
+                }
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Backend connection failed: ${error.message}`;
+                log(`Backend connection test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test login
+        async function testLogin() {
+            const statusDiv = document.getElementById('loginStatus');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ Email dan password harus diisi';
+                return;
+            }
+
+            try {
+                log(`Attempting login for: ${email}`);
+                
+                if (!supabase) {
+                    const initialized = await initializeSupabase();
+                    if (!initialized) {
+                        throw new Error('Supabase not initialized');
+                    }
+                }
+
+                // Clear any existing session
+                await supabase.auth.signOut();
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Attempt login
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: email.trim().toLowerCase(),
+                    password: password,
+                });
+
+                if (authError) {
+                    throw new Error(`Login failed: ${authError.message}`);
+                }
+
+                if (!authData?.user || !authData?.session) {
+                    throw new Error('Login failed - no user data returned');
+                }
+
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ Login successful for: ${authData.user.email}`;
+                log(`Login successful for: ${authData.user.email}`, 'success');
+                log(`Token: ${authData.session.access_token.substring(0, 50)}...`, 'info');
+
+                // Store session for other tests
+                window.currentSession = authData.session;
+
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Login failed: ${error.message}`;
+                log(`Login failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test logout
+        async function testLogout() {
+            const statusDiv = document.getElementById('loginStatus');
+            
+            try {
+                if (supabase) {
+                    await supabase.auth.signOut();
+                }
+                window.currentSession = null;
+                
+                statusDiv.className = 'status info';
+                statusDiv.textContent = 'ℹ️ Logged out successfully';
+                log('Logout successful', 'success');
+            } catch (error) {
+                log(`Logout error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test token validation
+        async function testTokenValidation() {
+            const statusDiv = document.getElementById('tokenStatus');
+            
+            if (!window.currentSession) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ No active session. Please login first.';
+                return;
+            }
+
+            try {
+                log('Testing token validation...');
+                
+                const token = window.currentSession.access_token;
+                
+                // Test auth verify endpoint
+                const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = `✅ Token validation successful for: ${data.data.admin.email}`;
+                    log(`Token validation successful for: ${data.data.admin.email}`, 'success');
+                    log(`Admin role: ${data.data.admin.role}`, 'info');
+                } else {
+                    throw new Error(`Token validation failed: ${data.error || 'Unknown error'}`);
+                }
+
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = `❌ Token validation failed: ${error.message}`;
+                log(`Token validation failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test QR Management specific endpoints
+        async function testQRManagementEndpoints() {
+            if (!window.currentSession) {
+                log('No active session. Please login first.', 'error');
+                return;
+            }
+
+            const token = window.currentSession.access_token;
+            const endpoints = [
+                { url: '/units', name: 'Units' },
+                { url: '/qr-codes?page=1&limit=10&include_analytics=true', name: 'QR Codes' }
+            ];
+
+            log('Testing QR Management endpoints...');
+
+            for (const endpoint of endpoints) {
+                try {
+                    log(`Testing ${endpoint.name} endpoint...`);
+                    
+                    const response = await fetch(`${API_BASE_URL}${endpoint.url}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        log(`✅ ${endpoint.name} endpoint successful`, 'success');
+                        log(`   Response: ${JSON.stringify(data).substring(0, 100)}...`, 'info');
+                    } else {
+                        const errorData = await response.text();
+                        log(`❌ ${endpoint.name} endpoint failed: ${response.status} ${response.statusText}`, 'error');
+                        log(`   Error details: ${errorData}`, 'error');
+                    }
+
+                } catch (error) {
+                    log(`❌ ${endpoint.name} endpoint exception: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Test all endpoints
+        async function testAllEndpoints() {
+            const statusDiv = document.getElementById('endpointStatus');
+            
+            if (!window.currentSession) {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ No active session. Please login first.';
+                return;
+            }
+
+            const token = window.currentSession.access_token;
+            const endpoints = [
+                { url: '/auth/verify', name: 'Auth Verify' },
+                { url: '/units', name: 'Units' },
+                { url: '/qr-codes', name: 'QR Codes' },
+                { url: '/master-data/units', name: 'Master Data Units' },
+                { url: '/complaints', name: 'Complaints' },
+                { url: '/users', name: 'Users' }
+            ];
+
+            let successCount = 0;
+            let totalCount = endpoints.length;
+
+            log('Testing all endpoints...');
+
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}${endpoint.url}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        successCount++;
+                        log(`✅ ${endpoint.name} - Success`, 'success');
+                    } else {
+                        log(`❌ ${endpoint.name} - Failed: ${response.status}`, 'error');
+                    }
+
+                } catch (error) {
+                    log(`❌ ${endpoint.name} - Exception: ${error.message}`, 'error');
+                }
+            }
+
+            if (successCount === totalCount) {
+                statusDiv.className = 'status success';
+                statusDiv.textContent = `✅ All endpoints passed (${successCount}/${totalCount})`;
+            } else {
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = `⚠️ Some endpoints failed (${successCount}/${totalCount} passed)`;
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            log('Page loaded, ready for testing');
+            log('Please update SUPABASE_URL and SUPABASE_ANON_KEY in the script before testing');
+        });
+    </script>
+</body>
+</html>

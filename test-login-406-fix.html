@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login 406 Fix</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Login 406 Fix</h1>
+        
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="admin@jempol.com" placeholder="Masukkan email admin">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="Masukkan password">
+        </div>
+        
+        <button onclick="testLogin()">🚀 Test Login</button>
+        <button onclick="testConnection()">📡 Test Connection</button>
+        <button onclick="testAdminQuery()">👤 Test Admin Query</button>
+        <button onclick="clearResults()">🧹 Clear Results</button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey, {
+            auth: {
+                persistSession: true,
+                autoRefreshToken: true,
+                detectSessionInUrl: false,
+                flowType: 'pkce'
+            },
+            global: {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                }
+            }
+        });
+
+        function addResult(type, title, content) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${typeof content === 'object' ? JSON.stringify(content, null, 2) : content}</pre>
+            `;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testConnection() {
+            try {
+                addResult('info', '📡 Testing Connection', 'Menguji koneksi ke Supabase...');
+                
+                const { data, error } = await supabase
+                    .from('admins')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    addResult('error', '❌ Connection Failed', error);
+                } else {
+                    addResult('success', '✅ Connection Success', 'Koneksi ke Supabase berhasil!');
+                }
+            } catch (error) {
+                addResult('error', '❌ Connection Exception', error.message);
+            }
+        }
+
+        async function testAdminQuery() {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                addResult('error', '❌ Input Error', 'Email harus diisi');
+                return;
+            }
+
+            try {
+                addResult('info', '👤 Testing Admin Query', `Mencari admin dengan email: ${email}`);
+                
+                // Strategy 1: maybeSingle
+                try {
+                    const { data: data1, error: error1 } = await supabase
+                        .from('admins')
+                        .select('id, username, full_name, email, role, is_active')
+                        .eq('email', email)
+                        .eq('is_active', true)
+                        .maybeSingle();
+                    
+                    if (error1) {
+                        addResult('error', '⚠️ Strategy 1 (maybeSingle) Failed', error1);
+                    } else {
+                        addResult('success', '✅ Strategy 1 (maybeSingle) Success', data1);
+                    }
+                } catch (error) {
+                    addResult('error', '❌ Strategy 1 Exception', error.message);
+                }
+                
+                // Strategy 2: array query
+                try {
+                    const { data: data2, error: error2 } = await supabase
+                        .from('admins')
+                        .select('id, username, full_name, email, role, is_active')
+                        .eq('email', email)
+                        .eq('is_active', true)
+                        .limit(1);
+                    
+                    if (error2) {
+                        addResult('error', '⚠️ Strategy 2 (array) Failed', error2);
+                    } else {
+                        addResult('success', '✅ Strategy 2 (array) Success', data2);
+                    }
+                } catch (error) {
+                    addResult('error', '❌ Strategy 2 Exception', error.message);
+                }
+                
+                // Strategy 3: all fields
+                try {
+                    const { data: data3, error: error3 } = await supabase
+                        .from('admins')
+                        .select('*')
+                        .eq('email', email)
+                        .eq('is_active', true);
+                    
+                    if (error3) {
+                        addResult('error', '⚠️ Strategy 3 (all fields) Failed', error3);
+                    } else {
+                        addResult('success', '✅ Strategy 3 (all fields) Success', data3);
+                    }
+                } catch (error) {
+                    addResult('error', '❌ Strategy 3 Exception', error.message);
+                }
+                
+            } catch (error) {
+                addResult('error', '❌ Admin Query Exception', error.message);
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                addResult('error', '❌ Input Error', 'Email dan password harus diisi');
+                return;
+            }
+
+            try {
+                addResult('info', '🔐 Testing Login', `Mencoba login dengan email: ${email}`);
+                
+                // Clear any existing session
+                await supabase.auth.signOut();
+                
+                // Wait a moment
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Attempt login
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: email.trim().toLowerCase(),
+                    password: password
+                });
+
+                if (authError) {
+                    addResult('error', '❌ Auth Error', authError);
+                    return;
+                }
+
+                if (!authData?.user || !authData?.session) {
+                    addResult('error', '❌ Login Failed', 'Tidak ada data user atau session');
+                    return;
+                }
+
+                addResult('success', '✅ Auth Success', {
+                    user: authData.user.email,
+                    session: 'Session created'
+                });
+
+                // Wait for session to be established
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Test admin profile query
+                await testAdminQuery();
+
+            } catch (error) {
+                addResult('error', '❌ Login Exception', error.message);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            addResult('info', '🚀 Test Login 406 Fix Ready', 'Siap untuk testing login dan query admin');
+        });
+    </script>
+</body>
+</html>

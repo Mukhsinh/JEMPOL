@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Management Authentication</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test QR Management Authentication</h1>
+        
+        <div class="section">
+            <h3>1. Login Admin</h3>
+            <input type="email" id="email" placeholder="Email admin" value="admin@jempol.com">
+            <input type="password" id="password" placeholder="Password" value="admin123">
+            <button onclick="loginAdmin()">Login</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="section">
+            <h3>2. Test QR Codes API</h3>
+            <button onclick="testQRCodesAPI()">Test GET /api/qr-codes</button>
+            <div id="qrCodesResult"></div>
+        </div>
+
+        <div class="section">
+            <h3>3. Test Create QR Code</h3>
+            <input type="text" id="unitId" placeholder="Unit ID" value="1">
+            <input type="text" id="qrName" placeholder="QR Name" value="Test QR Code">
+            <button onclick="testCreateQRCode()">Create QR Code</button>
+            <div id="createResult"></div>
+        </div>
+
+        <div class="section">
+            <h3>4. Debug Info</h3>
+            <button onclick="showDebugInfo()">Show Debug Info</button>
+            <div id="debugInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+        const API_BASE = 'http://localhost:3003/api';
+
+        async function loginAdmin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('loginResult');
+            
+            try {
+                console.log('🔄 Attempting login...');
+                
+                // Import Supabase client
+                const { createClient } = await import('https://cdn.skypack.dev/@supabase/supabase-js');
+                const supabase = createClient(
+                    'https://jxxzbdivafzzwqhagwrf.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg'
+                );
+
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                if (data.session) {
+                    authToken = data.session.access_token;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Login berhasil!</h4>
+                            <p>User: ${data.user.email}</p>
+                            <p>Token: ${authToken.substring(0, 50)}...</p>
+                        </div>
+                    `;
+                    console.log('✅ Login successful, token:', authToken.substring(0, 50) + '...');
+                } else {
+                    throw new Error('No session data received');
+                }
+
+            } catch (error) {
+                console.error('❌ Login error:', error);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Login gagal!</h4>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testQRCodesAPI() {
+            const resultDiv = document.getElementById('qrCodesResult');
+            
+            if (!authToken) {
+                resultDiv.innerHTML = '<div class="error">❌ Silakan login terlebih dahulu!</div>';
+                return;
+            }
+
+            try {
+                console.log('🔄 Testing QR Codes API...');
+                
+                const response = await fetch(`${API_BASE}/qr-codes?page=1&limit=10&include_analytics=true`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+
+                const data = await response.json();
+                console.log('📡 Response data:', data);
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ QR Codes API berhasil!</h4>
+                            <p>Status: ${response.status}</p>
+                            <p>Total QR Codes: ${data.qr_codes?.length || 0}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ QR Codes API gagal!</h4>
+                            <p>Status: ${response.status}</p>
+                            <p>Error: ${data.error || 'Unknown error'}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('❌ QR Codes API error:', error);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ QR Codes API error!</h4>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testCreateQRCode() {
+            const resultDiv = document.getElementById('createResult');
+            
+            if (!authToken) {
+                resultDiv.innerHTML = '<div class="error">❌ Silakan login terlebih dahulu!</div>';
+                return;
+            }
+
+            const unitId = document.getElementById('unitId').value;
+            const qrName = document.getElementById('qrName').value;
+
+            try {
+                console.log('🔄 Testing Create QR Code...');
+                
+                const response = await fetch(`${API_BASE}/qr-codes`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        unit_id: unitId,
+                        name: qrName,
+                        description: 'Test QR Code dari browser'
+                    })
+                });
+
+                const data = await response.json();
+                console.log('📡 Create response:', data);
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ QR Code berhasil dibuat!</h4>
+                            <p>Status: ${response.status}</p>
+                            <p>QR Code: ${data.qr_code?.code}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Create QR Code gagal!</h4>
+                            <p>Status: ${response.status}</p>
+                            <p>Error: ${data.error || 'Unknown error'}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('❌ Create QR Code error:', error);
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Create QR Code error!</h4>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function showDebugInfo() {
+            const resultDiv = document.getElementById('debugInfo');
+            
+            const debugInfo = {
+                authToken: authToken ? authToken.substring(0, 50) + '...' : 'Not set',
+                apiBase: API_BASE,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                localStorage: Object.keys(localStorage),
+                sessionStorage: Object.keys(sessionStorage)
+            };
+
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <h4>🔍 Debug Information</h4>
+                    <pre>${JSON.stringify(debugInfo, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        // Auto-load debug info on page load
+        window.onload = function() {
+            showDebugInfo();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Frontend-Backend Integration Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Frontend-Backend Integration Fix</h1>
+    
+    <div class="test-section">
+        <h3>Backend Connection Test</h3>
+        <button onclick="testBackendConnection()">Test Backend Connection</button>
+        <div id="backend-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Public Endpoints Test</h3>
+        <button onclick="testPublicEndpoints()">Test Public Endpoints</button>
+        <div id="public-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Auth Endpoints Test</h3>
+        <button onclick="testAuthEndpoints()">Test Auth Endpoints</button>
+        <div id="auth-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Frontend API Service Test</h3>
+        <button onclick="testFrontendAPI()">Test Frontend API</button>
+        <div id="frontend-result"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'http://localhost:3003/api';
+        const FRONTEND_URL = 'http://localhost:5173';
+        
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `<pre>${message}</pre>`;
+            element.appendChild(div);
+        }
+        
+        function clearLog(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+        
+        async function testBackendConnection() {
+            clearLog('backend-result');
+            log('backend-result', '🔍 Testing backend connection...', 'info');
+            
+            try {
+                // Test health endpoint
+                const response = await fetch(`${BACKEND_URL}/health`);
+                if (response.ok) {
+                    log('backend-result', '✅ Backend health check: OK', 'success');
+                } else {
+                    log('backend-result', `❌ Backend health check failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log('backend-result', `❌ Backend connection failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testPublicEndpoints() {
+            clearLog('public-result');
+            log('public-result', '🔍 Testing public endpoints...', 'info');
+            
+            const endpoints = [
+                '/master-data/public/unit-types',
+                '/master-data/public/patient-types',
+                '/master-data/public/service-categories',
+                '/master-data/public/ticket-types'
+            ];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${BACKEND_URL}${endpoint}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        log('public-result', `✅ ${endpoint}: ${data.length || 0} items`, 'success');
+                    } else {
+                        log('public-result', `❌ ${endpoint}: ${response.status}`, 'error');
+                    }
+                } catch (error) {
+                    log('public-result', `❌ ${endpoint}: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        async function testAuthEndpoints() {
+            clearLog('auth-result');
+            log('auth-result', '🔍 Testing auth endpoints (should return 401)...', 'info');
+            
+            const endpoints = [
+                '/complaints/tickets',
+                '/users',
+                '/units'
+            ];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${BACKEND_URL}${endpoint}`);
+                    if (response.status === 401) {
+                        log('auth-result', `✅ ${endpoint}: 401 (Auth required - correct)`, 'success');
+                    } else {
+                        log('auth-result', `⚠️ ${endpoint}: ${response.status} (Expected 401)`, 'info');
+                    }
+                } catch (error) {
+                    log('auth-result', `❌ ${endpoint}: ${error.message}`, 'error');
+                }
+            }
+        }
+        
+        async function testFrontendAPI() {
+            clearLog('frontend-result');
+            log('frontend-result', '🔍 Testing frontend API service...', 'info');
+            
+            try {
+                // Test if frontend is running
+                const frontendResponse = await fetch(FRONTEND_URL);
+                if (frontendResponse.ok) {
+                    log('frontend-result', '✅ Frontend is running', 'success');
+                } else {
+                    log('frontend-result', `❌ Frontend not accessible: ${frontendResponse.status}`, 'error');
+                }
+            } catch (error) {
+                log('frontend-result', `❌ Frontend connection failed: ${error.message}`, 'error');
+            }
+            
+            // Test CORS
+            try {
+                const corsResponse = await fetch(`${BACKEND_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Origin': FRONTEND_URL
+                    }
+                });
+                if (corsResponse.ok) {
+                    log('frontend-result', '✅ CORS configuration: OK', 'success');
+                } else {
+                    log('frontend-result', `❌ CORS issue: ${corsResponse.status}`, 'error');
+                }
+            } catch (error) {
+                log('frontend-result', `❌ CORS test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run tests on page load
+        window.onload = function() {
+            setTimeout(() => {
+                testBackendConnection();
+                setTimeout(() => testPublicEndpoints(), 1000);
+                setTimeout(() => testAuthEndpoints(), 2000);
+                setTimeout(() => testFrontendAPI(), 3000);
+            }, 500);
+        };
+    </script>
+</body>
+</html>

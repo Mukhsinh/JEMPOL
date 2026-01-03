@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Koneksi Frontend-Backend Final</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-result { margin: 10px 0; padding: 15px; border-radius: 8px; border-left: 5px solid; }
+        .success { background-color: #d4edda; color: #155724; border-left-color: #28a745; }
+        .error { background-color: #f8d7da; color: #721c24; border-left-color: #dc3545; }
+        .warning { background-color: #fff3cd; color: #856404; border-left-color: #ffc107; }
+        .loading { background-color: #e2e3e5; color: #495057; border-left-color: #6c757d; }
+        button { padding: 12px 24px; margin: 8px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        button.success { background: #28a745; }
+        button.danger { background: #dc3545; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin: 20px 0; }
+        .status-card { background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #dee2e6; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .online { background: #28a745; }
+        .offline { background: #dc3545; }
+        .unknown { background: #6c757d; }
+        h1 { color: #343a40; text-align: center; margin-bottom: 30px; }
+        h2 { color: #495057; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        .summary { background: #e9ecef; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Koneksi Frontend-Backend Final Fix</h1>
+        
+        <div class="status-grid">
+            <div class="status-card">
+                <h3><span class="status-indicator unknown" id="frontend-status"></span>Frontend Status</h3>
+                <p>Port: <strong>3002</strong></p>
+                <p id="frontend-info">Checking...</p>
+            </div>
+            <div class="status-card">
+                <h3><span class="status-indicator unknown" id="backend-status"></span>Backend Status</h3>
+                <p>Port: <strong>3003</strong></p>
+                <p id="backend-info">Checking...</p>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="testAllConnections()">🔄 Test Semua Koneksi</button>
+            <button onclick="testCriticalEndpoints()" class="success">⚡ Test Endpoint Kritis</button>
+            <button onclick="clearResults()" class="danger">🗑️ Clear Results</button>
+        </div>
+        
+        <div id="results"></div>
+        
+        <div class="summary" id="summary" style="display: none;">
+            <h3>📊 Ringkasan Test</h3>
+            <div id="summary-content"></div>
+        </div>
+    </div>
+
+    <script>
+        const FRONTEND_URL = 'http://localhost:3002';
+        const BACKEND_URL = 'http://localhost:3003';
+        const API_BASE = `${BACKEND_URL}/api`;
+        
+        let testResults = [];
+        
+        function updateStatus(elementId, status, info) {
+            const indicator = document.getElementById(elementId);
+            const infoElement = document.getElementById(elementId.replace('-status', '-info'));
+            
+            indicator.className = `status-indicator ${status}`;
+            infoElement.textContent = info;
+        }
+        
+        function addResult(title, success, message, data = null, duration = null) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${success ? 'success' : 'error'}`;
+            
+            const icon = success ? '✅' : '❌';
+            const durationText = duration ? ` (${duration}ms)` : '';
+            
+            let content = `<h3>${icon} ${title}${durationText}</h3><p>${message}</p>`;
+            if (data) {
+                content += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            div.innerHTML = content;
+            results.appendChild(div);
+            
+            testResults.push({ title, success, message, duration });
+            updateSummary();
+        }
+        
+        function addLoading(title) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = 'test-result loading';
+            div.id = `loading-${title.replace(/\s+/g, '-')}`;
+            div.innerHTML = `<h3>⏳ ${title}</h3><p>Testing...</p>`;
+            results.appendChild(div);
+        }
+        
+        function removeLoading(title) {
+            const loadingDiv = document.getElementById(`loading-${title.replace(/\s+/g, '-')}`);
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+        }
+        
+        async function testEndpoint(url, title, options = {}) {
+            const startTime = Date.now();
+            addLoading(title);
+            
+            try {
+                const response = await fetch(url, {
+                    method: options.method || 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    body: options.body ? JSON.stringify(options.body) : undefined
+                });
+                
+                const duration = Date.now() - startTime;
+                removeLoading(title);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(title, true, `Status: ${response.status} - Response OK`, data, duration);
+                    return { success: true, data, duration };
+                } else {
+                    const errorText = await response.text();
+                    addResult(title, false, `Status: ${response.status} - ${response.statusText}`, { error: errorText }, duration);
+                    return { success: false, status: response.status, error: errorText, duration };
+                }
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                removeLoading(title);
+                addResult(title, false, `Connection Error: ${error.message}`, { error: error.message }, duration);
+                return { success: false, error: error.message, duration };
+            }
+        }
+        
+        async function checkServerStatus() {
+            // Check Frontend
+            try {
+                const response = await fetch(FRONTEND_URL, { method: 'HEAD' });
+                updateStatus('frontend-status', 'online', 'Online - Vite Dev Server');
+            } catch (error) {
+                updateStatus('frontend-status', 'offline', 'Offline atau tidak dapat diakses');
+            }
+            
+            // Check Backend
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (response.ok) {
+                    updateStatus('backend-status', 'online', 'Online - API Server');
+                } else {
+                    updateStatus('backend-status', 'offline', 'Server error');
+                }
+            } catch (error) {
+                updateStatus('backend-status', 'offline', 'Offline atau tidak dapat diakses');
+            }
+        }
+        
+        async function testAllConnections() {
+            document.getElementById('results').innerHTML = '';
+            testResults = [];
+            
+            await checkServerStatus();
+            
+            // Test basic connectivity
+            await testEndpoint(`${API_BASE}/health`, 'Health Check');
+            
+            // Test public endpoints (no auth required)
+            await testEndpoint(`${API_BASE}/public/units`, 'Public Units');
+            await testEndpoint(`${API_BASE}/public/unit-types`, 'Public Unit Types');
+            
+            // Test master data endpoints
+            await testEndpoint(`${API_BASE}/master-data/units`, 'Master Data - Units');
+            await testEndpoint(`${API_BASE}/master-data/unit-types`, 'Master Data - Unit Types');
+            await testEndpoint(`${API_BASE}/master-data/service-categories`, 'Master Data - Service Categories');
+            
+            // Test other critical endpoints
+            await testEndpoint(`${API_BASE}/complaints`, 'Complaints API');
+            await testEndpoint(`${API_BASE}/escalation`, 'Escalation API');
+            await testEndpoint(`${API_BASE}/roles`, 'Roles API');
+            await testEndpoint(`${API_BASE}/response-templates`, 'Response Templates API');
+            
+            // Test reports and exports
+            await testEndpoint(`${API_BASE}/reports`, 'Reports API');
+            await testEndpoint(`${API_BASE}/test/reports`, 'Test Reports Endpoint');
+        }
+        
+        async function testCriticalEndpoints() {
+            document.getElementById('results').innerHTML = '';
+            testResults = [];
+            
+            await checkServerStatus();
+            
+            // Only test the most critical endpoints that were failing
+            await testEndpoint(`${API_BASE}/health`, 'Health Check');
+            await testEndpoint(`${API_BASE}/complaints`, 'Complaints (Critical)');
+            await testEndpoint(`${API_BASE}/master-data/units`, 'Units Data (Critical)');
+            await testEndpoint(`${API_BASE}/escalation`, 'Escalation (Critical)');
+            await testEndpoint(`${API_BASE}/roles`, 'Roles (Critical)');
+        }
+        
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            const content = document.getElementById('summary-content');
+            
+            if (testResults.length === 0) {
+                summary.style.display = 'none';
+                return;
+            }
+            
+            const successful = testResults.filter(r => r.success).length;
+            const failed = testResults.filter(r => r.success === false).length;
+            const avgDuration = testResults.reduce((sum, r) => sum + (r.duration || 0), 0) / testResults.length;
+            
+            content.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div><strong>✅ Berhasil:</strong> ${successful}</div>
+                    <div><strong>❌ Gagal:</strong> ${failed}</div>
+                    <div><strong>⏱️ Rata-rata Response:</strong> ${Math.round(avgDuration)}ms</div>
+                    <div><strong>📊 Success Rate:</strong> ${Math.round((successful / testResults.length) * 100)}%</div>
+                </div>
+                ${failed > 0 ? '<p style="color: #dc3545; margin-top: 15px;"><strong>⚠️ Ada endpoint yang gagal. Periksa konfigurasi backend dan pastikan semua service berjalan.</strong></p>' : '<p style="color: #28a745; margin-top: 15px;"><strong>🎉 Semua test berhasil! Koneksi frontend-backend sudah normal.</strong></p>'}
+            `;
+            
+            summary.style.display = 'block';
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('summary').style.display = 'none';
+            testResults = [];
+        }
+        
+        // Auto-check status on page load
+        window.onload = () => {
+            checkServerStatus();
+            setTimeout(() => {
+                testCriticalEndpoints();
+            }, 2000);
+        };
+    </script>
+</body>
+</html>

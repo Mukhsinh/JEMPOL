@@ -1,0 +1,54 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login Final</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h2>🔧 Test Login Final</h2>
+    <div id="status"></div>
+    <div id="result"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+        
+        console.log('🔧 Menggunakan URL:', SUPABASE_URL);
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function testLogin() {
+            const statusDiv = document.getElementById('status');
+            const resultDiv = document.getElementById('result');
+            
+            statusDiv.innerHTML = '🔄 Testing login...';
+            
+            try {
+                // Test login
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: 'admin@jempol.com',
+                    password: 'admin123'
+                });
+                
+                if (error) {
+                    console.error('❌ Login error:', error);
+                    statusDiv.innerHTML = '❌ Login gagal';
+                    resultDiv.innerHTML = `<pre>Error: ${JSON.stringify(error, null, 2)}</pre>`;
+                } else {
+                    console.log('✅ Login berhasil:', data);
+                    statusDiv.innerHTML = '✅ Login berhasil!';
+                    resultDiv.innerHTML = `<pre>Success: ${JSON.stringify(data.user, null, 2)}</pre>`;
+                }
+            } catch (err) {
+                console.error('❌ Unexpected error:', err);
+                statusDiv.innerHTML = '❌ Error tidak terduga';
+                resultDiv.innerHTML = `<pre>Error: ${err.message}</pre>`;
+            }
+        }
+        
+        // Auto test saat halaman dimuat
+        window.onload = testLogin;
+    </script>
+</body>
+</html>

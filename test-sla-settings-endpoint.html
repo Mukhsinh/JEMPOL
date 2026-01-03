@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SLA Settings Endpoint</title>
+</head>
+<body>
+    <h1>Test SLA Settings Endpoint</h1>
+    <div id="result"></div>
+
+    <script>
+        async function testSLASettings() {
+            try {
+                console.log('Testing SLA Settings endpoint...');
+                
+                // Get token first
+                const loginResponse = await fetch('http://localhost:3003/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+
+                if (!loginResponse.ok) {
+                    throw new Error(`Login failed: ${loginResponse.status}`);
+                }
+
+                const loginData = await loginResponse.json();
+                console.log('Login successful:', loginData);
+
+                // Test SLA Settings endpoint
+                const slaResponse = await fetch('http://localhost:3003/api/master-data/sla-settings', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${loginData.token}`,
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                console.log('SLA Settings response status:', slaResponse.status);
+
+                if (!slaResponse.ok) {
+                    throw new Error(`SLA Settings request failed: ${slaResponse.status}`);
+                }
+
+                const slaData = await slaResponse.json();
+                console.log('SLA Settings data:', slaData);
+
+                document.getElementById('result').innerHTML = `
+                    <h2>Success!</h2>
+                    <p>Found ${slaData.length} SLA settings</p>
+                    <pre>${JSON.stringify(slaData, null, 2)}</pre>
+                `;
+
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').innerHTML = `
+                    <h2>Error!</h2>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+
+        // Run test when page loads
+        testSLASettings();
+    </script>
+</body>
+</html>
