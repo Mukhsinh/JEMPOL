@@ -1,118 +1,166 @@
 import React, { useState, useEffect } from 'react';
-import { escalationService, EscalationRule } from '../../services/escalationService';
+import { escalationService, EscalationRule, EscalationStats } from '../../services/escalationService';
+import EscalationRuleModal from '../../components/EscalationRuleModal';
 
 const EscalationManagement: React.FC = () => {
   const [rules, setRules] = useState<EscalationRule[]>([]);
+  const [stats, setStats] = useState<EscalationStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedRule, setSelectedRule] = useState<EscalationRule | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchEscalationRules();
+    fetchData();
   }, []);
 
-  const fetchEscalationRules = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await escalationService.getRules();
-      // Pastikan actions adalah array untuk setiap rule dengan penanganan error
-      const normalizedData = (data || []).map(rule => {
-        let actions = [];
-        let trigger_conditions = {};
-        
-        // Parse actions dengan aman
-        try {
-          if (Array.isArray(rule.actions)) {
-            actions = rule.actions;
-          } else if (typeof rule.actions === 'string' && rule.actions) {
-            actions = JSON.parse(rule.actions);
-          } else if (rule.actions && typeof rule.actions === 'object') {
-            actions = [rule.actions];
-          }
-        } catch (e) {
-          console.warn('Failed to parse actions for rule:', rule.id, e);
-          actions = [];
-        }
-        
-        // Parse trigger_conditions dengan aman
-        try {
-          if (typeof rule.trigger_conditions === 'string' && rule.trigger_conditions) {
-            trigger_conditions = JSON.parse(rule.trigger_conditions);
-          } else if (rule.trigger_conditions && typeof rule.trigger_conditions === 'object') {
-            trigger_conditions = rule.trigger_conditions;
-          }
-        } catch (e) {
-          console.warn('Failed to parse trigger_conditions for rule:', rule.id, e);
-          trigger_conditions = {};
-        }
-        
-        return {
-          ...rule,
-          actions: Array.isArray(actions) ? actions : [],
-          trigger_conditions
-        };
-      });
+      
+      const [rulesData, statsData] = await Promise.all([
+        escalationService.getRules(),
+        escalationService.getStats()
+      ]);
+      
+      // Normalize data
+      const normalizedData = (rulesData || []).map(rule => normalizeRule(rule));
       setRules(normalizedData);
+      setStats(statsData);
     } catch (err: any) {
-      console.error('Error fetching escalation rules:', err);
-      setError(err.message || 'Gagal memuat aturan eskalasi');
+      console.error('Error fetching data:', err);
+      setError(err.message || 'Gagal memuat data eskalasi');
     } finally {
       setLoading(false);
     }
   };
 
+  const normalizeRule = (rule: any): EscalationRule => {
+    let actions = [];
+    let trigger_conditions = {};
+    
+    try {
+      if (Array.isArray(rule.actions)) {
+        actions = rule.actions;
+      } else if (typeof rule.actions === 'string' && rule.actions) {
+        actions = JSON.parse(rule.actions);
+      } else if (rule.actions && typeof rule.actions === 'object') {
+        actions = [rule.actions];
+      }
+    } catch (e) {
+      actions = [];
+    }
+    
+    try {
+      if (typeof rule.trigger_conditions === 'string' && rule.trigger_conditions) {
+        trigger_conditions = JSON.parse(rule.trigger_conditions);
+      } else if (rule.trigger_conditions && typeof rule.trigger_conditions === 'object') {
+        trigger_conditions = rule.trigger_conditions;
+      }
+    } catch (e) {
+      trigger_conditions = {};
+    }
+    
+    return {
+      ...rule,
+      actions: Array.isArray(actions) ? actions : [],
+      trigger_conditions
+    };
+  };
+
   const handleToggleRule = async (id: string, isActive: boolean) => {
     try {
-      await escalationService.updateRule(id, { is_active: !isActive });
-      await fetchEscalationRules();
+      setActionLoading(id);
+      await escalationService.toggleRuleStatus(id, !isActive);
+      await fetchData();
     } catch (err: any) {
-      console.error('Error updating escalation rule:', err);
-      setError(err.message || 'Gagal memperbarui aturan eskalasi');
+      console.error('Error toggling rule:', err);
+      setError(err.message || 'Gagal mengubah status aturan');
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  // Helper function untuk mendapatkan teks aksi
+  const handleDeleteRule = async (id: string) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus aturan ini?')) return;
+    
+    try {
+      setActionLoading(id);
+      await escalationService.deleteRule(id);
+      await fetchData();
+    } catch (err: any) {
+      console.error('Error deleting rule:', err);
+      setError(err.message || 'Gagal menghapus aturan');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleAddRule = () => {
+    setSelectedRule(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditRule = (rule: EscalationRule) => {
+    setSelectedRule(rule);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveRule = async (ruleData: Partial<EscalationRule>) => {
+    try {
+      if (selectedRule) {
+        await escalationService.updateRule(selectedRule.id, ruleData);
+      } else {
+        await escalationService.createRule(ruleData as any);
+      }
+      setIsModalOpen(false);
+      await fetchData();
+    } catch (err: any) {
+      console.error('Error saving rule:', err);
+      throw err;
+    }
+  };
+
   const getActionsText = (actions: any): string => {
     try {
       if (!actions) return '-';
-      let actionsArray = actions;
+      let actionsArray = Array.isArray(actions) ? actions : [actions];
+      if (actionsArray.length === 0) return '-';
       
-      if (typeof actions === 'string') {
-        try {
-          actionsArray = JSON.parse(actions);
-        } catch {
-          return '-';
-        }
-      }
+      const actionLabels: Record<string, string> = {
+        'notify_manager': 'Notifikasi Manager',
+        'notify_assignee': 'Notifikasi Penerima',
+        'bump_priority': 'Naikkan Prioritas',
+        'flag_review': 'Tandai Review',
+        'escalate_to_role': 'Eskalasi ke Role'
+      };
       
-      if (!Array.isArray(actionsArray) || actionsArray.length === 0) return '-';
-      return actionsArray.map((a: any) => a?.type?.replace(/_/g, ' ') || 'unknown').join(', ');
+      return actionsArray.map((a: any) => {
+        const type = a?.type || 'unknown';
+        return actionLabels[type] || type.replace(/_/g, ' ');
+      }).join(', ');
     } catch {
       return '-';
     }
   };
 
-  // Helper function untuk mendapatkan teks kondisi
   const getConditionsText = (conditions: any): string => {
     try {
-      if (!conditions) return '-';
-      let condObj = conditions;
-      
-      if (typeof conditions === 'string') {
-        try {
-          condObj = JSON.parse(conditions);
-        } catch {
-          return '-';
-        }
-      }
-      
-      if (!condObj || typeof condObj !== 'object') return '-';
+      if (!conditions || typeof conditions !== 'object') return '-';
       
       const parts: string[] = [];
-      if (condObj.priority?.length) parts.push(`Prioritas: ${condObj.priority.join(', ')}`);
-      if (condObj.status?.length) parts.push(`Status: ${condObj.status.join(', ')}`);
-      if (condObj.time_threshold) parts.push(`Waktu: ${condObj.time_threshold}s`);
-      if (condObj.sentiment_threshold) parts.push(`Sentimen: ${condObj.sentiment_threshold}`);
+      if (conditions.priority?.length) parts.push(`Prioritas: ${conditions.priority.join(', ')}`);
+      if (conditions.status?.length) parts.push(`Status: ${conditions.status.join(', ')}`);
+      if (conditions.time_threshold) {
+        const hours = Math.floor(conditions.time_threshold / 3600);
+        parts.push(`Waktu: ${hours} jam`);
+      }
+      if (conditions.sentiment_threshold) parts.push(`Sentimen: < ${conditions.sentiment_threshold}`);
+      if (conditions.confidence_threshold) parts.push(`Confidence: ${conditions.confidence_threshold}%`);
+      if (conditions.type) parts.push(`Tipe: ${conditions.type}`);
+      
       return parts.length > 0 ? parts.join(' | ') : '-';
     } catch {
       return '-';
@@ -123,37 +171,106 @@ const EscalationManagement: React.FC = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-gray-600 dark:text-gray-400">Memuat data eskalasi...</span>
       </div>
     );
   }
 
   return (
     <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manajemen Eskalasi</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">Kelola aturan eskalasi tiket otomatis</p>
         </div>
         <button
-          onClick={() => console.log('Add Rule clicked')}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+          onClick={handleAddRule}
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2 transition-colors"
         >
           <span className="material-symbols-outlined text-sm">add</span>
           Tambah Aturan
         </button>
       </div>
 
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-          <div className="text-sm text-red-700">{error}</div>
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="flex items-center">
+              <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
+                <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">rule</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Total Aturan</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.rules.total}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="flex items-center">
+              <div className="p-3 rounded-full bg-green-100 dark:bg-green-900">
+                <span className="material-symbols-outlined text-green-600 dark:text-green-400">check_circle</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Aturan Aktif</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.rules.active}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="flex items-center">
+              <div className="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900">
+                <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400">trending_up</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Tiket Dieskalasi</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.tickets.escalated}</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="flex items-center">
+              <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900">
+                <span className="material-symbols-outlined text-purple-600 dark:text-purple-400">analytics</span>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Tingkat Sukses</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.executions.successRate}%</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
+      {/* Error Alert */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+          <div className="flex items-center">
+            <span className="material-symbols-outlined text-red-500 mr-2">error</span>
+            <span className="text-sm text-red-700">{error}</span>
+            <button 
+              onClick={() => setError(null)} 
+              className="ml-auto text-red-500 hover:text-red-700"
+            >
+              <span className="material-symbols-outlined text-sm">close</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Rules Table */}
       {rules.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-8 text-center">
-          <span className="material-symbols-outlined text-6xl text-gray-300 dark:text-gray-600 mb-4">rule</span>
+          <span className="material-symbols-outlined text-6xl text-gray-300 dark:text-gray-600 mb-4 block">rule</span>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Belum Ada Aturan Eskalasi</h3>
-          <p className="text-gray-500 dark:text-gray-400">Buat aturan eskalasi pertama untuk mengotomatisasi penanganan tiket.</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">Buat aturan eskalasi pertama untuk mengotomatisasi penanganan tiket.</p>
+          <button
+            onClick={handleAddRule}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+          >
+            Buat Aturan Pertama
+          </button>
         </div>
       ) : (
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
@@ -165,7 +282,7 @@ const EscalationManagement: React.FC = () => {
                     Nama Aturan
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Kondisi
+                    Kondisi Pemicu
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Aksi
@@ -181,38 +298,67 @@ const EscalationManagement: React.FC = () => {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {rules.map((rule) => (
                   <tr key={rule.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900 dark:text-white">{rule.name}</div>
                       {rule.description && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{rule.description}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xs truncate">
+                          {rule.description}
+                        </div>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                      {getConditionsText(rule.trigger_conditions)}
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+                      <div className="truncate" title={getConditionsText(rule.trigger_conditions)}>
+                        {getConditionsText(rule.trigger_conditions)}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                       {getActionsText(rule.actions)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         rule.is_active 
                           ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
-                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                          : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                       }`}>
                         {rule.is_active ? 'Aktif' : 'Nonaktif'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleToggleRule(rule.id, rule.is_active)}
-                        className={`mr-2 px-3 py-1 rounded text-xs ${
-                          rule.is_active
-                            ? 'bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-200'
-                            : 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900 dark:text-green-200'
-                        }`}
-                      >
-                        {rule.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                      </button>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEditRule(rule)}
+                          className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                          title="Edit"
+                        >
+                          <span className="material-symbols-outlined text-lg">edit</span>
+                        </button>
+                        <button
+                          onClick={() => handleToggleRule(rule.id, rule.is_active)}
+                          disabled={actionLoading === rule.id}
+                          className={`p-1 ${
+                            rule.is_active
+                              ? 'text-orange-600 hover:text-orange-800 dark:text-orange-400'
+                              : 'text-green-600 hover:text-green-800 dark:text-green-400'
+                          }`}
+                          title={rule.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                        >
+                          {actionLoading === rule.id ? (
+                            <span className="material-symbols-outlined text-lg animate-spin">sync</span>
+                          ) : (
+                            <span className="material-symbols-outlined text-lg">
+                              {rule.is_active ? 'toggle_on' : 'toggle_off'}
+                            </span>
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRule(rule.id)}
+                          disabled={actionLoading === rule.id}
+                          className="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                          title="Hapus"
+                        >
+                          <span className="material-symbols-outlined text-lg">delete</span>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -220,6 +366,16 @@ const EscalationManagement: React.FC = () => {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Modal */}
+      {isModalOpen && (
+        <EscalationRuleModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveRule}
+          rule={selectedRule}
+        />
       )}
     </div>
   );

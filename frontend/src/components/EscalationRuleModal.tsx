@@ -21,9 +21,10 @@ interface EscalationRule {
 }
 
 interface EscalationRuleModalProps {
+    isOpen: boolean;
     rule?: EscalationRule | null;
     onClose: () => void;
-    onSave: (ruleData: Partial<EscalationRule>) => void;
+    onSave: (ruleData: Partial<EscalationRule>) => Promise<void>;
 }
 
 interface RuleFormData {
@@ -43,7 +44,7 @@ interface RuleFormData {
     }>;
 }
 
-const EscalationRuleModal: React.FC<EscalationRuleModalProps> = ({ rule, onClose, onSave }) => {
+const EscalationRuleModal: React.FC<EscalationRuleModalProps> = ({ isOpen, rule, onClose, onSave }) => {
     const [formData, setFormData] = useState<RuleFormData>({
         name: '',
         description: '',
@@ -148,15 +149,16 @@ const EscalationRuleModal: React.FC<EscalationRuleModalProps> = ({ rule, onClose
         setError(null);
 
         try {
-            // Mock save - just call onSave with form data
-            onSave(formData);
-        } catch (err) {
-            setError(rule ? 'Gagal mengupdate aturan' : 'Gagal membuat aturan');
+            await onSave(formData);
+        } catch (err: any) {
+            setError(err.message || (rule ? 'Gagal mengupdate aturan' : 'Gagal membuat aturan'));
             console.error('Error saving rule:', err);
         } finally {
             setLoading(false);
         }
     };
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

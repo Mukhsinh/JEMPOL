@@ -16,6 +16,7 @@ const router = Router();
 
 // Public endpoints (no auth required) for basic data
 router.get('/public/rules', getEscalationRules);
+router.get('/public/stats', getEscalationStats);
 
 // Endpoint untuk kompatibilitas frontend
 router.get('/', getEscalationRules); // untuk /api/escalation-rules

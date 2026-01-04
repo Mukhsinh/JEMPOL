@@ -30,14 +30,63 @@ export interface EscalationLog {
   executed_at: string;
 }
 
+export interface EscalationStats {
+  rules: {
+    total: number;
+    active: number;
+    inactive: number;
+  };
+  executions: {
+    total: number;
+    successful: number;
+    failed: number;
+    partial: number;
+    successRate: number;
+  };
+  tickets: {
+    escalated: number;
+  };
+  period: string;
+}
+
 class EscalationService {
   async getRules(): Promise<EscalationRule[]> {
     try {
+      // Coba endpoint dengan auth terlebih dahulu
       const response = await api.get('/escalation/rules');
+      return response.data || [];
+    } catch (error: any) {
+      console.warn('Auth endpoint failed, trying public endpoint:', error.message);
+      try {
+        // Fallback ke endpoint publik jika auth gagal
+        const response = await api.get('/escalation/public/rules');
+        return response.data || [];
+      } catch (fallbackError) {
+        console.error('Error fetching escalation rules:', fallbackError);
+        throw fallbackError;
+      }
+    }
+  }
+
+  async getStats(): Promise<EscalationStats> {
+    try {
+      const response = await api.get('/escalation/stats');
       return response.data;
-    } catch (error) {
-      console.error('Error fetching escalation rules:', error);
-      throw error;
+    } catch (error: any) {
+      console.warn('Auth stats endpoint failed, trying public:', error.message);
+      try {
+        const response = await api.get('/escalation/public/stats');
+        return response.data;
+      } catch (fallbackError) {
+        console.error('Error fetching escalation stats:', fallbackError);
+        // Return default stats jika gagal
+        return {
+          rules: { total: 0, active: 0, inactive: 0 },
+          executions: { total: 0, successful: 0, failed: 0, partial: 0, successRate: 0 },
+          tickets: { escalated: 0 },
+          period: '30 days'
+        };
+      }
     }
   }
 
