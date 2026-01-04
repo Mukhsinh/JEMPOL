@@ -15,15 +15,43 @@ const EscalationManagement: React.FC = () => {
       setLoading(true);
       setError(null);
       const data = await escalationService.getRules();
-      // Pastikan actions adalah array untuk setiap rule
-      const normalizedData = data.map(rule => ({
-        ...rule,
-        actions: Array.isArray(rule.actions) ? rule.actions : 
-                 (typeof rule.actions === 'string' ? JSON.parse(rule.actions) : []),
-        trigger_conditions: typeof rule.trigger_conditions === 'string' 
-          ? JSON.parse(rule.trigger_conditions) 
-          : (rule.trigger_conditions || {})
-      }));
+      // Pastikan actions adalah array untuk setiap rule dengan penanganan error
+      const normalizedData = (data || []).map(rule => {
+        let actions = [];
+        let trigger_conditions = {};
+        
+        // Parse actions dengan aman
+        try {
+          if (Array.isArray(rule.actions)) {
+            actions = rule.actions;
+          } else if (typeof rule.actions === 'string' && rule.actions) {
+            actions = JSON.parse(rule.actions);
+          } else if (rule.actions && typeof rule.actions === 'object') {
+            actions = [rule.actions];
+          }
+        } catch (e) {
+          console.warn('Failed to parse actions for rule:', rule.id, e);
+          actions = [];
+        }
+        
+        // Parse trigger_conditions dengan aman
+        try {
+          if (typeof rule.trigger_conditions === 'string' && rule.trigger_conditions) {
+            trigger_conditions = JSON.parse(rule.trigger_conditions);
+          } else if (rule.trigger_conditions && typeof rule.trigger_conditions === 'object') {
+            trigger_conditions = rule.trigger_conditions;
+          }
+        } catch (e) {
+          console.warn('Failed to parse trigger_conditions for rule:', rule.id, e);
+          trigger_conditions = {};
+        }
+        
+        return {
+          ...rule,
+          actions: Array.isArray(actions) ? actions : [],
+          trigger_conditions
+        };
+      });
       setRules(normalizedData);
     } catch (err: any) {
       console.error('Error fetching escalation rules:', err);
@@ -45,23 +73,50 @@ const EscalationManagement: React.FC = () => {
 
   // Helper function untuk mendapatkan teks aksi
   const getActionsText = (actions: any): string => {
-    if (!actions) return '-';
-    const actionsArray = Array.isArray(actions) ? actions : 
-                         (typeof actions === 'string' ? JSON.parse(actions) : []);
-    if (!Array.isArray(actionsArray) || actionsArray.length === 0) return '-';
-    return actionsArray.map((a: any) => a?.type || 'unknown').join(', ');
+    try {
+      if (!actions) return '-';
+      let actionsArray = actions;
+      
+      if (typeof actions === 'string') {
+        try {
+          actionsArray = JSON.parse(actions);
+        } catch {
+          return '-';
+        }
+      }
+      
+      if (!Array.isArray(actionsArray) || actionsArray.length === 0) return '-';
+      return actionsArray.map((a: any) => a?.type?.replace(/_/g, ' ') || 'unknown').join(', ');
+    } catch {
+      return '-';
+    }
   };
 
   // Helper function untuk mendapatkan teks kondisi
   const getConditionsText = (conditions: any): string => {
-    if (!conditions) return '-';
-    const condObj = typeof conditions === 'string' ? JSON.parse(conditions) : conditions;
-    const parts: string[] = [];
-    if (condObj.priority?.length) parts.push(`Prioritas: ${condObj.priority.join(', ')}`);
-    if (condObj.status?.length) parts.push(`Status: ${condObj.status.join(', ')}`);
-    if (condObj.time_threshold) parts.push(`Waktu: ${condObj.time_threshold}s`);
-    if (condObj.sentiment_threshold) parts.push(`Sentimen: ${condObj.sentiment_threshold}`);
-    return parts.length > 0 ? parts.join(' | ') : '-';
+    try {
+      if (!conditions) return '-';
+      let condObj = conditions;
+      
+      if (typeof conditions === 'string') {
+        try {
+          condObj = JSON.parse(conditions);
+        } catch {
+          return '-';
+        }
+      }
+      
+      if (!condObj || typeof condObj !== 'object') return '-';
+      
+      const parts: string[] = [];
+      if (condObj.priority?.length) parts.push(`Prioritas: ${condObj.priority.join(', ')}`);
+      if (condObj.status?.length) parts.push(`Status: ${condObj.status.join(', ')}`);
+      if (condObj.time_threshold) parts.push(`Waktu: ${condObj.time_threshold}s`);
+      if (condObj.sentiment_threshold) parts.push(`Sentimen: ${condObj.sentiment_threshold}`);
+      return parts.length > 0 ? parts.join(' | ') : '-';
+    } catch {
+      return '-';
+    }
   };
 
   if (loading) {
