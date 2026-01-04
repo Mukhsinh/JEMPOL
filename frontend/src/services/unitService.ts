@@ -116,10 +116,35 @@ export interface AiTrustSettings {
 class UnitService {
   // Units management dengan improved error handling
   async getUnits(params?: { search?: string; type?: string; status?: string }): Promise<{ units: Unit[] }> {
-    // Di Vercel production, gunakan Supabase langsung
+    // Di Vercel production, gunakan Supabase langsung dengan relasi
     if (isVercelProduction()) {
-      const result = await supabaseService.getUnits();
-      return { units: result.data || [] };
+      try {
+        let query = supabase
+          .from('units')
+          .select(`
+            *,
+            unit_type:unit_type_id (id, name, code, color),
+            parent_unit:parent_unit_id (id, name)
+          `)
+          .order('name');
+        
+        if (params?.status === 'active') {
+          query = query.eq('is_active', true);
+        } else if (params?.status === 'inactive') {
+          query = query.eq('is_active', false);
+        }
+        
+        if (params?.search) {
+          query = query.or(`name.ilike.%${params.search}%,code.ilike.%${params.search}%`);
+        }
+        
+        const { data, error } = await query;
+        if (error) throw error;
+        return { units: data || [] };
+      } catch (error: any) {
+        console.error('Supabase getUnits error:', error);
+        return { units: [] };
+      }
     }
     
     try {
@@ -158,17 +183,23 @@ class UnitService {
   async getUnitTypes(): Promise<UnitType[]> {
     if (isVercelProduction()) {
       try {
-        const { data, error } = await supabase.from('unit_types').select('*').eq('is_active', true);
+        const { data, error } = await supabase
+          .from('unit_types')
+          .select('*')
+          .order('name');
         if (error) throw error;
         return data || [];
-      } catch { return []; }
+      } catch (error: any) {
+        console.error('Supabase getUnitTypes error:', error);
+        return [];
+      }
     }
     try {
       const response = await api.get('/units/unit-types');
       return response.data;
     } catch {
       try {
-        const { data } = await supabase.from('unit_types').select('*').eq('is_active', true);
+        const { data } = await supabase.from('unit_types').select('*').order('name');
         return data || [];
       } catch { return []; }
     }
@@ -191,17 +222,23 @@ class UnitService {
   async getTicketTypes(): Promise<TicketType[]> {
     if (isVercelProduction()) {
       try {
-        const { data, error } = await supabase.from('ticket_types').select('*').eq('is_active', true);
+        const { data, error } = await supabase
+          .from('ticket_types')
+          .select('*')
+          .order('name');
         if (error) throw error;
         return data || [];
-      } catch { return []; }
+      } catch (error: any) {
+        console.error('Supabase getTicketTypes error:', error);
+        return [];
+      }
     }
     try {
       const response = await api.get('/units/ticket-types');
       return response.data;
     } catch {
       try {
-        const { data } = await supabase.from('ticket_types').select('*').eq('is_active', true);
+        const { data } = await supabase.from('ticket_types').select('*').order('name');
         return data || [];
       } catch { return []; }
     }
@@ -210,17 +247,23 @@ class UnitService {
   async getTicketStatuses(): Promise<TicketStatus[]> {
     if (isVercelProduction()) {
       try {
-        const { data, error } = await supabase.from('ticket_statuses').select('*').eq('is_active', true);
+        const { data, error } = await supabase
+          .from('ticket_statuses')
+          .select('*')
+          .order('display_order');
         if (error) throw error;
         return data || [];
-      } catch { return []; }
+      } catch (error: any) {
+        console.error('Supabase getTicketStatuses error:', error);
+        return [];
+      }
     }
     try {
       const response = await api.get('/units/ticket-statuses');
       return response.data;
     } catch {
       try {
-        const { data } = await supabase.from('ticket_statuses').select('*').eq('is_active', true);
+        const { data } = await supabase.from('ticket_statuses').select('*').order('display_order');
         return data || [];
       } catch { return []; }
     }

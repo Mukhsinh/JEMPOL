@@ -192,8 +192,11 @@ class SupabaseService {
     try {
       const { data, error } = await supabase
         .from('units')
-        .select('*')
-        .eq('is_active', true)
+        .select(`
+          *,
+          unit_type:unit_type_id (id, name, code, color),
+          parent_unit:parent_unit_id (id, name)
+        `)
         .order('name');
 
       if (error) throw error;
@@ -213,6 +216,85 @@ class SupabaseService {
     }
   }
 
+  // ==================== TICKET TYPES ====================
+
+  async getTicketTypes() {
+    try {
+      const { data, error } = await supabase
+        .from('ticket_types')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || [],
+        message: 'Ticket types berhasil diambil'
+      };
+    } catch (error: any) {
+      console.error('SupabaseService.getTicketTypes error:', error);
+      return {
+        success: false,
+        data: [],
+        error: error.message || 'Gagal mengambil data tipe tiket'
+      };
+    }
+  }
+
+  // ==================== TICKET STATUSES ====================
+
+  async getTicketStatuses() {
+    try {
+      const { data, error } = await supabase
+        .from('ticket_statuses')
+        .select('*')
+        .order('display_order');
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || [],
+        message: 'Ticket statuses berhasil diambil'
+      };
+    } catch (error: any) {
+      console.error('SupabaseService.getTicketStatuses error:', error);
+      return {
+        success: false,
+        data: [],
+        error: error.message || 'Gagal mengambil data status tiket'
+      };
+    }
+  }
+
+  // ==================== UNIT TYPES ====================
+
+  async getUnitTypes() {
+    try {
+      const { data, error } = await supabase
+        .from('unit_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || [],
+        message: 'Unit types berhasil diambil'
+      };
+    } catch (error: any) {
+      console.error('SupabaseService.getUnitTypes error:', error);
+      return {
+        success: false,
+        data: [],
+        error: error.message || 'Gagal mengambil data tipe unit'
+      };
+    }
+  }
+
   // ==================== CATEGORIES ====================
 
   async getCategories() {
@@ -220,7 +302,6 @@ class SupabaseService {
       const { data, error } = await supabase
         .from('service_categories')
         .select('*')
-        .eq('is_active', true)
         .order('name');
 
       if (error) throw error;
@@ -355,8 +436,13 @@ class SupabaseService {
     try {
       const { data, error } = await supabase
         .from('sla_settings')
-        .select('*')
-        .order('priority');
+        .select(`
+          *,
+          unit_types:unit_type_id (id, name, code),
+          service_categories:service_category_id (id, name, code),
+          patient_types:patient_type_id (id, name, code)
+        `)
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
 
@@ -402,6 +488,63 @@ class SupabaseService {
     }
   }
 
+  // ==================== SERVICE CATEGORIES ====================
+
+  async getServiceCategories() {
+    try {
+      const { data, error } = await supabase
+        .from('service_categories')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || [],
+        message: 'Service categories berhasil diambil'
+      };
+    } catch (error: any) {
+      console.error('SupabaseService.getServiceCategories error:', error);
+      return {
+        success: false,
+        data: [],
+        error: error.message || 'Gagal mengambil data kategori layanan'
+      };
+    }
+  }
+
+  // ==================== SLA SETTINGS (Enhanced) ====================
+
+  async getSLASettingsEnhanced() {
+    try {
+      const { data, error } = await supabase
+        .from('sla_settings')
+        .select(`
+          *,
+          unit_types:unit_type_id (id, name, code),
+          service_categories:service_category_id (id, name, code),
+          patient_types:patient_type_id (id, name, code)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: data || [],
+        message: 'SLA settings berhasil diambil'
+      };
+    } catch (error: any) {
+      console.error('SupabaseService.getSLASettingsEnhanced error:', error);
+      return {
+        success: false,
+        data: [],
+        error: error.message || 'Gagal mengambil data SLA settings'
+      };
+    }
+  }
+
   // ==================== TICKET CLASSIFICATIONS ====================
 
   async getTicketClassifications() {
@@ -409,7 +552,6 @@ class SupabaseService {
       const { data, error } = await supabase
         .from('ticket_classifications')
         .select('*')
-        .eq('is_active', true)
         .order('name');
 
       if (error) throw error;
@@ -605,7 +747,7 @@ class SupabaseService {
 
   async healthCheck() {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('admins')
         .select('count')
         .limit(1);

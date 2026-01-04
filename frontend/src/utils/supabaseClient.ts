@@ -30,9 +30,9 @@ const createSupabaseClient = () => {
           'Prefer': 'return=representation'
         },
         fetch: (url, options = {}) => {
-          // Timeout optimal untuk performa cepat
+          // Timeout lebih panjang untuk koneksi yang stabil (15 detik)
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
           
           return fetch(url, {
             ...options,

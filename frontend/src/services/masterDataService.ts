@@ -123,20 +123,34 @@ const withSupabaseFallback = async <T>(
   tableName: string,
   defaultData: T[] = []
 ): Promise<T[]> => {
-  // Di Vercel production, langsung gunakan Supabase
+  // Di Vercel production, langsung gunakan Supabase dengan retry
   if (isVercelProduction()) {
-    try {
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || defaultData;
-    } catch (error: any) {
-      console.error(`Supabase direct ${tableName} failed:`, error.message);
-      return defaultData;
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        console.log(`🔍 Fetching ${tableName} from Supabase (attempt ${4 - retries}/3)...`);
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error(`❌ Supabase error for ${tableName}:`, error.message);
+          throw error;
+        }
+        
+        console.log(`✅ ${tableName} fetched successfully:`, data?.length || 0, 'records');
+        return data || defaultData;
+      } catch (error: any) {
+        retries--;
+        console.error(`⚠️ Supabase direct ${tableName} failed (${retries} retries left):`, error.message);
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
     }
+    console.log(`📋 Using default data for ${tableName}:`, defaultData.length, 'records');
+    return defaultData;
   }
   
   try {
@@ -165,6 +179,12 @@ const withSupabaseFallback = async <T>(
 
 // Unit Types
 export const getUnitTypes = async (): Promise<UnitType[]> => {
+  // Di Vercel production, langsung gunakan Supabase
+  if (isVercelProduction()) {
+    const result = await supabaseService.getUnitTypes();
+    return result.data || [];
+  }
+  
   return withSupabaseFallback<UnitType>(
     '/master-data/unit-types',
     'unit_types',
@@ -211,6 +231,12 @@ export const deleteUnitType = async (id: string): Promise<void> => {
 
 // Service Categories
 export const getServiceCategories = async (): Promise<ServiceCategory[]> => {
+  // Di Vercel production, langsung gunakan Supabase
+  if (isVercelProduction()) {
+    const result = await supabaseService.getServiceCategories();
+    return result.data || [];
+  }
+  
   return withSupabaseFallback<ServiceCategory>(
     '/master-data/service-categories',
     'service_categories'
@@ -233,6 +259,28 @@ export const deleteServiceCategory = async (id: string): Promise<void> => {
 
 // Ticket Types
 export const getTicketTypes = async (): Promise<TicketType[]> => {
+  // Di Vercel production, langsung gunakan Supabase
+  if (isVercelProduction()) {
+    try {
+      console.log('🔍 Fetching ticket_types from Supabase...');
+      const { data, error } = await supabase
+        .from('ticket_types')
+        .select('*')
+        .order('name');
+      
+      if (error) {
+        console.error('❌ Supabase error for ticket_types:', error.message);
+        throw error;
+      }
+      
+      console.log('✅ ticket_types fetched successfully:', data?.length || 0, 'records');
+      return data || [];
+    } catch (error: any) {
+      console.error('⚠️ Failed to fetch ticket_types:', error.message);
+      return [];
+    }
+  }
+  
   return withSupabaseFallback<TicketType>(
     '/master-data/ticket-types',
     'ticket_types'
@@ -255,6 +303,24 @@ export const deleteTicketType = async (id: string): Promise<void> => {
 
 // Ticket Classifications
 export const getTicketClassifications = async (): Promise<TicketClassification[]> => {
+  // Di Vercel production, langsung gunakan Supabase
+  if (isVercelProduction()) {
+    try {
+      console.log('🔍 Fetching ticket_classifications from Supabase...');
+      const { data, error } = await supabase
+        .from('ticket_classifications')
+        .select('*')
+        .order('level', { ascending: true });
+      
+      if (error) throw error;
+      console.log('✅ ticket_classifications fetched:', data?.length || 0, 'records');
+      return data || [];
+    } catch (error: any) {
+      console.error('⚠️ Failed to fetch ticket_classifications:', error.message);
+      return [];
+    }
+  }
+  
   return withSupabaseFallback<TicketClassification>(
     '/master-data/ticket-classifications',
     'ticket_classifications'
@@ -277,6 +343,24 @@ export const deleteTicketClassification = async (id: string): Promise<void> => {
 
 // Ticket Statuses
 export const getTicketStatuses = async (): Promise<TicketStatus[]> => {
+  // Di Vercel production, langsung gunakan Supabase
+  if (isVercelProduction()) {
+    try {
+      console.log('🔍 Fetching ticket_statuses from Supabase...');
+      const { data, error } = await supabase
+        .from('ticket_statuses')
+        .select('*')
+        .order('display_order');
+      
+      if (error) throw error;
+      console.log('✅ ticket_statuses fetched:', data?.length || 0, 'records');
+      return data || [];
+    } catch (error: any) {
+      console.error('⚠️ Failed to fetch ticket_statuses:', error.message);
+      return [];
+    }
+  }
+  
   return withSupabaseFallback<TicketStatus>(
     '/master-data/ticket-statuses',
     'ticket_statuses'
@@ -301,8 +385,21 @@ export const deleteTicketStatus = async (id: string): Promise<void> => {
 export const getPatientTypes = async (): Promise<PatientType[]> => {
   // Di Vercel production, langsung gunakan Supabase
   if (isVercelProduction()) {
-    const result = await supabaseService.getPatientTypes();
-    return result.data || [];
+    try {
+      console.log('🔍 Fetching patient_types from Supabase...');
+      const { data, error } = await supabase
+        .from('patient_types')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      console.log('✅ patient_types fetched:', data?.length || 0, 'records');
+      return data || [];
+    } catch (error: any) {
+      console.error('⚠️ Failed to fetch patient_types:', error.message);
+      return [];
+    }
   }
   
   try {
@@ -336,8 +433,20 @@ export const deletePatientType = async (id: string): Promise<void> => {
 export const getRoles = async (): Promise<Role[]> => {
   // Di Vercel production, langsung gunakan Supabase
   if (isVercelProduction()) {
-    const result = await supabaseService.getRoles();
-    return result.data || [];
+    try {
+      console.log('🔍 Fetching roles from Supabase...');
+      const { data, error } = await supabase
+        .from('roles')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      console.log('✅ roles fetched:', data?.length || 0, 'records');
+      return data || [];
+    } catch (error: any) {
+      console.error('⚠️ Failed to fetch roles:', error.message);
+      return [];
+    }
   }
   
   return withSupabaseFallback<Role>(
@@ -364,8 +473,21 @@ export const deleteRole = async (id: string): Promise<void> => {
 export const getResponseTemplates = async (): Promise<ResponseTemplate[]> => {
   // Di Vercel production, langsung gunakan Supabase
   if (isVercelProduction()) {
-    const result = await supabaseService.getResponseTemplates();
-    return result.data || [];
+    try {
+      console.log('🔍 Fetching response_templates from Supabase...');
+      const { data, error } = await supabase
+        .from('response_templates')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      console.log('✅ response_templates fetched:', data?.length || 0, 'records');
+      return data || [];
+    } catch (error: any) {
+      console.error('⚠️ Failed to fetch response_templates:', error.message);
+      return [];
+    }
   }
   
   try {

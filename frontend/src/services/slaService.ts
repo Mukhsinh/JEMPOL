@@ -85,20 +85,30 @@ class SLAService {
   // Helper methods untuk dropdown data
   async getUnitTypes(): Promise<Array<{id: string; name: string; code: string}>> {
     if (isVercelProduction()) {
-      const result = await supabaseService.getUnits();
+      const result = await supabaseService.getUnitTypes();
       return result.data || [];
     }
-    const response = await api.get('/master-data/unit-types');
-    return response.data;
+    try {
+      const response = await api.get('/master-data/unit-types');
+      return response.data;
+    } catch {
+      const result = await supabaseService.getUnitTypes();
+      return result.data || [];
+    }
   }
 
   async getServiceCategories(): Promise<Array<{id: string; name: string; code: string}>> {
     if (isVercelProduction()) {
-      const result = await supabaseService.getCategories();
+      const result = await supabaseService.getServiceCategories();
       return result.data || [];
     }
-    const response = await api.get('/master-data/service-categories');
-    return response.data;
+    try {
+      const response = await api.get('/master-data/service-categories');
+      return response.data;
+    } catch {
+      const result = await supabaseService.getServiceCategories();
+      return result.data || [];
+    }
   }
 
   async getPatientTypes(): Promise<Array<{id: string; name: string; code: string}>> {
@@ -106,8 +116,13 @@ class SLAService {
       const result = await supabaseService.getPatientTypes();
       return result.data || [];
     }
-    const response = await api.get('/master-data/patient-types');
-    return response.data;
+    try {
+      const response = await api.get('/master-data/patient-types');
+      return response.data;
+    } catch {
+      const result = await supabaseService.getPatientTypes();
+      return result.data || [];
+    }
   }
 }
 
