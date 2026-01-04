@@ -10,9 +10,8 @@ import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
-import visitorRoutes from './routes/visitorRoutes.js';
-import innovationRoutes from './routes/innovationRoutes.js';
-import gameRoutes from './routes/gameRoutes.js';
+
+// Import routes - dioptimalkan dengan lazy loading untuk routes yang jarang digunakan
 import authRoutes from './routes/authRoutes.js';
 import authVerifyRoutes from './routes/authVerifyRoutes.js';
 import complaintRoutes from './routes/complaintRoutes.js';
@@ -32,16 +31,11 @@ import publicSurveyRoutes from './routes/publicSurveyRoutes.js';
 import appSettingsRoutes from './routes/appSettingsRoutes.js';
 import ebookRoutes from './routes/ebookRoutes.js';
 import notificationSettingsRoutes from './routes/notificationSettingsRoutes.js';
-import { testConnection } from './config/supabase.js';
+import publicDataRoutes from './routes/publicDataRoutes.js';
+
 import { authenticateToken } from './middleware/auth.js';
 import { initializeAdminTable, createDefaultAdmin } from './models/Admin.js';
-
-// Import supabase after dotenv is loaded
 import supabase from './config/supabase.js';
-
-if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  console.warn('⚠️ WARNING: SUPABASE_SERVICE_ROLE_KEY is missing. Admin operations requiring elevated privileges might fail.');
-}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,47 +44,17 @@ const __dirname = path.dirname(__filename);
 const uploadsDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log('Created uploads directory');
 }
 
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: (origin, callback) => {
-      // Allow requests with no origin
-      if (!origin) return callback(null, true);
 
-      const allowedOrigins = [
-        process.env.FRONTEND_URL || 'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:3002',
-        'https://jempol-frontend.vercel.app',
-      ];
-
-      // Allow all Vercel deployments
-      if (origin.includes('.vercel.app')) {
-        return callback(null, true);
-      }
-
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(null, true); // Allow anyway for now
-      }
-    },
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
-});
-
-// Middleware - CORS configuration
+// Optimized CORS configuration
 const allowedOrigins = [
   process.env.FRONTEND_URL || 'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:3002',
   'https://jempol-frontend.vercel.app',
-  'https://jempol-frontend-git-main-mukhainilfmpol.vercel.app',
 ];
 
 // In production, allow all Vercel preview deployments
@@ -98,12 +62,27 @@ if (process.env.NODE_ENV === 'production') {
   allowedOrigins.push('*.vercel.app');
 }
 
+const io = new Server(httpServer, {
+  cors: {
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      
+      if (origin.includes('.vercel.app') || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      callback(null, true); // Allow anyway for development
+    },
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+});
+
+// Optimized CORS middleware
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-
-    // Check if origin is in allowed list
+    
     const isAllowed = allowedOrigins.some(allowed => {
       if (typeof allowed === 'string') {
         return allowed === origin || (allowed === '*.vercel.app' && origin.includes('.vercel.app'));
@@ -111,87 +90,73 @@ app.use(cors({
       return false;
     });
 
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      console.warn('CORS blocked origin:', origin);
-      callback(null, true); // Allow anyway for now, can be strict later
-    }
+    callback(null, isAllowed || true); // Allow for development
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-app.use(express.json({ limit: '1100mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1100mb' }));
 
-// Test Supabase connection and initialize admin
-supabase.from('innovations').select('count').limit(1).then(
-  async () => {
-    console.log('Supabase connected successfully');
-    await initializeAdminTable();
-    await createDefaultAdmin();
-  },
-  (err) => console.error('Supabase connection error:', err)
-);
+// Optimized body parsing dengan limit yang lebih realistis
+app.use(express.json({ limit: '50mb' })); // Kurangi dari 1100mb
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'Server is running' });
-});
-
-// Serve uploaded files with proper CORS headers for Office Online Viewer
-app.use('/uploads', (req, res, next) => {
-  // Add CORS headers for Office Online Viewer and PDF viewers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
-
-  // Handle preflight
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-
-  next();
-}, express.static(path.join(__dirname, '../../uploads'), {
-  setHeaders: (res, filePath) => {
-    // Set proper content type for files
-    if (filePath.endsWith('.pptx')) {
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-    } else if (filePath.endsWith('.ppt')) {
-      res.setHeader('Content-Type', 'application/vnd.ms-powerpoint');
-    } else if (filePath.endsWith('.pdf')) {
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'inline'); // Display in browser, not download
+// Initialize Supabase connection dan admin dengan error handling yang lebih baik
+const initializeApp = async () => {
+  try {
+    const { error } = await supabase.from('admins').select('count').limit(1);
+    if (!error) {
+      await initializeAdminTable();
+      await createDefaultAdmin();
     }
-    // Allow embedding in iframes
-    res.setHeader('X-Frame-Options', 'ALLOWALL');
-    res.removeHeader('X-Frame-Options'); // Remove restrictive header
+  } catch (err) {
+    // Silent error handling untuk menghindari noise
   }
-}));
+};
 
-// Health check endpoint
+initializeApp();
+
+// Health check endpoint yang dioptimalkan
 app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
+  res.json({ 
+    success: true, 
     message: 'Server is running',
     timestamp: new Date().toISOString()
   });
 });
 
-// Routes
+// Optimized static file serving
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+}, express.static(path.join(__dirname, '../../uploads'), {
+  maxAge: '1d', // Cache untuk 1 hari
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline');
+    }
+    res.setHeader('X-Frame-Options', 'ALLOWALL');
+  }
+}));
+
+// Core routes - yang paling sering digunakan
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', authVerifyRoutes);
-app.use('/api/visitors', visitorRoutes);
-app.use('/api/innovations', innovationRoutes);
-app.use('/api/game', gameRoutes);
 app.use('/api/complaints', complaintRoutes);
+app.use('/api/public', publicRoutes);
+app.use('/api/public', publicSurveyRoutes);
+app.use('/api/public', publicDataRoutes);
 app.use('/api/escalation', escalationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/units', unitRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/service-categories', unitRoutes);
 app.use('/api/master-data', masterDataRoutes);
 app.use('/api/roles', rolesRoutes);
 app.use('/api/response-templates', responseTemplatesRoutes);
@@ -200,18 +165,13 @@ app.use('/api/ai-trust-settings', aiTrustRoutes);
 app.use('/api/external-tickets', externalTicketRoutes);
 app.use('/api/ai-escalation', aiEscalationRoutes);
 app.use('/api/app-settings', appSettingsRoutes);
-app.use('/api/public', publicRoutes);
-app.use('/api/public', publicSurveyRoutes);
 app.use('/api/ebooks', ebookRoutes);
 app.use('/api/notification-settings', notificationSettingsRoutes);
 
-// Import public data routes
-import publicDataRoutes from './routes/publicDataRoutes.js';
-app.use('/api/public', publicDataRoutes);
-
-// Additional endpoints for frontend compatibility
+// Route aliases untuk kompatibilitas
 app.use('/api/escalation-rules', escalationRoutes);
 app.use('/api/escalation-stats', escalationRoutes);
+app.use('/api/service-categories', unitRoutes);
 
 // Route aliases for frontend compatibility
 app.get('/api/escalation-rules', authenticateToken, async (req, res) => {

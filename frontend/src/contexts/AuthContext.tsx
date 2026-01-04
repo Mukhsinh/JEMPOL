@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
@@ -28,39 +28,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [initComplete, setInitComplete] = useState(false);
 
   useEffect(() => {
-    // Prevent double initialization in React StrictMode
+    // Prevent double initialization
     if (initComplete) return;
 
     const initAuth = async () => {
       try {
-        console.log('🔄 Initializing auth...');
-
-        // Timeout yang lebih pendek dan realistis (3 detik)
+        // Timeout yang lebih singkat untuk inisialisasi cepat
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Auth initialization timeout')), 3000);
+          setTimeout(() => reject(new Error('Auth initialization timeout')), 2000);
         });
 
         const authPromise = (async () => {
           try {
-            // Skip connection test untuk mempercepat inisialisasi
-            console.log('⚡ Skipping connection test for faster initialization');
-
-            // Check if Supabase session exists
+            // Check session tanpa connection test untuk kecepatan
             const { data: { session }, error } = await supabase.auth.getSession();
 
-            if (error) {
-              console.error('❌ Error getting session:', error);
+            if (error || !session?.user) {
               return null;
             }
 
-            if (!session?.user) {
-              console.log('ℹ️ No active session found');
-              return null;
-            }
-
-            console.log('✅ Found existing session for:', session.user.email);
-
-            // Get admin profile dengan timeout pendek
+            // Get admin profile dengan timeout singkat
             const profilePromise = supabase
               .from('admins')
               .select('id, username, full_name, email, role, is_active')
@@ -69,35 +56,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .single();
 
             const profileTimeout = new Promise((_, reject) => {
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 2000);
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 1000);
             });
 
             const { data: profileData, error: profileError } = await Promise.race([profilePromise, profileTimeout]) as any;
 
             if (profileError || !profileData) {
-              console.error('❌ Admin profile not found or not active:', profileError);
-              // Clear invalid session
               await supabase.auth.signOut();
               return null;
             }
 
-            const userData = {
+            return {
               id: profileData.id,
               username: profileData.username,
               full_name: profileData.full_name,
               email: profileData.email,
               role: profileData.role || 'admin',
             };
-
-            console.log('✅ User restored from session:', userData.email);
-            return userData;
           } catch (error) {
-            console.error('❌ Auth promise error:', error);
             return null;
           }
         })();
 
-        // Race between auth check and timeout
         const result = await Promise.race([authPromise, timeoutPromise]);
         
         if (result) {
@@ -105,26 +85,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
       } catch (error) {
-        console.error('❌ Auth initialization error:', error);
-        // On timeout or error, just continue without user
+        // Silent error handling untuk performa
       } finally {
-        // Always set loading to false setelah maksimal 3 detik
         setIsLoading(false);
         setInitComplete(true);
-        console.log('✅ Auth initialization complete');
       }
     };
 
-    // Start auth initialization
     initAuth();
 
-    // Listen for auth state changes
+    // Auth state listener yang dioptimalkan
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-      console.log('🔔 Auth state changed:', event);
-
       if (event === 'SIGNED_IN' && session?.user) {
         try {
-          // Fetch admin profile on sign in dengan timeout pendek
           const profilePromise = supabase
             .from('admins')
             .select('id, username, full_name, email, role, is_active')
@@ -133,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .single();
 
           const profileTimeout = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Profile fetch timeout')), 2000);
+            setTimeout(() => reject(new Error('Profile fetch timeout')), 1000);
           });
 
           const { data: profileData, error: profileError } = await Promise.race([profilePromise, profileTimeout]) as any;
@@ -148,12 +121,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
           }
         } catch (error) {
-          console.error('Error fetching profile on sign in:', error);
+          // Silent error handling
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log('✅ Token refreshed successfully');
       }
     });
 
@@ -162,16 +133,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [initComplete]);
 
-  const login = async (email: string, password: string) => {
+  // Optimized login function dengan caching dan timeout yang lebih singkat
+  const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      console.log('🔄 Attempting login...');
-
       // Clear any existing session first
       await supabase.auth.signOut();
-
-      // Wait singkat untuk cleanup
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 100)); // Kurangi delay
 
       // Validate input
       const cleanEmail = email.trim().toLowerCase();
@@ -182,32 +150,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      console.log('📧 Login attempt for:', cleanEmail);
-
-      // Login dengan timeout yang optimal (5 detik)
+      // Login dengan timeout yang lebih singkat untuk performa
       const loginPromise = supabase.auth.signInWithPassword({
         email: cleanEmail,
         password: password,
       });
 
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Login timeout')), 5000);
+        setTimeout(() => reject(new Error('Login timeout')), 3000); // Kurangi timeout
       });
 
       const { data: authData, error: authError } = await Promise.race([loginPromise, timeoutPromise]) as any;
 
       if (authError) {
-        console.error('❌ Auth error:', authError);
         let errorMessage = 'Login gagal';
         
         if (authError.message?.includes('Invalid login credentials')) {
-          errorMessage = 'Email atau password salah. Pastikan menggunakan: admin@jempol.com / admin123';
-        } else if (authError.message?.includes('Email not confirmed')) {
-          errorMessage = 'Email belum dikonfirmasi';
+          errorMessage = 'Email atau password salah';
         } else if (authError.message?.includes('timeout')) {
           errorMessage = 'Koneksi timeout, silakan coba lagi';
-        } else if (authError.message?.includes('network')) {
-          errorMessage = 'Masalah koneksi jaringan, periksa internet Anda';
         }
         
         return {
@@ -223,54 +184,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      console.log('✅ Auth successful, fetching admin profile...');
+      // Get admin profile dengan timeout yang lebih singkat
+      const profilePromise = supabase
+        .from('admins')
+        .select('id, username, full_name, email, role, is_active')
+        .eq('email', cleanEmail)
+        .eq('is_active', true)
+        .single();
 
-      // Get admin profile dengan retry mechanism yang cepat
-      let adminProfile = null;
-      let profileError = null;
-      
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        try {
-          const profilePromise = supabase
-            .from('admins')
-            .select('id, username, full_name, email, role, is_active')
-            .eq('email', cleanEmail)
-            .eq('is_active', true)
-            .single();
+      const profileTimeout = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Profile timeout')), 1000); // Timeout lebih singkat
+      });
 
-          const profileTimeout = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Profile timeout')), 1500);
-          });
+      const { data: adminProfile, error: profileError } = await Promise.race([profilePromise, profileTimeout]) as any;
 
-          const { data, error } = await Promise.race([profilePromise, profileTimeout]) as any;
-
-          if (!error && data) {
-            adminProfile = data;
-            break;
-          } else {
-            profileError = error;
-            console.warn(`⚠️ Profile fetch attempt ${attempt} failed:`, error);
-            
-            if (attempt < 2) {
-              await new Promise(resolve => setTimeout(resolve, 200));
-            }
-          }
-        } catch (err) {
-          profileError = err;
-          console.warn(`⚠️ Profile fetch attempt ${attempt} error:`, err);
-          
-          if (attempt < 2) {
-            await new Promise(resolve => setTimeout(resolve, 200));
-          }
-        }
-      }
-
-      if (!adminProfile) {
-        console.error('❌ Profile error after all attempts:', profileError);
+      if (profileError || !adminProfile) {
         await supabase.auth.signOut();
         return {
           success: false,
-          error: 'Admin tidak ditemukan atau tidak aktif. Silakan hubungi administrator.',
+          error: 'Admin tidak ditemukan atau tidak aktif',
         };
       }
 
@@ -284,17 +216,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       setUser(userData);
-      console.log('✅ Login successful:', userData.email, 'Role:', userData.role);
-
       return { success: true };
     } catch (error: any) {
-      console.error('❌ Unexpected login error:', error);
       let errorMessage = 'Terjadi kesalahan yang tidak terduga';
       
       if (error.message?.includes('timeout')) {
         errorMessage = 'Koneksi timeout, silakan coba lagi';
-      } else if (error.message?.includes('network')) {
-        errorMessage = 'Masalah koneksi jaringan';
       }
       
       return {
@@ -304,33 +231,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await supabase.auth.signOut();
       setUser(null);
-      console.log('✅ Logout successful');
     } catch (error) {
-      console.error('❌ Logout error:', error);
       setUser(null);
     }
-  };
+  }, []);
 
-  const isAuthenticated = !!user;
-  const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
-  const isSuperAdmin = user?.role === 'superadmin';
+  // Memoized computed values untuk menghindari re-render
+  const authValues = useMemo(() => ({
+    user,
+    isLoading,
+    isAuthenticated: !!user,
+    login,
+    logout,
+    isAdmin: user?.role === 'admin' || user?.role === 'superadmin',
+    isSuperAdmin: user?.role === 'superadmin'
+  }), [user, isLoading, login, logout]);
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      isLoading,
-      isAuthenticated,
-      login,
-      logout,
-      isAdmin,
-      isSuperAdmin
-    }}>
+    <AuthContext.Provider value={authValues}>
       {children}
     </AuthContext.Provider>
   );

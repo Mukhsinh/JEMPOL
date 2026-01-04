@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Buku Petunjuk</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .loading { text-align: center; padding: 20px; }
+        .error { color: red; padding: 10px; background: #ffe6e6; border: 1px solid #ff0000; margin: 10px 0; }
+        .success { color: green; padding: 10px; background: #e6ffe6; border: 1px solid #00ff00; margin: 10px 0; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .section h3 { margin-top: 0; color: #333; }
+        .section p { line-height: 1.6; color: #666; }
+        button { padding: 8px 16px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .nav-buttons { margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>Test Halaman Buku Petunjuk KISS</h1>
+    
+    <div id="status" class="loading">Memuat data ebook...</div>
+    
+    <div class="nav-buttons">
+        <button onclick="testEbookAPI()">Test API Ebook</button>
+        <button onclick="testFrontendConnection()">Test Koneksi Frontend</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3004/api';
+        
+        async function testEbookAPI() {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                statusDiv.innerHTML = '<div class="loading">Testing API endpoint...</div>';
+                
+                const response = await fetch(`${API_BASE_URL}/ebooks`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                statusDiv.innerHTML = '<div class="success">✅ API endpoint berhasil diakses!</div>';
+                
+                let html = '<h2>Data Ebook Sections:</h2>';
+                
+                if (data && data.length > 0) {
+                    data.forEach((section, index) => {
+                        html += `
+                            <div class="section">
+                                <h3>${section.title}</h3>
+                                <p><strong>Order:</strong> ${section.order}</p>
+                                <p><strong>Status:</strong> ${section.is_active ? 'Aktif' : 'Tidak Aktif'}</p>
+                                <p><strong>Content:</strong></p>
+                                <p>${section.content}</p>
+                                <p><strong>ID:</strong> ${section.id}</p>
+                                <p><strong>Created:</strong> ${new Date(section.created_at).toLocaleString('id-ID')}</p>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<p>Tidak ada data ebook ditemukan.</p>';
+                }
+                
+                resultsDiv.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error testing ebook API:', error);
+                statusDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                resultsDiv.innerHTML = `
+                    <h2>Error Details:</h2>
+                    <pre>${error.stack || error.message}</pre>
+                `;
+            }
+        }
+        
+        async function testFrontendConnection() {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                statusDiv.innerHTML = '<div class="loading">Testing frontend connection...</div>';
+                
+                // Test if frontend is running
+                const frontendResponse = await fetch('http://localhost:3000');
+                const frontendRunning = frontendResponse.ok;
+                
+                // Test backend health
+                const backendResponse = await fetch(`${API_BASE_URL}/health`);
+                const backendData = await backendResponse.json();
+                
+                let html = '<h2>Connection Status:</h2>';
+                html += `<p><strong>Frontend (Port 3000):</strong> ${frontendRunning ? '✅ Running' : '❌ Not Running'}</p>`;
+                html += `<p><strong>Backend (Port 3004):</strong> ${backendData.success ? '✅ Running' : '❌ Not Running'}</p>`;
+                html += `<p><strong>Backend Message:</strong> ${backendData.message}</p>`;
+                html += `<p><strong>Timestamp:</strong> ${new Date(backendData.timestamp).toLocaleString('id-ID')}</p>`;
+                
+                resultsDiv.innerHTML = html;
+                statusDiv.innerHTML = '<div class="success">✅ Connection test completed!</div>';
+                
+            } catch (error) {
+                console.error('Error testing connections:', error);
+                statusDiv.innerHTML = `<div class="error">❌ Connection Error: ${error.message}</div>`;
+                resultsDiv.innerHTML = `
+                    <h2>Connection Error:</h2>
+                    <p>Pastikan backend berjalan di port 3004 dan frontend di port 3000</p>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+        
+        function clearResults() {
+            document.getElementById('status').innerHTML = '<div>Ready untuk testing...</div>';
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        // Auto test on page load
+        window.onload = function() {
+            setTimeout(testEbookAPI, 1000);
+        };
+    </script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 export class LoadingOptimizer {
   private static instance: LoadingOptimizer;
   private loadingStates: Map<string, boolean> = new Map();
-  private timeouts: Map<string, number> = new Map();
+  private timeouts: Map<string, ReturnType<typeof setTimeout>> = new Map();
 
   static getInstance(): LoadingOptimizer {
     if (!LoadingOptimizer.instance) {
@@ -15,14 +15,14 @@ export class LoadingOptimizer {
     // Clear existing timeout
     const existingTimeout = this.timeouts.get(key);
     if (existingTimeout) {
-      window.clearTimeout(existingTimeout);
+      clearTimeout(existingTimeout);
     }
 
     this.loadingStates.set(key, isLoading);
 
     if (isLoading) {
       // Set timeout untuk auto-clear loading state
-      const timeoutId = window.setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         console.warn(`⚠️ Loading timeout untuk ${key}, auto-clearing...`);
         this.loadingStates.set(key, false);
         this.timeouts.delete(key);
@@ -39,7 +39,7 @@ export class LoadingOptimizer {
   }
 
   clearAll(): void {
-    this.timeouts.forEach(timeout => window.clearTimeout(timeout));
+    this.timeouts.forEach(timeout => clearTimeout(timeout));
     this.timeouts.clear();
     this.loadingStates.clear();
   }

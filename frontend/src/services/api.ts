@@ -1,61 +1,83 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 import { APIResponse } from '../types';
 
-// Determine API base URL based on environment
-const getApiBaseUrl = () => {
-  // Check if VITE_API_URL is set
+// Cache untuk API base URL
+let cachedApiBaseUrl: string | null = null;
+
+// Determine API base URL based on environment dengan caching
+const getApiBaseUrl = (): string => {
+  if (cachedApiBaseUrl) {
+    return cachedApiBaseUrl;
+  }
+
   const envApiUrl = (import.meta as any).env?.VITE_API_URL;
 
   if (envApiUrl) {
-    return envApiUrl;
+    cachedApiBaseUrl = envApiUrl;
+    return cachedApiBaseUrl;
   }
 
   // In production (Vercel), use relative path
   if (import.meta.env.PROD) {
-    return '/api';
+    cachedApiBaseUrl = '/api';
+    return cachedApiBaseUrl;
   }
 
   // In development, use localhost with correct port
-  return 'http://localhost:3004/api';
+  cachedApiBaseUrl = 'http://localhost:3004/api';
+  return cachedApiBaseUrl;
 };
 
 const API_BASE_URL = getApiBaseUrl();
 
-console.log('API Base URL:', API_BASE_URL);
-
+// Optimized axios instance dengan timeout yang lebih singkat
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
-  timeout: 60000, // 60 seconds timeout
+  timeout: 15000, // Kurangi timeout untuk performa lebih cepat
   withCredentials: false,
 });
 
-// Request interceptor to add auth token
+// Cache untuk token
+let cachedToken: string | null = null;
+let tokenCacheTime = 0;
+const TOKEN_CACHE_DURATION = 30000; // 30 detik
+
+// Request interceptor yang dioptimalkan
 api.interceptors.request.use(
-  async (config) => {
+  async (config: AxiosRequestConfig) => {
     try {
-      // Import authService dynamically to avoid circular dependency
+      const now = Date.now();
+      
+      // Gunakan cached token jika masih valid
+      if (cachedToken && (now - tokenCacheTime) < TOKEN_CACHE_DURATION) {
+        config.headers = config.headers || {};
+        config.headers.Authorization = `Bearer ${cachedToken}`;
+        return config;
+      }
+
+      // Import authService dinamis untuk menghindari circular dependency
       const { authService } = await import('./authService');
       const token = await authService.getToken();
+      
       if (token) {
+        cachedToken = token;
+        tokenCacheTime = now;
+        config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${token}`;
-        console.log('🔑 Token added to request:', config.url);
-      } else {
-        console.log('⚠️ No token available for request:', config.url);
       }
     } catch (error) {
-      console.error('❌ Error getting token:', error);
+      // Jangan log error untuk mengurangi noise
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor for error handling
+// Response interceptor yang dioptimalkan untuk error handling
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<APIResponse>) => {
@@ -64,37 +86,29 @@ api.interceptors.response.use(
     if (error.code === 'ECONNABORTED') {
       message = 'Koneksi timeout. Periksa koneksi internet Anda.';
     } else if (error.code === 'ERR_NETWORK') {
-      message = 'Tidak dapat terhubung ke server. Pastikan server backend berjalan di ' + API_BASE_URL;
+      message = 'Tidak dapat terhubung ke server.';
     } else if (error.code === 'ERR_CONNECTION_REFUSED') {
-      message = 'Koneksi ditolak. Pastikan server backend berjalan di ' + API_BASE_URL;
-    } else if (error.code === 'ERR_BAD_REQUEST') {
-      message = error.response?.data?.error || 'Permintaan tidak valid';
+      message = 'Koneksi ditolak. Server tidak tersedia.';
     } else if (error.response) {
       message = error.response.data?.error || error.message || 'Terjadi kesalahan';
 
-      // Handle authentication errors
+      // Handle authentication errors dengan optimasi
       if (error.response.status === 401 || error.response.status === 403) {
-        console.warn('🔐 Authentication error:', {
-          status: error.response.status,
-          message: message,
-          url: error.config?.url,
-          code: error.response.data?.code
-        });
-
-        // Only logout if backend explicitly says token is invalid
-        // Check for specific error codes that indicate token is truly bad
         const isTokenInvalid =
           error.response.data?.code === 'ERR_INVALID_TOKEN' ||
           error.response.data?.code === 'ERR_BAD_REQUEST' ||
           error.response.data?.error === 'Token tidak valid. Silakan login ulang.';
 
         if (isTokenInvalid) {
-          console.log('🚫 Backend rejected token as invalid, forcing logout...');
+          // Clear cached token
+          cachedToken = null;
+          tokenCacheTime = 0;
+          
           try {
             const { authService } = await import('./authService');
             await authService.logout();
 
-            // Only redirect to login if on protected pages
+            // Hanya redirect jika di halaman yang dilindungi
             const isProtectedPage =
               window.location.pathname.startsWith('/admin') ||
               window.location.pathname.startsWith('/dashboard') ||
@@ -107,26 +121,15 @@ api.interceptors.response.use(
 
             return Promise.reject(new Error('Sesi telah berakhir. Silakan login kembali.'));
           } catch (e) {
-            console.error('Error during forced logout:', e);
+            // Silent error handling
           }
         } else {
-          // For other 401/403 errors (like permission denied), just log
-          console.log('⚠️ Auth error but token may be valid (permission issue)');
           message = error.response.data?.error || 'Anda tidak memiliki izin untuk mengakses resource ini.';
         }
       }
     } else if (error.request) {
-      message = 'Server tidak merespons. Periksa koneksi internet Anda dan pastikan server backend berjalan.';
+      message = 'Server tidak merespons. Periksa koneksi internet Anda.';
     }
-
-    console.error('API Error:', {
-      message,
-      code: error.code,
-      status: error.response?.status,
-      url: error.config?.url,
-      baseURL: API_BASE_URL,
-      data: error.response?.data
-    });
 
     return Promise.reject(new Error(message));
   }

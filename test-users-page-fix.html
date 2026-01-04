@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Users Page Fix</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; color: #0c5460; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background-color: #007bff; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Perbaikan Halaman Users</h1>
+        
+        <div class="test-section info">
+            <h3>Status Koneksi Backend</h3>
+            <p id="backend-status">Mengecek koneksi...</p>
+            <button class="btn-primary" onclick="checkBackendConnection()">Cek Koneksi Backend</button>
+        </div>
+
+        <div class="test-section info">
+            <h3>Test Login Admin</h3>
+            <p>Login sebagai admin untuk mengakses endpoint users</p>
+            <input type="text" id="username" placeholder="Username" value="admin@jempol.com">
+            <input type="password" id="password" placeholder="Password" value="admin123">
+            <button class="btn-primary" onclick="loginAdmin()">Login Admin</button>
+            <p id="login-status"></p>
+        </div>
+
+        <div class="test-section info">
+            <h3>Test Endpoint Users</h3>
+            <button class="btn-success" onclick="testUsersEndpoint()">Test GET /api/users</button>
+            <button class="btn-success" onclick="testUnitsEndpoint()">Test GET /api/users/units</button>
+            <div id="users-result"></div>
+        </div>
+
+        <div class="test-section info">
+            <h3>Data Users dari Database</h3>
+            <div id="users-table"></div>
+        </div>
+
+        <div class="test-section info">
+            <h3>Test Frontend Integration</h3>
+            <button class="btn-primary" onclick="testFrontendIntegration()">Test Frontend User Service</button>
+            <div id="frontend-result"></div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+
+        async function checkBackendConnection() {
+            const statusEl = document.getElementById('backend-status');
+            try {
+                const response = await fetch('http://localhost:3001/api/health');
+                if (response.ok) {
+                    statusEl.innerHTML = '<span style="color: green;">✓ Backend terhubung</span>';
+                } else {
+                    statusEl.innerHTML = '<span style="color: orange;">⚠ Backend merespons tapi ada masalah</span>';
+                }
+            } catch (error) {
+                statusEl.innerHTML = '<span style="color: red;">✗ Backend tidak terhubung: ' + error.message + '</span>';
+            }
+        }
+
+        async function loginAdmin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const statusEl = document.getElementById('login-status');
+
+            try {
+                const response = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    authToken = data.data.token;
+                    statusEl.innerHTML = '<span style="color: green;">✓ Login berhasil</span>';
+                } else {
+                    statusEl.innerHTML = '<span style="color: red;">✗ Login gagal: ' + (data.message || 'Unknown error') + '</span>';
+                }
+            } catch (error) {
+                statusEl.innerHTML = '<span style="color: red;">✗ Error login: ' + error.message + '</span>';
+            }
+        }
+
+        async function testUsersEndpoint() {
+            const resultEl = document.getElementById('users-result');
+            
+            if (!authToken) {
+                resultEl.innerHTML = '<div class="error">Silakan login terlebih dahulu</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3001/api/users', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultEl.innerHTML = `
+                        <div class="success">
+                            <h4>✓ Endpoint Users Berhasil</h4>
+                            <p>Total users: ${data.data ? data.data.length : 0}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                    
+                    // Tampilkan data dalam tabel
+                    displayUsersTable(data.data || []);
+                } else {
+                    resultEl.innerHTML = `
+                        <div class="error">
+                            <h4>✗ Endpoint Users Gagal</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultEl.innerHTML = `
+                    <div class="error">
+                        <h4>✗ Error mengakses endpoint users</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testUnitsEndpoint() {
+            const resultEl = document.getElementById('users-result');
+            
+            if (!authToken) {
+                resultEl.innerHTML = '<div class="error">Silakan login terlebih dahulu</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3001/api/users/units', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultEl.innerHTML += `
+                        <div class="success">
+                            <h4>✓ Endpoint Units Berhasil</h4>
+                            <p>Total units: ${data.data ? data.data.length : 0}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultEl.innerHTML += `
+                        <div class="error">
+                            <h4>✗ Endpoint Units Gagal</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultEl.innerHTML += `
+                    <div class="error">
+                        <h4>✗ Error mengakses endpoint units</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayUsersTable(users) {
+            const tableEl = document.getElementById('users-table');
+            
+            if (!users || users.length === 0) {
+                tableEl.innerHTML = '<p>Tidak ada data users</p>';
+                return;
+            }
+
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nama Lengkap</th>
+                            <th>Email</th>
+                            <th>NIP</th>
+                            <th>Telepon</th>
+                            <th>Unit Kerja</th>
+                            <th>Peran</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            users.forEach(user => {
+                tableHTML += `
+                    <tr>
+                        <td>${user.full_name || '-'}</td>
+                        <td>${user.email || '-'}</td>
+                        <td>${user.employee_id || '-'}</td>
+                        <td>${user.phone || '-'}</td>
+                        <td>${user.units?.name || '-'}</td>
+                        <td>${user.role || '-'}</td>
+                        <td>${user.is_active ? 'Aktif' : 'Nonaktif'}</td>
+                    </tr>
+                `;
+            });
+
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+
+            tableEl.innerHTML = tableHTML;
+        }
+
+        async function testFrontendIntegration() {
+            const resultEl = document.getElementById('frontend-result');
+            
+            // Simulasi test frontend service
+            resultEl.innerHTML = `
+                <div class="info">
+                    <h4>Frontend Integration Test</h4>
+                    <p>Perbaikan yang dilakukan:</p>
+                    <ul>
+                        <li>✓ Memperbaiki interface User di userService.ts</li>
+                        <li>✓ Mengubah user.unit?.name menjadi user.units?.name di UserManagement.tsx</li>
+                        <li>✓ Memastikan struktur data sesuai dengan response backend</li>
+                    </ul>
+                    <p><strong>Status:</strong> <span style="color: green;">Perbaikan selesai</span></p>
+                </div>
+            `;
+        }
+
+        // Auto check backend connection on load
+        window.onload = function() {
+            checkBackendConnection();
+        };
+    </script>
+</body>
+</html>

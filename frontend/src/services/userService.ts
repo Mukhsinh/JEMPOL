@@ -13,13 +13,16 @@ export interface User {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  unit?: {
+  units?: {
+    id: string;
     name: string;
     code: string;
   };
-  admin?: {
+  admins?: {
+    id: string;
     username: string;
     full_name: string;
+    email: string;
   };
 }
 

@@ -157,6 +157,31 @@ class ComplaintService {
     return response.data;
   }
 
+  // Update complaint (alias untuk updateTicket)
+  async updateComplaint(id: string, data: Partial<Ticket>) {
+    return this.updateTicket(id, data);
+  }
+
+  // Get complaint by ID (alias untuk getTicket)
+  async getComplaintById(id: string) {
+    return this.getTicket(id);
+  }
+
+  // Get complaints by unit
+  async getComplaintsByUnit(unitId: string) {
+    try {
+      const response = await api.get(`/complaints/unit/${unitId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error in getComplaintsByUnit:', error);
+      return {
+        success: false,
+        error: error.message || 'Gagal mengambil data tiket berdasarkan unit',
+        data: []
+      };
+    }
+  }
+
   // Add response to ticket
   async addResponse(ticketId: string, data: {
     message: string;

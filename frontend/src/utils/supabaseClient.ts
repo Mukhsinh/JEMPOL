@@ -4,12 +4,11 @@ import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jxxzbdivafzzwqhagwrf.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
 
-// Singleton pattern untuk menghindari multiple instances
+// Singleton pattern untuk menghindari multiple instances dan meningkatkan performa
 let supabaseInstance: any = null;
 
 const createSupabaseClient = () => {
   if (supabaseInstance) {
-    console.log('♻️ Reusing existing Supabase client instance');
     return supabaseInstance;
   }
 
@@ -20,7 +19,7 @@ const createSupabaseClient = () => {
         autoRefreshToken: true,
         detectSessionInUrl: false,
         flowType: 'pkce',
-        storage: window.localStorage,
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
         storageKey: 'supabase.auth.token',
         debug: false
       },
@@ -31,109 +30,91 @@ const createSupabaseClient = () => {
           'Prefer': 'return=representation'
         },
         fetch: (url, options = {}) => {
-          // Timeout yang optimal (5 detik)
+          // Timeout optimal untuk performa cepat
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          
           return fetch(url, {
             ...options,
-            signal: AbortSignal.timeout(5000)
-          });
+            signal: controller.signal
+          }).finally(() => clearTimeout(timeoutId));
         }
       },
       realtime: {
         params: {
-          eventsPerSecond: 10
+          eventsPerSecond: 5 // Kurangi untuk performa lebih baik
         }
       }
     });
 
-    console.log('✅ Supabase client initialized successfully');
     return supabaseInstance;
   } catch (error) {
-    console.error('❌ Failed to initialize Supabase client:', error);
+    console.error('Failed to initialize Supabase client:', error);
     throw error;
   }
 };
 
 export const supabase = createSupabaseClient();
 
-// Connection status tracking
+// Connection status tracking dengan cache untuk performa
 let isConnected = true;
 let lastConnectionCheck = 0;
-const CONNECTION_CHECK_INTERVAL = 30000; // 30 detik
+const CONNECTION_CHECK_INTERVAL = 60000; // 1 menit untuk mengurangi overhead
 
-// Setup auth state listener only once
+// Setup auth state listener hanya sekali
 let authListenerSetup = false;
 
 if (!authListenerSetup && typeof window !== 'undefined') {
   try {
     supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
-      console.log('🔐 Auth state changed:', event, session ? 'Session exists' : 'No session');
-
-      if (event === 'SIGNED_IN') {
-        console.log('✅ User signed in:', session?.user?.email);
+      if (event === 'SIGNED_IN' && session?.access_token) {
         isConnected = true;
-
-        // Update authorization header for axios
-        if (session?.access_token) {
-          console.log('🔑 Updating authorization header with new token');
-          // Import api dynamically to avoid circular dependency
-          import('../services/api').then(({ api }) => {
-            api.defaults.headers.common['Authorization'] = `Bearer ${session.access_token}`;
-          }).catch(err => {
-            console.warn('Could not update API headers:', err);
-          });
-        }
+        // Update authorization header untuk axios
+        import('../services/api').then(({ api }) => {
+          api.defaults.headers.common['Authorization'] = `Bearer ${session.access_token}`;
+        }).catch(() => {});
       } else if (event === 'SIGNED_OUT') {
-        console.log('👋 User signed out');
-        // Clear authorization header
         import('../services/api').then(({ api }) => {
           delete api.defaults.headers.common['Authorization'];
-        }).catch(err => {
-          console.warn('Could not clear API headers:', err);
-        });
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log('🔄 Token refreshed');
+        }).catch(() => {});
+      } else if (event === 'TOKEN_REFRESHED' && session?.access_token) {
         isConnected = true;
-
-        // Update authorization header with new token
-        if (session?.access_token) {
-          console.log('🔑 Updating authorization header with refreshed token');
-          import('../services/api').then(({ api }) => {
-            api.defaults.headers.common['Authorization'] = `Bearer ${session.access_token}`;
-          }).catch(err => {
-            console.warn('Could not update API headers:', err);
-          });
-        }
+        import('../services/api').then(({ api }) => {
+          api.defaults.headers.common['Authorization'] = `Bearer ${session.access_token}`;
+        }).catch(() => {});
       }
     });
 
     authListenerSetup = true;
   } catch (error) {
-    console.error('❌ Failed to setup auth listener:', error);
+    console.error('Failed to setup auth listener:', error);
   }
 }
 
-// Optimized connection checker dengan caching
+// Connection checker yang dioptimalkan dengan cache dan timeout singkat
 export const checkConnection = async (): Promise<boolean> => {
   const now = Date.now();
   
-  // Return cached result if checked recently
+  // Return cached result jika baru saja dicek
   if (now - lastConnectionCheck < CONNECTION_CHECK_INTERVAL && isConnected) {
     return isConnected;
   }
 
   try {
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Connection check timeout')), 2000);
-    });
-
-    const checkPromise = supabase.from('admins').select('count').limit(1);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500); // Timeout lebih singkat
     
-    const { error } = await Promise.race([checkPromise, timeoutPromise]) as any;
+    const { error } = await supabase
+      .from('admins')
+      .select('count')
+      .limit(1)
+      .abortSignal(controller.signal);
+    
+    clearTimeout(timeoutId);
     isConnected = !error;
     lastConnectionCheck = now;
     return isConnected;
   } catch (error) {
-    console.warn('Connection check failed:', error);
     isConnected = false;
     lastConnectionCheck = now;
     return false;
@@ -141,15 +122,3 @@ export const checkConnection = async (): Promise<boolean> => {
 };
 
 export const getConnectionStatus = (): boolean => isConnected;
-
-// Quick initial connection test (non-blocking)
-if (typeof window !== 'undefined') {
-  // Don't block initialization, just test in background
-  setTimeout(() => {
-    checkConnection().then(connected => {
-      console.log('🌐 Initial connection status:', connected ? 'Connected' : 'Disconnected');
-    }).catch(err => {
-      console.warn('Initial connection check failed:', err);
-    });
-  }, 1000);
-}

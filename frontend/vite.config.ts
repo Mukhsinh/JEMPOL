@@ -15,20 +15,35 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    chunkSizeWarningLimit: 1500,
+    chunkSizeWarningLimit: 1000, // Kurangi warning limit
+    minify: 'esbuild', // Gunakan esbuild untuk minifikasi yang lebih cepat
     rollupOptions: {
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
           'router': ['react-router-dom'],
-          'ui-components': ['lucide-react'],
-          'game-engine': ['phaser'],
-          'http-client': ['axios'],
-          'supabase-client': ['@supabase/supabase-js'],
-          'socket-client': ['socket.io-client']
+          'ui-libs': ['lucide-react'],
+          'game': ['phaser'],
+          'http': ['axios'],
+          'supabase': ['@supabase/supabase-js'],
+          'socket': ['socket.io-client']
         },
       },
     },
+    // Optimasi untuk build yang lebih cepat
+    sourcemap: false, // Disable sourcemap di production untuk ukuran lebih kecil
+    reportCompressedSize: false, // Skip compressed size reporting untuk build lebih cepat
+  },
+  // Optimasi untuk development
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@supabase/supabase-js',
+      'axios',
+      'lucide-react'
+    ],
   },
   test: {
     globals: true,

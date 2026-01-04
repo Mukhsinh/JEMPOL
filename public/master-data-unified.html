@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html class="light" lang="id">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Pengaturan Master Data - Sistem Manajemen Keluhan</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "primary-dark": "#0b63b8",
+                        "background-light": "#f8fafc",
+                        "background-dark": "#101922",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1e293b",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem", 
+                        "lg": "0.5rem", 
+                        "xl": "0.75rem", 
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .sidebar-item-active {
+            background-color: var(--tw-colors-primary);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(19, 127, 236, 0.2), 0 2px 4px -1px rgba(19, 127, 236, 0.1);
+        }
+        .submenu-item-active {
+            color: #137fec;
+            background-color: rgba(19, 127, 236, 0.08);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden selection:bg-primary/20 selection:text-primary">
+    <div class="flex h-screen w-full">
+        <!-- Sidebar -->
+        <aside class="w-[280px] bg-surface-light dark:bg-surface-dark border-r border-slate-200 dark:border-slate-800 flex flex-col flex-shrink-0 z-30 transition-all">
+            <div class="h-16 flex items-center px-6 border-b border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-3 text-slate-900 dark:text-white">
+                    <div class="size-8 rounded-lg bg-primary flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+                        <span class="material-symbols-outlined text-[20px]">local_hospital</span>
+                    </div>
+                    <h1 class="text-lg font-bold tracking-tight">CMS Admin</h1>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-6">
+                <div>
+                    <h3 class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Layanan Publik</h3>
+                    <nav class="flex flex-col gap-1">
+                        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="/dashboard">
+                            <span class="material-symbols-outlined">dashboard</span>
+                            <span class="text-sm font-medium">Dashboard</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="/tickets">
+                            <span class="material-symbols-outlined">inbox</span>
+                            <span class="text-sm font-medium">Keluhan</span>
+                        </a>
+                        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="/reports">
+                            <span class="material-symbols-outlined">analytics</span>
+                            <span class="text-sm font-medium">Analitik</span>
+                        </a>
+                    </nav>
+                </div>
+                
+                <div>
+                    <h3 class="px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Manajemen</h3>
+                    <nav class="flex flex-col gap-1">
+                        <div class="flex flex-col rounded-xl bg-slate-50/80 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700/50 overflow-hidden">
+                            <button id="masterDataToggle" class="flex items-center justify-between w-full gap-3 px-3 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-medium">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-symbols-outlined text-primary font-variation-settings-'FILL'1">database</span>
+                                    <span class="text-sm">Master Data</span>
+                                </div>
+                                <span id="expandIcon" class="material-symbols-outlined text-slate-400 text-[18px] transition-transform">expand_less</span>
+                            </button>
+                            
+                            <div id="masterDataSubmenu" class="flex flex-col py-2">
+                                <div class="px-4 py-1.5 mt-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Organisasi & Layanan</div>
+                                <a id="tab-units" class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg submenu-item-active text-sm transition-colors" href="#" onclick="switchTab('units')">
+                                    <span class="size-1.5 rounded-full bg-primary"></span>Unit Kerja
+                                </a>
+                                <a id="tab-unit-types" class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 text-sm transition-colors" href="#" onclick="switchTab('unit-types')">
+                                    <span class="size-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>Tipe Unit Kerja
+                                </a>
+                                <a id="tab-service-categories" class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 text-sm transition-colors" href="#" onclick="switchTab('service-categories')">
+                                    <span class="size-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>Kategori Layanan
+                                </a>
+                                
+                                <div class="px-4 py-1.5 mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiket & SLA</div>
+                                <a id="tab-ticket-types" class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 text-sm transition-colors" href="#" onclick="switchTab('ticket-types')">
+                                    <span class="size-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>Tipe Tiket
+                                </a>
+                                <a id="tab-classifications" class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 text-sm transition-colors" href="#" onclick="switchTab('classifications')">
+                                    <span class="size-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>Klasifikasi
+                                </a>
+                                <a id="tab-ticket-statuses" class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 text-sm transition-colors" href="#" onclick="switchTab('ticket-statuses')">
+                                    <span class="size-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>Status Tiket
+                                </a>
+                                
+                                <div class="px-4 py-1.5 mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sistem</div>
+                                <a id="tab-roles" class="flex items-center gap-3 px-4 py-2 mx-2 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-700/50 text-sm transition-colors" href="#" onclick="switchTab('roles')">
+                                    <span class="size-1.5 rounded-full bg-slate-300 dark:bg-slate-600"></span>Peran & Akses
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors mt-1" href="/settings">
+                            <span class="material-symbols-outlined">settings</span>
+                            <span class="text-sm font-medium">Pengaturan Sistem</span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                    <div class="size-10 rounded-full bg-slate-200 bg-cover bg-center ring-2 ring-white dark:ring-slate-700" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDhZWFLhjM26KGl8PZ-bgMlD2i-WuJg_0wfxqZ_0Hx4iouJVl_RBYuVGf-SGeZoox_u5G4q8Zo55URHEFZP_vCGvAwV0A_ug5og6CUTQf0tLmQ2Y1zQ1nGGo6I8oDU0c-jUS5GGHr1PMjM2l3eMZ1dKn5CN5zQwa-SYQIrhyudyHO676rMo8bbqIKs0SLoKFTHySO60vLvMx9-xhhGRitkSRlINSzCd-5wcsx59Vxf_IqjJd3sdKKKF0DUVbbiI5CKvnnSyrDuBPuE6');"></div>
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="text-sm font-semibold text-slate-900 dark:text-white truncate">Admin User</span>
+                        <span class="text-xs text-slate-500 truncate">System Administrator</span>
+                    </div>
+                    <span class="material-symbols-outlined text-slate-400 ml-auto text-sm">unfold_more</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col min-w-0 bg-background-light dark:bg-background-dark overflow-hidden">
+            <!-- Header -->
+            <header class="h-16 flex items-center justify-between px-8 bg-surface-light dark:bg-surface-dark border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
+                <div class="flex items-center gap-2 text-sm text-slate-500">
+                    <a class="hover:text-primary transition-colors" href="/settings">Pengaturan</a>
+                    <span class="material-symbols-outlined text-xs">chevron_right</span>
+                    <span class="hover:text-primary transition-colors cursor-pointer">Master Data</span>
+                    <span class="material-symbols-outlined text-xs">chevron_right</span>
+                    <span id="currentTabName" class="text-slate-900 dark:text-white font-medium">Unit Kerja</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <span class="material-symbols-outlined">notifications</span>
+                        <span class="absolute top-2 right-2 size-2 bg-red-500 rounded-full border border-white dark:border-slate-900"></span>
+                    </button>
+                    <div class="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
+                    <button class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <span class="material-symbols-outlined">help</span>
+                    </button>
+                    <button class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <span class="material-symbols-outlined">dark_mode</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Content -->
+            <div class="flex-1 overflow-y-auto p-6 md:p-8">
+                <div class="max-w-7xl mx-auto flex flex-col gap-6">
+                    <!-- Dynamic Content Area -->
+                    <div id="contentArea">
+                        <!-- Units Management Content (Default) -->
+                        <div id="content-units" class="tab-content">
+                            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                                <div>
+                                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Manajemen Unit Kerja</h2>
+                                    <p class="text-slate-500 mt-1 text-sm">Kelola struktur organisasi, hierarki, dan detail unit kerja dalam sistem rumah sakit.</p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <button class="inline-flex items-center justify-center gap-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium px-4 py-2 rounded-lg transition-colors text-sm shadow-sm">
+                                        <span class="material-symbols-outlined text-[18px]">file_download</span>Ekspor
+                                    </button>
+                                    <button class="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm shadow-md shadow-blue-500/20">
+                                        <span class="material-symbols-outlined text-[18px]">add</span>Tambah Unit Baru
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Search and Filters -->
+                            <div class="bg-surface-light dark:bg-surface-dark p-1 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row gap-2 items-center">
+                                <div class="relative w-full md:flex-1 group p-1">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <span class="material-symbols-outlined text-slate-400 group-focus-within:text-primary">search</span>
+                                    </div>
+                                    <input id="searchInput" class="block w-full pl-11 pr-3 py-2 border-none bg-transparent text-slate-900 dark:text-white placeholder-slate-400 focus:ring-0 text-sm" placeholder="Cari nama, kode, atau unit induk..." type="text"/>
+                                </div>
+                                <div class="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden md:block"></div>
+                                <div class="flex items-center gap-2 w-full md:w-auto p-1">
+                                    <div class="relative w-full md:w-auto">
+                                        <select id="typeFilter" class="form-select block w-full md:w-48 py-2 pl-3 pr-10 text-sm border-none rounded-lg bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 focus:ring-0 cursor-pointer font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                            <option>Semua Tipe</option>
+                                            <option>Administratif</option>
+                                            <option>Layanan Medis</option>
+                                            <option>Penunjang</option>
+                                            <option>Teknis</option>
+                                        </select>
+                                    </div>
+                                    <div class="relative w-full md:w-auto">
+                                        <select id="statusFilter" class="form-select block w-full md:w-40 py-2 pl-3 pr-10 text-sm border-none rounded-lg bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300 focus:ring-0 cursor-pointer font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                                            <option>Semua Status</option>
+                                            <option>Aktif</option>
+                                            <option>Tidak Aktif</option>
+                                            <option>Pemeliharaan</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Data Table -->
+                            <div class="bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm text-left">
+                                        <thead class="text-xs font-semibold text-slate-500 uppercase bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                                            <tr>
+                                                <th class="px-6 py-4" scope="col">Nama Unit (Hierarki)</th>
+                                                <th class="px-6 py-4" scope="col">Kode</th>
+                                                <th class="px-6 py-4" scope="col">Tipe</th>
+                                                <th class="px-6 py-4" scope="col">Target SLA</th>
+                                                <th class="px-6 py-4" scope="col">Status</th>
+                                                <th class="px-6 py-4 text-right" scope="col">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="unitsTableBody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                                            <!-- Dynamic content will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20">
+                                    <span class="text-sm text-slate-500">Menampilkan <span id="displayCount">0</span> entri</span>
+                                    <div class="flex items-center gap-2">
+                                        <button class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-white dark:hover:bg-slate-800 shadow-sm disabled:opacity-50 transition-all" disabled="">
+                                            <span class="material-symbols-outlined text-sm">chevron_left</span>
+                                        </button>
+                                        <div class="flex items-center gap-1">
+                                            <button class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-primary shadow-sm">1</button>
+                                        </div>
+                                        <button class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-white dark:hover:bg-slate-800 shadow-sm transition-all">
+                                            <span class="material-symbols-outlined text-sm">chevron_right</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Other tab contents will be loaded dynamically -->
+                        <div id="content-unit-types" class="tab-content hidden">
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Tipe Unit Kerja</h2>
+                            <p class="text-slate-500 mt-2">Kelola tipe-tipe unit kerja dalam organisasi.</p>
+                        </div>
+
+                        <div id="content-service-categories" class="tab-content hidden">
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Kategori Layanan</h2>
+                            <p class="text-slate-500 mt-2">Kelola kategori layanan yang tersedia.</p>
+                        </div>
+
+                        <div id="content-ticket-types" class="tab-content hidden">
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Tipe Tiket</h2>
+                            <p class="text-slate-500 mt-2">Kelola jenis-jenis tiket yang dapat dibuat.</p>
+                        </div>
+
+                        <div id="content-classifications" class="tab-content hidden">
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Klasifikasi Tiket</h2>
+                            <p class="text-slate-500 mt-2">Kelola klasifikasi untuk tiket.</p>
+                        </div>
+
+                        <div id="content-ticket-statuses" class="tab-content hidden">
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Status Tiket</h2>
+                            <p class="text-slate-500 mt-2">Kelola status-status tiket yang tersedia.</p>
+                        </div>
+
+                        <div id="content-roles" class="tab-content hidden">
+                            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Peran & Akses</h2>
+                            <p class="text-slate-500 mt-2">Kelola peran pengguna dan hak akses sistem.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Global variables
+        let currentTab = 'units';
+        let unitsData = [];
+        let filteredUnits = [];
+
+        // Tab names mapping
+        const tabNames = {
+            'units': 'Unit Kerja',
+            'unit-types': 'Tipe Unit Kerja',
+            'service-categories': 'Kategori Layanan',
+            'ticket-types': 'Tipe Tiket',
+            'classifications': 'Klasifikasi',
+            'ticket-statuses': 'Status Tiket',
+            'roles': 'Peran & Akses'
+        };
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+            loadUnitsData();
+        });
+
+        // Initialize event listeners
+        function initializeEventListeners() {
+            // Master data toggle
+            document.getElementById('masterDataToggle').addEventListener('click', toggleMasterDataSubmenu);
+            
+            // Search and filter inputs
+            document.getElementById('searchInput').addEventListener('input', filterUnits);
+            document.getElementById('typeFilter').addEventListener('change', filterUnits);
+            document.getElementById('statusFilter').addEventListener('change', filterUnits);
+        }
+
+        // Toggle master data submenu
+        function toggleMasterDataSubmenu() {
+            const submenu = document.getElementById('masterDataSubmenu');
+            const icon = document.getElementById('expandIcon');
+            
+            if (submenu.style.display === 'none') {
+                submenu.style.display = 'flex';
+                icon.textContent = 'expand_less';
+            } else {
+                submenu.style.display = 'none';
+                icon.textContent = 'expand_more';
+            }
+        }
+
+        // Switch between tabs
+        function switchTab(tabId) {
+            // Update active tab
+            currentTab = tabId;
+            
+            // Update sidebar active state
+            document.querySelectorAll('[id^="tab-"]').forEach(tab => {
+                tab.classList.remove('submenu-item-active');
+                tab.classList.add('text-slate-500', 'dark:text-slate-400');
+                tab.querySelector('span').classList.remove('bg-primary');
+                tab.querySelector('span').classList.add('bg-slate-300', 'dark:bg-slate-600');
+            });
+            
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            if (activeTab) {
+                activeTab.classList.add('submenu-item-active');
+                activeTab.classList.remove('text-slate-500', 'dark:text-slate-400');
+                activeTab.querySelector('span').classList.add('bg-primary');
+                activeTab.querySelector('span').classList.remove('bg-slate-300', 'dark:bg-slate-600');
+            }
+            
+            // Update breadcrumb
+            document.getElementById('currentTabName').textContent = tabNames[tabId] || tabId;
+            
+            // Show/hide content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            const activeContent = document.getElementById(`content-${tabId}`);
+            if (activeContent) {
+                activeContent.classList.remove('hidden');
+            }
+            
+            // Load specific data for the tab
+            if (tabId === 'units') {
+                loadUnitsData();
+            }
+        }
+
+        // Load units data from API
+        async function loadUnitsData() {
+            try {
+                // For demo purposes, using mock data
+                // In production, this would be: const response = await fetch('/api/units');
+                unitsData = [
+                    {
+                        id: '1',
+                        name: 'RS Umum Admin',
+                        code: 'U-001',
+                        unit_type: { name: 'Administratif', code: 'ADM' },
+                        sla_hours: 24,
+                        is_active: true,
+                        parent_unit_id: null
+                    },
+                    {
+                        id: '2',
+                        name: 'IGD (Unit Gawat Darurat)',
+                        code: 'U-002',
+                        unit_type: { name: 'Layanan Medis', code: 'MED' },
+                        sla_hours: 1,
+                        is_active: true,
+                        parent_unit_id: '1'
+                    },
+                    {
+                        id: '3',
+                        name: 'Farmasi',
+                        code: 'U-003',
+                        unit_type: { name: 'Penunjang Medis', code: 'PEN' },
+                        sla_hours: 4,
+                        is_active: true,
+                        parent_unit_id: '1'
+                    },
+                    {
+                        id: '4',
+                        name: 'Pusat IT Support',
+                        code: 'U-004',
+                        unit_type: { name: 'Teknis', code: 'TEK' },
+                        sla_hours: 2,
+                        is_active: false,
+                        parent_unit_id: null
+                    }
+                ];
+                
+                filteredUnits = [...unitsData];
+                renderUnitsTable();
+            } catch (error) {
+                console.error('Error loading units data:', error);
+            }
+        }
+
+        // Filter units based on search and filters
+        function filterUnits() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('typeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            filteredUnits = unitsData.filter(unit => {
+                const matchesSearch = !searchTerm || 
+                    unit.name.toLowerCase().includes(searchTerm) ||
+                    unit.code.toLowerCase().includes(searchTerm);
+                
+                const matchesType = !typeFilter || typeFilter === 'Semua Tipe' ||
+                    unit.unit_type?.name === typeFilter;
+                
+                const matchesStatus = !statusFilter || statusFilter === 'Semua Status' ||
+                    (statusFilter === 'Aktif' && unit.is_active) ||
+                    (statusFilter === 'Tidak Aktif' && !unit.is_active) ||
+                    (statusFilter === 'Pemeliharaan' && !unit.is_active);
+                
+                return matchesSearch && matchesType && matchesStatus;
+            });
+            
+            renderUnitsTable();
+        }
+
+        // Render units table
+        function renderUnitsTable() {
+            const tbody = document.getElementById('unitsTableBody');
+            const displayCount = document.getElementById('displayCount');
+            
+            if (filteredUnits.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-slate-500">
+                            Tidak ada data unit kerja
+                        </td>
+                    </tr>
+                `;
+                displayCount.textContent = '0';
+                return;
+            }
+            
+            tbody.innerHTML = filteredUnits.map(unit => {
+                const isChild = !!unit.parent_unit_id;
+                const statusBadge = getStatusBadge(unit.is_active);
+                const typeBadge = getTypeBadge(unit.unit_type?.name);
+                const slaTime = formatSlaTime(unit.sla_hours);
+                
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                        <td class="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                            ${isChild ? `
+                                <div class="flex items-center gap-3 pl-4 border-l-2 border-slate-200 dark:border-slate-700 ml-3 relative">
+                                    <span class="absolute -left-[2px] top-1/2 -translate-y-1/2 w-3 h-[2px] bg-slate-200 dark:bg-slate-700"></span>
+                                    <span class="ml-2">${unit.name}</span>
+                                </div>
+                            ` : `
+                                <div class="flex items-center gap-3">
+                                    <div class="size-8 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                                        <span class="material-symbols-outlined text-[18px]">domain</span>
+                                    </div>
+                                    <span>${unit.name}</span>
+                                </div>
+                            `}
+                        </td>
+                        <td class="px-6 py-4 text-slate-500 font-mono text-xs">${unit.code}</td>
+                        <td class="px-6 py-4 text-slate-600 dark:text-slate-300">${typeBadge}</td>
+                        <td class="px-6 py-4 text-slate-600 dark:text-slate-300 ${unit.sla_hours <= 2 ? 'font-medium' : ''}">${slaTime}</td>
+                        <td class="px-6 py-4">${statusBadge}</td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button class="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Edit">
+                                    <span class="material-symbols-outlined text-[18px]">edit</span>
+                                </button>
+                                <button class="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Hapus">
+                                    <span class="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            displayCount.textContent = filteredUnits.length;
+        }
+
+        // Helper functions
+        function getStatusBadge(isActive) {
+            if (isActive) {
+                return `
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800">
+                        <span class="size-1.5 rounded-full bg-emerald-500"></span>Aktif
+                    </span>
+                `;
+            } else {
+                return `
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-100 dark:border-amber-800">
+                        <span class="size-1.5 rounded-full bg-amber-500"></span>Pemeliharaan
+                    </span>
+                `;
+            }
+        }
+
+        function getTypeBadge(typeName) {
+            const typeColors = {
+                'Administratif': 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700',
+                'Layanan Medis': 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/30',
+                'Penunjang Medis': 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-800/30',
+                'Teknis': 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+            };
+            
+            const colorClass = typeColors[typeName] || typeColors['Administratif'];
+            
+            return `
+                <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium border ${colorClass}">
+                    ${typeName || 'Tidak Diketahui'}
+                </span>
+            `;
+        }
+
+        function formatSlaTime(hours) {
+            if (hours < 24) {
+                return `${hours} Jam`;
+            } else {
+                const days = Math.floor(hours / 24);
+                return `${days} Hari`;
+            }
+        }
+    </script>
+</body>
+</html>
