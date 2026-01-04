@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import notificationSettingsService, { NotificationSetting } from '../services/notificationSettingsService';
 
 const NotificationSettings: React.FC = () => {
-  const [settings, setSettings] = useState<NotificationSetting[]>([]);
+  const [settings, setSettings] = useState<NotificationSetting | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchNotificationSettings();
@@ -15,122 +16,81 @@ const NotificationSettings: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-
       const data = await notificationSettingsService.getNotificationSettings();
-
-      // If no settings exist, create default ones (this logic should ideally be in backend, but keeping for safety)
-      const defaultSettings: NotificationSetting[] = [
-        {
-          id: '1',
-          type: 'ticket_created',
-          enabled: true,
-          email_enabled: true,
-          sms_enabled: false,
-          push_enabled: true,
-          description: 'Notifikasi ketika tiket baru dibuat'
-        },
-        {
-          id: '2',
-          type: 'ticket_updated',
-          enabled: true,
-          email_enabled: true,
-          sms_enabled: false,
-          push_enabled: true,
-          description: 'Notifikasi ketika status tiket diperbarui'
-        },
-        {
-          id: '3',
-          type: 'ticket_resolved',
-          enabled: true,
-          email_enabled: true,
-          sms_enabled: true,
-          push_enabled: true,
-          description: 'Notifikasi ketika tiket diselesaikan'
-        },
-        {
-          id: '4',
-          type: 'escalation_triggered',
-          enabled: true,
-          email_enabled: true,
-          sms_enabled: true,
-          push_enabled: true,
-          description: 'Notifikasi ketika eskalasi dipicu'
-        },
-        {
-          id: '5',
-          type: 'survey_reminder',
-          enabled: false,
-          email_enabled: true,
-          sms_enabled: false,
-          push_enabled: false,
-          description: 'Pengingat untuk mengisi survei'
-        }
-      ];
-
-      setSettings(data.length > 0 ? data : defaultSettings);
+      setSettings(data);
     } catch (err: any) {
       console.error('Error fetching notification settings:', err);
-      setError(err.message || 'Failed to fetch notification settings');
-
+      setError(err.message || 'Gagal memuat pengaturan notifikasi');
       // Set default settings on error
-      setSettings([
-        {
-          id: '1',
-          type: 'ticket_created',
-          enabled: true,
-          email_enabled: true,
-          sms_enabled: false,
-          push_enabled: true,
-          description: 'Notifikasi ketika tiket baru dibuat'
-        }
-      ]);
+      setSettings({
+        id: '',
+        email_notif: true,
+        wa_notif: false,
+        web_push_notif: true,
+        tiket_masuk: true,
+        eskalasi: true,
+        sla_warning: true,
+        respon_baru: true,
+        tiket_selesai: true
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSettingChange = async (id: string, field: keyof NotificationSetting, value: boolean) => {
+  const handleSettingChange = (field: keyof NotificationSetting, value: boolean) => {
+    if (!settings) return;
+    setSettings(prev => prev ? { ...prev, [field]: value } : null);
+  };
+
+  const handleSave = async () => {
+    if (!settings) return;
+    
     try {
       setSaving(true);
-
-      // Update local state immediately
-      setSettings(prev => prev.map(setting =>
-        setting.id === id ? { ...setting, [field]: value } : setting
-      ));
-
-      // Update on server
-      await notificationSettingsService.updateNotificationSetting(id, { [field]: value });
-
+      setError(null);
+      
+      const { id, pengguna_id, dibuat_pada, diperbarui_pada, ...updateData } = settings;
+      await notificationSettingsService.bulkUpdateNotificationSettings(updateData);
+      
+      setSuccessMessage('Pengaturan notifikasi berhasil disimpan');
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err: any) {
-      console.error('Error updating notification setting:', err);
-      setError(err.message || 'Failed to update notification setting');
-
-      // Revert local state on error
-      await fetchNotificationSettings();
+      console.error('Error saving notification settings:', err);
+      setError(err.message || 'Gagal menyimpan pengaturan notifikasi');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleBulkUpdate = async (field: keyof NotificationSetting, value: boolean) => {
-    try {
-      setSaving(true);
+  const handleEnableAll = () => {
+    if (!settings) return;
+    setSettings({
+      ...settings,
+      email_notif: true,
+      wa_notif: true,
+      web_push_notif: true,
+      tiket_masuk: true,
+      eskalasi: true,
+      sla_warning: true,
+      respon_baru: true,
+      tiket_selesai: true
+    });
+  };
 
-      // Update all settings
-      const updates = settings.map(setting => ({
-        id: setting.id,
-        [field]: value
-      }));
-
-      await notificationSettingsService.bulkUpdateNotificationSettings(updates);
-      await fetchNotificationSettings();
-
-    } catch (err: any) {
-      console.error('Error bulk updating notification settings:', err);
-      setError(err.message || 'Failed to bulk update notification settings');
-    } finally {
-      setSaving(false);
-    }
+  const handleDisableAll = () => {
+    if (!settings) return;
+    setSettings({
+      ...settings,
+      email_notif: false,
+      wa_notif: false,
+      web_push_notif: false,
+      tiket_masuk: false,
+      eskalasi: false,
+      sla_warning: false,
+      respon_baru: false,
+      tiket_selesai: false
+    });
   };
 
   if (loading) {
@@ -142,119 +102,216 @@ const NotificationSettings: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Notification Settings</h1>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => handleBulkUpdate('enabled', true)}
-            disabled={saving}
-            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
-          >
-            Enable All
-          </button>
-          <button
-            onClick={() => handleBulkUpdate('enabled', false)}
-            disabled={saving}
-            className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50"
-          >
-            Disable All
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-          <div className="text-sm text-red-700">{error}</div>
-        </div>
-      )}
-
-      <div className="bg-white shadow rounded-lg">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Notification Type
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Enabled
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  SMS
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Push
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {settings.map((setting) => (
-                <tr key={setting.id}>
-                  <td className="px-6 py-4">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {setting.type.replace(/_/g, ' ').replace(/ w/g, l => l.toUpperCase())}
-                      </div>
-                      <div className="text-sm text-gray-500">{setting.description}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <input
-                      type="checkbox"
-                      checked={setting.enabled}
-                      onChange={(e) => handleSettingChange(setting.id, 'enabled', e.target.checked)}
-                      disabled={saving}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <input
-                      type="checkbox"
-                      checked={setting.email_enabled}
-                      onChange={(e) => handleSettingChange(setting.id, 'email_enabled', e.target.checked)}
-                      disabled={saving || !setting.enabled}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <input
-                      type="checkbox"
-                      checked={setting.sms_enabled}
-                      onChange={(e) => handleSettingChange(setting.id, 'sms_enabled', e.target.checked)}
-                      disabled={saving || !setting.enabled}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <input
-                      type="checkbox"
-                      checked={setting.push_enabled}
-                      onChange={(e) => handleSettingChange(setting.id, 'push_enabled', e.target.checked)}
-                      disabled={saving || !setting.enabled}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {saving && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-              <span>Saving...</span>
-            </div>
+    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pengaturan Notifikasi</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1">Kelola preferensi notifikasi Anda</p>
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={handleEnableAll}
+              disabled={saving}
+              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 text-sm"
+            >
+              Aktifkan Semua
+            </button>
+            <button
+              onClick={handleDisableAll}
+              disabled={saving}
+              className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 text-sm"
+            >
+              Nonaktifkan Semua
+            </button>
           </div>
         </div>
-      )}
+
+        {/* Messages */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+            <div className="text-sm text-red-700">{error}</div>
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
+            <div className="text-sm text-green-700">{successMessage}</div>
+          </div>
+        )}
+
+        {settings && (
+          <>
+            {/* Kanal Notifikasi */}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Kanal Notifikasi</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Pilih kanal untuk menerima notifikasi</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Email</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Terima notifikasi melalui email</div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.email_notif}
+                      onChange={(e) => handleSettingChange('email_notif', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">WhatsApp</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Terima notifikasi melalui WhatsApp</div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.wa_notif}
+                      onChange={(e) => handleSettingChange('wa_notif', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Push Browser</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Terima notifikasi push di browser</div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.web_push_notif}
+                      onChange={(e) => handleSettingChange('web_push_notif', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Jenis Notifikasi */}
+            <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Jenis Notifikasi</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Pilih jenis notifikasi yang ingin diterima</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Tiket Masuk</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Notifikasi ketika ada tiket baru masuk</div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.tiket_masuk}
+                      onChange={(e) => handleSettingChange('tiket_masuk', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Eskalasi</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Notifikasi ketika tiket dieskalasi</div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.eskalasi}
+                      onChange={(e) => handleSettingChange('eskalasi', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Peringatan SLA</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Notifikasi peringatan batas waktu SLA</div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.sla_warning}
+                      onChange={(e) => handleSettingChange('sla_warning', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Respon Baru</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Notifikasi ketika ada respon baru pada tiket</div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.respon_baru}
+                      onChange={(e) => handleSettingChange('respon_baru', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Tiket Selesai</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Notifikasi ketika tiket diselesaikan</div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={settings.tiket_selesai}
+                      onChange={(e) => handleSettingChange('tiket_selesai', e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Menyimpan...
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">save</span>
+                    Simpan Pengaturan
+                  </>
+                )}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };

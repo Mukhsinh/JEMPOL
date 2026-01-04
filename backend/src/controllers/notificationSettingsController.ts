@@ -10,14 +10,53 @@ export const getNotificationSettings = async (req: Request, res: Response) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
+        // Menggunakan tabel pengaturan_notifikasi (bahasa Indonesia)
         const { data: settings, error } = await supabase
-            .from('notification_settings')
+            .from('pengaturan_notifikasi')
             .select('*')
-            .eq('user_id', userId);
+            .eq('pengguna_id', userId);
 
         if (error) throw error;
 
-        res.json(settings || []);
+        // Jika belum ada pengaturan, buat default
+        if (!settings || settings.length === 0) {
+            const { data: newSettings, error: insertError } = await supabase
+                .from('pengaturan_notifikasi')
+                .insert({
+                    pengguna_id: userId,
+                    email_notif: true,
+                    wa_notif: false,
+                    web_push_notif: true,
+                    tiket_masuk: true,
+                    eskalasi: true,
+                    sla_warning: true,
+                    respon_baru: true,
+                    tiket_selesai: true
+                })
+                .select()
+                .single();
+
+            if (insertError) {
+                console.error('Error creating default notification settings:', insertError);
+                // Return default settings even if insert fails
+                return res.json({
+                    id: null,
+                    pengguna_id: userId,
+                    email_notif: true,
+                    wa_notif: false,
+                    web_push_notif: true,
+                    tiket_masuk: true,
+                    eskalasi: true,
+                    sla_warning: true,
+                    respon_baru: true,
+                    tiket_selesai: true
+                });
+            }
+
+            return res.json(newSettings);
+        }
+
+        res.json(settings[0]);
     } catch (error: any) {
         console.error('Error fetching notification settings:', error);
         res.status(500).json({ error: error.message });
@@ -35,10 +74,13 @@ export const updateNotificationSetting = async (req: Request, res: Response) => 
         }
 
         const { data: setting, error } = await supabase
-            .from('notification_settings')
-            .update(updates)
+            .from('pengaturan_notifikasi')
+            .update({
+                ...updates,
+                diperbarui_pada: new Date().toISOString()
+            })
             .eq('id', id)
-            .eq('user_id', userId)
+            .eq('pengguna_id', userId)
             .select()
             .single();
 
@@ -54,29 +96,54 @@ export const updateNotificationSetting = async (req: Request, res: Response) => 
 export const bulkUpdateNotificationSettings = async (req: Request, res: Response) => {
     try {
         const userId = (req as any).user?.id;
-        const { updates } = req.body; // Array of { id, ...updates }
+        const updates = req.body; // Object with notification settings
 
         if (!userId) {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        const results = [];
-        for (const update of updates) {
-            const { id, ...fields } = update;
+        // Check if settings exist for this user
+        const { data: existingSettings, error: selectError } = await supabase
+            .from('pengaturan_notifikasi')
+            .select('id')
+            .eq('pengguna_id', userId)
+            .single();
+
+        if (selectError && selectError.code !== 'PGRST116') {
+            throw selectError;
+        }
+
+        let result;
+        if (existingSettings) {
+            // Update existing settings
             const { data, error } = await supabase
-                .from('notification_settings')
-                .update(fields)
-                .eq('id', id)
-                .eq('user_id', userId)
+                .from('pengaturan_notifikasi')
+                .update({
+                    ...updates,
+                    diperbarui_pada: new Date().toISOString()
+                })
+                .eq('pengguna_id', userId)
                 .select()
                 .single();
 
-            if (!error && data) {
-                results.push(data);
-            }
+            if (error) throw error;
+            result = data;
+        } else {
+            // Insert new settings
+            const { data, error } = await supabase
+                .from('pengaturan_notifikasi')
+                .insert({
+                    pengguna_id: userId,
+                    ...updates
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            result = data;
         }
 
-        res.json(results);
+        res.json(result);
     } catch (error: any) {
         console.error('Error bulk updating notification settings:', error);
         res.status(500).json({ error: error.message });

@@ -703,3 +703,243 @@ export const getSurveyStats = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const exportSurveyReport = async (req: Request, res: Response) => {
+  try {
+    const { start_date, end_date, format = 'excel' } = req.query as any;
+
+    // Query surveys from multiple tables
+    let standaloneSurveysQuery = supabase
+      .from('standalone_surveys')
+      .select(`
+        *,
+        units(name),
+        service_categories(name)
+      `)
+      .order('submitted_at', { ascending: false });
+
+    let publicSurveysQuery = supabase
+      .from('public_surveys')
+      .select(`
+        *,
+        units(name),
+        service_categories(name)
+      `)
+      .order('submitted_at', { ascending: false });
+
+    let satisfactionSurveysQuery = supabase
+      .from('satisfaction_surveys')
+      .select(`
+        *,
+        tickets(ticket_number, title)
+      `)
+      .order('submitted_at', { ascending: false });
+
+    if (start_date) {
+      standaloneSurveysQuery = standaloneSurveysQuery.gte('submitted_at', start_date);
+      publicSurveysQuery = publicSurveysQuery.gte('submitted_at', start_date);
+      satisfactionSurveysQuery = satisfactionSurveysQuery.gte('submitted_at', start_date);
+    }
+    if (end_date) {
+      const endDateObj = new Date(end_date);
+      endDateObj.setHours(23, 59, 59, 999);
+      standaloneSurveysQuery = standaloneSurveysQuery.lte('submitted_at', endDateObj.toISOString());
+      publicSurveysQuery = publicSurveysQuery.lte('submitted_at', endDateObj.toISOString());
+      satisfactionSurveysQuery = satisfactionSurveysQuery.lte('submitted_at', endDateObj.toISOString());
+    }
+
+    const [standaloneSurveys, publicSurveys, satisfactionSurveys] = await Promise.all([
+      standaloneSurveysQuery,
+      publicSurveysQuery,
+      satisfactionSurveysQuery
+    ]);
+
+    // Combine all surveys
+    const allSurveys: any[] = [];
+
+    // Add standalone surveys
+    standaloneSurveys.data?.forEach((survey: any) => {
+      allSurveys.push({
+        id: survey.id,
+        type: 'Standalone',
+        submitted_at: survey.submitted_at,
+        reporter_name: survey.reporter_name || 'Anonim',
+        reporter_email: survey.reporter_email || '-',
+        unit_name: survey.units?.name || '-',
+        category_name: survey.service_categories?.name || '-',
+        overall_score: survey.overall_score || 0,
+        response_time_score: survey.response_time_score || 0,
+        solution_quality_score: survey.solution_quality_score || 0,
+        staff_courtesy_score: survey.staff_courtesy_score || 0,
+        comments: survey.comments || '-',
+        source: survey.source || 'web'
+      });
+    });
+
+    // Add public surveys
+    publicSurveys.data?.forEach((survey: any) => {
+      allSurveys.push({
+        id: survey.id,
+        type: 'Publik',
+        submitted_at: survey.submitted_at,
+        reporter_name: survey.visitor_name || 'Anonim',
+        reporter_email: survey.visitor_email || '-',
+        unit_name: survey.units?.name || '-',
+        category_name: survey.service_categories?.name || '-',
+        overall_score: survey.overall_score || 0,
+        response_time_score: survey.response_time_score || 0,
+        solution_quality_score: survey.solution_quality_score || 0,
+        staff_courtesy_score: survey.staff_courtesy_score || 0,
+        comments: survey.comments || '-',
+        source: survey.source || 'public_survey'
+      });
+    });
+
+    // Add satisfaction surveys
+    satisfactionSurveys.data?.forEach((survey: any) => {
+      allSurveys.push({
+        id: survey.id,
+        type: 'Kepuasan Tiket',
+        submitted_at: survey.submitted_at,
+        reporter_name: survey.tickets?.ticket_number || '-',
+        reporter_email: '-',
+        unit_name: '-',
+        category_name: survey.tickets?.title || '-',
+        overall_score: survey.overall_score || 0,
+        response_time_score: survey.response_time_score || 0,
+        solution_quality_score: survey.solution_quality_score || 0,
+        staff_courtesy_score: survey.staff_courtesy_score || 0,
+        comments: survey.comments || '-',
+        source: 'ticket'
+      });
+    });
+
+    // Sort by submitted_at descending
+    allSurveys.sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime());
+
+    if (format === 'pdf') {
+      // Export to PDF
+      const doc = new PDFDocument({ margin: 50 });
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=laporan-survei-${new Date().toISOString().split('T')[0]}.pdf`);
+
+      doc.pipe(res);
+
+      doc.fontSize(20).text('Laporan Survei Kepuasan', { align: 'center' });
+      doc.moveDown();
+
+      const periodText = start_date && end_date 
+        ? `${new Date(start_date).toLocaleDateString('id-ID')} - ${new Date(end_date).toLocaleDateString('id-ID')}`
+        : 'Semua Periode';
+      doc.fontSize(12).text(`Periode: ${periodText}`, { align: 'center' });
+      doc.moveDown(2);
+
+      // Summary
+      doc.fontSize(16).text('Ringkasan', { underline: true });
+      doc.moveDown();
+      doc.fontSize(12);
+      doc.text(`Total Survei: ${allSurveys.length}`);
+      
+      const avgOverall = allSurveys.length > 0 
+        ? (allSurveys.reduce((sum, s) => sum + s.overall_score, 0) / allSurveys.length).toFixed(2)
+        : 0;
+      doc.text(`Rata-rata Skor Keseluruhan: ${avgOverall}`);
+      doc.moveDown(2);
+
+      // Detail table
+      doc.fontSize(16).text('Detail Survei', { underline: true });
+      doc.moveDown();
+
+      allSurveys.slice(0, 50).forEach((survey, index) => {
+        if (doc.y > 700) {
+          doc.addPage();
+        }
+        doc.fontSize(10);
+        doc.text(`${index + 1}. ${survey.type} - ${new Date(survey.submitted_at).toLocaleDateString('id-ID')}`);
+        doc.text(`   Nama: ${survey.reporter_name} | Unit: ${survey.unit_name}`);
+        doc.text(`   Skor: ${survey.overall_score}/5 | Komentar: ${survey.comments.substring(0, 50)}...`);
+        doc.moveDown(0.5);
+      });
+
+      doc.fontSize(8).text(`Digenerate pada: ${new Date().toLocaleString('id-ID')}`, 50, doc.page.height - 50);
+      doc.end();
+    } else {
+      // Export to Excel
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('Laporan Survei');
+
+      // Add headers
+      sheet.addRow([
+        'No',
+        'Tipe Survei',
+        'Tanggal',
+        'Nama Responden',
+        'Email',
+        'Unit',
+        'Kategori',
+        'Skor Keseluruhan',
+        'Skor Waktu Respons',
+        'Skor Kualitas Solusi',
+        'Skor Keramahan Staff',
+        'Komentar',
+        'Sumber'
+      ]);
+
+      // Style header
+      sheet.getRow(1).font = { bold: true };
+      sheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF137FEC' }
+      };
+      sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+      // Add data rows
+      allSurveys.forEach((survey, index) => {
+        sheet.addRow([
+          index + 1,
+          survey.type,
+          new Date(survey.submitted_at).toLocaleDateString('id-ID'),
+          survey.reporter_name,
+          survey.reporter_email,
+          survey.unit_name,
+          survey.category_name,
+          survey.overall_score,
+          survey.response_time_score,
+          survey.solution_quality_score,
+          survey.staff_courtesy_score,
+          survey.comments,
+          survey.source
+        ]);
+      });
+
+      // Set column widths
+      sheet.columns = [
+        { width: 5 },
+        { width: 15 },
+        { width: 12 },
+        { width: 20 },
+        { width: 25 },
+        { width: 20 },
+        { width: 20 },
+        { width: 15 },
+        { width: 15 },
+        { width: 15 },
+        { width: 15 },
+        { width: 40 },
+        { width: 12 }
+      ];
+
+      const filename = `laporan-survei-${new Date().toISOString().split('T')[0]}.xlsx`;
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+
+      await workbook.xlsx.write(res);
+      res.end();
+    }
+  } catch (error) {
+    console.error('Error exporting survey report:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

@@ -6,7 +6,8 @@ import {
   getUnits,
   getCategories,
   getSurveyReports,
-  getSurveyStats
+  getSurveyStats,
+  exportSurveyReport
 } from '../controllers/reportController.js';
 import { authenticateSupabase } from '../middleware/supabaseAuthMiddleware.js';
 
@@ -21,6 +22,7 @@ router.get('/', getReportData);
 // Survey routes
 router.get('/surveys', getSurveyReports);
 router.get('/surveys/stats', getSurveyStats);
+router.get('/surveys/export', exportSurveyReport);
 
 // Export routes
 router.get('/export/pdf', exportToPDF);
