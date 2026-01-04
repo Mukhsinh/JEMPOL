@@ -1,5 +1,6 @@
-import api from './api';
+import api, { isVercelProduction } from './api';
 import { fallbackService } from './fallbackService';
+import { supabaseService } from './supabaseService';
 
 export interface Ticket {
   id: string;

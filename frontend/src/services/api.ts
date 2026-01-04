@@ -4,6 +4,11 @@ import { APIResponse } from '../types';
 // Cache untuk API base URL
 let cachedApiBaseUrl: string = '';
 
+// Check if running in Vercel production
+export const isVercelProduction = (): boolean => {
+  return import.meta.env.PROD && !import.meta.env.VITE_API_URL?.includes('localhost');
+};
+
 // Determine API base URL based on environment dengan caching
 const getApiBaseUrl = (): string => {
   if (cachedApiBaseUrl) {
@@ -12,12 +17,14 @@ const getApiBaseUrl = (): string => {
 
   const envApiUrl = (import.meta as any).env?.VITE_API_URL;
 
-  if (envApiUrl) {
+  // In development with explicit API URL
+  if (envApiUrl && envApiUrl.includes('localhost')) {
     cachedApiBaseUrl = envApiUrl;
     return cachedApiBaseUrl;
   }
 
-  // In production (Vercel), use relative path
+  // In production (Vercel), we'll use Supabase directly
+  // But keep /api as fallback for any remaining API calls
   if (import.meta.env.PROD) {
     cachedApiBaseUrl = '/api';
     return cachedApiBaseUrl;
