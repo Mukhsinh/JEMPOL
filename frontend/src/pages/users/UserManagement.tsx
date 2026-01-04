@@ -51,7 +51,16 @@ const UserManagement = () => {
                 userService.getUnits()
             ]);
 
-            setUsers(usersData);
+            // Map users to include proper unit type
+            const usersWithUnits: UserWithUnit[] = usersData.map(user => ({
+                ...user,
+                units: user.units ? {
+                    ...user.units,
+                    is_active: true
+                } : undefined
+            }));
+
+            setUsers(usersWithUnits);
             setUnits(unitsData);
         } catch (error) {
             console.error('Error fetching data:', error);

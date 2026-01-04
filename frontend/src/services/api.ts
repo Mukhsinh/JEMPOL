@@ -1,8 +1,8 @@
-import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { APIResponse } from '../types';
 
 // Cache untuk API base URL
-let cachedApiBaseUrl: string | null = null;
+let cachedApiBaseUrl: string = '';
 
 // Determine API base URL based on environment dengan caching
 const getApiBaseUrl = (): string => {
@@ -80,13 +80,12 @@ api.interceptors.response.use(
 
 // Request interceptor yang dioptimalkan
 api.interceptors.request.use(
-  async (config: AxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig) => {
     try {
       const now = Date.now();
       
       // Gunakan cached token jika masih valid
       if (cachedToken && (now - tokenCacheTime) < TOKEN_CACHE_DURATION) {
-        config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${cachedToken}`;
         return config;
       }
@@ -98,7 +97,6 @@ api.interceptors.request.use(
       if (token) {
         cachedToken = token;
         tokenCacheTime = now;
-        config.headers = config.headers || {};
         config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (error) {
