@@ -19,6 +19,19 @@ interface Stats {
     csatScore: number;
 }
 
+interface StatusDistribution {
+    open: number;
+    in_progress: number;
+    escalated: number;
+    resolved: number;
+    closed: number;
+}
+
+interface UnitTicketCount {
+    unit_name: string;
+    count: number;
+}
+
 interface FilterState {
     dateRange: string;
     unitId: string;
@@ -40,6 +53,16 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
     const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    
+    // Real data states
+    const [statusDistribution, setStatusDistribution] = useState<StatusDistribution>({
+        open: 0,
+        in_progress: 0,
+        escalated: 0,
+        resolved: 0,
+        closed: 0
+    });
+    const [unitTicketCounts, setUnitTicketCounts] = useState<UnitTicketCount[]>([]);
     
     // Filter states
     const [filters, setFilters] = useState<FilterState>({
@@ -90,8 +113,29 @@ export default function DashboardPage() {
     async function fetchDashboardData() {
         setLoading(true);
         try {
-            // Build query with filters
-            let query = supabase
+            // Calculate date filter
+            const now = new Date();
+            let startDate = new Date();
+            
+            switch (filters.dateRange) {
+                case '1_day':
+                    startDate.setDate(now.getDate() - 1);
+                    break;
+                case '7_days':
+                    startDate.setDate(now.getDate() - 7);
+                    break;
+                case '30_days':
+                    startDate.setDate(now.getDate() - 30);
+                    break;
+                case '90_days':
+                    startDate.setDate(now.getDate() - 90);
+                    break;
+                default:
+                    startDate.setDate(now.getDate() - 7);
+            }
+
+            // Build query for internal tickets
+            let internalQuery = supabase
                 .from('tickets')
                 .select(`
                     *,
@@ -100,67 +144,109 @@ export default function DashboardPage() {
                 `)
                 .order('created_at', { ascending: false });
 
+            // Build query for external tickets
+            let externalQuery = supabase
+                .from('external_tickets')
+                .select(`
+                    *,
+                    unit:unit_id (name)
+                `)
+                .order('created_at', { ascending: false });
+
             // Apply date filter
             if (filters.dateRange !== '') {
-                const now = new Date();
-                let startDate = new Date();
-                
-                switch (filters.dateRange) {
-                    case '1_day':
-                        startDate.setDate(now.getDate() - 1);
-                        break;
-                    case '7_days':
-                        startDate.setDate(now.getDate() - 7);
-                        break;
-                    case '30_days':
-                        startDate.setDate(now.getDate() - 30);
-                        break;
-                    case '90_days':
-                        startDate.setDate(now.getDate() - 90);
-                        break;
-                    default:
-                        startDate.setDate(now.getDate() - 7);
-                }
-                
-                query = query.gte('created_at', startDate.toISOString());
+                internalQuery = internalQuery.gte('created_at', startDate.toISOString());
+                externalQuery = externalQuery.gte('created_at', startDate.toISOString());
             }
 
             // Apply unit filter
             if (filters.unitId) {
-                query = query.eq('unit_id', filters.unitId);
+                internalQuery = internalQuery.eq('unit_id', filters.unitId);
+                externalQuery = externalQuery.eq('unit_id', filters.unitId);
             }
 
             // Apply status filter
             if (filters.status) {
-                query = query.eq('status', filters.status);
+                internalQuery = internalQuery.eq('status', filters.status);
+                externalQuery = externalQuery.eq('status', filters.status);
             }
 
             // Apply priority filter
             if (filters.priority) {
-                query = query.eq('priority', filters.priority);
+                internalQuery = internalQuery.eq('priority', filters.priority);
+                externalQuery = externalQuery.eq('priority', filters.priority);
             }
 
-            // Apply category filter
+            // Apply category filter (only for internal tickets)
             if (filters.category) {
-                query = query.eq('category_id', filters.category);
+                internalQuery = internalQuery.eq('category_id', filters.category);
             }
 
-            const { data: ticketsData, error: ticketsError } = await query;
+            // Execute both queries
+            const [internalResult, externalResult] = await Promise.all([
+                internalQuery,
+                externalQuery
+            ]);
 
-            if (ticketsError) throw ticketsError;
+            if (internalResult.error) throw internalResult.error;
+            if (externalResult.error) throw externalResult.error;
 
-            // Cast data to Ticket[] because Supabase types might be slightly off with joins
-            const formattedTickets = (ticketsData as any[]).map((t) => ({
+            // Format internal tickets
+            const internalTickets = (internalResult.data as any[] || []).map((t) => ({
                 ...t,
                 unit: t.unit,
-                category: t.category
+                category: t.category,
+                source_type: 'internal'
             })) as Ticket[];
 
-            setTickets(formattedTickets);
+            // Format external tickets to match Ticket type
+            const externalTickets = (externalResult.data as any[] || []).map((t) => ({
+                id: t.id,
+                ticket_number: t.ticket_number,
+                type: t.service_type,
+                category_id: null,
+                title: t.title,
+                description: t.description,
+                submitter_name: t.reporter_name,
+                submitter_email: t.reporter_email,
+                submitter_phone: t.reporter_phone,
+                submitter_address: t.reporter_address,
+                is_anonymous: t.reporter_identity_type === 'anonymous',
+                unit_id: t.unit_id,
+                assigned_to: null,
+                created_by: null,
+                status: t.status,
+                priority: t.priority,
+                urgency_level: t.urgency_level,
+                ai_classification: t.ai_classification,
+                sentiment_score: t.sentiment_score,
+                confidence_score: t.confidence_score,
+                sla_deadline: t.sla_deadline,
+                first_response_at: t.first_response_at,
+                resolved_at: t.resolved_at,
+                source: t.source || 'qr_code',
+                qr_code_id: t.qr_code_id,
+                ip_address: t.ip_address,
+                user_agent: t.user_agent,
+                created_at: t.created_at,
+                updated_at: t.updated_at,
+                unit: t.unit,
+                category: { name: t.category || '-' },
+                source_type: 'external'
+            })) as Ticket[];
+
+            // Combine and sort all tickets
+            const allTickets = [...internalTickets, ...externalTickets].sort((a, b) => {
+                const dateA = new Date(a.created_at || 0).getTime();
+                const dateB = new Date(b.created_at || 0).getTime();
+                return dateB - dateA;
+            });
+
+            setTickets(allTickets);
 
             // Calculate stats
-            const total = formattedTickets.length;
-            const breached = formattedTickets.filter((t) => {
+            const total = allTickets.length;
+            const breached = allTickets.filter((t) => {
                 if (!t.sla_deadline) return false;
                 const deadline = new Date(t.sla_deadline).getTime();
                 const now = new Date().getTime();
@@ -173,7 +259,7 @@ export default function DashboardPage() {
             const breachRate = total > 0 ? (breached / total) * 100 : 0;
 
             // Calculate Avg Resolution Time
-            const resolvedTickets = formattedTickets.filter((t) => t.status === 'resolved' && t.resolved_at);
+            const resolvedTickets = allTickets.filter((t) => t.status === 'resolved' && t.resolved_at);
             let avgTime = 0;
             if (resolvedTickets.length > 0) {
                 const totalTime = resolvedTickets.reduce((acc, t) => {
@@ -190,6 +276,38 @@ export default function DashboardPage() {
                 avgResolutionTime: resolvedTickets.length > 0 ? `${avgTime.toFixed(1)} jam` : '0 jam',
                 csatScore: 4.8 // Mock for now, nanti ambil dari tabel survei kepuasan
             });
+
+            // Calculate status distribution from real data
+            const statusCounts: StatusDistribution = {
+                open: allTickets.filter(t => t.status === 'open').length,
+                in_progress: allTickets.filter(t => t.status === 'in_progress').length,
+                escalated: allTickets.filter(t => t.status === 'escalated').length,
+                resolved: allTickets.filter(t => t.status === 'resolved').length,
+                closed: allTickets.filter(t => t.status === 'closed').length
+            };
+            setStatusDistribution(statusCounts);
+
+            // Calculate tickets per unit from real data
+            const unitCounts: { [key: string]: number } = {};
+            allTickets.forEach(ticket => {
+                const unitName = (ticket.unit as any)?.name || 'Tidak Diketahui';
+                unitCounts[unitName] = (unitCounts[unitName] || 0) + 1;
+            });
+            const unitTicketArray = Object.entries(unitCounts).map(([unit_name, count]) => ({
+                unit_name,
+                count
+            })).sort((a, b) => b.count - a.count);
+            setUnitTicketCounts(unitTicketArray);
+
+            // Fetch CSAT score from satisfaction_surveys
+            const { data: csatData } = await supabase
+                .from('satisfaction_surveys')
+                .select('overall_score');
+            
+            if (csatData && csatData.length > 0) {
+                const avgCsat = csatData.reduce((acc: number, s: { overall_score: number | null }) => acc + (s.overall_score || 0), 0) / csatData.length;
+                setStats(prev => ({ ...prev, csatScore: parseFloat(avgCsat.toFixed(1)) }));
+            }
 
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
@@ -606,46 +724,36 @@ export default function DashboardPage() {
                                 </div>
                                 <button className="text-primary text-sm font-medium hover:underline">Lihat Laporan</button>
                             </div>
-                            {/* Custom CSS Bar Chart Visual */}
+                            {/* Real Data Bar Chart */}
                             <div className="h-64 flex flex-col justify-end gap-2">
                                 <div className="flex items-end justify-between h-full gap-4 px-2">
-                                    {/* Mock Data Visualization */}
-                                    <div className="flex flex-col items-center gap-2 flex-1 group">
-                                        <div className="relative w-full max-w-[40px] bg-blue-100 dark:bg-blue-900/30 rounded-t-sm h-full flex flex-col justify-end overflow-hidden">
-                                            <div className="w-full bg-primary hover:bg-blue-600 transition-all duration-500" style={{ height: '45%' }}></div>
+                                    {unitTicketCounts.length === 0 ? (
+                                        <div className="w-full flex items-center justify-center text-slate-500 dark:text-slate-400">
+                                            Tidak ada data tiket
                                         </div>
-                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Medis</span>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2 flex-1 group">
-                                        <div className="relative w-full max-w-[40px] bg-blue-100 dark:bg-blue-900/30 rounded-t-sm h-full flex flex-col justify-end overflow-hidden">
-                                            <div className="w-full bg-primary hover:bg-blue-600 transition-all duration-500" style={{ height: '65%' }}></div>
-                                        </div>
-                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Fasilitas</span>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2 flex-1 group">
-                                        <div className="relative w-full max-w-[40px] bg-blue-100 dark:bg-blue-900/30 rounded-t-sm h-full flex flex-col justify-end overflow-hidden">
-                                            <div className="w-full bg-primary hover:bg-blue-600 transition-all duration-500" style={{ height: '30%' }}></div>
-                                        </div>
-                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Admin</span>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2 flex-1 group">
-                                        <div className="relative w-full max-w-[40px] bg-blue-100 dark:bg-blue-900/30 rounded-t-sm h-full flex flex-col justify-end overflow-hidden">
-                                            <div className="w-full bg-primary hover:bg-blue-600 transition-all duration-500" style={{ height: '20%' }}></div>
-                                        </div>
-                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Keuangan</span>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2 flex-1 group">
-                                        <div className="relative w-full max-w-[40px] bg-blue-100 dark:bg-blue-900/30 rounded-t-sm h-full flex flex-col justify-end overflow-hidden">
-                                            <div className="w-full bg-primary hover:bg-blue-600 transition-all duration-500" style={{ height: '55%' }}></div>
-                                        </div>
-                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">SDM</span>
-                                    </div>
-                                    <div className="flex flex-col items-center gap-2 flex-1 group">
-                                        <div className="relative w-full max-w-[40px] bg-blue-100 dark:bg-blue-900/30 rounded-t-sm h-full flex flex-col justify-end overflow-hidden">
-                                            <div className="w-full bg-primary hover:bg-blue-600 transition-all duration-500" style={{ height: '35%' }}></div>
-                                        </div>
-                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">TI</span>
-                                    </div>
+                                    ) : (
+                                        unitTicketCounts.slice(0, 6).map((unit, index) => {
+                                            const maxCount = Math.max(...unitTicketCounts.map(u => u.count));
+                                            const heightPercent = maxCount > 0 ? (unit.count / maxCount) * 100 : 0;
+                                            return (
+                                                <div key={index} className="flex flex-col items-center gap-2 flex-1 group">
+                                                    <div className="relative w-full max-w-[40px] bg-blue-100 dark:bg-blue-900/30 rounded-t-sm h-full flex flex-col justify-end overflow-hidden">
+                                                        <div 
+                                                            className="w-full bg-primary hover:bg-blue-600 transition-all duration-500" 
+                                                            style={{ height: `${heightPercent}%` }}
+                                                        >
+                                                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-slate-700 dark:text-slate-300">
+                                                                {unit.count}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center truncate w-full" title={unit.unit_name}>
+                                                        {unit.unit_name.length > 10 ? unit.unit_name.substring(0, 10) + '...' : unit.unit_name}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -658,50 +766,69 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                             <div className="flex flex-col gap-5 flex-1 justify-center">
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-blue-400"></span> Terbuka
-                                        </span>
-                                        <span className="font-bold text-slate-900 dark:text-white">45</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-blue-400 rounded-full" style={{ width: '32%' }}></div>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-yellow-400"></span> Diproses
-                                        </span>
-                                        <span className="font-bold text-slate-900 dark:text-white">68</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-yellow-400 rounded-full" style={{ width: '48%' }}></div>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-orange-500"></span> Eskalasi
-                                        </span>
-                                        <span className="font-bold text-slate-900 dark:text-white">12</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-orange-500 rounded-full" style={{ width: '8%' }}></div>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Selesai
-                                        </span>
-                                        <span className="font-bold text-slate-900 dark:text-white">9</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '6%' }}></div>
-                                    </div>
-                                </div>
+                                {(() => {
+                                    const totalStatus = statusDistribution.open + statusDistribution.in_progress + statusDistribution.escalated + statusDistribution.resolved + statusDistribution.closed;
+                                    const getPercent = (count: number) => totalStatus > 0 ? (count / totalStatus) * 100 : 0;
+                                    return (
+                                        <>
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                                        <span className="w-2 h-2 rounded-full bg-blue-400"></span> Terbuka
+                                                    </span>
+                                                    <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.open}</span>
+                                                </div>
+                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-blue-400 rounded-full" style={{ width: `${getPercent(statusDistribution.open)}%` }}></div>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                                        <span className="w-2 h-2 rounded-full bg-yellow-400"></span> Diproses
+                                                    </span>
+                                                    <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.in_progress}</span>
+                                                </div>
+                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${getPercent(statusDistribution.in_progress)}%` }}></div>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                                        <span className="w-2 h-2 rounded-full bg-orange-500"></span> Eskalasi
+                                                    </span>
+                                                    <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.escalated}</span>
+                                                </div>
+                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-orange-500 rounded-full" style={{ width: `${getPercent(statusDistribution.escalated)}%` }}></div>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Selesai
+                                                    </span>
+                                                    <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.resolved}</span>
+                                                </div>
+                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${getPercent(statusDistribution.resolved)}%` }}></div>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                                        <span className="w-2 h-2 rounded-full bg-red-500"></span> Ditutup
+                                                    </span>
+                                                    <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.closed}</span>
+                                                </div>
+                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div className="h-full bg-red-500 rounded-full" style={{ width: `${getPercent(statusDistribution.closed)}%` }}></div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
                         </div>
                     </div>
