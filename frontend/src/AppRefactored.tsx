@@ -1,7 +1,15 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
+
+// Loading component
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin h-8 w-8 border-b-2 border-blue-500 rounded-full"></div>
+  </div>
+);
 
 // Core Pages
 import Dashboard from './pages/Dashboard';
@@ -22,11 +30,11 @@ import QRManagement from './pages/tickets/QRManagement';
 import AIEscalationManagement from './pages/tickets/AIEscalationManagement';
 import EscalationManagement from './pages/tickets/EscalationManagement';
 
-// Survey Management
-import SurveyForm from './pages/survey/SurveyForm';
-import SurveyLanding from './pages/survey/SurveyLanding';
-import SurveyReport from './pages/survey/SurveyReport';
-import PublicSurveyForm from './pages/survey/PublicSurveyForm';
+// Survey Management (lazy loaded)
+const SurveyForm = lazy(() => import('./pages/survey/SurveyForm'));
+const SurveyLanding = lazy(() => import('./pages/survey/SurveyLanding'));
+const SurveyReport = lazy(() => import('./pages/survey/SurveyReport'));
+const PublicSurveyForm = lazy(() => import('./pages/survey/PublicSurveyForm'));
 
 // User Management
 import UserManagement from './pages/users/UserManagement';
@@ -58,8 +66,8 @@ function AppRefactored() {
           <Route path="/ticket-tracker" element={<TicketTracker />} />
           <Route path="/tiket-eksternal" element={<ExternalTicketForm />} />
           <Route path="/tiket-eksternal/:qrCode" element={<ExternalTicketForm />} />
-          <Route path="/survey/public" element={<PublicSurveyForm />} />
-          <Route path="/survey/public/:qrCode" element={<PublicSurveyForm />} />
+          <Route path="/survey/public" element={<Suspense fallback={<LoadingSpinner />}><PublicSurveyForm /></Suspense>} />
+          <Route path="/survey/public/:qrCode" element={<Suspense fallback={<LoadingSpinner />}><PublicSurveyForm /></Suspense>} />
           <Route path="/buku-petunjuk" element={<BukuPetunjuk />} />
 
           {/* Protected Admin Routes */}
@@ -83,10 +91,10 @@ function AppRefactored() {
                   <Route path="/tickets/escalation" element={<EscalationManagement />} />
 
                   {/* Survey Management */}
-                  <Route path="/survey" element={<SurveyLanding />} />
-                  <Route path="/survey/admin" element={<SurveyLanding />} />
-                  <Route path="/survey/form" element={<SurveyForm />} />
-                  <Route path="/survey/report" element={<SurveyReport />} />
+                  <Route path="/survey" element={<Suspense fallback={<LoadingSpinner />}><SurveyLanding /></Suspense>} />
+                  <Route path="/survey/admin" element={<Suspense fallback={<LoadingSpinner />}><SurveyLanding /></Suspense>} />
+                  <Route path="/survey/form" element={<Suspense fallback={<LoadingSpinner />}><SurveyForm /></Suspense>} />
+                  <Route path="/survey/report" element={<Suspense fallback={<LoadingSpinner />}><SurveyReport /></Suspense>} />
 
                   {/* User Management */}
                   <Route path="/users" element={<UserManagement />} />
