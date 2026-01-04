@@ -1,4 +1,6 @@
-import api from './api';
+import api, { isVercelProduction } from './api';
+import { supabaseService } from './supabaseService';
+import { supabase } from '../utils/supabaseClient';
 
 export interface ReportData {
   id: string;
@@ -86,27 +88,6 @@ export interface ServiceCategory {
 }
 
 class ReportService {
-  // Helper function untuk fallback ke public endpoint
-  private async withPublicFallback<T>(
-    primaryEndpoint: string,
-    publicEndpoint: string,
-    defaultData: T[] = []
-  ): Promise<T[]> {
-    try {
-      const response = await api.get(primaryEndpoint);
-      return response.data || [];
-    } catch (error) {
-      console.warn(`Primary endpoint ${primaryEndpoint} failed, trying public fallback...`, error);
-      try {
-        const fallbackResponse = await api.get(publicEndpoint);
-        return fallbackResponse.data || [];
-      } catch (fallbackError) {
-        console.error(`Public fallback ${publicEndpoint} also failed:`, fallbackError);
-        return defaultData;
-      }
-    }
-  }
-
   async getReportData(params?: {
     page?: number;
     limit?: number;
@@ -125,59 +106,108 @@ class ReportService {
       totalPages: number;
     };
   }> {
+    // Di Vercel production, gunakan Supabase langsung
+    if (isVercelProduction()) {
+      try {
+        const { data: tickets, error } = await supabase
+          .from('tickets')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(params?.limit || 50);
+
+        if (error) throw error;
+
+        const total = tickets?.length || 0;
+        const resolved = tickets?.filter((t: any) => t.status === 'resolved').length || 0;
+
+        return {
+          data: tickets || [],
+          summary: {
+            total_tickets: total,
+            open_tickets: tickets?.filter((t: any) => t.status === 'open').length || 0,
+            in_progress_tickets: tickets?.filter((t: any) => t.status === 'in_progress').length || 0,
+            resolved_tickets: resolved,
+            closed_tickets: tickets?.filter((t: any) => t.status === 'closed').length || 0,
+            average_resolution_time: 30
+          },
+          pagination: {
+            page: params?.page || 1,
+            limit: params?.limit || 10,
+            total,
+            totalPages: Math.ceil(total / (params?.limit || 10))
+          }
+        };
+      } catch (error) {
+        console.error('Supabase direct report error:', error);
+        return {
+          data: [],
+          summary: { total_tickets: 0, open_tickets: 0, in_progress_tickets: 0, resolved_tickets: 0, closed_tickets: 0, average_resolution_time: 0 },
+          pagination: { page: 1, limit: 10, total: 0, totalPages: 0 }
+        };
+      }
+    }
+
     try {
       const response = await api.get('/reports', { params });
       return response.data || {
         data: [],
-        summary: {
-          total_tickets: 0,
-          open_tickets: 0,
-          in_progress_tickets: 0,
-          resolved_tickets: 0,
-          closed_tickets: 0,
-          average_resolution_time: 0
-        },
-        pagination: {
-          page: 1,
-          limit: 10,
-          total: 0,
-          totalPages: 0
-        }
+        summary: { total_tickets: 0, open_tickets: 0, in_progress_tickets: 0, resolved_tickets: 0, closed_tickets: 0, average_resolution_time: 0 },
+        pagination: { page: 1, limit: 10, total: 0, totalPages: 0 }
       };
     } catch (error) {
       console.error('Error fetching report data:', error);
-      return {
-        data: [],
-        summary: {
-          total_tickets: 0,
-          open_tickets: 0,
-          in_progress_tickets: 0,
-          resolved_tickets: 0,
-          closed_tickets: 0,
-          average_resolution_time: 0
-        },
-        pagination: {
-          page: 1,
-          limit: 10,
-          total: 0,
-          totalPages: 0
-        }
-      };
+      // Fallback ke Supabase
+      try {
+        const { data: tickets } = await supabase.from('tickets').select('*').order('created_at', { ascending: false }).limit(50);
+        const total = tickets?.length || 0;
+        return {
+          data: tickets || [],
+          summary: {
+            total_tickets: total,
+            open_tickets: tickets?.filter((t: any) => t.status === 'open').length || 0,
+            in_progress_tickets: tickets?.filter((t: any) => t.status === 'in_progress').length || 0,
+            resolved_tickets: tickets?.filter((t: any) => t.status === 'resolved').length || 0,
+            closed_tickets: tickets?.filter((t: any) => t.status === 'closed').length || 0,
+            average_resolution_time: 30
+          },
+          pagination: { page: 1, limit: 10, total, totalPages: Math.ceil(total / 10) }
+        };
+      } catch {
+        return {
+          data: [],
+          summary: { total_tickets: 0, open_tickets: 0, in_progress_tickets: 0, resolved_tickets: 0, closed_tickets: 0, average_resolution_time: 0 },
+          pagination: { page: 1, limit: 10, total: 0, totalPages: 0 }
+        };
+      }
     }
   }
 
   async getUnits(): Promise<Unit[]> {
-    return this.withPublicFallback<Unit>(
-      '/reports/units',
-      '/master-data/public/units'
-    );
+    if (isVercelProduction()) {
+      const result = await supabaseService.getUnits();
+      return result.data || [];
+    }
+    try {
+      const response = await api.get('/reports/units');
+      return response.data || [];
+    } catch {
+      const result = await supabaseService.getUnits();
+      return result.data || [];
+    }
   }
 
   async getServiceCategories(): Promise<ServiceCategory[]> {
-    return this.withPublicFallback<ServiceCategory>(
-      '/reports/categories',
-      '/master-data/public/service-categories'
-    );
+    if (isVercelProduction()) {
+      const result = await supabaseService.getCategories();
+      return result.data || [];
+    }
+    try {
+      const response = await api.get('/reports/categories');
+      return response.data || [];
+    } catch {
+      const result = await supabaseService.getCategories();
+      return result.data || [];
+    }
   }
 
   async exportToExcel(params?: any): Promise<Blob> {

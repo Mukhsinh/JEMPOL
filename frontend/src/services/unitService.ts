@@ -1,4 +1,6 @@
-import api from './api';
+import api, { isVercelProduction } from './api';
+import { supabaseService } from './supabaseService';
+import { supabase } from '../utils/supabaseClient';
 
 export interface Unit {
   id: string;
@@ -114,37 +116,27 @@ export interface AiTrustSettings {
 class UnitService {
   // Units management dengan improved error handling
   async getUnits(params?: { search?: string; type?: string; status?: string }): Promise<{ units: Unit[] }> {
+    // Di Vercel production, gunakan Supabase langsung
+    if (isVercelProduction()) {
+      const result = await supabaseService.getUnits();
+      return { units: result.data || [] };
+    }
+    
     try {
       console.log('🔄 Fetching units from main endpoint...');
       const response = await api.get('/units', { params });
       
-      // Ensure we return the expected format
       if (Array.isArray(response.data)) {
-        console.log('✅ Units fetched successfully from main endpoint');
         return { units: response.data };
       } else if (response.data && Array.isArray(response.data.units)) {
-        console.log('✅ Units fetched successfully from main endpoint');
         return response.data;
       } else {
-        console.log('✅ Units fetched successfully from main endpoint (transformed)');
         return { units: response.data || [] };
       }
     } catch (error: any) {
-      console.warn('⚠️ Main endpoint failed, trying public fallback:', error.message);
-      
-      // Fallback to public endpoint if main endpoint fails
-      try {
-        const fallbackResponse = await api.get('/public/units', { params });
-        const fallbackData = fallbackResponse.data || [];
-        console.log('✅ Units fetched successfully from public fallback');
-        return { units: Array.isArray(fallbackData) ? fallbackData : [] };
-      } catch (fallbackError: any) {
-        console.error('❌ Public fallback also failed:', fallbackError.message);
-        
-        // Return empty array with warning instead of throwing error
-        console.warn('⚠️ Returning empty units array due to API failures');
-        return { units: [] };
-      }
+      console.warn('⚠️ Main endpoint failed, trying Supabase direct:', error.message);
+      const result = await supabaseService.getUnits();
+      return { units: result.data || [] };
     }
   }
 
@@ -164,171 +156,101 @@ class UnitService {
 
   // Master data dengan improved fallback
   async getUnitTypes(): Promise<UnitType[]> {
+    if (isVercelProduction()) {
+      try {
+        const { data, error } = await supabase.from('unit_types').select('*').eq('is_active', true);
+        if (error) throw error;
+        return data || [];
+      } catch { return []; }
+    }
     try {
       const response = await api.get('/units/unit-types');
       return response.data;
-    } catch (error: any) {
-      console.warn('⚠️ Unit types main endpoint failed, trying public fallback:', error.message);
+    } catch {
       try {
-        const fallbackResponse = await api.get('/public/unit-types');
-        return fallbackResponse.data || [];
-      } catch (fallbackError: any) {
-        console.error('❌ Unit types public fallback failed, using defaults:', fallbackError.message);
-        return [
-          {
-            id: '1',
-            name: 'Administratif',
-            code: 'ADM',
-            description: 'Unit Administratif',
-            icon: 'business',
-            color: '#6B7280',
-            is_active: true
-          },
-          {
-            id: '2',
-            name: 'Layanan Medis',
-            code: 'MED',
-            description: 'Unit Layanan Medis',
-            icon: 'local_hospital',
-            color: '#3B82F6',
-            is_active: true
-          }
-        ];
-      }
+        const { data } = await supabase.from('unit_types').select('*').eq('is_active', true);
+        return data || [];
+      } catch { return []; }
     }
   }
 
   async getServiceCategories(): Promise<ServiceCategory[]> {
+    if (isVercelProduction()) {
+      const result = await supabaseService.getCategories();
+      return result.data || [];
+    }
     try {
       const response = await api.get('/units/service-categories');
       return response.data;
-    } catch (error: any) {
-      console.warn('⚠️ Service categories main endpoint failed, trying public fallback:', error.message);
-      try {
-        const fallbackResponse = await api.get('/master-data/public/service-categories');
-        return fallbackResponse.data || [];
-      } catch (fallbackError: any) {
-        console.error('❌ Service categories public fallback failed, using defaults:', fallbackError.message);
-        return [
-          {
-            id: '1',
-            name: 'Layanan Umum',
-            code: 'GEN',
-            description: 'Layanan umum rumah sakit',
-            default_sla_hours: 24,
-            requires_attachment: false,
-            is_active: true
-          }
-        ];
-      }
+    } catch {
+      const result = await supabaseService.getCategories();
+      return result.data || [];
     }
   }
 
   async getTicketTypes(): Promise<TicketType[]> {
+    if (isVercelProduction()) {
+      try {
+        const { data, error } = await supabase.from('ticket_types').select('*').eq('is_active', true);
+        if (error) throw error;
+        return data || [];
+      } catch { return []; }
+    }
     try {
       const response = await api.get('/units/ticket-types');
       return response.data;
-    } catch (error: any) {
-      console.warn('⚠️ Ticket types main endpoint failed, trying public fallback:', error.message);
+    } catch {
       try {
-        const fallbackResponse = await api.get('/master-data/public/ticket-types');
-        return fallbackResponse.data || [];
-      } catch (fallbackError: any) {
-        console.error('❌ Ticket types public fallback failed, using defaults:', fallbackError.message);
-        return [
-          {
-            id: '1',
-            name: 'Keluhan',
-            code: 'COMPLAINT',
-            description: 'Keluhan layanan',
-            icon: 'report_problem',
-            color: '#EF4444',
-            default_priority: 'medium',
-            default_sla_hours: 24,
-            is_active: true
-          }
-        ];
-      }
+        const { data } = await supabase.from('ticket_types').select('*').eq('is_active', true);
+        return data || [];
+      } catch { return []; }
     }
   }
 
   async getTicketStatuses(): Promise<TicketStatus[]> {
+    if (isVercelProduction()) {
+      try {
+        const { data, error } = await supabase.from('ticket_statuses').select('*').eq('is_active', true);
+        if (error) throw error;
+        return data || [];
+      } catch { return []; }
+    }
     try {
       const response = await api.get('/units/ticket-statuses');
       return response.data;
-    } catch (error: any) {
-      console.warn('⚠️ Ticket statuses main endpoint failed, trying public fallback:', error.message);
+    } catch {
       try {
-        const fallbackResponse = await api.get('/master-data/public/ticket-statuses');
-        return fallbackResponse.data || [];
-      } catch (fallbackError: any) {
-        console.error('❌ Ticket statuses public fallback failed, using defaults:', fallbackError.message);
-        return [
-          {
-            id: '1',
-            name: 'Terbuka',
-            code: 'OPEN',
-            description: 'Tiket baru yang belum ditangani',
-            status_type: 'open',
-            color: '#3B82F6',
-            is_final: false,
-            display_order: 1,
-            is_active: true
-          }
-        ];
-      }
+        const { data } = await supabase.from('ticket_statuses').select('*').eq('is_active', true);
+        return data || [];
+      } catch { return []; }
     }
   }
 
   async getPatientTypes(): Promise<PatientType[]> {
+    if (isVercelProduction()) {
+      const result = await supabaseService.getPatientTypes();
+      return result.data || [];
+    }
     try {
       const response = await api.get('/units/patient-types');
       return response.data;
-    } catch (error: any) {
-      console.warn('⚠️ Patient types main endpoint failed, trying public fallback:', error.message);
-      try {
-        const fallbackResponse = await api.get('/master-data/public/patient-types');
-        return fallbackResponse.data || [];
-      } catch (fallbackError: any) {
-        console.error('❌ Patient types public fallback failed, using defaults:', fallbackError.message);
-        return [
-          {
-            id: '1',
-            name: 'Pasien Umum',
-            code: 'GENERAL',
-            description: 'Pasien umum',
-            priority_level: 3,
-            default_sla_hours: 24,
-            is_active: true
-          }
-        ];
-      }
+    } catch {
+      const result = await supabaseService.getPatientTypes();
+      return result.data || [];
     }
   }
 
   async getSlaSettings(): Promise<SlaSettings[]> {
+    if (isVercelProduction()) {
+      const result = await supabaseService.getSLASettings();
+      return result.data || [];
+    }
     try {
       const response = await api.get('/units/sla-settings');
       return response.data;
-    } catch (error: any) {
-      console.warn('⚠️ SLA settings main endpoint failed, trying public fallback:', error.message);
-      try {
-        const fallbackResponse = await api.get('/master-data/public/sla-settings');
-        return fallbackResponse.data || [];
-      } catch (fallbackError: any) {
-        console.error('❌ SLA settings public fallback failed, using defaults:', fallbackError.message);
-        return [
-          {
-            id: '1',
-            name: 'SLA Default',
-            response_time_hours: 1,
-            resolution_time_hours: 24,
-            escalation_time_hours: 48,
-            business_hours_only: false,
-            is_active: true
-          }
-        ];
-      }
+    } catch {
+      const result = await supabaseService.getSLASettings();
+      return result.data || [];
     }
   }
 

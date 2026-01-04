@@ -101,7 +101,7 @@ const BukuPetunjuk: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-blue-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -138,7 +138,7 @@ const BukuPetunjuk: React.FC = () => {
           {ebooks.map((ebook) => (
             <div key={ebook.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
               {/* Card Header */}
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
+              <div className="bg-blue-600 p-6 text-white">
                 <div className="flex items-center justify-between mb-4">
                   {getCategoryIcon(ebook.category)}
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(ebook.category)} bg-white`}>

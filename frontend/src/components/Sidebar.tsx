@@ -350,17 +350,6 @@ export default function Sidebar() {
                                     <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
                                     <p className="text-sm font-medium">Pengaturan SLA</p>
                                 </Link>
-                                
-                                <Link
-                                    to="/master-data/roles-permissions"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/roles-permissions')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Peran & Akses</p>
-                                </Link>
                             </div>
                         )}
                     </div>
