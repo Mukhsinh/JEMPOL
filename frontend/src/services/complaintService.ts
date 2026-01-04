@@ -119,6 +119,18 @@ class ComplaintService {
     try {
       console.log('🎫 Fetching tickets with filters:', filters);
       
+      // Di Vercel production, gunakan Supabase langsung
+      if (isVercelProduction()) {
+        console.log('🌐 Using Supabase direct for Vercel production');
+        const result = await supabaseService.getTickets(filters);
+        return {
+          success: result.success,
+          data: result.data || [],
+          message: result.message,
+          error: result.error
+        };
+      }
+      
       // Cek cache terlebih dahulu
       const now = Date.now();
       if (ComplaintService.ticketsCache && (now - ComplaintService.ticketsCache.timestamp) < ComplaintService.CACHE_DURATION) {
@@ -153,45 +165,37 @@ class ComplaintService {
           message: 'Tickets berhasil diambil'
         };
       } catch (mainError: any) {
-        console.log('⚠️ Main endpoint failed, trying fallback...');
+        console.log('⚠️ Main endpoint failed, trying Supabase direct...');
         
-        // Fallback ke endpoint publik
-        try {
-          const fallbackResponse = await api.get('/public/tickets', { 
-            params: filters,
-            timeout: 20000 // 20 detik untuk fallback
-          });
-          
-          const fallbackTickets = fallbackResponse.data?.data || [];
-          
-          // Update cache dengan data fallback
+        // Fallback ke Supabase langsung
+        const result = await supabaseService.getTickets(filters);
+        if (result.success) {
+          // Update cache dengan data Supabase
           ComplaintService.ticketsCache = {
-            data: fallbackTickets,
+            data: result.data || [],
             timestamp: now
           };
           
-          console.log('✅ Tickets fetched from fallback endpoint:', fallbackTickets.length, 'tickets');
+          console.log('✅ Tickets fetched from Supabase direct:', result.data?.length || 0, 'tickets');
           
           return {
             success: true,
-            data: fallbackTickets,
-            message: 'Tickets berhasil diambil dari fallback'
+            data: result.data || [],
+            message: 'Tickets berhasil diambil dari Supabase'
           };
-        } catch (fallbackError: any) {
-          console.error('❌ Both endpoints failed:', fallbackError.message);
-          
-          // Return cached data jika ada, meskipun expired
-          if (ComplaintService.ticketsCache) {
-            console.log('📦 Using expired cache as last resort');
-            return {
-              success: true,
-              data: ComplaintService.ticketsCache.data,
-              message: 'Menggunakan data cache (mungkin tidak terbaru)'
-            };
-          }
-          
-          throw mainError; // Throw original error
         }
+        
+        // Return cached data jika ada, meskipun expired
+        if (ComplaintService.ticketsCache) {
+          console.log('📦 Using expired cache as last resort');
+          return {
+            success: true,
+            data: ComplaintService.ticketsCache.data,
+            message: 'Menggunakan data cache (mungkin tidak terbaru)'
+          };
+        }
+        
+        throw mainError; // Throw original error
       }
     } catch (error: any) {
       console.error('Error in getTickets:', error);
@@ -276,68 +280,52 @@ class ComplaintService {
 
   // Get units
   async getUnits() {
+    // Di Vercel production, gunakan Supabase langsung
+    if (isVercelProduction()) {
+      return await supabaseService.getUnits();
+    }
+    
     try {
       const response = await api.get('/complaints/units');
       return response.data;
     } catch (error: any) {
       console.error('Error in getUnits:', error);
-      
-      // Try fallback to public endpoint if authentication fails
-      if (error.message?.includes('Token akses diperlukan') || 
-          error.message?.includes('401') ||
-          error.message?.includes('Unauthorized')) {
-        console.log('Trying fallback public units...');
-        return await fallbackService.getPublicUnits();
-      }
-      
-      return {
-        success: false,
-        error: error.message || 'Gagal mengambil data unit',
-        data: []
-      };
+      // Fallback ke Supabase langsung
+      return await supabaseService.getUnits();
     }
   }
 
   // Get service categories
   async getCategories() {
+    // Di Vercel production, gunakan Supabase langsung
+    if (isVercelProduction()) {
+      return await supabaseService.getCategories();
+    }
+    
     try {
       const response = await api.get('/complaints/categories');
       return response.data;
     } catch (error: any) {
       console.error('Error in getCategories:', error);
-      
-      // Try fallback to public endpoint if authentication fails
-      if (error.message?.includes('Token akses diperlukan') || 
-          error.message?.includes('401') ||
-          error.message?.includes('Unauthorized')) {
-        console.log('Trying fallback public categories...');
-        return await fallbackService.getPublicCategories();
-      }
-      
-      return {
-        success: false,
-        error: error.message || 'Gagal mengambil data kategori',
-        data: []
-      };
+      // Fallback ke Supabase langsung
+      return await supabaseService.getCategories();
     }
   }
 
   // Get dashboard metrics
   async getDashboardMetrics() {
+    // Di Vercel production, gunakan Supabase langsung
+    if (isVercelProduction()) {
+      return await supabaseService.getDashboardMetrics();
+    }
+    
     try {
       const response = await api.get('/complaints/dashboard/metrics');
       return response.data;
     } catch (error: any) {
       console.error('Error in getDashboardMetrics:', error);
-      return {
-        success: false,
-        error: error.message || 'Gagal mengambil data dashboard',
-        data: {
-          statusCounts: {},
-          recentTickets: [],
-          categoryStats: {}
-        }
-      };
+      // Fallback ke Supabase langsung
+      return await supabaseService.getDashboardMetrics();
     }
   }
 

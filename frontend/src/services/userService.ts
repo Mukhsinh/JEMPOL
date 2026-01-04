@@ -1,4 +1,10 @@
 import api from './api';
+import { supabaseService } from './supabaseService';
+
+// Check if running in Vercel production (no backend available)
+const isVercelProduction = (): boolean => {
+  return import.meta.env.PROD && !import.meta.env.VITE_API_URL?.includes('localhost');
+};
 
 export interface User {
   id: string;
@@ -70,53 +76,56 @@ export interface UpdateUserData {
 class UserService {
 
   async getUsers(): Promise<User[]> {
+    // Di Vercel production, gunakan Supabase langsung
+    if (isVercelProduction()) {
+      const result = await supabaseService.getUsers();
+      return result.data || [];
+    }
+    
     try {
       const response = await api.get('/users');
       return response.data?.data || [];
     } catch (error: any) {
-      console.warn('Primary endpoint /users failed, trying public fallback...', error.message);
-      try {
-        const fallbackResponse = await api.get('/public/users');
-        return fallbackResponse.data?.data || [];
-      } catch (fallbackError) {
-        console.error('Public fallback /public/users also failed:', fallbackError);
-        return [];
-      }
+      console.warn('Primary endpoint /users failed, trying Supabase direct...', error.message);
+      // Fallback ke Supabase langsung
+      const result = await supabaseService.getUsers();
+      return result.data || [];
     }
   }
 
   async getUnits(): Promise<Unit[]> {
-    // Fix: Use correct public endpoint and handle response structure
+    // Di Vercel production, gunakan Supabase langsung
+    if (isVercelProduction()) {
+      const result = await supabaseService.getUnits();
+      return result.data || [];
+    }
+    
     try {
       const response = await api.get('/users/units');
       return response.data?.data || [];
     } catch (error) {
-      console.warn('Primary endpoint /users/units failed, trying public fallback...', error);
-      try {
-        const fallbackResponse = await api.get('/public/units');
-        // Public endpoint returns array directly
-        return Array.isArray(fallbackResponse.data) ? fallbackResponse.data : (fallbackResponse.data?.data || []);
-      } catch (fallbackError) {
-        console.error('Public fallback /public/units also failed:', fallbackError);
-        return [];
-      }
+      console.warn('Primary endpoint /users/units failed, trying Supabase direct...', error);
+      // Fallback ke Supabase langsung
+      const result = await supabaseService.getUnits();
+      return result.data || [];
     }
   }
 
   async getRoles(): Promise<Role[]> {
+    // Di Vercel production, gunakan Supabase langsung
+    if (isVercelProduction()) {
+      const result = await supabaseService.getRoles();
+      return result.data || [];
+    }
+    
     try {
       const response = await api.get('/users/roles');
       return response.data?.data || [];
     } catch (error) {
-      console.warn('Primary endpoint /users/roles failed, trying public fallback...', error);
-      try {
-        const fallbackResponse = await api.get('/public/roles');
-        // Public endpoint returns array directly
-        return Array.isArray(fallbackResponse.data) ? fallbackResponse.data : (fallbackResponse.data?.data || []);
-      } catch (fallbackError) {
-        console.error('Public fallback /public/roles also failed:', fallbackError);
-        return [];
-      }
+      console.warn('Primary endpoint /users/roles failed, trying Supabase direct...', error);
+      // Fallback ke Supabase langsung
+      const result = await supabaseService.getRoles();
+      return result.data || [];
     }
   }
 

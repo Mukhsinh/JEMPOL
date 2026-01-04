@@ -1,4 +1,5 @@
-import api from './api';
+import api, { isVercelProduction } from './api';
+import { supabaseService } from './supabaseService';
 
 export interface SLASetting {
   id: string;
@@ -49,22 +50,21 @@ export interface UpdateSLASettingData extends Partial<CreateSLASettingData> {}
 class SLAService {
   async getSLASettings(): Promise<SLASetting[]> {
     console.log('SLAService: Getting SLA settings...');
+    
+    // Di Vercel production, gunakan Supabase langsung
+    if (isVercelProduction()) {
+      const result = await supabaseService.getSLASettings();
+      return result.data || [];
+    }
+    
     try {
-      // Try main endpoint first
-      let response;
-      try {
-        response = await api.get('/master-data/sla-settings');
-      } catch (error) {
-        console.log('Main endpoint failed, trying public endpoint...');
-        response = await api.get('/master-data/public/sla-settings');
-      }
-      
+      const response = await api.get('/master-data/sla-settings');
       console.log('SLAService: SLA settings response:', response.data);
       return response.data || [];
     } catch (error) {
-      console.error('SLAService: Error getting SLA settings:', error);
-      // Return empty array instead of throwing error
-      return [];
+      console.log('Main endpoint failed, trying Supabase direct...');
+      const result = await supabaseService.getSLASettings();
+      return result.data || [];
     }
   }
 
@@ -84,16 +84,28 @@ class SLAService {
 
   // Helper methods untuk dropdown data
   async getUnitTypes(): Promise<Array<{id: string; name: string; code: string}>> {
+    if (isVercelProduction()) {
+      const result = await supabaseService.getUnits();
+      return result.data || [];
+    }
     const response = await api.get('/master-data/unit-types');
     return response.data;
   }
 
   async getServiceCategories(): Promise<Array<{id: string; name: string; code: string}>> {
+    if (isVercelProduction()) {
+      const result = await supabaseService.getCategories();
+      return result.data || [];
+    }
     const response = await api.get('/master-data/service-categories');
     return response.data;
   }
 
   async getPatientTypes(): Promise<Array<{id: string; name: string; code: string}>> {
+    if (isVercelProduction()) {
+      const result = await supabaseService.getPatientTypes();
+      return result.data || [];
+    }
     const response = await api.get('/master-data/patient-types');
     return response.data;
   }

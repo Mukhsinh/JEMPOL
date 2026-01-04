@@ -1,4 +1,5 @@
-import api from './api';
+import api, { isVercelProduction } from './api';
+import { supabaseService } from './supabaseService';
 
 export interface QRCode {
   id: string;
@@ -76,61 +77,54 @@ export const qrCodeService = {
     search?: string;
     include_analytics?: boolean;
   }): Promise<{ qr_codes: QRCode[]; pagination: any }> {
+    // Di Vercel production, gunakan Supabase langsung
+    if (isVercelProduction()) {
+      try {
+        const result = await supabaseService.getQRCodes();
+        return {
+          qr_codes: result.data || [],
+          pagination: {
+            page: params?.page || 1,
+            limit: params?.limit || 10,
+            total: result.data?.length || 0,
+            pages: Math.ceil((result.data?.length || 0) / (params?.limit || 10))
+          }
+        };
+      } catch (error: any) {
+        console.error('❌ Supabase direct failed:', error.message);
+        return {
+          qr_codes: [],
+          pagination: { page: 1, limit: 10, total: 0, pages: 0 }
+        };
+      }
+    }
+    
     try {
       console.log('🔄 Fetching QR codes...');
-
-      // Try to get token but don't fail if not available
-      const { authService } = await import('./authService');
-      const token = await authService.getToken();
-
-      if (!token) {
-        console.warn('⚠️ No authentication token available, trying public fallback...');
-        // Try public endpoint fallback
-        try {
-          const publicResponse = await api.get('/public/qr-codes', { params });
-          console.log('✅ QR codes fetched from public fallback');
-          return publicResponse.data;
-        } catch (publicError: any) {
-          console.warn('⚠️ Public fallback also failed:', publicError.message);
-          return {
-            qr_codes: [],
-            pagination: {
-              page: params?.page || 1,
-              limit: params?.limit || 10,
-              total: 0,
-              pages: 0
-            }
-          };
-        }
-      }
-
-      console.log('🔑 Token available, making authenticated request...');
       const response = await api.get('/qr-codes', { params });
       console.log('✅ QR codes fetched successfully');
       return response.data;
     } catch (error: any) {
       console.error('❌ Failed to fetch QR codes:', error.message);
-
-      // Try public fallback on any error
+      // Fallback ke Supabase langsung
       try {
-        console.log('🔄 Trying public fallback for QR codes...');
-        const publicResponse = await api.get('/public/qr-codes', { params });
-        console.log('✅ QR codes fetched from public fallback');
-        return publicResponse.data;
-      } catch (publicError: any) {
-        console.warn('⚠️ Public fallback also failed:', publicError.message);
+        const result = await supabaseService.getQRCodes();
+        return {
+          qr_codes: result.data || [],
+          pagination: {
+            page: params?.page || 1,
+            limit: params?.limit || 10,
+            total: result.data?.length || 0,
+            pages: Math.ceil((result.data?.length || 0) / (params?.limit || 10))
+          }
+        };
+      } catch (supaError: any) {
+        console.error('❌ Supabase fallback also failed:', supaError.message);
       }
-
-      // Return empty data for errors to prevent page crash
-      console.warn('⚠️ Returning empty QR codes data due to API failure');
+      
       return {
         qr_codes: [],
-        pagination: {
-          page: params?.page || 1,
-          limit: params?.limit || 10,
-          total: 0,
-          pages: 0
-        }
+        pagination: { page: 1, limit: 10, total: 0, pages: 0 }
       };
     }
   },

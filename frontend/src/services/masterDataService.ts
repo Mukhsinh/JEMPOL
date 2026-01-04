@@ -1,4 +1,6 @@
-import api from './api';
+import api, { isVercelProduction } from './api';
+import { supabaseService } from './supabaseService';
+import { supabase } from '../utils/supabaseClient';
 
 export interface UnitType {
   id: string;
@@ -115,26 +117,46 @@ export interface AITrustSetting {
   updated_at: string;
 }
 
-// Helper function untuk fallback ke public endpoint
-const withPublicFallback = async <T>(
+// Helper function untuk fallback ke Supabase langsung
+const withSupabaseFallback = async <T>(
   primaryEndpoint: string,
-  publicEndpoint: string,
+  tableName: string,
   defaultData: T[] = []
 ): Promise<T[]> => {
+  // Di Vercel production, langsung gunakan Supabase
+  if (isVercelProduction()) {
+    try {
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || defaultData;
+    } catch (error: any) {
+      console.error(`Supabase direct ${tableName} failed:`, error.message);
+      return defaultData;
+    }
+  }
+  
   try {
     console.log(`Trying primary endpoint: ${primaryEndpoint}`);
     const response = await api.get(primaryEndpoint);
     console.log(`Primary endpoint ${primaryEndpoint} success:`, response.data?.length || 0, 'records');
     return response.data || [];
   } catch (error: any) {
-    console.warn(`Primary endpoint ${primaryEndpoint} failed, trying public fallback...`, error.message);
+    console.warn(`Primary endpoint ${primaryEndpoint} failed, trying Supabase direct...`, error.message);
     try {
-      console.log(`Trying public fallback: ${publicEndpoint}`);
-      const fallbackResponse = await api.get(publicEndpoint);
-      console.log(`Public fallback ${publicEndpoint} success:`, fallbackResponse.data?.length || 0, 'records');
-      return fallbackResponse.data || [];
+      const { data, error: supaError } = await supabase
+        .from(tableName)
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (supaError) throw supaError;
+      console.log(`Supabase direct ${tableName} success:`, data?.length || 0, 'records');
+      return data || defaultData;
     } catch (fallbackError: any) {
-      console.error(`Public fallback ${publicEndpoint} also failed:`, fallbackError.message);
+      console.error(`Supabase direct ${tableName} also failed:`, fallbackError.message);
       console.log(`Using default data for ${primaryEndpoint}:`, defaultData.length, 'records');
       return defaultData;
     }
@@ -143,9 +165,9 @@ const withPublicFallback = async <T>(
 
 // Unit Types
 export const getUnitTypes = async (): Promise<UnitType[]> => {
-  return withPublicFallback<UnitType>(
+  return withSupabaseFallback<UnitType>(
     '/master-data/unit-types',
-    '/master-data/public/unit-types',
+    'unit_types',
     [
       {
         id: '1',
@@ -189,9 +211,9 @@ export const deleteUnitType = async (id: string): Promise<void> => {
 
 // Service Categories
 export const getServiceCategories = async (): Promise<ServiceCategory[]> => {
-  return withPublicFallback<ServiceCategory>(
+  return withSupabaseFallback<ServiceCategory>(
     '/master-data/service-categories',
-    '/master-data/public/service-categories'
+    'service_categories'
   );
 };
 
@@ -211,9 +233,9 @@ export const deleteServiceCategory = async (id: string): Promise<void> => {
 
 // Ticket Types
 export const getTicketTypes = async (): Promise<TicketType[]> => {
-  return withPublicFallback<TicketType>(
+  return withSupabaseFallback<TicketType>(
     '/master-data/ticket-types',
-    '/master-data/public/ticket-types'
+    'ticket_types'
   );
 };
 
@@ -233,9 +255,9 @@ export const deleteTicketType = async (id: string): Promise<void> => {
 
 // Ticket Classifications
 export const getTicketClassifications = async (): Promise<TicketClassification[]> => {
-  return withPublicFallback<TicketClassification>(
+  return withSupabaseFallback<TicketClassification>(
     '/master-data/ticket-classifications',
-    '/master-data/public/ticket-classifications'
+    'ticket_classifications'
   );
 };
 
@@ -255,9 +277,9 @@ export const deleteTicketClassification = async (id: string): Promise<void> => {
 
 // Ticket Statuses
 export const getTicketStatuses = async (): Promise<TicketStatus[]> => {
-  return withPublicFallback<TicketStatus>(
+  return withSupabaseFallback<TicketStatus>(
     '/master-data/ticket-statuses',
-    '/master-data/public/ticket-statuses'
+    'ticket_statuses'
   );
 };
 
@@ -277,66 +299,22 @@ export const deleteTicketStatus = async (id: string): Promise<void> => {
 
 // Patient Types
 export const getPatientTypes = async (): Promise<PatientType[]> => {
+  // Di Vercel production, langsung gunakan Supabase
+  if (isVercelProduction()) {
+    const result = await supabaseService.getPatientTypes();
+    return result.data || [];
+  }
+  
   try {
     console.log('🔍 Fetching patient types...');
-
-    // Try primary endpoint first
     const response = await api.get('/master-data/patient-types');
     console.log('✅ Primary endpoint success:', response.data?.length || 0, 'records');
     return Array.isArray(response.data) ? response.data : [];
-
   } catch (error: any) {
     console.warn('⚠️  Primary endpoint failed:', error.message);
-
-    // If 403 or 401, try public endpoint
-    if (error.message.includes('403') || error.message.includes('401') || error.message.includes('Token tidak valid')) {
-      try {
-        console.log('🔄 Trying public fallback endpoint...');
-        const fallbackResponse = await api.get('/master-data/public/patient-types');
-        console.log('✅ Public fallback success:', fallbackResponse.data?.length || 0, 'records');
-        return Array.isArray(fallbackResponse.data) ? fallbackResponse.data : [];
-      } catch (fallbackError: any) {
-        console.error('❌ Public fallback also failed:', fallbackError.message);
-      }
-    }
-
-    // Return default data if all else fails
-    console.log('🔄 Using default patient types data');
-    return [
-      {
-        id: '1',
-        name: 'Pasien Umum',
-        code: 'UMUM',
-        description: 'Pasien dengan layanan umum',
-        priority_level: 3,
-        default_sla_hours: 24,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '2',
-        name: 'Pasien VIP',
-        code: 'VIP',
-        description: 'Pasien dengan layanan VIP',
-        priority_level: 2,
-        default_sla_hours: 4,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '3',
-        name: 'Pasien Darurat',
-        code: 'DARURAT',
-        description: 'Pasien dengan kondisi darurat',
-        priority_level: 1,
-        default_sla_hours: 1,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ];
+    // Fallback ke Supabase langsung
+    const result = await supabaseService.getPatientTypes();
+    return result.data || [];
   }
 };
 
@@ -356,9 +334,15 @@ export const deletePatientType = async (id: string): Promise<void> => {
 
 // Roles
 export const getRoles = async (): Promise<Role[]> => {
-  return withPublicFallback<Role>(
+  // Di Vercel production, langsung gunakan Supabase
+  if (isVercelProduction()) {
+    const result = await supabaseService.getRoles();
+    return result.data || [];
+  }
+  
+  return withSupabaseFallback<Role>(
     '/master-data/roles',
-    '/master-data/public/roles'
+    'roles'
   );
 };
 
@@ -378,12 +362,19 @@ export const deleteRole = async (id: string): Promise<void> => {
 
 // Response Templates
 export const getResponseTemplates = async (): Promise<ResponseTemplate[]> => {
+  // Di Vercel production, langsung gunakan Supabase
+  if (isVercelProduction()) {
+    const result = await supabaseService.getResponseTemplates();
+    return result.data || [];
+  }
+  
   try {
     const response = await api.get('/master-data/response-templates');
     return response.data || [];
   } catch (error) {
-    console.warn('Failed to fetch response templates:', error);
-    return [];
+    console.warn('Failed to fetch response templates, trying Supabase direct...');
+    const result = await supabaseService.getResponseTemplates();
+    return result.data || [];
   }
 };
 
