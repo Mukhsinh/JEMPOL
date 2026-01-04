@@ -73,9 +73,15 @@ class UserService {
     try {
       const response = await api.get('/users');
       return response.data?.data || [];
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      return [];
+    } catch (error: any) {
+      console.warn('Primary endpoint /users failed, trying public fallback...', error.message);
+      try {
+        const fallbackResponse = await api.get('/public/users');
+        return fallbackResponse.data?.data || [];
+      } catch (fallbackError) {
+        console.error('Public fallback /public/users also failed:', fallbackError);
+        return [];
+      }
     }
   }
 

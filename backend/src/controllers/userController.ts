@@ -371,6 +371,39 @@ class UserController {
       });
     }
   }
+
+  // Get all roles for dropdown
+  async getRoles(req: Request, res: Response) {
+    try {
+      const { data: roles, error } = await supabase
+        .from('roles')
+        .select('id, name, code, description, permissions, is_system_role, is_active')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching roles:', error);
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Gagal mengambil data peran',
+          error: error.message 
+        });
+      }
+
+      res.json({
+        success: true,
+        data: roles || []
+      });
+    } catch (error) {
+      console.error('Error in getRoles:', error);
+      res.status(500).json({ 
+        success: false, 
+        message: 'Terjadi kesalahan server',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  }
 }
 
-export default new UserController();
+export
+ default new UserController();

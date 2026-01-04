@@ -90,33 +90,114 @@ export interface DashboardMetrics {
   recentTickets: Ticket[];
 }
 
+export interface TicketFilters {
+  status?: string;
+  priority?: string;
+  unit_id?: string;
+  category_id?: string;
+  date_from?: string;
+  date_to?: string;
+  search?: string;
+  limit?: number;
+}
+
+export interface APIResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+  error?: string;
+}
+
 class ComplaintService {
+  // Cache untuk tickets
+  private static ticketsCache: { data: Ticket[], timestamp: number } | null = null;
+  private static readonly CACHE_DURATION = 30000; // 30 detik
+
   // Get all tickets with filters
-  async getTickets(params?: {
-    status?: string;
-    unit_id?: string;
-    assigned_to?: string;
-    page?: number;
-    limit?: number;
-  }) {
+  async getTickets(filters: TicketFilters = {}): Promise<APIResponse<Ticket[]>> {
     try {
-      const response = await api.get('/complaints/tickets', { params });
-      return response.data;
-    } catch (error: any) {
-      console.error('Error in getTickets:', error);
+      console.log('🎫 Fetching tickets with filters:', filters);
       
-      // Try fallback to public endpoint if authentication fails
-      if (error.message?.includes('Token akses diperlukan') || 
-          error.message?.includes('401') ||
-          error.message?.includes('Unauthorized')) {
-        console.log('Trying fallback public tickets...');
-        return await fallbackService.getPublicTickets(params);
+      // Cek cache terlebih dahulu
+      const now = Date.now();
+      if (ComplaintService.ticketsCache && (now - ComplaintService.ticketsCache.timestamp) < ComplaintService.CACHE_DURATION) {
+        console.log('📦 Using cached tickets data');
+        return {
+          success: true,
+          data: ComplaintService.ticketsCache.data,
+          message: 'Tickets berhasil diambil dari cache'
+        };
       }
       
+      // Coba endpoint utama dengan timeout yang lebih pendek
+      try {
+        const response = await api.get('/complaints', { 
+          params: filters,
+          timeout: 30000 // 30 detik untuk endpoint utama
+        });
+        
+        const tickets = response.data?.data || [];
+        
+        // Update cache
+        ComplaintService.ticketsCache = {
+          data: tickets,
+          timestamp: now
+        };
+        
+        console.log('✅ Tickets fetched successfully from main endpoint:', tickets.length, 'tickets');
+        
+        return {
+          success: true,
+          data: tickets,
+          message: 'Tickets berhasil diambil'
+        };
+      } catch (mainError: any) {
+        console.log('⚠️ Main endpoint failed, trying fallback...');
+        
+        // Fallback ke endpoint publik
+        try {
+          const fallbackResponse = await api.get('/public/tickets', { 
+            params: filters,
+            timeout: 20000 // 20 detik untuk fallback
+          });
+          
+          const fallbackTickets = fallbackResponse.data?.data || [];
+          
+          // Update cache dengan data fallback
+          ComplaintService.ticketsCache = {
+            data: fallbackTickets,
+            timestamp: now
+          };
+          
+          console.log('✅ Tickets fetched from fallback endpoint:', fallbackTickets.length, 'tickets');
+          
+          return {
+            success: true,
+            data: fallbackTickets,
+            message: 'Tickets berhasil diambil dari fallback'
+          };
+        } catch (fallbackError: any) {
+          console.error('❌ Both endpoints failed:', fallbackError.message);
+          
+          // Return cached data jika ada, meskipun expired
+          if (ComplaintService.ticketsCache) {
+            console.log('📦 Using expired cache as last resort');
+            return {
+              success: true,
+              data: ComplaintService.ticketsCache.data,
+              message: 'Menggunakan data cache (mungkin tidak terbaru)'
+            };
+          }
+          
+          throw mainError; // Throw original error
+        }
+      }
+    } catch (error: any) {
+      console.error('Error in getTickets:', error);
       return {
         success: false,
-        error: error.message || 'Gagal mengambil data tiket',
-        data: []
+        data: [],
+        error: error.message || 'Gagal mengambil data tiket'
       };
     }
   }

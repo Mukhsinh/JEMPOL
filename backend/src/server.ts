@@ -51,7 +51,8 @@ const httpServer = createServer(app);
 
 // Optimized CORS configuration
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:3000',
+  process.env.FRONTEND_URL || 'http://localhost:3002',
+  'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:3002',
   'https://jempol-frontend.vercel.app',
@@ -525,7 +526,7 @@ io.on('connection', (socket) => {
 // Make io accessible to routes
 app.set('io', io);
 
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.PORT || 3004;
 
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

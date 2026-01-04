@@ -23,29 +23,25 @@ class FallbackService {
   // Fallback untuk mendapatkan units tanpa autentikasi
   async getPublicUnits() {
     try {
-      const response = await api.get('/complaints/public/units');
-      return response.data;
+      const response = await api.get('/public/units');
+      return {
+        success: true,
+        data: response.data
+      };
     } catch (error) {
       console.error('Fallback getPublicUnits error:', error);
-      // Try alternative endpoint
-      try {
-        const altResponse = await api.get('/public/units');
-        return altResponse.data;
-      } catch (altError) {
-        console.error('Alternative public units error:', altError);
-        return {
-          success: false,
-          error: 'Tidak dapat mengambil data unit',
-          data: []
-        };
-      }
+      return {
+        success: false,
+        error: 'Tidak dapat mengambil data unit',
+        data: []
+      };
     }
   }
 
   // Fallback untuk mendapatkan categories tanpa autentikasi
   async getPublicCategories() {
     try {
-      const response = await api.get('/complaints/public/categories');
+      const response = await api.get('/public/categories');
       return response.data;
     } catch (error) {
       console.error('Fallback getPublicCategories error:', error);

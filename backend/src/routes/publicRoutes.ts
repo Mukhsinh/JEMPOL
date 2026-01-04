@@ -148,6 +148,61 @@ router.post('/qr/:token/tickets', async (req: Request, res: Response) => {
   }
 });
 
+// Get all public tickets (for dashboard fallback)
+router.get('/tickets', async (req: Request, res: Response) => {
+  try {
+    const { status, unit_id, page = 1, limit = 10 } = req.query;
+
+    let query = supabase
+      .from('tickets')
+      .select(`
+        id,
+        ticket_number,
+        title,
+        status,
+        priority,
+        created_at,
+        units:unit_id(name, code),
+        service_categories:category_id(name)
+      `)
+      .order('created_at', { ascending: false });
+
+    // Apply filters
+    if (status && status !== 'all') query = query.eq('status', status);
+    if (unit_id && unit_id !== 'all') query = query.eq('unit_id', unit_id);
+
+    // Apply pagination
+    const offset = (Number(page) - 1) * Number(limit);
+    query = query.range(offset, offset + Number(limit) - 1);
+
+    const { data: tickets, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching public tickets:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil data tiket'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: tickets || [],
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: count || tickets?.length || 0
+      }
+    });
+  } catch (error) {
+    console.error('Error in get public tickets:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
+
 // Get public ticket by tracking number
 router.get('/tickets/:trackingNumber', async (req: Request, res: Response) => {
   try {
@@ -633,5 +688,37 @@ async function generateTicketNumber(): Promise<string> {
 
   return `TKT-${year}-${nextNumber.toString().padStart(4, '0')}`;
 }
+
+// Get users for public access (read-only)
+router.get('/users', async (req: Request, res: Response) => {
+  try {
+    const { data: users, error } = await supabase
+      .from('users')
+      .select(`
+        id, full_name, email, phone, employee_id, role, is_active, created_at, updated_at, unit_id,
+        units:unit_id(id, name, code)
+      `)
+      .order('full_name');
+
+    if (error) {
+      console.error('Error fetching public users:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil data pengguna'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: users || []
+    });
+  } catch (error) {
+    console.error('Error in get public users:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
 
 export default router;

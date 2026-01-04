@@ -4,19 +4,32 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3001,
+    hmr: {
+      overlay: false,
+    },
+    port: 3002,
+    host: true,
     historyApiFallback: true,
+    headers: {
+      'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*; connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com;"
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3004',
         changeOrigin: true,
+        timeout: 30000,
+        proxyTimeout: 30000,
       },
     },
   },
   build: {
+    target: 'es2015',
+    esbuild: {
+      drop: ['console', 'debugger'],
+    },
     outDir: 'dist',
-    chunkSizeWarningLimit: 1000, // Kurangi warning limit
-    minify: 'esbuild', // Gunakan esbuild untuk minifikasi yang lebih cepat
+    chunkSizeWarningLimit: 1000,
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -30,11 +43,9 @@ export default defineConfig({
         },
       },
     },
-    // Optimasi untuk build yang lebih cepat
-    sourcemap: false, // Disable sourcemap di production untuk ukuran lebih kecil
-    reportCompressedSize: false, // Skip compressed size reporting untuk build lebih cepat
+    sourcemap: false,
+    reportCompressedSize: false,
   },
-  // Optimasi untuk development
   optimizeDeps: {
     include: [
       'react',

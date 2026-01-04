@@ -1,37 +1,23 @@
 import { Router } from 'express';
 import userController from '../controllers/userController.js';
-import { authenticateSupabase } from '../middleware/supabaseAuthMiddleware.js';
+import { authenticateSupabase, optionalSupabaseAuth } from '../middleware/supabaseAuthMiddleware.js';
 
 const router = Router();
 
-// Test routes without auth (for development only)
-if (process.env.NODE_ENV === 'development') {
-  router.get('/test', userController.getUsers.bind(userController));
-  router.get('/test/units', userController.getUnits.bind(userController));
-  router.post('/test', userController.createUser.bind(userController));
-  router.put('/test/:id', userController.updateUser.bind(userController));
-  router.delete('/test/:id', userController.deleteUser.bind(userController));
-}
+// Public routes (no auth required)
+router.get('/public', userController.getUsers.bind(userController));
+router.get('/public/units', userController.getUnits.bind(userController));
+router.get('/public/roles', userController.getRoles.bind(userController));
 
-// Apply authentication middleware to all protected routes
-router.use(authenticateSupabase);
+// Semi-protected GET routes (optional auth - works with or without valid token)
+router.get('/', optionalSupabaseAuth, userController.getUsers.bind(userController));
+router.get('/units', optionalSupabaseAuth, userController.getUnits.bind(userController));
+router.get('/roles', optionalSupabaseAuth, userController.getRoles.bind(userController));
+router.get('/:id', optionalSupabaseAuth, userController.getUserById.bind(userController));
 
-// Get all users
-router.get('/', userController.getUsers.bind(userController));
-
-// Get all units for dropdown
-router.get('/units', userController.getUnits.bind(userController));
-
-// Get user by ID
-router.get('/:id', userController.getUserById.bind(userController));
-
-// Create new user
-router.post('/', userController.createUser.bind(userController));
-
-// Update user
-router.put('/:id', userController.updateUser.bind(userController));
-
-// Delete user (soft delete)
-router.delete('/:id', userController.deleteUser.bind(userController));
+// Protected write routes (require authentication)
+router.post('/', authenticateSupabase, userController.createUser.bind(userController));
+router.put('/:id', authenticateSupabase, userController.updateUser.bind(userController));
+router.delete('/:id', authenticateSupabase, userController.deleteUser.bind(userController));
 
 export default router;

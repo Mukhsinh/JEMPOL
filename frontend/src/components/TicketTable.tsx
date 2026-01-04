@@ -19,8 +19,10 @@ const TicketTable: React.FC<TicketTableProps> = ({ filters }) => {
     const navigate = useNavigate();
 
     const fetchTickets = async () => {
+        console.log('🎫 TicketTable: Fetching tickets...');
+        setLoading(true);
+        
         try {
-            setLoading(true);
             setError(null);
             
             // Build query parameters based on filters

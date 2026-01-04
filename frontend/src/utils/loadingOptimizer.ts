@@ -1,48 +1,78 @@
-// Loading optimizer untuk mengatasi masalah loading
+
+// Loading optimizer untuk mengatasi masalah performa
 export class LoadingOptimizer {
-  private static instance: LoadingOptimizer;
-  private loadingStates: Map<string, boolean> = new Map();
-  private timeouts: Map<string, ReturnType<typeof setTimeout>> = new Map();
+  private static loadingStates = new Map<string, boolean>();
+  private static cache = new Map<string, { data: any; timestamp: number }>();
+  private static readonly CACHE_DURATION = 60000; // 1 menit
 
-  static getInstance(): LoadingOptimizer {
-    if (!LoadingOptimizer.instance) {
-      LoadingOptimizer.instance = new LoadingOptimizer();
-    }
-    return LoadingOptimizer.instance;
+  // Debounce function untuk mengurangi request berlebihan
+  static debounce<T extends (...args: any[]) => any>(
+    func: T,
+    wait: number
+  ): (...args: Parameters<T>) => void {
+    let timeout: NodeJS.Timeout;
+    return (...args: Parameters<T>) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
   }
 
-  setLoading(key: string, isLoading: boolean, timeout: number = 10000): void {
-    // Clear existing timeout
-    const existingTimeout = this.timeouts.get(key);
-    if (existingTimeout) {
-      clearTimeout(existingTimeout);
-    }
-
-    this.loadingStates.set(key, isLoading);
-
-    if (isLoading) {
-      // Set timeout untuk auto-clear loading state
-      const timeoutId = setTimeout(() => {
-        console.warn(`⚠️ Loading timeout untuk ${key}, auto-clearing...`);
-        this.loadingStates.set(key, false);
-        this.timeouts.delete(key);
-      }, timeout);
-      
-      this.timeouts.set(key, timeoutId);
-    } else {
-      this.timeouts.delete(key);
-    }
+  // Cache dengan TTL
+  static setCache(key: string, data: any): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now()
+    });
   }
 
-  isLoading(key: string): boolean {
+  static getCache(key: string): any | null {
+    const cached = this.cache.get(key);
+    if (!cached) return null;
+    
+    if (Date.now() - cached.timestamp > this.CACHE_DURATION) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return cached.data;
+  }
+
+  // Loading state management
+  static setLoading(key: string, loading: boolean): void {
+    this.loadingStates.set(key, loading);
+  }
+
+  static isLoading(key: string): boolean {
     return this.loadingStates.get(key) || false;
   }
 
-  clearAll(): void {
-    this.timeouts.forEach(timeout => clearTimeout(timeout));
-    this.timeouts.clear();
-    this.loadingStates.clear();
+  // Batch requests untuk mengurangi beban server
+  static async batchRequests<T>(
+    requests: (() => Promise<T>)[],
+    batchSize: number = 3
+  ): Promise<T[]> {
+    const results: T[] = [];
+    
+    for (let i = 0; i < requests.length; i += batchSize) {
+      const batch = requests.slice(i, i + batchSize);
+      const batchResults = await Promise.allSettled(
+        batch.map(request => request())
+      );
+      
+      batchResults.forEach(result => {
+        if (result.status === 'fulfilled') {
+          results.push(result.value);
+        } else {
+          console.warn('Batch request failed:', result.reason);
+        }
+      });
+      
+      // Delay antar batch untuk mengurangi beban
+      if (i + batchSize < requests.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+    
+    return results;
   }
 }
-
-export const loadingOptimizer = LoadingOptimizer.getInstance();

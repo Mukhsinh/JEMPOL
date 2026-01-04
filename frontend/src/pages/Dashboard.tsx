@@ -39,40 +39,92 @@ const Dashboard = () => {
     const [showStatusDropdown, setShowStatusDropdown] = useState(false);
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
-    // Load initial data
+    // Load initial data dengan optimasi timeout
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                const [unitsResponse, categoriesResponse] = await Promise.all([
-                    complaintService.getUnits(),
-                    complaintService.getCategories()
-                ]);
-
+                setLoading(true);
+                
+                // Load data secara bertahap untuk mengurangi beban
+                console.log('📊 Loading dashboard data...');
+                
+                // Load units terlebih dahulu
+                const unitsResponse = await complaintService.getUnits();
                 if (unitsResponse.success) {
                     setUnits(unitsResponse.data);
+                    console.log('✅ Units loaded:', unitsResponse.data.length);
                 }
+                
+                // Delay kecil sebelum load categories
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Load categories
+                const categoriesResponse = await complaintService.getCategories();
                 if (categoriesResponse.success) {
                     setCategories(categoriesResponse.data);
+                    console.log('✅ Categories loaded:', categoriesResponse.data.length);
                 }
-            } catch (error) {
-                console.error('Error loading initial data:', error);
-            }
-        };
 
-        loadInitialData();
-    }, []);
+                } catch (error) {
+                    console.error('❌ Error loading initial data:', error);
+                    // Set empty arrays sebagai fallback
+                    setUnits([]);
+                    setCategories([]);
+                } finally {
+                    setLoading(false);
+                }
+            };
 
-    // Load metrics when filters change
+            loadInitialData();
+        }, []);
+
+    // Load metrics when filters change dengan optimasi timeout
     useEffect(() => {
         const fetchMetrics = async () => {
             setLoading(true);
             try {
-                const response = await complaintService.getDashboardMetricsFiltered(filters);
+                console.log('📈 Fetching dashboard metrics with filters:', filters);
+                
+                // Tambahkan timeout khusus untuk metrics
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Metrics request timeout')), 25000);
+                });
+                
+                const metricsPromise = complaintService.getDashboardMetricsFiltered({
+                    dateRange: filters.dateRange,
+                    unit_id: filters.unit_id,
+                    category_id: filters.category_id,
+                    status: filters.status
+                });
+                
+                const response = await Promise.race([metricsPromise, timeoutPromise]) as any;
+                
                 if (response.success) {
                     setMetrics(response.data);
+                    console.log('✅ Dashboard metrics loaded successfully');
+                } else {
+                    console.warn('⚠️ Dashboard metrics failed:', response.error);
+                    // Set default metrics jika gagal
+                    setMetrics({
+                        totalTickets: 0,
+                        openTickets: 0,
+                        inProgressTickets: 0,
+                        resolvedTickets: 0,
+                        averageResolutionTime: 0,
+                        satisfactionScore: 0
+                    });
                 }
             } catch (error) {
-                console.error('Error fetching dashboard metrics:', error);
+                console.error('❌ Error fetching dashboard metrics:', error);
+                // Set default metrics sebagai fallback
+                setMetrics({
+                    totalTickets: 0,
+                    openTickets: 0,
+                    inProgressTickets: 0,
+                    resolvedTickets: 0,
+                    averageResolutionTime: 0,
+                    satisfactionScore: 0
+                });
             } finally {
                 setLoading(false);
             }

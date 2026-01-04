@@ -37,7 +37,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
-  timeout: 15000, // Kurangi timeout untuk performa lebih cepat
+  timeout: 45000, // 45 detik untuk koneksi lambat // 60 detik untuk koneksi yang stabil
   withCredentials: false,
 });
 
@@ -45,6 +45,38 @@ const api = axios.create({
 let cachedToken: string | null = null;
 let tokenCacheTime = 0;
 const TOKEN_CACHE_DURATION = 30000; // 30 detik
+
+
+// Retry interceptor untuk request yang gagal
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    
+    // Jika belum ada retry count, set ke 0
+    if (!config.__retryCount) {
+      config.__retryCount = 0;
+    }
+    
+    // Retry maksimal 3 kali untuk error timeout atau network
+    if (
+      config.__retryCount < 3 &&
+      (error.code === 'ECONNABORTED' || 
+       error.code === 'ERR_NETWORK' ||
+       error.code === 'ERR_CONNECTION_REFUSED')
+    ) {
+      config.__retryCount += 1;
+      console.log(`🔄 Retrying request (${config.__retryCount}/3): ${config.url}`);
+      
+      // Delay sebelum retry
+      await new Promise(resolve => setTimeout(resolve, 1000 * config.__retryCount));
+      
+      return api(config);
+    }
+    
+    return Promise.reject(error);
+  }
+);
 
 // Request interceptor yang dioptimalkan
 api.interceptors.request.use(

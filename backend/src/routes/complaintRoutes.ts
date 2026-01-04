@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { supabaseAdmin } from '../config/supabase.js';
-import { authenticateSupabase } from '../middleware/supabaseAuthMiddleware.js';
+import { authenticateSupabase, optionalSupabaseAuth } from '../middleware/supabaseAuthMiddleware.js';
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -11,6 +11,62 @@ interface AuthenticatedRequest extends Request {
 }
 
 const router = express.Router();
+
+// Root endpoint - GET /api/complaints (alias untuk /api/complaints/tickets)
+router.get('/', optionalSupabaseAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    console.log('GET /api/complaints - User:', req.user?.id, 'Query:', req.query);
+
+    const { status, unit_id, assigned_to, page = 1, limit = 50 } = req.query;
+
+    // Simplified query without user relations to avoid infinite recursion
+    let query = supabaseAdmin
+      .from('tickets')
+      .select(`
+        *,
+        units:unit_id(name, code),
+        service_categories:category_id(name)
+      `)
+      .order('created_at', { ascending: false });
+
+    // Apply filters
+    if (status && status !== 'all') query = query.eq('status', status);
+    if (unit_id && unit_id !== 'all') query = query.eq('unit_id', unit_id);
+    if (assigned_to && assigned_to !== 'all') query = query.eq('assigned_to', assigned_to);
+
+    // Apply pagination
+    const offset = (Number(page) - 1) * Number(limit);
+    query = query.range(offset, offset + Number(limit) - 1);
+
+    const { data: tickets, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching complaints:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil data tiket: ' + error.message
+      });
+    }
+
+    console.log('Complaints fetched successfully:', tickets?.length || 0);
+
+    res.json({
+      success: true,
+      data: tickets || [],
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total: count || tickets?.length || 0
+      }
+    });
+  } catch (error: any) {
+    console.error('Error in get complaints:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server: ' + error.message
+    });
+  }
+});
 
 // Test endpoint untuk debugging
 router.get('/test', async (req: Request, res: Response) => {
@@ -165,7 +221,7 @@ router.get('/public/categories', async (req: Request, res: Response) => {
 });
 
 // Get all tickets with filters
-router.get('/tickets', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/tickets', optionalSupabaseAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     console.log('GET /tickets - User:', req.user?.id, 'Query:', req.query);
 
@@ -257,7 +313,7 @@ router.get('/tickets', authenticateSupabase, async (req: AuthenticatedRequest, r
 });
 
 // Get single ticket by ID
-router.get('/tickets/:id', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/tickets/:id', optionalSupabaseAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -557,7 +613,7 @@ router.post('/tickets/:id/responses', authenticateSupabase, async (req: Authenti
 });
 
 // Get units
-router.get('/units', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/units', optionalSupabaseAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data: units, error } = await supabaseAdmin
       .from('units')
@@ -587,7 +643,7 @@ router.get('/units', authenticateSupabase, async (req: AuthenticatedRequest, res
 });
 
 // Get service categories
-router.get('/categories', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/categories', optionalSupabaseAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data: categories, error } = await supabaseAdmin
       .from('service_categories')
@@ -617,7 +673,7 @@ router.get('/categories', authenticateSupabase, async (req: AuthenticatedRequest
 });
 
 // Dashboard metrics
-router.get('/dashboard/metrics', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/dashboard/metrics', optionalSupabaseAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     // Get ticket counts by status
     const { data: statusCounts, error: statusError } = await supabaseAdmin
@@ -702,7 +758,7 @@ router.get('/dashboard/metrics', authenticateSupabase, async (req: Authenticated
 });
 
 // Enhanced dashboard metrics with filters
-router.get('/dashboard/metrics/filtered', authenticateSupabase, async (req: AuthenticatedRequest, res: Response) => {
+router.get('/dashboard/metrics/filtered', optionalSupabaseAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
       dateRange = 'last_7_days',

@@ -17,6 +17,9 @@ const StatusChart: React.FC<StatusChartProps> = ({ metrics }) => {
 
     useEffect(() => {
         const fetchChartData = async () => {
+            console.log('📊 StatusChart: Fetching chart data...');
+            setLoading(true);
+            
             try {
                 // If metrics with categoryStats is provided, use it
                 if (metrics?.categoryStats) {
@@ -37,11 +40,17 @@ const StatusChart: React.FC<StatusChartProps> = ({ metrics }) => {
                     return;
                 }
 
-                // Fallback to fetching data directly
-                const [unitsResponse, ticketsResponse] = await Promise.all([
+                // Fallback to fetching data directly with timeout
+                const timeoutPromise = new Promise<never>((_, reject) => {
+                    setTimeout(() => reject(new Error('Chart data timeout')), 20000);
+                });
+
+                const dataPromise = Promise.all([
                     complaintService.getUnits(),
                     complaintService.getTickets({ limit: 1000 })
                 ]);
+
+                const [unitsResponse, ticketsResponse] = await Promise.race([dataPromise, timeoutPromise]) as [any, any];
 
                 if (unitsResponse.success && ticketsResponse.success) {
                     const units = unitsResponse.data || [];
@@ -65,7 +74,9 @@ const StatusChart: React.FC<StatusChartProps> = ({ metrics }) => {
                     setChartData(topUnits);
                 }
             } catch (error) {
-                console.error('Error fetching chart data:', error);
+                console.error('❌ StatusChart: Error fetching chart data:', error);
+                // Set empty data on error
+                setChartData([]);
             } finally {
                 setLoading(false);
             }
