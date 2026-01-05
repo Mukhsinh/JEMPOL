@@ -119,18 +119,6 @@ class ComplaintService {
     try {
       console.log('🎫 Fetching tickets with filters:', filters);
       
-      // Di Vercel production, gunakan Supabase langsung
-      if (isVercelProduction()) {
-        console.log('🌐 Using Supabase direct for Vercel production');
-        const result = await supabaseService.getTickets(filters);
-        return {
-          success: result.success,
-          data: result.data || [],
-          message: result.message,
-          error: result.error
-        };
-      }
-      
       // Cek cache terlebih dahulu
       const now = Date.now();
       if (ComplaintService.ticketsCache && (now - ComplaintService.ticketsCache.timestamp) < ComplaintService.CACHE_DURATION) {
@@ -142,68 +130,57 @@ class ComplaintService {
         };
       }
       
-      // Coba endpoint utama dengan timeout yang lebih pendek
-      try {
-        const response = await api.get('/complaints', { 
-          params: filters,
-          timeout: 30000 // 30 detik untuk endpoint utama
-        });
-        
-        const tickets = response.data?.data || [];
-        
-        // Update cache
-        ComplaintService.ticketsCache = {
-          data: tickets,
-          timestamp: now
-        };
-        
-        console.log('✅ Tickets fetched successfully from main endpoint:', tickets.length, 'tickets');
-        
-        return {
-          success: true,
-          data: tickets,
-          message: 'Tickets berhasil diambil'
-        };
-      } catch (mainError: any) {
-        console.log('⚠️ Main endpoint failed, trying Supabase direct...');
-        
-        // Fallback ke Supabase langsung
+      // Di Vercel production atau backend tidak tersedia, gunakan Supabase langsung
+      if (isVercelProduction()) {
+        console.log('🌐 Using Supabase direct');
         const result = await supabaseService.getTickets(filters);
         if (result.success) {
-          // Update cache dengan data Supabase
           ComplaintService.ticketsCache = {
             data: result.data || [],
             timestamp: now
           };
-          
-          console.log('✅ Tickets fetched from Supabase direct:', result.data?.length || 0, 'tickets');
-          
-          return {
-            success: true,
-            data: result.data || [],
-            message: 'Tickets berhasil diambil dari Supabase'
-          };
+        }
+        return {
+          success: result.success,
+          data: result.data || [],
+          message: result.message,
+          error: result.error
+        };
+      }
+      
+      // Coba endpoint utama dengan timeout pendek
+      try {
+        const response = await api.get('/complaints', { 
+          params: filters,
+          timeout: 5000 // 5 detik timeout untuk cek backend
+        });
+        
+        const tickets = response.data?.data || [];
+        ComplaintService.ticketsCache = { data: tickets, timestamp: now };
+        console.log('✅ Tickets fetched from backend:', tickets.length, 'tickets');
+        
+        return { success: true, data: tickets, message: 'Tickets berhasil diambil' };
+      } catch (mainError: any) {
+        console.log('⚠️ Backend tidak tersedia, menggunakan Supabase...');
+        
+        // Fallback ke Supabase langsung
+        const result = await supabaseService.getTickets(filters);
+        if (result.success) {
+          ComplaintService.ticketsCache = { data: result.data || [], timestamp: now };
+          console.log('✅ Tickets fetched from Supabase:', result.data?.length || 0, 'tickets');
+          return { success: true, data: result.data || [], message: 'Tickets berhasil diambil' };
         }
         
-        // Return cached data jika ada, meskipun expired
+        // Return cached data jika ada
         if (ComplaintService.ticketsCache) {
-          console.log('📦 Using expired cache as last resort');
-          return {
-            success: true,
-            data: ComplaintService.ticketsCache.data,
-            message: 'Menggunakan data cache (mungkin tidak terbaru)'
-          };
+          return { success: true, data: ComplaintService.ticketsCache.data, message: 'Menggunakan cache' };
         }
         
-        throw mainError; // Throw original error
+        throw mainError;
       }
     } catch (error: any) {
       console.error('Error in getTickets:', error);
-      return {
-        success: false,
-        data: [],
-        error: error.message || 'Gagal mengambil data tiket'
-      };
+      return { success: false, data: [], error: error.message || 'Gagal mengambil data tiket' };
     }
   }
 
@@ -280,51 +257,67 @@ class ComplaintService {
 
   // Get units
   async getUnits() {
-    // Di Vercel production, gunakan Supabase langsung
+    // Gunakan Supabase langsung jika backend tidak tersedia
     if (isVercelProduction()) {
-      return await supabaseService.getUnits();
+      console.log('🔄 Fetching units from Supabase...');
+      const result = await supabaseService.getUnits();
+      if (result.success) {
+        console.log('✅ Units loaded:', result.data?.length || 0);
+      }
+      return result;
     }
     
     try {
-      const response = await api.get('/complaints/units');
+      const response = await api.get('/complaints/units', { timeout: 5000 });
       return response.data;
     } catch (error: any) {
-      console.error('Error in getUnits:', error);
-      // Fallback ke Supabase langsung
-      return await supabaseService.getUnits();
+      console.log('⚠️ Backend tidak tersedia, menggunakan Supabase...');
+      const result = await supabaseService.getUnits();
+      if (result.success) {
+        console.log('✅ Units loaded:', result.data?.length || 0);
+      }
+      return result;
     }
   }
 
   // Get service categories
   async getCategories() {
-    // Di Vercel production, gunakan Supabase langsung
+    // Gunakan Supabase langsung jika backend tidak tersedia
     if (isVercelProduction()) {
-      return await supabaseService.getCategories();
+      console.log('🔄 Fetching categories from Supabase...');
+      const result = await supabaseService.getCategories();
+      if (result.success) {
+        console.log('✅ Categories loaded:', result.data?.length || 0);
+      }
+      return result;
     }
     
     try {
-      const response = await api.get('/complaints/categories');
+      const response = await api.get('/complaints/categories', { timeout: 5000 });
       return response.data;
     } catch (error: any) {
-      console.error('Error in getCategories:', error);
-      // Fallback ke Supabase langsung
-      return await supabaseService.getCategories();
+      console.log('⚠️ Backend tidak tersedia, menggunakan Supabase...');
+      const result = await supabaseService.getCategories();
+      if (result.success) {
+        console.log('✅ Categories loaded:', result.data?.length || 0);
+      }
+      return result;
     }
   }
 
   // Get dashboard metrics
   async getDashboardMetrics() {
-    // Di Vercel production, gunakan Supabase langsung
+    // Gunakan Supabase langsung jika backend tidak tersedia
     if (isVercelProduction()) {
+      console.log('🔄 Fetching dashboard metrics from Supabase...');
       return await supabaseService.getDashboardMetrics();
     }
     
     try {
-      const response = await api.get('/complaints/dashboard/metrics');
+      const response = await api.get('/complaints/dashboard/metrics', { timeout: 5000 });
       return response.data;
     } catch (error: any) {
-      console.error('Error in getDashboardMetrics:', error);
-      // Fallback ke Supabase langsung
+      console.log('⚠️ Backend tidak tersedia, menggunakan Supabase...');
       return await supabaseService.getDashboardMetrics();
     }
   }
@@ -336,8 +329,22 @@ class ComplaintService {
     status?: string;
     category_id?: string;
   }) {
-    const response = await api.get('/complaints/dashboard/metrics/filtered', { params: filters });
-    return response.data;
+    // Gunakan Supabase langsung jika backend tidak tersedia
+    if (isVercelProduction()) {
+      console.log('📈 Fetching dashboard metrics from Supabase...');
+      return await supabaseService.getDashboardMetrics();
+    }
+    
+    try {
+      const response = await api.get('/complaints/dashboard/metrics/filtered', { 
+        params: filters,
+        timeout: 5000 
+      });
+      return response.data;
+    } catch (error: any) {
+      console.log('⚠️ Backend tidak tersedia, menggunakan Supabase...');
+      return await supabaseService.getDashboardMetrics();
+    }
   }
 
   // Public API methods (no auth required)

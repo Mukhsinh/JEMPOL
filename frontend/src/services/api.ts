@@ -4,9 +4,23 @@ import { APIResponse } from '../types';
 // Cache untuk API base URL
 let cachedApiBaseUrl: string = '';
 
-// Check if running in Vercel production
+// Check if backend is available (will be set after first check)
+let backendAvailable: boolean | null = null;
+
+// Check if running in Vercel production or backend not available
 export const isVercelProduction = (): boolean => {
-  return import.meta.env.PROD && !import.meta.env.VITE_API_URL?.includes('localhost');
+  // Jika sudah dicek dan backend tidak tersedia, return true
+  if (backendAvailable === false) return true;
+  // Jika di production mode
+  if (import.meta.env.PROD) return true;
+  // Jika VITE_API_URL tidak ada atau kosong
+  if (!import.meta.env.VITE_API_URL) return true;
+  return false;
+};
+
+// Set backend availability status
+export const setBackendAvailable = (available: boolean) => {
+  backendAvailable = available;
 };
 
 // Determine API base URL based on environment dengan caching
@@ -17,20 +31,19 @@ const getApiBaseUrl = (): string => {
 
   const envApiUrl = (import.meta as any).env?.VITE_API_URL;
 
+  // In production (Vercel), we'll use Supabase directly
+  if (import.meta.env.PROD) {
+    cachedApiBaseUrl = '/api';
+    return cachedApiBaseUrl;
+  }
+
   // In development with explicit API URL
   if (envApiUrl && envApiUrl.includes('localhost')) {
     cachedApiBaseUrl = envApiUrl;
     return cachedApiBaseUrl;
   }
 
-  // In production (Vercel), we'll use Supabase directly
-  // But keep /api as fallback for any remaining API calls
-  if (import.meta.env.PROD) {
-    cachedApiBaseUrl = '/api';
-    return cachedApiBaseUrl;
-  }
-
-  // In development, use localhost with correct port
+  // Default fallback
   cachedApiBaseUrl = 'http://localhost:3004/api';
   return cachedApiBaseUrl;
 };
@@ -65,18 +78,23 @@ api.interceptors.response.use(
       config.__retryCount = 0;
     }
     
-    // Retry maksimal 3 kali untuk error timeout atau network
+    // Jika connection refused, set backend tidak tersedia dan jangan retry
+    if (error.code === 'ERR_CONNECTION_REFUSED') {
+      console.log('⚠️ Backend tidak tersedia, menggunakan Supabase langsung');
+      setBackendAvailable(false);
+      return Promise.reject(error);
+    }
+    
+    // Retry maksimal 2 kali untuk error timeout atau network (bukan connection refused)
     if (
-      config.__retryCount < 3 &&
-      (error.code === 'ECONNABORTED' || 
-       error.code === 'ERR_NETWORK' ||
-       error.code === 'ERR_CONNECTION_REFUSED')
+      config.__retryCount < 2 &&
+      (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK')
     ) {
       config.__retryCount += 1;
-      console.log(`🔄 Retrying request (${config.__retryCount}/3): ${config.url}`);
+      console.log(`🔄 Retrying request (${config.__retryCount}/2): ${config.url}`);
       
       // Delay sebelum retry
-      await new Promise(resolve => setTimeout(resolve, 1000 * config.__retryCount));
+      await new Promise(resolve => setTimeout(resolve, 500 * config.__retryCount));
       
       return api(config);
     }
