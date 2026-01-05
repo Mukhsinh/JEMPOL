@@ -606,6 +606,101 @@ router.get('/sla-settings', async (req: Request, res: Response) => {
   }
 });
 
+// Submit external ticket from public form (QR code scan)
+router.post('/external-tickets', async (req: Request, res: Response) => {
+  try {
+    const {
+      reporter_identity_type,
+      reporter_name,
+      reporter_email,
+      reporter_phone,
+      reporter_address,
+      service_type,
+      category,
+      title,
+      description,
+      qr_code,
+      unit_id,
+      source = 'qr_code'
+    } = req.body;
+
+    // Generate ticket number
+    const ticketNumber = await generateTicketNumber();
+
+    // Calculate SLA deadline (default 24 hours)
+    const slaDeadline = new Date();
+    slaDeadline.setHours(slaDeadline.getHours() + 24);
+
+    const isAnonymous = reporter_identity_type === 'anonymous';
+
+    const ticketData: any = {
+      ticket_number: ticketNumber,
+      type: service_type || 'complaint',
+      title,
+      description,
+      unit_id: unit_id || null,
+      priority: 'medium',
+      status: 'open',
+      sla_deadline: slaDeadline.toISOString(),
+      source: source,
+      is_anonymous: isAnonymous,
+      ip_address: req.ip,
+      user_agent: req.get('User-Agent')
+    };
+
+    // Add submitter info if not anonymous
+    if (!isAnonymous) {
+      if (reporter_name) ticketData.submitter_name = reporter_name;
+      if (reporter_email) ticketData.submitter_email = reporter_email;
+      if (reporter_phone) ticketData.submitter_phone = reporter_phone;
+      if (reporter_address) ticketData.submitter_address = reporter_address;
+    }
+
+    // Find category ID if category name provided
+    if (category) {
+      const { data: categoryData } = await supabase
+        .from('service_categories')
+        .select('id')
+        .eq('name', category)
+        .single();
+      
+      if (categoryData) {
+        ticketData.category_id = categoryData.id;
+      }
+    }
+
+    const { data: ticket, error } = await supabase
+      .from('tickets')
+      .insert(ticketData)
+      .select(`
+        *,
+        units:unit_id(name, code)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Error creating external ticket:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal membuat tiket'
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      ticket_number: ticket.ticket_number,
+      data: ticket,
+      message: 'Tiket berhasil dibuat. Nomor tiket Anda: ' + ticket.ticket_number
+    });
+  } catch (error) {
+    console.error('Error in create external ticket:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
+
 // Submit satisfaction survey
 router.post('/surveys/:ticketId', async (req: Request, res: Response) => {
   try {

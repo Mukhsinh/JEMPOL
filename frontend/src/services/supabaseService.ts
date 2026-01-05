@@ -653,6 +653,178 @@ class SupabaseService {
     }
   }
 
+  async getQRCodeById(id: string) {
+    try {
+      const { data, error } = await supabase
+        .from('qr_codes')
+        .select(`
+          *,
+          units:unit_id (id, name, code)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data,
+        message: 'QR code berhasil diambil'
+      };
+    } catch (error: any) {
+      console.error('SupabaseService.getQRCodeById error:', error);
+      return {
+        success: false,
+        data: null,
+        error: error.message || 'Gagal mengambil data QR code'
+      };
+    }
+  }
+
+  async getQRCodeByCode(code: string) {
+    try {
+      const { data, error } = await supabase
+        .from('qr_codes')
+        .select(`
+          *,
+          units:unit_id (id, name, code)
+        `)
+        .eq('code', code)
+        .single();
+
+      if (error) throw error;
+
+      // Update usage count
+      if (data) {
+        await supabase
+          .from('qr_codes')
+          .update({ usage_count: (data.usage_count || 0) + 1 })
+          .eq('id', data.id);
+      }
+
+      return {
+        success: true,
+        data,
+        message: 'QR code berhasil diambil'
+      };
+    } catch (error: any) {
+      console.error('SupabaseService.getQRCodeByCode error:', error);
+      return {
+        success: false,
+        data: null,
+        error: error.message || 'Gagal mengambil data QR code'
+      };
+    }
+  }
+
+  async createQRCode(qrData: {
+    unit_id: string;
+    name: string;
+    description?: string;
+    redirect_type?: string;
+    auto_fill_unit?: boolean;
+    show_options?: string[];
+  }) {
+    try {
+      // Generate unique code and token
+      const code = `QR-${Date.now().toString(36).toUpperCase()}`;
+      const token = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 15)}`;
+
+      const { data, error } = await supabase
+        .from('qr_codes')
+        .insert({
+          ...qrData,
+          code,
+          token,
+          is_active: true,
+          usage_count: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select(`
+          *,
+          units:unit_id (id, name, code)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data,
+        message: 'QR code berhasil dibuat'
+      };
+    } catch (error: any) {
+      console.error('SupabaseService.createQRCode error:', error);
+      return {
+        success: false,
+        data: null,
+        error: error.message || 'Gagal membuat QR code'
+      };
+    }
+  }
+
+  async updateQRCode(id: string, updates: {
+    name?: string;
+    description?: string;
+    is_active?: boolean;
+    redirect_type?: string;
+    auto_fill_unit?: boolean;
+    show_options?: string[];
+  }) {
+    try {
+      const { data, error } = await supabase
+        .from('qr_codes')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select(`
+          *,
+          units:unit_id (id, name, code)
+        `)
+        .single();
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data,
+        message: 'QR code berhasil diupdate'
+      };
+    } catch (error: any) {
+      console.error('SupabaseService.updateQRCode error:', error);
+      return {
+        success: false,
+        data: null,
+        error: error.message || 'Gagal mengupdate QR code'
+      };
+    }
+  }
+
+  async deleteQRCode(id: string) {
+    try {
+      const { error } = await supabase
+        .from('qr_codes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        message: 'QR code berhasil dihapus'
+      };
+    } catch (error: any) {
+      console.error('SupabaseService.deleteQRCode error:', error);
+      return {
+        success: false,
+        error: error.message || 'Gagal menghapus QR code'
+      };
+    }
+  }
+
   // ==================== TICKET RESPONSES ====================
 
   async getTicketResponses(ticketId: string) {
