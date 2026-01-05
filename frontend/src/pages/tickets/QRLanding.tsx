@@ -65,17 +65,18 @@ const QRLanding: React.FC = () => {
 
     // Build URL dengan parameter unit - selalu kirim parameter untuk public pages
     const params = new URLSearchParams();
+    const unitName = qr.units?.name || '';
     
-    // Selalu kirim parameter unit untuk auto-fill
+    // Selalu kirim parameter unit untuk auto-fill - encode unit_name dengan benar
     params.append('qr', qr.code);
     params.append('unit_id', qr.unit_id);
-    params.append('unit_name', qr.units?.name || '');
+    params.append('unit_name', encodeURIComponent(unitName));
     params.append('auto_fill', qr.auto_fill_unit !== false ? 'true' : 'false');
     
     const url = `${config.path}?${params.toString()}`;
     
-    // Gunakan navigate dengan replace untuk menghindari back ke halaman loading
-    navigate(url, { replace: true });
+    // Gunakan window.location untuk redirect langsung tanpa login
+    window.location.href = url;
   };
 
   const handleOptionClick = (optionType: string) => {
@@ -86,9 +87,12 @@ const QRLanding: React.FC = () => {
 
     // Build URL dengan parameter unit untuk public pages
     const params = new URLSearchParams();
+    const unitName = qrData.units?.name || '';
+    
+    // Encode unit_name dengan benar
     params.append('qr', qrData.code);
     params.append('unit_id', qrData.unit_id);
-    params.append('unit_name', qrData.units?.name || '');
+    params.append('unit_name', encodeURIComponent(unitName));
     params.append('auto_fill', qrData.auto_fill_unit !== false ? 'true' : 'false');
     
     const url = `${config.path}?${params.toString()}`;

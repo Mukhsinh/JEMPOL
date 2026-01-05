@@ -69,11 +69,11 @@ const QRScanLanding: React.FC = () => {
     const qrCode = data.code;
     const autoFillUnit = data.auto_fill_unit !== false;
     
-    // Encode parameter untuk URL
+    // Encode parameter untuk URL - pastikan unit_name di-encode dengan benar
     const params = new URLSearchParams({
       qr: qrCode,
       unit_id: unitId,
-      unit_name: unitName,
+      unit_name: encodeURIComponent(unitName),
       auto_fill: autoFillUnit ? 'true' : 'false'
     });
 
@@ -103,11 +103,13 @@ const QRScanLanding: React.FC = () => {
     if (!qrData) return;
     
     const autoFillUnit = qrData.auto_fill_unit !== false;
+    const unitName = qrData.units?.name || '';
     
+    // Encode parameter untuk URL - pastikan unit_name di-encode dengan benar
     const params = new URLSearchParams({
       qr: qrData.code,
       unit_id: qrData.unit_id,
-      unit_name: qrData.units?.name || '',
+      unit_name: encodeURIComponent(unitName),
       auto_fill: autoFillUnit ? 'true' : 'false'
     });
 

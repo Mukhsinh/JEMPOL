@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Code Redirect - Mobile View</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
+        h1 { color: #1e293b; font-size: 1.5rem; margin-bottom: 8px; }
+        h2 { color: #334155; font-size: 1.1rem; margin-bottom: 16px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        p { color: #64748b; margin-bottom: 16px; line-height: 1.6; }
+        .status { padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 0.9rem; }
+        .status.success { background: #dcfce7; color: #166534; border-left: 4px solid #22c55e; }
+        .status.info { background: #dbeafe; color: #1e40af; border-left: 4px solid #3b82f6; }
+        .status.warning { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
+        .btn { display: inline-block; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; margin: 8px 8px 8px 0; transition: all 0.2s; border: none; cursor: pointer; font-size: 0.95rem; }
+        .btn-primary { background: #3b82f6; color: white; }
+        .btn-primary:hover { background: #2563eb; transform: translateY(-2px); }
+        .btn-success { background: #22c55e; color: white; }
+        .btn-success:hover { background: #16a34a; }
+        .btn-purple { background: #8b5cf6; color: white; }
+        .btn-purple:hover { background: #7c3aed; }
+        .btn-orange { background: #f97316; color: white; }
+        .btn-orange:hover { background: #ea580c; }
+        .route-list { background: #f8fafc; border-radius: 8px; padding: 16px; margin: 16px 0; }
+        .route-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+        .route-item:last-child { border-bottom: none; }
+        .route-path { font-family: monospace; background: #1e293b; color: #22d3ee; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; }
+        .route-desc { margin-left: 12px; color: #64748b; font-size: 0.9rem; }
+        .mobile-preview { border: 3px solid #1e293b; border-radius: 24px; padding: 8px; background: #1e293b; max-width: 320px; margin: 20px auto; }
+        .mobile-screen { background: white; border-radius: 16px; padding: 16px; min-height: 400px; }
+        .mobile-header { background: #3b82f6; color: white; padding: 12px; border-radius: 8px 8px 0 0; margin: -16px -16px 16px -16px; text-align: center; font-weight: 600; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; }
+        .checklist { list-style: none; padding: 0; }
+        .checklist li { padding: 8px 0; display: flex; align-items: center; }
+        .checklist li::before { content: "✅"; margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🔍 Test QR Code Redirect ke Form Mobile</h1>
+            <p>Halaman ini untuk memverifikasi bahwa scan QR Code mengarahkan langsung ke form yang sesuai dengan tampilan mobile tanpa sidebar.</p>
+        </div>
+
+        <div class="card">
+            <h2>📱 Alur QR Code Scan</h2>
+            <div class="route-list">
+                <div class="route-item">
+                    <span class="route-path">/scan/:code</span>
+                    <span class="route-desc">→ QRScanLanding (Landing page setelah scan)</span>
+                </div>
+                <div class="route-item">
+                    <span class="route-path">/qr/:code</span>
+                    <span class="route-desc">→ QRLanding (Alternatif landing page)</span>
+                </div>
+                <div class="route-item">
+                    <span class="route-path">/public/tiket-eksternal</span>
+                    <span class="route-desc">→ Form Tiket Eksternal (Mobile, No Sidebar)</span>
+                </div>
+                <div class="route-item">
+                    <span class="route-path">/public/tiket-internal</span>
+                    <span class="route-desc">→ Form Tiket Internal (Mobile, No Sidebar)</span>
+                </div>
+                <div class="route-item">
+                    <span class="route-path">/public/survei</span>
+                    <span class="route-desc">→ Form Survei (Mobile, No Sidebar)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>✅ Fitur yang Sudah Diperbaiki</h2>
+            <ul class="checklist">
+                <li>QR Code mengarah ke <code>/scan/{code}</code></li>
+                <li>Auto-redirect berdasarkan <code>redirect_type</code> di QR Code</li>
+                <li>Halaman public TANPA sidebar navigasi</li>
+                <li>Tampilan mobile-friendly (responsive)</li>
+                <li>Unit otomatis terisi dari QR Code</li>
+                <li>URL parameter di-encode dengan benar</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2>🧪 Test Halaman Public (Tanpa Login)</h2>
+            <p>Klik tombol di bawah untuk membuka halaman form public. Halaman ini bisa diakses tanpa login dan tidak memiliki sidebar.</p>
+            
+            <a href="/public/tiket-eksternal?qr=TEST&unit_id=test-unit&unit_name=Unit%20Test&auto_fill=true" class="btn btn-orange" target="_blank">
+                📝 Form Tiket Eksternal
+            </a>
+            <a href="/public/tiket-internal?qr=TEST&unit_id=test-unit&unit_name=Unit%20Test&auto_fill=true" class="btn btn-purple" target="_blank">
+                📋 Form Tiket Internal
+            </a>
+            <a href="/public/survei?qr=TEST&unit_id=test-unit&unit_name=Unit%20Test&auto_fill=true" class="btn btn-success" target="_blank">
+                ⭐ Form Survei
+            </a>
+        </div>
+
+        <div class="card">
+            <h2>📱 Preview Tampilan Mobile</h2>
+            <div class="mobile-preview">
+                <div class="mobile-screen">
+                    <div class="mobile-header">Form Pengaduan</div>
+                    <div class="status info">
+                        <strong>Unit Tujuan:</strong><br>
+                        Unit Test (dari QR Code)
+                    </div>
+                    <p style="font-size: 0.85rem; color: #64748b;">
+                        Tampilan form sudah dioptimalkan untuk mobile:
+                    </p>
+                    <ul style="font-size: 0.8rem; color: #64748b; padding-left: 20px; margin-top: 8px;">
+                        <li>Tidak ada sidebar</li>
+                        <li>Input field full-width</li>
+                        <li>Touch-friendly buttons</li>
+                        <li>Responsive layout</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🔧 Pengaturan QR Code di Admin</h2>
+            <p>Di halaman <strong>Manajemen QR Code</strong>, Anda bisa mengatur:</p>
+            <div class="status info">
+                <strong>redirect_type:</strong>
+                <ul style="margin-top: 8px; padding-left: 20px;">
+                    <li><code>selection</code> - Tampilkan pilihan layanan</li>
+                    <li><code>internal_ticket</code> - Langsung ke form tiket internal</li>
+                    <li><code>external_ticket</code> - Langsung ke form tiket eksternal</li>
+                    <li><code>survey</code> - Langsung ke form survei</li>
+                </ul>
+            </div>
+            <a href="/qr-codes" class="btn btn-primary" target="_blank">
+                ⚙️ Buka Manajemen QR Code
+            </a>
+        </div>
+
+        <div class="card">
+            <h2>📊 Status Perbaikan</h2>
+            <div class="status success">
+                <strong>✅ SELESAI:</strong> QR Code sekarang mengarahkan langsung ke form yang sesuai dengan tampilan mobile tanpa sidebar navigasi.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

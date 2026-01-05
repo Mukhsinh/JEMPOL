@@ -14,13 +14,15 @@ interface FormData {
   attachments: File[];
 }
 
+// Mobile-optimized Public Internal Ticket Form
+// Halaman ini diakses melalui scan QR Code - TANPA SIDEBAR
 const PublicInternalTicket: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
   const qrCode = searchParams.get('qr') || '';
   const unitId = searchParams.get('unit_id') || '';
-  const unitName = searchParams.get('unit_name') || '';
+  const unitName = decodeURIComponent(searchParams.get('unit_name') || '');
   const autoFill = searchParams.get('auto_fill') === 'true';
 
   const [submitting, setSubmitting] = useState(false);
