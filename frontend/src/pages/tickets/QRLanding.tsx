@@ -8,21 +8,21 @@ const OPTION_CONFIG = {
     title: 'Buat Tiket Internal',
     description: 'Sampaikan keluhan atau permintaan untuk ditangani oleh unit terkait',
     color: 'blue',
-    path: '/tickets/create-internal'
+    path: '/public/tiket-internal'
   },
   external_ticket: {
     icon: 'description',
     title: 'Buat Tiket Eksternal',
     description: 'Sampaikan pengaduan, saran, atau permintaan informasi',
     color: 'green',
-    path: '/tiket-eksternal'
+    path: '/public/tiket-eksternal'
   },
   survey: {
     icon: 'rate_review',
     title: 'Isi Survei Kepuasan',
     description: 'Berikan penilaian terhadap layanan yang telah Anda terima',
     color: 'purple',
-    path: '/survey/public'
+    path: '/public/survei'
   }
 };
 
@@ -63,26 +63,38 @@ const QRLanding: React.FC = () => {
     const config = OPTION_CONFIG[type as keyof typeof OPTION_CONFIG];
     if (!config) return;
 
-    // Build URL dengan parameter unit jika auto_fill_unit aktif
-    let url = config.path;
+    // Build URL dengan parameter unit - selalu kirim parameter untuk public pages
     const params = new URLSearchParams();
     
-    if (qr.auto_fill_unit) {
-      params.append('unit_id', qr.unit_id);
-      params.append('unit_name', qr.units?.name || '');
-    }
-    params.append('qr_code', qr.code);
+    // Selalu kirim parameter unit untuk auto-fill
+    params.append('qr', qr.code);
+    params.append('unit_id', qr.unit_id);
+    params.append('unit_name', qr.units?.name || '');
+    params.append('auto_fill', qr.auto_fill_unit !== false ? 'true' : 'false');
     
-    if (params.toString()) {
-      url += `?${params.toString()}`;
-    }
+    const url = `${config.path}?${params.toString()}`;
     
-    navigate(url);
+    // Gunakan navigate dengan replace untuk menghindari back ke halaman loading
+    navigate(url, { replace: true });
   };
 
   const handleOptionClick = (optionType: string) => {
     if (!qrData) return;
-    handleRedirect(optionType, qrData);
+    
+    const config = OPTION_CONFIG[optionType as keyof typeof OPTION_CONFIG];
+    if (!config) return;
+
+    // Build URL dengan parameter unit untuk public pages
+    const params = new URLSearchParams();
+    params.append('qr', qrData.code);
+    params.append('unit_id', qrData.unit_id);
+    params.append('unit_name', qrData.units?.name || '');
+    params.append('auto_fill', qrData.auto_fill_unit !== false ? 'true' : 'false');
+    
+    const url = `${config.path}?${params.toString()}`;
+    
+    // Gunakan window.location untuk redirect ke public route tanpa login
+    window.location.href = url;
   };
 
   if (loading) {

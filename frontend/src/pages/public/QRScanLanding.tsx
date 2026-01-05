@@ -8,7 +8,9 @@ interface QRCodeData {
   code: string;
   name: string;
   description?: string;
-  redirect_type: 'internal_ticket' | 'external_ticket' | 'survey';
+  redirect_type?: 'selection' | 'internal_ticket' | 'external_ticket' | 'survey';
+  auto_fill_unit?: boolean;
+  show_options?: string[];
   redirect_settings?: {
     auto_fill_unit?: boolean;
     show_unit_info?: boolean;
@@ -43,16 +45,20 @@ const QRScanLanding: React.FC = () => {
     try {
       setLoading(true);
       const data = await qrCodeService.getByCode(code!);
+      console.log('QR Code data loaded:', data);
       setQrData(data as QRCodeData);
       
-      // Auto redirect jika redirect_type sudah ditentukan
-      if (data.redirect_type) {
+      // Auto redirect jika redirect_type BUKAN 'selection' dan sudah ditentukan
+      if (data.redirect_type && data.redirect_type !== 'selection') {
+        console.log('Auto redirecting to:', data.redirect_type);
         handleRedirect(data as QRCodeData);
+      } else {
+        // Jika selection atau tidak ada, tampilkan pilihan
+        setLoading(false);
       }
     } catch (err: any) {
       console.error('Error fetching QR code:', err);
       setError('QR Code tidak valid atau sudah tidak aktif');
-    } finally {
       setLoading(false);
     }
   };
@@ -61,52 +67,66 @@ const QRScanLanding: React.FC = () => {
     const unitId = data.unit_id;
     const unitName = data.units?.name || '';
     const qrCode = data.code;
+    const autoFillUnit = data.auto_fill_unit !== false;
     
     // Encode parameter untuk URL
     const params = new URLSearchParams({
       qr: qrCode,
       unit_id: unitId,
       unit_name: unitName,
-      auto_fill: 'true'
+      auto_fill: autoFillUnit ? 'true' : 'false'
     });
 
+    let targetUrl = '';
+    
     switch (data.redirect_type) {
       case 'internal_ticket':
-        navigate(`/public/tiket-internal?${params.toString()}`);
+        targetUrl = `/public/tiket-internal?${params.toString()}`;
         break;
       case 'external_ticket':
-        navigate(`/public/tiket-eksternal?${params.toString()}`);
+        targetUrl = `/public/tiket-eksternal?${params.toString()}`;
         break;
       case 'survey':
-        navigate(`/public/survei?${params.toString()}`);
+        targetUrl = `/public/survei?${params.toString()}`;
         break;
       default:
-        // Jika tidak ada redirect_type, tampilkan pilihan
+        // Jika tidak ada redirect_type atau selection, tampilkan pilihan
         setLoading(false);
+        return;
     }
+    
+    // Gunakan window.location untuk redirect langsung tanpa login
+    window.location.href = targetUrl;
   };
 
   const handleManualRedirect = (type: 'internal_ticket' | 'external_ticket' | 'survey') => {
     if (!qrData) return;
     
+    const autoFillUnit = qrData.auto_fill_unit !== false;
+    
     const params = new URLSearchParams({
       qr: qrData.code,
       unit_id: qrData.unit_id,
       unit_name: qrData.units?.name || '',
-      auto_fill: 'true'
+      auto_fill: autoFillUnit ? 'true' : 'false'
     });
 
+    let targetUrl = '';
+    
     switch (type) {
       case 'internal_ticket':
-        navigate(`/public/tiket-internal?${params.toString()}`);
+        targetUrl = `/public/tiket-internal?${params.toString()}`;
         break;
       case 'external_ticket':
-        navigate(`/public/tiket-eksternal?${params.toString()}`);
+        targetUrl = `/public/tiket-eksternal?${params.toString()}`;
         break;
       case 'survey':
-        navigate(`/public/survei?${params.toString()}`);
+        targetUrl = `/public/survei?${params.toString()}`;
         break;
     }
+    
+    // Gunakan window.location untuk redirect langsung tanpa login
+    window.location.href = targetUrl;
   };
 
   if (loading) {
@@ -139,6 +159,9 @@ const QRScanLanding: React.FC = () => {
       </div>
     );
   }
+
+  // Ambil show_options dari pengaturan QR Code, default semua opsi
+  const showOptions = qrData?.show_options || ['internal_ticket', 'external_ticket', 'survey'];
 
   // Tampilkan pilihan jika tidak ada auto-redirect
   return (
@@ -194,68 +217,74 @@ const QRScanLanding: React.FC = () => {
             </p>
 
             <div className="grid gap-4">
-              {/* Tiket Eksternal */}
-              <button
-                onClick={() => handleManualRedirect('external_ticket')}
-                className="group flex items-center gap-4 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/5 transition-all text-left"
-              >
-                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-2xl">support_agent</span>
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                    Buat Pengaduan / Laporan
-                  </h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Sampaikan keluhan, saran, atau permintaan informasi
-                  </p>
-                </div>
-                <span className="material-symbols-outlined text-slate-400 group-hover:text-primary group-hover:translate-x-1 transition-all">
-                  arrow_forward
-                </span>
-              </button>
+              {/* Tiket Eksternal - tampilkan jika ada di show_options */}
+              {showOptions.includes('external_ticket') && (
+                <button
+                  onClick={() => handleManualRedirect('external_ticket')}
+                  className="group flex items-center gap-4 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/5 transition-all text-left"
+                >
+                  <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-2xl">support_agent</span>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                      Buat Pengaduan / Laporan
+                    </h4>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Sampaikan keluhan, saran, atau permintaan informasi
+                    </p>
+                  </div>
+                  <span className="material-symbols-outlined text-slate-400 group-hover:text-primary group-hover:translate-x-1 transition-all">
+                    arrow_forward
+                  </span>
+                </button>
+              )}
 
-              {/* Survei */}
-              <button
-                onClick={() => handleManualRedirect('survey')}
-                className="group flex items-center gap-4 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/5 transition-all text-left"
-              >
-                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-2xl">rate_review</span>
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                    Isi Survei Kepuasan
-                  </h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Berikan penilaian terhadap layanan yang Anda terima
-                  </p>
-                </div>
-                <span className="material-symbols-outlined text-slate-400 group-hover:text-primary group-hover:translate-x-1 transition-all">
-                  arrow_forward
-                </span>
-              </button>
+              {/* Survei - tampilkan jika ada di show_options */}
+              {showOptions.includes('survey') && (
+                <button
+                  onClick={() => handleManualRedirect('survey')}
+                  className="group flex items-center gap-4 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/5 transition-all text-left"
+                >
+                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-2xl">rate_review</span>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                      Isi Survei Kepuasan
+                    </h4>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Berikan penilaian terhadap layanan yang Anda terima
+                    </p>
+                  </div>
+                  <span className="material-symbols-outlined text-slate-400 group-hover:text-primary group-hover:translate-x-1 transition-all">
+                    arrow_forward
+                  </span>
+                </button>
+              )}
 
-              {/* Tiket Internal (untuk staff) */}
-              <button
-                onClick={() => handleManualRedirect('internal_ticket')}
-                className="group flex items-center gap-4 p-4 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/5 transition-all text-left opacity-75 hover:opacity-100"
-              >
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-2xl">assignment</span>
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                    Tiket Internal (Staff)
-                  </h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Khusus untuk petugas internal rumah sakit
-                  </p>
-                </div>
-                <span className="material-symbols-outlined text-slate-400 group-hover:text-primary group-hover:translate-x-1 transition-all">
-                  arrow_forward
-                </span>
-              </button>
+              {/* Tiket Internal - tampilkan jika ada di show_options */}
+              {showOptions.includes('internal_ticket') && (
+                <button
+                  onClick={() => handleManualRedirect('internal_ticket')}
+                  className="group flex items-center gap-4 p-4 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/5 transition-all text-left opacity-75 hover:opacity-100"
+                >
+                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-2xl">assignment</span>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                      Tiket Internal (Staff)
+                    </h4>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Khusus untuk petugas internal rumah sakit
+                    </p>
+                  </div>
+                  <span className="material-symbols-outlined text-slate-400 group-hover:text-primary group-hover:translate-x-1 transition-all">
+                    arrow_forward
+                  </span>
+                </button>
+              )}
             </div>
           </div>
 
