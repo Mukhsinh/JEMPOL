@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 const PublicSurveyForm = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const qrCode = searchParams.get('qr') || searchParams.get('qrCode');
+    const qrCode = searchParams.get('qr') || searchParams.get('qrCode') || searchParams.get('qr_code');
+    const unitIdFromUrl = searchParams.get('unit_id');
+    const unitNameFromUrl = searchParams.get('unit_name');
 
     // State for form data
     const [formData, setFormData] = useState({
-        unit_tujuan: 'Poli Penyakit Dalam - Gedung A', // Default or from QR
+        unit_tujuan: unitNameFromUrl ? decodeURIComponent(unitNameFromUrl) : 'Poli Penyakit Dalam - Gedung A',
+        unit_id: unitIdFromUrl || '',
         service_type: '',
         full_name: '',
         is_anonymous: false,
@@ -30,6 +33,19 @@ const PublicSurveyForm = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [error, setError] = useState('');
+    const [unitLocked, setUnitLocked] = useState(!!unitIdFromUrl);
+
+    // Update unit jika ada dari URL
+    useEffect(() => {
+        if (unitNameFromUrl) {
+            setFormData(prev => ({
+                ...prev,
+                unit_tujuan: decodeURIComponent(unitNameFromUrl),
+                unit_id: unitIdFromUrl || ''
+            }));
+            setUnitLocked(true);
+        }
+    }, [unitIdFromUrl, unitNameFromUrl]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;

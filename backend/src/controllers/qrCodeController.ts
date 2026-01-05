@@ -14,7 +14,7 @@ const generateToken = (): string => {
 
 export const createQRCode = async (req: Request, res: Response) => {
   try {
-    const { unit_id, name, description } = req.body;
+    const { unit_id, name, description, redirect_type, auto_fill_unit, show_options } = req.body;
 
     // Validate required fields
     if (!unit_id || !name) {
@@ -71,7 +71,10 @@ export const createQRCode = async (req: Request, res: Response) => {
         name,
         description,
         is_active: true,
-        usage_count: 0
+        usage_count: 0,
+        redirect_type: redirect_type || 'selection',
+        auto_fill_unit: auto_fill_unit !== false,
+        show_options: show_options || ['internal_ticket', 'external_ticket', 'survey']
       })
       .select(`
         *,
@@ -286,7 +289,7 @@ export const getQRCodeByCode = async (req: Request, res: Response) => {
 export const updateQRCode = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { name, description, is_active } = req.body;
+    const { name, description, is_active, redirect_type, auto_fill_unit, show_options } = req.body;
 
     const updateData: any = {
       updated_at: new Date().toISOString()
@@ -295,6 +298,9 @@ export const updateQRCode = async (req: Request, res: Response) => {
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (is_active !== undefined) updateData.is_active = is_active;
+    if (redirect_type !== undefined) updateData.redirect_type = redirect_type;
+    if (auto_fill_unit !== undefined) updateData.auto_fill_unit = auto_fill_unit;
+    if (show_options !== undefined) updateData.show_options = show_options;
 
     const { data: qrCode, error } = await supabase
       .from('qr_codes')

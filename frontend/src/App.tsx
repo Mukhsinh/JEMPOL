@@ -19,6 +19,7 @@ import CreateInternalTicket from './pages/tickets/CreateInternalTicket';
 import TiketEksternal from './pages/tickets/TiketEksternal';
 import ExternalTicketForm from './pages/tickets/ExternalTicketForm';
 import QRManagement from './pages/tickets/QRManagement';
+import QRLanding from './pages/tickets/QRLanding';
 import AIEscalationManagement from './pages/tickets/AIEscalationManagement';
 import EscalationManagement from './pages/tickets/EscalationManagement';
 
@@ -27,6 +28,11 @@ import SurveyForm from './pages/survey/SurveyForm';
 import SurveyLanding from './pages/survey/SurveyLanding';
 import SurveyReport from './pages/survey/SurveyReport';
 import PublicSurveyForm from './pages/survey/PublicSurveyForm';
+
+// Public Pages (No Sidebar)
+import QRScanLanding from './pages/public/QRScanLanding';
+import PublicExternalTicket from './pages/public/PublicExternalTicket';
+import PublicSurvey from './pages/public/PublicSurvey';
 
 // User Management
 import UserManagement from './pages/users/UserManagement';
@@ -56,11 +62,18 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/ticket-tracker" element={<TicketTracker />} />
+          <Route path="/qr/:code" element={<QRLanding />} />
           <Route path="/tiket-eksternal" element={<ExternalTicketForm />} />
           <Route path="/tiket-eksternal/:qrCode" element={<ExternalTicketForm />} />
           <Route path="/survey/public" element={<PublicSurveyForm />} />
           <Route path="/survey/public/:qrCode" element={<PublicSurveyForm />} />
           <Route path="/buku-petunjuk" element={<BukuPetunjuk />} />
+          
+          {/* Public Routes - QR Scan Integration (No Sidebar) */}
+          <Route path="/scan/:code" element={<QRScanLanding />} />
+          <Route path="/public/tiket-eksternal" element={<PublicExternalTicket />} />
+          <Route path="/public/tiket-internal" element={<PublicExternalTicket />} />
+          <Route path="/public/survei" element={<PublicSurvey />} />
 
           {/* Protected Admin Routes */}
           <Route path="/*" element={

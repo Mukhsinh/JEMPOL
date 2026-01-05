@@ -1,22 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { complaintService } from '../../services/complaintService';
 import { masterDataService, TicketType, ServiceCategory } from '../../services/masterDataService';
 import unitService, { Unit } from '../../services/unitService';
 
 const CreateInternalTicket = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    
+    // Ambil parameter dari URL (dari QR Landing)
+    const unitIdFromUrl = searchParams.get('unit_id');
+    const unitNameFromUrl = searchParams.get('unit_name');
+    const qrCodeFromUrl = searchParams.get('qr_code');
+    
     const [units, setUnits] = useState<Unit[]>([]);
     const [categories, setCategories] = useState<ServiceCategory[]>([]);
     const [ticketTypes, setTicketTypes] = useState<TicketType[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [unitLocked, setUnitLocked] = useState(!!unitIdFromUrl);
 
     // Form State
     const [title, setTitle] = useState('');
     const [categoryId, setCategoryId] = useState('');
     const [priority, setPriority] = useState('medium');
-    const [unitId, setUnitId] = useState('');
+    const [unitId, setUnitId] = useState(unitIdFromUrl || '');
     const [type, setType] = useState('');
     const [description, setDescription] = useState('');
     const [files, setFiles] = useState<File[]>([]);
@@ -24,6 +32,14 @@ const CreateInternalTicket = () => {
     useEffect(() => {
         fetchMasterData();
     }, []);
+
+    // Set unit dari URL jika ada
+    useEffect(() => {
+        if (unitIdFromUrl) {
+            setUnitId(unitIdFromUrl);
+            setUnitLocked(true);
+        }
+    }, [unitIdFromUrl]);
 
     const fetchMasterData = async () => {
         try {
@@ -200,12 +216,21 @@ const CreateInternalTicket = () => {
 
                             {/* Unit */}
                             <div className="flex flex-col gap-2">
-                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Unit <span className="text-red-500">*</span></label>
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    Unit <span className="text-red-500">*</span>
+                                    {unitLocked && (
+                                        <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs">
+                                            <span className="material-symbols-outlined text-xs">lock</span>
+                                            Otomatis dari QR
+                                        </span>
+                                    )}
+                                </label>
                                 <div className="relative">
                                     <select
-                                        className="w-full appearance-none px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
+                                        className={`w-full appearance-none px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all ${unitLocked ? 'cursor-not-allowed opacity-75' : 'cursor-pointer'}`}
                                         value={unitId}
                                         onChange={(e) => setUnitId(e.target.value)}
+                                        disabled={unitLocked}
                                     >
                                         <option value="" disabled>Pilih unit...</option>
                                         {units.map(unit => (

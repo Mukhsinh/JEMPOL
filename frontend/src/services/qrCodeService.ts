@@ -10,6 +10,9 @@ export interface QRCode {
   description?: string;
   is_active: boolean;
   usage_count: number;
+  redirect_type?: 'selection' | 'internal_ticket' | 'external_ticket' | 'survey';
+  auto_fill_unit?: boolean;
+  show_options?: string[];
   created_at: string;
   updated_at: string;
   units?: {
@@ -29,6 +32,9 @@ export interface CreateQRCodeData {
   unit_id: string;
   name: string;
   description?: string;
+  redirect_type?: 'selection' | 'internal_ticket' | 'external_ticket' | 'survey';
+  auto_fill_unit?: boolean;
+  show_options?: string[];
 }
 
 export interface QRCodeAnalytics {
@@ -142,6 +148,9 @@ export const qrCodeService = {
       name?: string;
       description?: string;
       is_active?: boolean;
+      redirect_type?: 'selection' | 'internal_ticket' | 'external_ticket' | 'survey';
+      auto_fill_unit?: boolean;
+      show_options?: string[];
     }
   ): Promise<any> {
     try {
@@ -186,9 +195,9 @@ export const qrCodeService = {
     return response.data;
   },
 
-  // Generate QR code URL
+  // Generate QR code URL - mengarah ke halaman landing QR scan
   generateQRUrl(code: string): string {
-    return `${window.location.origin}/tiket-eksternal/${code}`;
+    return `${window.location.origin}/scan/${code}`;
   },
 
   // Generate QR code image URL (for display)

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { masterDataService, ServiceCategory } from '../../services/masterDataService';
 import { qrCodeService, QRCode } from '../../services/qrCodeService';
 import { externalTicketService } from '../../services/externalTicketService';
@@ -19,7 +19,13 @@ interface FormData {
 
 const TiketEksternal: React.FC = () => {
   const { qrCode } = useParams<{ qrCode: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  
+  // Ambil parameter dari URL (dari QR Landing)
+  const unitIdFromUrl = searchParams.get('unit_id');
+  const unitNameFromUrl = searchParams.get('unit_name');
+  const qrCodeFromUrl = searchParams.get('qr_code');
   
   const [qrData, setQrData] = useState<QRCode | null>(null);
   const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>([]);
@@ -27,6 +33,7 @@ const TiketEksternal: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [charCount, setCharCount] = useState(0);
+  const [unitLocked, setUnitLocked] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     reporter_identity_type: 'personal',
@@ -43,7 +50,7 @@ const TiketEksternal: React.FC = () => {
 
   useEffect(() => {
     initializeForm();
-  }, [qrCode]);
+  }, [qrCode, unitIdFromUrl]);
 
   const initializeForm = async () => {
     try {
@@ -53,59 +60,70 @@ const TiketEksternal: React.FC = () => {
       const categories = await masterDataService.getServiceCategories();
       setServiceCategories(categories.filter(cat => cat.is_active));
       
-      // Load QR code data if available
-      if (qrCode) {
-        try {
-          const qrCodeData = await qrCodeService.getByCode(qrCode);
-          setQrData(qrCodeData);
-        } catch (error) {
-          console.error('QR Code tidak ditemukan:', error);
-          // Use default unit if QR code not found
-          setQrData({
-            id: 'default',
-            unit_id: 'default-unit',
-            code: 'DEFAULT',
-            token: 'default-token',
-            name: 'Formulir Umum',
-            description: 'Formulir pengaduan umum',
-            is_active: true,
-            usage_count: 0,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            units: {
-              id: 'default-unit',
-              name: 'Instalasi Gawat Darurat (IGD)',
-              code: 'IGD',
-              description: 'Unit default untuk pengaduan umum'
-            }
-          });
-        }
-      } else {
-        // Default unit when no QR code
+      // Jika ada unit_id dari URL (dari QR Landing dengan auto_fill_unit)
+      if (unitIdFromUrl && unitNameFromUrl) {
         setQrData({
-          id: 'default',
-          unit_id: 'default-unit',
-          code: 'DEFAULT',
-          token: 'default-token',
-          name: 'Formulir Umum',
-          description: 'Formulir pengaduan umum',
+          id: 'from-qr-landing',
+          unit_id: unitIdFromUrl,
+          code: qrCodeFromUrl || 'QR',
+          token: '',
+          name: 'QR Code',
           is_active: true,
           usage_count: 0,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           units: {
-            id: 'default-unit',
-            name: 'Instalasi Gawat Darurat (IGD)',
-            code: 'IGD',
-            description: 'Unit default untuk pengaduan umum'
+            id: unitIdFromUrl,
+            name: decodeURIComponent(unitNameFromUrl),
+            code: '',
           }
         });
+        setUnitLocked(true);
+        setLoading(false);
+        return;
+      }
+      
+      // Load QR code data if available
+      if (qrCode) {
+        try {
+          const qrCodeData = await qrCodeService.getByCode(qrCode);
+          setQrData(qrCodeData);
+          setUnitLocked(qrCodeData.auto_fill_unit !== false);
+        } catch (error) {
+          console.error('QR Code tidak ditemukan:', error);
+          setDefaultUnit();
+        }
+      } else {
+        setDefaultUnit();
       }
     } catch (error) {
       console.error('Error initializing form:', error);
+      setDefaultUnit();
     } finally {
       setLoading(false);
     }
+  };
+
+  const setDefaultUnit = () => {
+    setQrData({
+      id: 'default',
+      unit_id: 'default-unit',
+      code: 'DEFAULT',
+      token: 'default-token',
+      name: 'Formulir Umum',
+      description: 'Formulir pengaduan umum',
+      is_active: true,
+      usage_count: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      units: {
+        id: 'default-unit',
+        name: 'Instalasi Gawat Darurat (IGD)',
+        code: 'IGD',
+        description: 'Unit default untuk pengaduan umum'
+      }
+    });
+    setUnitLocked(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -247,13 +265,19 @@ const TiketEksternal: React.FC = () => {
                   <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wide">
                     <span className="material-symbols-outlined text-lg">verified</span>
                     <span>Unit Terverifikasi</span>
+                    {unitLocked && (
+                      <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs">
+                        <span className="material-symbols-outlined text-xs">lock</span>
+                        Otomatis Terisi
+                      </span>
+                    )}
                   </div>
                   <h3 className="text-slate-900 dark:text-white text-xl font-bold leading-tight">
                     {qrData.units.name}
                   </h3>
                   <p className="text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal">
-                    {qrCode ? 
-                      `Anda sedang membuat laporan untuk unit ini berdasarkan kode QR yang dipindai.` :
+                    {unitLocked ? 
+                      `Unit ini telah dipilih secara otomatis berdasarkan QR Code yang dipindai.` :
                       `Formulir pengaduan umum untuk unit ini.`
                     }
                   </p>

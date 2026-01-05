@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Scan Integration</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        h1 { color: #1e40af; margin-bottom: 8px; }
+        h2 { color: #334155; font-size: 18px; margin-top: 0; }
+        .success { color: #059669; background: #d1fae5; padding: 12px; border-radius: 8px; }
+        .info { color: #0369a1; background: #e0f2fe; padding: 12px; border-radius: 8px; }
+        .warning { color: #d97706; background: #fef3c7; padding: 12px; border-radius: 8px; }
+        ul { line-height: 1.8; }
+        code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+        a { color: #2563eb; }
+        .test-links { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+        .test-links a { display: flex; align-items: center; gap: 8px; padding: 12px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-decoration: none; color: #334155; }
+        .test-links a:hover { background: #f1f5f9; border-color: #2563eb; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>✅ QR Code Integration Test</h1>
+        <h2>Fitur QR Management dengan Integrasi Unit</h2>
+        
+        <div class="success">
+            <strong>Implementasi Selesai!</strong><br>
+            QR Code sekarang terintegrasi dengan unit dan memiliki pengaturan redirect.
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🎯 Fitur yang Diimplementasikan</h2>
+        <ul>
+            <li><strong>Integrasi Unit Otomatis:</strong> Saat scan QR, unit akan otomatis terisi sesuai pengaturan</li>
+            <li><strong>Pilihan Redirect:</strong> Admin dapat mengatur kemana pelanggan diarahkan saat scan:
+                <ul>
+                    <li>Tampilkan Pilihan (pelanggan memilih sendiri)</li>
+                    <li>Langsung ke Form Tiket Internal</li>
+                    <li>Langsung ke Form Tiket Eksternal</li>
+                    <li>Langsung ke Form Survei</li>
+                </ul>
+            </li>
+            <li><strong>Halaman Publik Tanpa Sidebar:</strong> Semua halaman publik tidak menampilkan navigasi sidebar</li>
+            <li><strong>Auto-fill Unit:</strong> Toggle untuk mengaktifkan/menonaktifkan pengisian unit otomatis</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>🔗 URL Routes Baru</h2>
+        <ul>
+            <li><code>/scan/:code</code> - Landing page saat scan QR (menentukan redirect)</li>
+            <li><code>/public/tiket-eksternal</code> - Form tiket eksternal publik (tanpa sidebar)</li>
+            <li><code>/public/tiket-internal</code> - Form tiket internal publik (tanpa sidebar)</li>
+            <li><code>/public/survei</code> - Form survei publik (tanpa sidebar)</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>🧪 Test Links</h2>
+        <p>Pastikan aplikasi berjalan di <code>http://localhost:5173</code></p>
+        
+        <div class="test-links">
+            <a href="http://localhost:5173/tickets/qr-management" target="_blank">
+                📱 QR Management (Admin)
+            </a>
+            <a href="http://localhost:5173/scan/TEST123" target="_blank">
+                🔍 Test Scan QR (akan error jika kode tidak ada)
+            </a>
+            <a href="http://localhost:5173/public/tiket-eksternal?unit_id=test&unit_name=Unit%20Test&auto_fill=true" target="_blank">
+                📝 Form Tiket Eksternal Publik
+            </a>
+            <a href="http://localhost:5173/public/survei?unit_id=test&unit_name=Unit%20Test&auto_fill=true" target="_blank">
+                ⭐ Form Survei Publik
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📋 Cara Penggunaan</h2>
+        <ol>
+            <li>Buka halaman <strong>QR Management</strong> di menu Tickets</li>
+            <li>Klik <strong>"Buat QR Code Baru"</strong></li>
+            <li>Pilih <strong>Unit</strong> yang akan terintegrasi dengan QR</li>
+            <li>Isi nama dan deskripsi QR Code</li>
+            <li>Pilih <strong>Arahkan ke</strong>:
+                <ul>
+                    <li><em>Tampilkan Pilihan</em> - Pelanggan akan melihat menu pilihan</li>
+                    <li><em>Form Tiket Eksternal</em> - Langsung ke form pengaduan</li>
+                    <li><em>Form Survei</em> - Langsung ke form survei kepuasan</li>
+                </ul>
+            </li>
+            <li>Aktifkan <strong>Otomatis Isi Unit</strong> agar pelanggan tidak perlu memilih unit</li>
+            <li>Klik <strong>Buat QR Code</strong></li>
+            <li>QR Code siap dicetak dan dipasang di lokasi unit</li>
+        </ol>
+    </div>
+
+    <div class="card">
+        <h2>🗄️ Database Changes</h2>
+        <div class="info">
+            Kolom baru ditambahkan ke tabel <code>qr_codes</code>:
+            <ul>
+                <li><code>redirect_type</code> - Tipe redirect (selection, internal_ticket, external_ticket, survey)</li>
+                <li><code>auto_fill_unit</code> - Boolean untuk auto-fill unit</li>
+                <li><code>show_options</code> - Array pilihan yang ditampilkan</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
