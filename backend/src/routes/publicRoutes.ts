@@ -701,6 +701,111 @@ router.post('/external-tickets', async (req: Request, res: Response) => {
   }
 });
 
+// Submit internal ticket from public form (QR code scan - for staff)
+router.post('/internal-tickets', async (req: Request, res: Response) => {
+  try {
+    const {
+      reporter_name,
+      reporter_email,
+      reporter_phone,
+      reporter_department,
+      reporter_position,
+      category,
+      priority,
+      title,
+      description,
+      qr_code,
+      unit_id,
+      source = 'qr_code'
+    } = req.body;
+
+    // Generate ticket number
+    const ticketNumber = await generateTicketNumber();
+
+    // Calculate SLA deadline based on priority
+    const slaDeadline = new Date();
+    switch (priority) {
+      case 'critical':
+        slaDeadline.setHours(slaDeadline.getHours() + 4);
+        break;
+      case 'high':
+        slaDeadline.setHours(slaDeadline.getHours() + 8);
+        break;
+      case 'medium':
+        slaDeadline.setHours(slaDeadline.getHours() + 24);
+        break;
+      case 'low':
+        slaDeadline.setHours(slaDeadline.getHours() + 48);
+        break;
+      default:
+        slaDeadline.setHours(slaDeadline.getHours() + 24);
+    }
+
+    const ticketData: any = {
+      ticket_number: ticketNumber,
+      type: 'internal',
+      title,
+      description,
+      unit_id: unit_id || null,
+      priority: priority || 'medium',
+      status: 'open',
+      sla_deadline: slaDeadline.toISOString(),
+      source: source,
+      is_anonymous: false,
+      submitter_name: reporter_name,
+      submitter_email: reporter_email,
+      submitter_phone: reporter_phone,
+      submitter_department: reporter_department,
+      submitter_position: reporter_position,
+      ip_address: req.ip,
+      user_agent: req.get('User-Agent')
+    };
+
+    // Find category ID if category name provided
+    if (category) {
+      const { data: categoryData } = await supabase
+        .from('service_categories')
+        .select('id')
+        .eq('code', category)
+        .single();
+      
+      if (categoryData) {
+        ticketData.category_id = categoryData.id;
+      }
+    }
+
+    const { data: ticket, error } = await supabase
+      .from('tickets')
+      .insert(ticketData)
+      .select(`
+        *,
+        units:unit_id(name, code)
+      `)
+      .single();
+
+    if (error) {
+      console.error('Error creating internal ticket:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal membuat tiket internal'
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      ticket_number: ticket.ticket_number,
+      data: ticket,
+      message: 'Tiket internal berhasil dibuat. Nomor tiket Anda: ' + ticket.ticket_number
+    });
+  } catch (error) {
+    console.error('Error in create internal ticket:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
+
 // Submit satisfaction survey
 router.post('/surveys/:ticketId', async (req: Request, res: Response) => {
   try {

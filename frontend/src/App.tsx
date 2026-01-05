@@ -32,6 +32,7 @@ import PublicSurveyForm from './pages/survey/PublicSurveyForm';
 // Public Pages (No Sidebar)
 import QRScanLanding from './pages/public/QRScanLanding';
 import PublicExternalTicket from './pages/public/PublicExternalTicket';
+import PublicInternalTicket from './pages/public/PublicInternalTicket';
 import PublicSurvey from './pages/public/PublicSurvey';
 
 // User Management
@@ -72,7 +73,7 @@ function App() {
           {/* Public Routes - QR Scan Integration (No Sidebar) */}
           <Route path="/scan/:code" element={<QRScanLanding />} />
           <Route path="/public/tiket-eksternal" element={<PublicExternalTicket />} />
-          <Route path="/public/tiket-internal" element={<PublicExternalTicket />} />
+          <Route path="/public/tiket-internal" element={<PublicInternalTicket />} />
           <Route path="/public/survei" element={<PublicSurvey />} />
 
           {/* Protected Admin Routes */}
