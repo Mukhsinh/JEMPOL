@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
-import { supabase } from '../utils/supabaseClient';
+import { supabase, clearInvalidSession } from '../utils/supabaseClient';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 interface User {
@@ -43,7 +43,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Check session tanpa connection test untuk kecepatan
             const { data: { session }, error } = await supabase.auth.getSession();
 
-            if (error || !session?.user) {
+            // Handle invalid refresh token error
+            if (error) {
+              console.log('Session error, clearing invalid session:', error.message);
+              await clearInvalidSession();
+              return null;
+            }
+
+            if (!session?.user) {
               return null;
             }
 
@@ -73,7 +80,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               email: profileData.email,
               role: profileData.role || 'admin',
             };
-          } catch (error) {
+          } catch (error: any) {
+            // Handle refresh token error
+            if (error?.message?.includes('Refresh Token') || error?.message?.includes('refresh_token')) {
+              console.log('Invalid refresh token, clearing session...');
+              await clearInvalidSession();
+            }
             return null;
           }
         })();
@@ -96,6 +108,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Auth state listener yang dioptimalkan
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
+      // Handle token refresh error
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.log('Token refresh failed in auth listener');
+        await clearInvalidSession();
+        setUser(null);
+        return;
+      }
+      
       if (event === 'SIGNED_IN' && session?.user) {
         try {
           const profilePromise = supabase

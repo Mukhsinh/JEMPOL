@@ -66,7 +66,7 @@ let authListenerSetup = false;
 
 if (!authListenerSetup && typeof window !== 'undefined') {
   try {
-    supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+    supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
       if (event === 'SIGNED_IN' && session?.access_token) {
         isConnected = true;
         // Update authorization header untuk axios
@@ -83,6 +83,17 @@ if (!authListenerSetup && typeof window !== 'undefined') {
           api.defaults.headers.common['Authorization'] = `Bearer ${session.access_token}`;
         }).catch(() => {});
       }
+      
+      // Handle token refresh error - clear invalid session
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.log('Token refresh failed, clearing session...');
+        try {
+          await supabase.auth.signOut();
+          localStorage.removeItem('supabase.auth.token');
+        } catch (e) {
+          // Silent error
+        }
+      }
     });
 
     authListenerSetup = true;
@@ -90,6 +101,17 @@ if (!authListenerSetup && typeof window !== 'undefined') {
     console.error('Failed to setup auth listener:', error);
   }
 }
+
+// Helper untuk clear invalid session
+export const clearInvalidSession = async () => {
+  try {
+    await supabase.auth.signOut();
+    localStorage.removeItem('supabase.auth.token');
+    localStorage.removeItem('sb-jxxzbdivafzzwqhagwrf-auth-token');
+  } catch (e) {
+    // Silent error
+  }
+};
 
 // Connection checker yang dioptimalkan dengan cache dan timeout singkat
 export const checkConnection = async (): Promise<boolean> => {

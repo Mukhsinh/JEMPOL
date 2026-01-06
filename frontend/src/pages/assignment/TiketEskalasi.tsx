@@ -3,7 +3,15 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import escalatedTicketService, { EscalatedTicket, EscalationStats } from '../../services/escalatedTicketService';
-import api from '../../services/api';
+import api, { isVercelProduction } from '../../services/api';
+import { createClient } from '@supabase/supabase-js';
+
+// Anon client untuk query publik
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+const anonSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: { persistSession: false, autoRefreshToken: false }
+});
 
 interface Unit {
   id: string;
@@ -35,12 +43,35 @@ export default function TiketEskalasi() {
   // Fetch units for filter
   const fetchUnits = useCallback(async () => {
     try {
+      // Di production, gunakan Supabase langsung
+      if (isVercelProduction()) {
+        const { data, error } = await anonSupabase
+          .from('units')
+          .select('id, name, code')
+          .eq('is_active', true)
+          .order('name');
+        if (!error && data) {
+          setUnits(data);
+        }
+        return;
+      }
+      
       const response = await api.get('/public/units');
       if (Array.isArray(response.data)) {
         setUnits(response.data);
       }
     } catch (error) {
       console.error('Error fetching units:', error);
+      // Fallback ke Supabase
+      try {
+        const { data } = await anonSupabase
+          .from('units')
+          .select('id, name, code')
+          .eq('is_active', true);
+        if (data) setUnits(data);
+      } catch (e) {
+        // Silent
+      }
     }
   }, []);
 

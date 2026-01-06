@@ -1,5 +1,5 @@
 import api, { isVercelProduction } from './api';
-import { supabase } from '../utils/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 
 export interface EscalatedTicket {
   id: string;
@@ -21,6 +21,18 @@ export interface EscalatedTicket {
     role: string;
   };
 }
+
+// Create a separate anon client for public queries (no auth required)
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+
+// Anon client tanpa session untuk query publik
+const anonSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false
+  }
+});
 
 export interface EscalationStats {
   total_active: number;
@@ -87,8 +99,8 @@ class EscalatedTicketService {
   // Query Supabase langsung untuk tiket eskalasi
   private async getEscalatedTicketsFromSupabase(): Promise<EscalatedTicket[]> {
     try {
-      // Get escalations
-      const { data: escalations, error: escError } = await supabase
+      // Gunakan anonSupabase untuk menghindari masalah token
+      const { data: escalations, error: escError } = await anonSupabase
         .from('ticket_escalations')
         .select('id, ticket_id, from_role, to_role, reason, escalated_at')
         .order('escalated_at', { ascending: false });
@@ -106,7 +118,7 @@ class EscalatedTicketService {
       const ticketIds = escalations.map((e: any) => e.ticket_id).filter(Boolean);
       
       // Get tickets
-      const { data: tickets, error: ticketError } = await supabase
+      const { data: tickets, error: ticketError } = await anonSupabase
         .from('tickets')
         .select('id, ticket_number, title, description, priority, status, created_at, sla_deadline, submitter_name, unit_id, assigned_to')
         .in('id', ticketIds);
@@ -120,7 +132,7 @@ class EscalatedTicketService {
       const unitIds = tickets?.map((t: any) => t.unit_id).filter(Boolean) || [];
       const unitsMap = new Map<string, any>();
       if (unitIds.length > 0) {
-        const { data: units } = await supabase
+        const { data: units } = await anonSupabase
           .from('units')
           .select('id, name, code')
           .in('id', unitIds);
@@ -131,7 +143,7 @@ class EscalatedTicketService {
       const userIds = tickets?.map((t: any) => t.assigned_to).filter(Boolean) || [];
       const usersMap = new Map<string, any>();
       if (userIds.length > 0) {
-        const { data: users } = await supabase
+        const { data: users } = await anonSupabase
           .from('users')
           .select('id, full_name, role')
           .in('id', userIds);
@@ -199,7 +211,7 @@ class EscalatedTicketService {
   // Query Supabase langsung untuk tiket prioritas
   private async getPriorityTicketsFromSupabase(): Promise<EscalatedTicket[]> {
     try {
-      const { data: tickets, error } = await supabase
+      const { data: tickets, error } = await anonSupabase
         .from('tickets')
         .select('id, ticket_number, title, description, priority, status, created_at, sla_deadline, submitter_name, unit_id, assigned_to')
         .in('priority', ['high', 'critical'])
@@ -219,7 +231,7 @@ class EscalatedTicketService {
       const unitIds = tickets.map((t: any) => t.unit_id).filter(Boolean);
       const unitsMap = new Map<string, any>();
       if (unitIds.length > 0) {
-        const { data: units } = await supabase
+        const { data: units } = await anonSupabase
           .from('units')
           .select('id, name, code')
           .in('id', unitIds);
@@ -230,7 +242,7 @@ class EscalatedTicketService {
       const userIds = tickets.map((t: any) => t.assigned_to).filter(Boolean);
       const usersMap = new Map<string, any>();
       if (userIds.length > 0) {
-        const { data: users } = await supabase
+        const { data: users } = await anonSupabase
           .from('users')
           .select('id, full_name, role')
           .in('id', userIds);
@@ -298,7 +310,7 @@ class EscalatedTicketService {
   private async getExecutiveOverviewFromSupabase(): Promise<any> {
     try {
       // Get escalations to director
-      const { data: escalations, error: escError } = await supabase
+      const { data: escalations, error: escError } = await anonSupabase
         .from('ticket_escalations')
         .select('id, ticket_id, from_role, to_role, reason, escalated_at')
         .eq('to_role', 'director')
@@ -316,7 +328,7 @@ class EscalatedTicketService {
       const unitsMap = new Map<string, any>();
 
       if (ticketIds.length > 0) {
-        const { data: ticketData } = await supabase
+        const { data: ticketData } = await anonSupabase
           .from('tickets')
           .select('id, ticket_number, title, priority, status, sla_deadline, unit_id')
           .in('id', ticketIds);
@@ -324,7 +336,7 @@ class EscalatedTicketService {
 
         const unitIds = tickets.map((t: any) => t.unit_id).filter(Boolean);
         if (unitIds.length > 0) {
-          const { data: units } = await supabase
+          const { data: units } = await anonSupabase
             .from('units')
             .select('id, name')
             .in('id', unitIds);
@@ -335,7 +347,7 @@ class EscalatedTicketService {
       const ticketsMap = new Map(tickets.map((t: any) => [t.id, t]));
 
       // Get stats
-      const { count: totalEscalations } = await supabase
+      const { count: totalEscalations } = await anonSupabase
         .from('ticket_escalations')
         .select('*', { count: 'exact', head: true });
 
