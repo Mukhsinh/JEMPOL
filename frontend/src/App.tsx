@@ -23,6 +23,16 @@ import QRLanding from './pages/tickets/QRLanding';
 import AIEscalationManagement from './pages/tickets/AIEscalationManagement';
 import EscalationManagement from './pages/tickets/EscalationManagement';
 
+// Assignment/Penugasan Management
+import { 
+  TiketEskalasi, 
+  TiketEskalasiDetail, 
+  TiketPrioritas, 
+  TiketPrioritasDetail, 
+  TinjauanEksekutif, 
+  TinjauanEksekutifDetail 
+} from './pages/assignment';
+
 // Survey Management
 import SurveyForm from './pages/survey/SurveyForm';
 import SurveyLanding from './pages/survey/SurveyLanding';
@@ -34,6 +44,8 @@ import QRScanLanding from './pages/public/QRScanLanding';
 import PublicExternalTicket from './pages/public/PublicExternalTicket';
 import PublicInternalTicket from './pages/public/PublicInternalTicket';
 import PublicSurvey from './pages/public/PublicSurvey';
+import PublicExternalTicketFullscreen from './pages/public/PublicExternalTicketFullscreen';
+import PublicSurveyFullscreen from './pages/public/PublicSurveyFullscreen';
 
 // User Management
 import UserManagement from './pages/users/UserManagement';
@@ -75,6 +87,9 @@ function App() {
           <Route path="/public/tiket-eksternal" element={<PublicExternalTicket />} />
           <Route path="/public/tiket-internal" element={<PublicInternalTicket />} />
           <Route path="/public/survei" element={<PublicSurvey />} />
+          {/* Fullscreen Mobile Forms - untuk QR Code scan */}
+          <Route path="/public/form-pengaduan" element={<PublicExternalTicketFullscreen />} />
+          <Route path="/public/form-survei" element={<PublicSurveyFullscreen />} />
 
           {/* Protected Admin Routes */}
           <Route path="/*" element={
@@ -95,6 +110,14 @@ function App() {
                   <Route path="/qr-codes" element={<QRManagement />} />
                   <Route path="/tickets/ai-escalation" element={<AIEscalationManagement />} />
                   <Route path="/tickets/escalation" element={<EscalationManagement />} />
+
+                  {/* Assignment/Penugasan Management */}
+                  <Route path="/assignment/tiket-eskalasi" element={<TiketEskalasi />} />
+                  <Route path="/assignment/tiket-eskalasi/:id" element={<TiketEskalasiDetail />} />
+                  <Route path="/assignment/tiket-prioritas" element={<TiketPrioritas />} />
+                  <Route path="/assignment/tiket-prioritas/:id" element={<TiketPrioritasDetail />} />
+                  <Route path="/assignment/tinjauan-eksekutif" element={<TinjauanEksekutif />} />
+                  <Route path="/assignment/tinjauan-eksekutif/:id" element={<TinjauanEksekutifDetail />} />
 
                   {/* Survey Management */}
                   <Route path="/survey" element={<SurveyLanding />} />

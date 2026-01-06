@@ -10,6 +10,7 @@ export default function Sidebar() {
     const [isTicketsOpen, setIsTicketsOpen] = useState(false);
     const [isSurveyOpen, setIsSurveyOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isAssignmentOpen, setIsAssignmentOpen] = useState(false);
 
     const isActive = (path: string) => {
         if (path === '/' && location.pathname === '/') return true;
@@ -33,6 +34,10 @@ export default function Sidebar() {
         return location.pathname.startsWith('/settings');
     };
 
+    const isAssignmentActive = () => {
+        return location.pathname.startsWith('/assignment');
+    };
+
     // Auto-open dropdown if user is on respective pages
     useEffect(() => {
         if (isMasterDataActive()) {
@@ -46,6 +51,9 @@ export default function Sidebar() {
         }
         if (isSettingsActive()) {
             setIsSettingsOpen(true);
+        }
+        if (isAssignmentActive()) {
+            setIsAssignmentOpen(true);
         }
     }, [location.pathname]);
 
@@ -233,6 +241,63 @@ export default function Sidebar() {
                                 >
                                     <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
                                     <p className="text-sm font-medium">Laporan Survei</p>
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Assignment/Penugasan Dropdown */}
+                    <div className="mb-2">
+                        <button
+                            onClick={() => setIsAssignmentOpen(!isAssignmentOpen)}
+                            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors ${isAssignmentActive()
+                                ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                }`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <span className="material-symbols-outlined">assignment</span>
+                                <p className="text-sm font-medium">Penugasan</p>
+                            </div>
+                            <span className={`material-symbols-outlined text-sm transition-transform ${isAssignmentOpen ? 'rotate-180' : ''}`}>
+                                expand_more
+                            </span>
+                        </button>
+
+                        {/* Assignment Submenu */}
+                        {isAssignmentOpen && (
+                            <div className="mt-2 ml-6 flex flex-col gap-1">
+                                <Link
+                                    to="/assignment/tiket-eskalasi"
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/assignment/tiket-eskalasi')
+                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                        }`}
+                                >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                    <p className="text-sm font-medium">Tiket Eskalasi</p>
+                                </Link>
+                                
+                                <Link
+                                    to="/assignment/tiket-prioritas"
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/assignment/tiket-prioritas')
+                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                        }`}
+                                >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                    <p className="text-sm font-medium">Tiket Prioritas</p>
+                                </Link>
+                                
+                                <Link
+                                    to="/assignment/tinjauan-eksekutif"
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/assignment/tinjauan-eksekutif')
+                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                        }`}
+                                >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                    <p className="text-sm font-medium">Tinjauan Eksekutif</p>
                                 </Link>
                             </div>
                         )}

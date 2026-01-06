@@ -84,10 +84,12 @@ const QRScanLanding: React.FC = () => {
         targetUrl = `/public/tiket-internal?${params.toString()}`;
         break;
       case 'external_ticket':
-        targetUrl = `/public/tiket-eksternal?${params.toString()}`;
+        // Arahkan ke halaman fullscreen untuk mobile
+        targetUrl = `/public/form-pengaduan?${params.toString()}`;
         break;
       case 'survey':
-        targetUrl = `/public/survei?${params.toString()}`;
+        // Arahkan ke halaman fullscreen untuk mobile
+        targetUrl = `/public/form-survei?${params.toString()}`;
         break;
       default:
         // Jika tidak ada redirect_type atau selection, tampilkan pilihan
@@ -120,10 +122,12 @@ const QRScanLanding: React.FC = () => {
         targetUrl = `/public/tiket-internal?${params.toString()}`;
         break;
       case 'external_ticket':
-        targetUrl = `/public/tiket-eksternal?${params.toString()}`;
+        // Arahkan ke halaman fullscreen untuk mobile
+        targetUrl = `/public/form-pengaduan?${params.toString()}`;
         break;
       case 'survey':
-        targetUrl = `/public/survei?${params.toString()}`;
+        // Arahkan ke halaman fullscreen untuk mobile
+        targetUrl = `/public/form-survei?${params.toString()}`;
         break;
     }
     
@@ -165,30 +169,30 @@ const QRScanLanding: React.FC = () => {
   // Ambil show_options dari pengaturan QR Code, default semua opsi
   const showOptions = qrData?.show_options || ['internal_ticket', 'external_ticket', 'survey'];
 
-  // Tampilkan pilihan jika tidak ada auto-redirect
+  // Tampilkan pilihan jika tidak ada auto-redirect - Mode Fullscreen Mobile
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex flex-col">
-      {/* Header */}
-      <header className="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+      {/* Minimal Header */}
+      <div className="bg-white dark:bg-slate-800 px-4 py-3 shadow-sm safe-area-top">
+        <div className="max-w-lg mx-auto flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
             <span className="material-symbols-outlined text-primary text-2xl">local_hospital</span>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 dark:text-white">Sistem Pengaduan Terpadu</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Layanan Publik Digital</p>
+            <h1 className="text-base font-bold text-slate-900 dark:text-white">Layanan Publik</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Sistem Pengaduan Terpadu</p>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full">
-          {/* Unit Info Card */}
+        <div className="max-w-md w-full space-y-4">
+          {/* Unit Info Card - Compact */}
           {qrData?.units && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 mb-6">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-5">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
                   <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-3xl">business</span>
                 </div>
                 <div className="flex-1">
@@ -196,115 +200,83 @@ const QRScanLanding: React.FC = () => {
                     <span className="text-xs font-semibold text-primary uppercase tracking-wider">Unit Tujuan</span>
                     <span className="material-symbols-outlined text-green-500 text-sm">verified</span>
                   </div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                     {qrData.units.name}
                   </h2>
-                  {qrData.units.description && (
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      {qrData.units.description}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Action Cards */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-              Pilih Layanan
-            </h3>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-              Silakan pilih jenis layanan yang ingin Anda akses
+          {/* Action Cards - Mobile Optimized */}
+          <div className="space-y-3">
+            <p className="text-center text-sm text-slate-600 dark:text-slate-400 font-medium">
+              Pilih layanan yang Anda butuhkan
             </p>
 
-            <div className="grid gap-4">
-              {/* Tiket Eksternal - tampilkan jika ada di show_options */}
-              {showOptions.includes('external_ticket') && (
-                <button
-                  onClick={() => handleManualRedirect('external_ticket')}
-                  className="group flex items-center gap-4 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/5 transition-all text-left"
-                >
-                  <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-2xl">support_agent</span>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                      Buat Pengaduan / Laporan
-                    </h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Sampaikan keluhan, saran, atau permintaan informasi
-                    </p>
-                  </div>
-                  <span className="material-symbols-outlined text-slate-400 group-hover:text-primary group-hover:translate-x-1 transition-all">
-                    arrow_forward
-                  </span>
-                </button>
-              )}
+            {/* Tiket Eksternal */}
+            {showOptions.includes('external_ticket') && (
+              <button
+                onClick={() => handleManualRedirect('external_ticket')}
+                className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-5 flex items-center gap-4 hover:shadow-xl transition-all active:scale-[0.98]"
+              >
+                <div className="w-14 h-14 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
+                  <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-3xl">support_agent</span>
+                </div>
+                <div className="flex-1 text-left">
+                  <h4 className="font-bold text-slate-900 dark:text-white text-base">Buat Pengaduan</h4>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Keluhan, saran, atau permintaan</p>
+                </div>
+                <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+              </button>
+            )}
 
-              {/* Survei - tampilkan jika ada di show_options */}
-              {showOptions.includes('survey') && (
-                <button
-                  onClick={() => handleManualRedirect('survey')}
-                  className="group flex items-center gap-4 p-4 rounded-xl border-2 border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/5 transition-all text-left"
-                >
-                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-2xl">rate_review</span>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                      Isi Survei Kepuasan
-                    </h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Berikan penilaian terhadap layanan yang Anda terima
-                    </p>
-                  </div>
-                  <span className="material-symbols-outlined text-slate-400 group-hover:text-primary group-hover:translate-x-1 transition-all">
-                    arrow_forward
-                  </span>
-                </button>
-              )}
+            {/* Survei */}
+            {showOptions.includes('survey') && (
+              <button
+                onClick={() => handleManualRedirect('survey')}
+                className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-5 flex items-center gap-4 hover:shadow-xl transition-all active:scale-[0.98]"
+              >
+                <div className="w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                  <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-3xl">rate_review</span>
+                </div>
+                <div className="flex-1 text-left">
+                  <h4 className="font-bold text-slate-900 dark:text-white text-base">Isi Survei Kepuasan</h4>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Berikan penilaian layanan</p>
+                </div>
+                <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+              </button>
+            )}
 
-              {/* Tiket Internal - tampilkan jika ada di show_options */}
-              {showOptions.includes('internal_ticket') && (
-                <button
-                  onClick={() => handleManualRedirect('internal_ticket')}
-                  className="group flex items-center gap-4 p-4 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-primary hover:bg-primary/5 transition-all text-left opacity-75 hover:opacity-100"
-                >
-                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-2xl">assignment</span>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
-                      Tiket Internal (Staff)
-                    </h4>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      Khusus untuk petugas internal rumah sakit
-                    </p>
-                  </div>
-                  <span className="material-symbols-outlined text-slate-400 group-hover:text-primary group-hover:translate-x-1 transition-all">
-                    arrow_forward
-                  </span>
-                </button>
-              )}
-            </div>
+            {/* Tiket Internal */}
+            {showOptions.includes('internal_ticket') && (
+              <button
+                onClick={() => handleManualRedirect('internal_ticket')}
+                className="w-full bg-slate-100 dark:bg-slate-800/50 rounded-2xl p-5 flex items-center gap-4 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-[0.98] border border-dashed border-slate-300 dark:border-slate-600"
+              >
+                <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                  <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-3xl">assignment</span>
+                </div>
+                <div className="flex-1 text-left">
+                  <h4 className="font-bold text-slate-700 dark:text-slate-300 text-base">Tiket Internal</h4>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Khusus petugas internal</p>
+                </div>
+                <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+              </button>
+            )}
           </div>
 
           {/* Footer Info */}
-          <div className="mt-6 text-center">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Unit akan otomatis terisi berdasarkan lokasi QR Code yang Anda scan
-            </p>
-          </div>
+          <p className="text-center text-xs text-slate-500 dark:text-slate-400 pt-4">
+            Unit akan otomatis terisi dari QR Code
+          </p>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-4">
-        <div className="max-w-4xl mx-auto px-4 text-center text-sm text-slate-500 dark:text-slate-400">
-          © 2024 Sistem Pengaduan Terpadu. Hak Cipta Dilindungi.
-        </div>
-      </footer>
+      {/* CSS for safe area */}
+      <style>{`
+        .safe-area-top { padding-top: env(safe-area-inset-top); }
+      `}</style>
     </div>
   );
 };
