@@ -1,3 +1,4 @@
+// Halaman Tiket Eskalasi - Untuk Kepala Unit
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -218,8 +219,8 @@ export default function TiketEskalasi() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      <div className="w-full max-w-[1440px] mx-auto p-4 md:p-6 lg:p-8 flex flex-col gap-6">
+    <div className="w-full">
+      <div className="flex flex-col gap-6">
         {/* Breadcrumb */}
         <nav className="flex text-sm font-medium text-slate-500 dark:text-slate-400">
           <Link to="/" className="hover:text-primary transition-colors flex items-center gap-1">
@@ -474,3 +475,4 @@ export default function TiketEskalasi() {
     </div>
   );
 }
+

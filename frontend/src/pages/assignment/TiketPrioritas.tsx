@@ -1,5 +1,6 @@
+// Halaman Tiket Prioritas - Untuk Manager
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 
@@ -178,9 +179,9 @@ export default function TiketPrioritas() {
   const paginatedTickets = filteredTickets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="w-full">
       {/* Header */}
-      <header className="w-full bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-8 py-6 flex flex-wrap justify-between items-center gap-4 shrink-0 z-10">
+      <header className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-6 py-5 flex flex-wrap justify-between items-center gap-4 mb-6">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <h1 className="text-slate-900 dark:text-white text-2xl font-black tracking-tight">Tiket Prioritas Saya</h1>
@@ -205,8 +206,7 @@ export default function TiketPrioritas() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-8">
-        <div className="max-w-[1400px] mx-auto flex flex-col gap-8">
+      <div className="flex flex-col gap-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between h-32 relative overflow-hidden group hover:border-primary/50 transition-colors">

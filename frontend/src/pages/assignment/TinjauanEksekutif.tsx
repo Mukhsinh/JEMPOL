@@ -1,3 +1,4 @@
+// Halaman Tinjauan Eksekutif - Untuk Direktur
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -151,8 +152,8 @@ export default function TinjauanEksekutif() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
-      <div className="max-w-[1280px] mx-auto p-4 md:p-8 flex flex-col gap-8">
+    <div className="w-full">
+      <div className="flex flex-col gap-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row flex-wrap justify-between gap-4 items-end md:items-center">
           <div className="flex flex-col gap-1">
