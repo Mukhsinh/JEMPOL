@@ -29,7 +29,7 @@ interface TicketDetail {
 export default function TiketPrioritasDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  useAuth(); // Memastikan user terautentikasi
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [responseText, setResponseText] = useState('');
@@ -42,39 +42,40 @@ export default function TiketPrioritasDetail() {
   const fetchTicketDetail = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/escalations/priority-tickets/${id}`);
-      if (response.data.success) {
-        setTicket(response.data.data);
-        setSelectedUnit(response.data.data.unit_id);
+      const response = await api.get(`/escalations/tickets/${id}`);
+      if (response.data.success && response.data.data) {
+        const data = response.data.data;
+        setTicket({
+          id: data.id,
+          ticket_number: data.ticket_number,
+          title: data.title,
+          description: data.description,
+          unit_name: data.units?.name || 'Unit tidak diketahui',
+          unit_id: data.unit_id,
+          priority: data.priority || 'medium',
+          status: data.status || 'open',
+          created_at: data.created_at,
+          sla_deadline: data.sla_deadline,
+          ai_classification: data.ai_classification,
+          ai_confidence: data.confidence_score ? Number(data.confidence_score) : undefined,
+          sentiment_score: data.sentiment_score ? Number(data.sentiment_score) : undefined,
+          submitter_name: data.submitter_name,
+          submitter_email: data.submitter_email,
+          submitter_phone: data.submitter_phone,
+          history: data.ticket_responses?.map((r: any) => ({
+            type: 'response',
+            user: r.users?.full_name || 'Sistem',
+            message: r.message,
+            timestamp: r.created_at
+          })) || []
+        });
+        setSelectedUnit(data.unit_id);
+      } else {
+        setTicket(null);
       }
     } catch (error) {
       console.error('Error fetching ticket detail:', error);
-      setTicket({
-        id: id || '1',
-        ticket_number: '4920',
-        title: 'Masalah Sanitasi di Ruang B',
-        description: 'Pasien melaporkan tempat sampah meluap di lorong utama Ruang B dekat stasiun perawat. Baunya mulai menyengat dan membuat pengunjung serta pasien di ruang tunggu tidak nyaman.',
-        unit_name: 'Manajemen Fasilitas',
-        unit_id: '1',
-        priority: 'high',
-        status: 'in_progress',
-        created_at: '2023-10-24T10:00:00Z',
-        sla_deadline: '2023-10-24T14:00:00Z',
-        ai_classification: { category: 'Pengaduan', urgency: 'Urgensi Tinggi', unit: 'Unit Sanitasi' },
-        ai_confidence: 95,
-        ai_recommendations: ['Kirim petugas kebersihan segera (Risiko SLA).', 'Telepon tindak lanjut dalam 2 jam.', 'Catat insiden untuk tinjauan mingguan.'],
-        sentiment_score: -0.8,
-        submitter_name: 'John Doe',
-        submitter_email: 'john.doe@example.com',
-        submitter_phone: '+1 (555) 123-4567',
-        attachments: [{ url: 'https://via.placeholder.com/300', name: 'foto_1.jpg' }],
-        history: [
-          { type: 'response', user: 'Agen Sarah Jenkins', message: 'Memberitahu supervisor kebersihan melalui radio internal. Estimasi penyelesaian dalam 30 menit.', timestamp: '2023-10-24T10:15:00Z' },
-          { type: 'ai_classification', user: 'Sistem AI', message: 'Diklasifikasikan otomatis sebagai Sanitasi / Kebersihan dengan Prioritas Tinggi.', timestamp: '2023-10-24T10:01:00Z', is_ai: true },
-          { type: 'created', user: 'Sistem', message: 'Dikirim via Aplikasi Seluler oleh Pengguna Tamu.', timestamp: '2023-10-24T10:00:00Z' }
-        ],
-        unit_performance: { open_tickets: 12, avg_response: '15m', sla_compliance: '94%' }
-      });
+      setTicket(null);
     } finally {
       setLoading(false);
     }
@@ -83,7 +84,7 @@ export default function TiketPrioritasDetail() {
   const handleSendResponse = async () => {
     if (!responseText.trim()) return;
     try {
-      await api.post(`/escalations/priority-tickets/${id}/respond`, { message: responseText });
+      await api.post(`/escalations/tickets/${id}/respond`, { message: responseText });
       setResponseText('');
       fetchTicketDetail();
     } catch (error) {
@@ -93,7 +94,7 @@ export default function TiketPrioritasDetail() {
 
   const handleCloseTicket = async () => {
     try {
-      await api.patch(`/escalations/priority-tickets/${id}/status`, { status: 'closed' });
+      await api.patch(`/escalations/tickets/${id}/status`, { status: 'closed' });
       navigate('/assignment/tiket-prioritas');
     } catch (error) {
       console.error('Error closing ticket:', error);

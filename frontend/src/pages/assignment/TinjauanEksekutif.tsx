@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import api from '../../services/api';
+import escalatedTicketService from '../../services/escalatedTicketService';
 
 interface EscalationTicket {
   id: string;
@@ -56,50 +56,21 @@ export default function TinjauanEksekutif() {
   const fetchExecutiveData = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/escalations/executive-overview');
-      if (response.data.success) {
-        setTickets(response.data.data.tickets || []);
-        setStats(response.data.data.stats || stats);
-        setAIInsight(response.data.data.ai_insight || aiInsight);
+      const data = await escalatedTicketService.getExecutiveOverview();
+      if (data) {
+        setTickets(data.tickets || []);
+        if (data.stats) {
+          setStats(data.stats);
+        }
+        if (data.ai_insight) {
+          setAIInsight(data.ai_insight);
+        }
+      } else {
+        setTickets([]);
       }
     } catch (error) {
       console.error('Error fetching executive data:', error);
-      // Mock data
-      setTickets([
-        {
-          id: '1',
-          ticket_number: 'TKT-2094',
-          title: 'Kelangkaan Obat Insulin',
-          reporter: 'Dr. Budi Santoso',
-          department: 'Farmasi',
-          duration: '48 Jam (Over SLA)',
-          sla_status: 'breached',
-          status: 'Eskalasi Direktur',
-          status_type: 'escalation_director'
-        },
-        {
-          id: '2',
-          ticket_number: 'TKT-2088',
-          title: 'AC Rusak Ruang VIP 03',
-          reporter: 'Pasien komplain panas berlebih',
-          department: 'Fasilitas',
-          duration: '23 Jam (Mendekati Limit)',
-          sla_status: 'warning',
-          status: 'High Priority',
-          status_type: 'high_priority'
-        },
-        {
-          id: '3',
-          ticket_number: 'TKT-2091',
-          title: 'Antrian Pendaftaran > 2 Jam',
-          reporter: 'Sistem offline sementara',
-          department: 'Administrasi',
-          duration: '2 Jam (On Track)',
-          sla_status: 'on_track',
-          status: 'Investigasi',
-          status_type: 'investigation'
-        }
-      ]);
+      setTickets([]);
     } finally {
       setLoading(false);
     }
@@ -404,6 +375,16 @@ export default function TinjauanEksekutif() {
             {loading ? (
               <div className="flex items-center justify-center py-20">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : tickets.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 px-4">
+                <div className="bg-slate-100 dark:bg-slate-700 rounded-full p-6 mb-4">
+                  <span className="material-symbols-outlined text-5xl text-slate-400 dark:text-slate-500">gavel</span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Tidak Ada Eskalasi Prioritas</h3>
+                <p className="text-slate-500 dark:text-slate-400 text-center max-w-md">
+                  Saat ini tidak ada tiket yang memerlukan tinjauan eksekutif. Tiket akan muncul di sini ketika ada eskalasi ke level direktur.
+                </p>
               </div>
             ) : (
               <>

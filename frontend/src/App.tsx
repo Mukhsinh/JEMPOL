@@ -98,58 +98,58 @@ function App() {
                 <Routes>
                   {/* Dashboard */}
                   <Route path="/" element={<Dashboard />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="dashboard" element={<Dashboard />} />
 
                   {/* Ticket Management */}
-                  <Route path="/tickets" element={<TicketList />} />
-                  <Route path="/tickets/:id" element={<TicketDetail />} />
-                  <Route path="/tickets/view" element={<TicketDetailView />} />
-                  <Route path="/tickets/create/internal" element={<CreateInternalTicket />} />
-                  <Route path="/tickets/tiket-eksternal" element={<TiketEksternal />} />
-                  <Route path="/tickets/qr-management" element={<QRManagement />} />
-                  <Route path="/qr-codes" element={<QRManagement />} />
-                  <Route path="/tickets/ai-escalation" element={<AIEscalationManagement />} />
-                  <Route path="/tickets/escalation" element={<EscalationManagement />} />
+                  <Route path="tickets" element={<TicketList />} />
+                  <Route path="tickets/:id" element={<TicketDetail />} />
+                  <Route path="tickets/view" element={<TicketDetailView />} />
+                  <Route path="tickets/create/internal" element={<CreateInternalTicket />} />
+                  <Route path="tickets/tiket-eksternal" element={<TiketEksternal />} />
+                  <Route path="tickets/qr-management" element={<QRManagement />} />
+                  <Route path="qr-codes" element={<QRManagement />} />
+                  <Route path="tickets/ai-escalation" element={<AIEscalationManagement />} />
+                  <Route path="tickets/escalation" element={<EscalationManagement />} />
 
                   {/* Assignment/Penugasan Management */}
-                  <Route path="/assignment/tiket-eskalasi" element={<TiketEskalasi />} />
-                  <Route path="/assignment/tiket-eskalasi/:id" element={<TiketEskalasiDetail />} />
-                  <Route path="/assignment/tiket-prioritas" element={<TiketPrioritas />} />
-                  <Route path="/assignment/tiket-prioritas/:id" element={<TiketPrioritasDetail />} />
-                  <Route path="/assignment/tinjauan-eksekutif" element={<TinjauanEksekutif />} />
-                  <Route path="/assignment/tinjauan-eksekutif/:id" element={<TinjauanEksekutifDetail />} />
+                  <Route path="assignment/tiket-eskalasi" element={<TiketEskalasi />} />
+                  <Route path="assignment/tiket-eskalasi/:id" element={<TiketEskalasiDetail />} />
+                  <Route path="assignment/tiket-prioritas" element={<TiketPrioritas />} />
+                  <Route path="assignment/tiket-prioritas/:id" element={<TiketPrioritasDetail />} />
+                  <Route path="assignment/tinjauan-eksekutif" element={<TinjauanEksekutif />} />
+                  <Route path="assignment/tinjauan-eksekutif/:id" element={<TinjauanEksekutifDetail />} />
 
                   {/* Survey Management */}
-                  <Route path="/survey" element={<SurveyLanding />} />
-                  <Route path="/survey/admin" element={<SurveyLanding />} />
-                  <Route path="/survey/form" element={<SurveyForm />} />
-                  <Route path="/survey/report" element={<SurveyReport />} />
+                  <Route path="survey" element={<SurveyLanding />} />
+                  <Route path="survey/admin" element={<SurveyLanding />} />
+                  <Route path="survey/form" element={<SurveyForm />} />
+                  <Route path="survey/report" element={<SurveyReport />} />
 
                   {/* User Management */}
-                  <Route path="/users" element={<UserManagement />} />
-                  <Route path="/users/profile" element={<UserProfile />} />
+                  <Route path="users" element={<UserManagement />} />
+                  <Route path="users/profile" element={<UserProfile />} />
 
                   {/* Master Data Management */}
-                  <Route path="/master-data" element={<MasterData />} />
-                  <Route path="/master-data/units" element={<UnitsPage />} />
-                  <Route path="/master-data/unit-types" element={<UnitTypesPage />} />
-                  <Route path="/master-data/service-categories" element={<ServiceCategoriesPage />} />
-                  <Route path="/master-data/ticket-types" element={<TicketTypesPage />} />
-                  <Route path="/master-data/ticket-classifications" element={<TicketClassificationsPage />} />
-                  <Route path="/master-data/ticket-statuses" element={<TicketStatusesPage />} />
-                  <Route path="/master-data/patient-types" element={<PatientTypesPage />} />
-                  <Route path="/master-data/roles-permissions" element={<RolesPermissionsPage />} />
-                  <Route path="/master-data/sla-settings" element={<SLASettingsPage />} />
-                  <Route path="/unified-master-data" element={<UnifiedMasterData />} />
+                  <Route path="master-data" element={<MasterData />} />
+                  <Route path="master-data/units" element={<UnitsPage />} />
+                  <Route path="master-data/unit-types" element={<UnitTypesPage />} />
+                  <Route path="master-data/service-categories" element={<ServiceCategoriesPage />} />
+                  <Route path="master-data/ticket-types" element={<TicketTypesPage />} />
+                  <Route path="master-data/ticket-classifications" element={<TicketClassificationsPage />} />
+                  <Route path="master-data/ticket-statuses" element={<TicketStatusesPage />} />
+                  <Route path="master-data/patient-types" element={<PatientTypesPage />} />
+                  <Route path="master-data/roles-permissions" element={<RolesPermissionsPage />} />
+                  <Route path="master-data/sla-settings" element={<SLASettingsPage />} />
+                  <Route path="unified-master-data" element={<UnifiedMasterData />} />
 
                   {/* Settings */}
-                  <Route path="/settings/*" element={<SettingsPage />} />
+                  <Route path="settings/*" element={<SettingsPage />} />
 
                   {/* Reports & Analytics */}
-                  <Route path="/reports" element={<Reports />} />
+                  <Route path="reports" element={<Reports />} />
                   
                   {/* Notifications */}
-                  <Route path="/realtime-notification" element={<NotificationSettings />} />
+                  <Route path="realtime-notification" element={<NotificationSettings />} />
                 </Routes>
               </MainLayout>
             </ProtectedRoute>

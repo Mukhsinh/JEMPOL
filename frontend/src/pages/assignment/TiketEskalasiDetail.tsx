@@ -42,7 +42,7 @@ interface TicketDetail {
 export default function TiketEskalasiDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  useAuth(); // Memastikan user terautentikasi
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [responseText, setResponseText] = useState('');
@@ -56,75 +56,42 @@ export default function TiketEskalasiDetail() {
     try {
       setLoading(true);
       const response = await api.get(`/escalations/tickets/${id}`);
-      if (response.data.success) {
-        setTicket(response.data.data);
-        setSelectedUnit(response.data.data.unit_id);
+      if (response.data.success && response.data.data) {
+        const data = response.data.data;
+        // Format data dari API
+        setTicket({
+          id: data.id,
+          ticket_number: data.ticket_number,
+          title: data.title,
+          description: data.description,
+          unit_name: data.units?.name || 'Unit tidak diketahui',
+          unit_id: data.unit_id,
+          priority: data.priority || 'medium',
+          status: data.status || 'open',
+          created_at: data.created_at,
+          sla_deadline: data.sla_deadline,
+          escalated_at: data.ticket_escalations?.[0]?.escalated_at || data.created_at,
+          escalation_reason: data.ticket_escalations?.[0]?.reason || '',
+          ai_classification: data.ai_classification,
+          ai_confidence: data.confidence_score ? Number(data.confidence_score) : undefined,
+          sentiment_score: data.sentiment_score ? Number(data.sentiment_score) : undefined,
+          submitter_name: data.submitter_name,
+          submitter_email: data.submitter_email,
+          submitter_phone: data.submitter_phone,
+          history: data.ticket_responses?.map((r: any) => ({
+            type: 'response',
+            user: r.users?.full_name || 'Sistem',
+            message: r.message,
+            timestamp: r.created_at
+          })) || []
+        });
+        setSelectedUnit(data.unit_id);
+      } else {
+        setTicket(null);
       }
     } catch (error) {
       console.error('Error fetching ticket detail:', error);
-      // Mock data for demo
-      setTicket({
-        id: id || '1',
-        ticket_number: 'TKT-4920',
-        title: 'Masalah Kebersihan di Ruang B',
-        description: 'Pasien melaporkan tempat sampah meluap di lorong utama Ruang B dekat pos perawat. Bau mulai menyengat dan mengganggu kenyamanan pengunjung dan pasien di ruang tunggu. Beberapa pengunjung telah mengeluh tentang kurangnya pembersihan tepat waktu. Foto terlampir menunjukkan kondisi per jam 09:45 pagi ini.',
-        unit_name: 'Manajemen Fasilitas',
-        unit_id: '1',
-        priority: 'high',
-        status: 'in_progress',
-        created_at: '2023-10-24T10:00:00Z',
-        sla_deadline: '2023-10-24T14:00:00Z',
-        escalated_at: '2023-10-24T10:20:00Z',
-        escalation_reason: 'Risiko SLA tinggi dan kategori sanitasi kritis',
-        ai_classification: {
-          category: 'Keluhan',
-          urgency: 'Urgensi Tinggi',
-          unit: 'Unit Sanitasi'
-        },
-        ai_confidence: 95,
-        ai_recommendations: [
-          'Kirim petugas kebersihan segera (Risiko SLA).',
-          'Panggilan tindak lanjut dalam 2 jam.',
-          'Catat insiden untuk tinjauan mingguan.'
-        ],
-        sentiment_score: -0.8,
-        submitter_name: 'John Doe',
-        submitter_email: 'john.doe@example.com',
-        submitter_phone: '+1 (555) 123-4567',
-        submitter_type: 'Keluarga Pasien • VIP',
-        attachments: [
-          { url: 'https://via.placeholder.com/300', name: 'foto_1.jpg' },
-          { url: 'https://via.placeholder.com/300', name: 'foto_2.jpg' }
-        ],
-        history: [
-          {
-            type: 'escalation',
-            user: 'Sistem',
-            message: 'Tiket dieskalasi ke Kepala Unit karena risiko SLA tinggi dan kategori sanitasi kritis.',
-            timestamp: '2023-10-24T10:20:00Z',
-            is_escalation: true
-          },
-          {
-            type: 'response',
-            user: 'Petugas Sarah Jenkins',
-            message: 'Memberitahu pengawas kebersihan via radio internal. Estimasi penyelesaian dalam 30 menit.',
-            timestamp: '2023-10-24T10:15:00Z'
-          },
-          {
-            type: 'ai_classification',
-            user: 'Sistem AI',
-            message: 'Diklasifikasikan otomatis sebagai Sanitasi / Kebersihan dengan Prioritas Tinggi.',
-            timestamp: '2023-10-24T10:01:00Z',
-            is_ai: true
-          },
-          {
-            type: 'created',
-            user: 'Sistem',
-            message: 'Dikirim via Aplikasi Mobile oleh Pengguna Tamu.',
-            timestamp: '2023-10-24T10:00:00Z'
-          }
-        ]
-      });
+      setTicket(null);
     } finally {
       setLoading(false);
     }

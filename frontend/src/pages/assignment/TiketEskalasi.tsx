@@ -1,39 +1,22 @@
 // Halaman Tiket Eskalasi - Untuk Kepala Unit
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import escalatedTicketService, { EscalatedTicket, EscalationStats } from '../../services/escalatedTicketService';
 import api from '../../services/api';
 
-interface EscalatedTicket {
+interface Unit {
   id: string;
-  ticket_number: string;
-  title: string;
-  description: string;
-  unit_name: string;
-  unit_color: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  status: string;
-  created_at: string;
-  sla_deadline: string;
-  escalated_at: string;
-  escalation_reason: string;
-  ai_insight?: string;
-  submitter_name?: string;
-}
-
-interface Stats {
-  total_active: number;
-  high_urgency: number;
-  waiting_response: number;
-  completed_this_month: number;
-  new_today: number;
+  name: string;
+  code: string;
 }
 
 export default function TiketEskalasi() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [tickets, setTickets] = useState<EscalatedTicket[]>([]);
-  const [stats, setStats] = useState<Stats>({
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [stats, setStats] = useState<EscalationStats>({
     total_active: 0,
     high_urgency: 0,
     waiting_response: 0,
@@ -44,109 +27,75 @@ export default function TiketEskalasi() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [urgencyFilter, setUrgencyFilter] = useState('all');
+  const [unitFilter, setUnitFilter] = useState('all');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'priority'>('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    fetchEscalatedTickets();
-  }, []);
-
-  const fetchEscalatedTickets = async () => {
+  // Fetch units for filter
+  const fetchUnits = useCallback(async () => {
     try {
-      setLoading(true);
-      // Fetch escalated tickets for current user (Kepala Unit)
-      const response = await api.get('/escalations/my-tickets');
-      if (response.data.success) {
-        setTickets(response.data.data || []);
-        calculateStats(response.data.data || []);
+      const response = await api.get('/public/units');
+      if (Array.isArray(response.data)) {
+        setUnits(response.data);
       }
     } catch (error) {
+      console.error('Error fetching units:', error);
+    }
+  }, []);
+
+  const fetchEscalatedTickets = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await escalatedTicketService.getMyEscalatedTickets();
+      setTickets(data);
+      setStats(escalatedTicketService.calculateStats(data));
+    } catch (error) {
       console.error('Error fetching escalated tickets:', error);
-      // Use mock data for demo
-      const mockTickets: EscalatedTicket[] = [
-        {
-          id: '1',
-          ticket_number: 'TKT-2023-001',
-          title: 'Keluhan Pelayanan UGD',
-          description: 'Pasien menunggu > 3 jam',
-          unit_name: 'Unit Gawat Darurat',
-          unit_color: '#3B82F6',
-          priority: 'high',
-          status: 'in_progress',
-          created_at: '2023-10-12T10:00:00Z',
-          sla_deadline: '2023-10-12T14:00:00Z',
-          escalated_at: '2023-10-12T10:20:00Z',
-          escalation_reason: 'Risiko SLA tinggi dan kategori sanitasi kritis',
-          ai_insight: 'Sentimen negatif terdeteksi, perlu tindakan segera',
-          submitter_name: 'John Doe'
-        },
-        {
-          id: '2',
-          ticket_number: 'TKT-2023-004',
-          title: 'Fasilitas Ruang Tunggu Rusak',
-          description: 'AC mati di lantai 2',
-          unit_name: 'Unit Sarana & Prasarana',
-          unit_color: '#F97316',
-          priority: 'medium',
-          status: 'open',
-          created_at: '2023-10-11T09:00:00Z',
-          sla_deadline: '2023-10-12T09:00:00Z',
-          escalated_at: '2023-10-11T11:00:00Z',
-          escalation_reason: 'Keluhan berulang dari pengunjung'
-        },
-        {
-          id: '3',
-          ticket_number: 'TKT-2023-018',
-          title: 'Keterlambatan Obat Rawat Inap',
-          description: 'Komplain keluarga pasien VIP',
-          unit_name: 'Unit Farmasi',
-          unit_color: '#14B8A6',
-          priority: 'high',
-          status: 'in_progress',
-          created_at: '2023-10-10T08:00:00Z',
-          sla_deadline: '2023-10-10T12:00:00Z',
-          escalated_at: '2023-10-10T10:00:00Z',
-          escalation_reason: 'Pasien VIP, prioritas tinggi',
-          ai_insight: 'Pola keluhan serupa terdeteksi minggu ini'
-        },
-        {
-          id: '4',
-          ticket_number: 'TKT-2023-022',
-          title: 'Permintaan Jadwal Dokter Spesialis',
-          description: 'Website tidak update',
-          unit_name: 'Unit Administrasi',
-          unit_color: '#6366F1',
-          priority: 'low',
-          status: 'escalated',
-          created_at: '2023-10-09T14:00:00Z',
-          sla_deadline: '2023-10-11T14:00:00Z',
-          escalated_at: '2023-10-10T08:00:00Z',
-          escalation_reason: 'Menunggu persetujuan',
-          ai_insight: 'Masalah teknis teridentifikasi'
-        }
-      ];
-      setTickets(mockTickets);
-      calculateStats(mockTickets);
+      setTickets([]);
+      setStats(escalatedTicketService.calculateStats([]));
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchEscalatedTickets();
+    fetchUnits();
+  }, [fetchEscalatedTickets, fetchUnits]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, urgencyFilter, unitFilter, sortOrder]);
+
+  // Export to CSV
+  const handleExportCSV = () => {
+    const headers = ['No. Tiket', 'Judul', 'Unit Asal', 'Urgensi', 'Status', 'Tanggal Eskalasi', 'Alasan Eskalasi'];
+    const csvData = filteredTickets.map(ticket => [
+      ticket.ticket_number,
+      ticket.title,
+      ticket.unit_name,
+      ticket.priority.toUpperCase(),
+      ticket.status,
+      formatDate(ticket.escalated_at),
+      ticket.escalation_reason || '-'
+    ]);
+    
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(cell => `"${cell}"`).join(','))
+      .join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `tiket-eskalasi-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
   };
 
-  const calculateStats = (data: EscalatedTicket[]) => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-    setStats({
-      total_active: data.filter(t => !['resolved', 'closed'].includes(t.status)).length,
-      high_urgency: data.filter(t => t.priority === 'high' || t.priority === 'critical').length,
-      waiting_response: data.filter(t => t.status === 'escalated').length,
-      completed_this_month: data.filter(t => 
-        ['resolved', 'closed'].includes(t.status) && 
-        new Date(t.created_at) >= startOfMonth
-      ).length,
-      new_today: data.filter(t => new Date(t.escalated_at) >= startOfDay).length
-    });
+  // Print report
+  const handlePrint = () => {
+    window.print();
   };
 
   const getPriorityBadge = (priority: string) => {
@@ -194,15 +143,29 @@ export default function TiketEskalasi() {
     );
   };
 
-  const filteredTickets = tickets.filter(ticket => {
-    const matchesSearch = 
-      ticket.ticket_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.unit_name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
-    const matchesUrgency = urgencyFilter === 'all' || ticket.priority === urgencyFilter;
-    return matchesSearch && matchesStatus && matchesUrgency;
-  });
+  const filteredTickets = tickets
+    .filter(ticket => {
+      const matchesSearch = 
+        ticket.ticket_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        ticket.unit_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (ticket.submitter_name && ticket.submitter_name.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
+      const matchesUrgency = urgencyFilter === 'all' || ticket.priority === urgencyFilter;
+      const matchesUnit = unitFilter === 'all' || ticket.unit_name === unitFilter;
+      return matchesSearch && matchesStatus && matchesUrgency && matchesUnit;
+    })
+    .sort((a, b) => {
+      if (sortOrder === 'newest') {
+        return new Date(b.escalated_at).getTime() - new Date(a.escalated_at).getTime();
+      } else if (sortOrder === 'oldest') {
+        return new Date(a.escalated_at).getTime() - new Date(b.escalated_at).getTime();
+      } else {
+        // Sort by priority
+        const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+        return (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
+      }
+    });
 
   const totalPages = Math.ceil(filteredTickets.length / itemsPerPage);
   const paginatedTickets = filteredTickets.slice(
@@ -245,11 +208,17 @@ export default function TiketEskalasi() {
             </p>
           </div>
           <div className="flex gap-3">
-            <button className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-2 shadow-sm">
+            <button 
+              onClick={handlePrint}
+              className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition flex items-center gap-2 shadow-sm"
+            >
               <span className="material-symbols-outlined text-lg">print</span>
               Cetak Laporan
             </button>
-            <button className="bg-primary text-white border border-primary px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-600 transition flex items-center gap-2 shadow-sm shadow-blue-200 dark:shadow-none">
+            <button 
+              onClick={handleExportCSV}
+              className="bg-primary text-white border border-primary px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-600 transition flex items-center gap-2 shadow-sm shadow-blue-200 dark:shadow-none"
+            >
               <span className="material-symbols-outlined text-lg">download</span>
               Ekspor Data
             </button>
@@ -356,6 +325,26 @@ export default function TiketEskalasi() {
               <option value="medium">Sedang</option>
               <option value="low">Rendah</option>
             </select>
+            <select
+              value={unitFilter}
+              onChange={(e) => setUnitFilter(e.target.value)}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-sm font-medium border border-slate-200 dark:border-slate-600"
+            >
+              <option value="all">Semua Unit</option>
+              {units.map(unit => (
+                <option key={unit.id} value={unit.name}>{unit.name}</option>
+              ))}
+            </select>
+            <div className="border-l border-slate-200 dark:border-slate-600 mx-1 h-8 hidden sm:block"></div>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'newest' | 'oldest' | 'priority')}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-primary bg-primary/10 hover:bg-primary/20 text-sm font-bold border-none"
+            >
+              <option value="newest">Terbaru</option>
+              <option value="oldest">Terlama</option>
+              <option value="priority">Prioritas</option>
+            </select>
           </div>
         </div>
 
@@ -364,6 +353,16 @@ export default function TiketEskalasi() {
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : paginatedTickets.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 px-4">
+              <div className="bg-slate-100 dark:bg-slate-700 rounded-full p-6 mb-4">
+                <span className="material-symbols-outlined text-5xl text-slate-400 dark:text-slate-500">inbox</span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Tidak Ada Tiket Eskalasi</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-center max-w-md">
+                Saat ini tidak ada tiket yang dieskalasikan kepada Anda. Tiket akan muncul di sini ketika ada eskalasi baru.
+              </p>
             </div>
           ) : (
             <>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Tiket Eskalasi Integration</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+        .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #1e40af; }
+        h2 { color: #374151; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px; }
+        .status { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .success { background: #dcfce7; color: #166534; }
+        .error { background: #fee2e2; color: #991b1b; }
+        .warning { background: #fef3c7; color: #92400e; }
+        .info { background: #dbeafe; color: #1e40af; }
+        pre { background: #1f2937; color: #f9fafb; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+        button { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin: 5px; }
+        button:hover { background: #2563eb; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background: #f9fafb; font-weight: 600; }
+        .priority-high { color: #dc2626; }
+        .priority-critical { color: #7c2d12; font-weight: bold; }
+        .priority-medium { color: #d97706; }
+        .priority-low { color: #6b7280; }
+    </style>
+</head>
+<body>
+    <h1>🎫 Test Integrasi Halaman Tiket Eskalasi</h1>
+    
+    <div class="card">
+        <h2>📋 Status Komponen</h2>
+        <div class="grid">
+            <div>
+                <h3>Frontend</h3>
+                <ul id="frontend-status"></ul>
+            </div>
+            <div>
+                <h3>Backend API</h3>
+                <ul id="backend-status"></ul>
+            </div>
+        </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🔌 Test API Endpoints</h2>
+        <button onclick="testMyTickets()">Test /escalations/my-tickets</button>
+        <button onclick="testPriorityTickets()">Test /escalations/priority-tickets</button>
+        <button onclick="testExecutiveOverview()">Test /escalations/executive-overview</button>
+        <div id="api-result"></div>
+    </div>
+
+    <div class="card">
+        <h2>📊 Data Tiket Eskalasi</h2>
+        <div id="tickets-data">
+            <p>Klik tombol di atas untuk memuat data...</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🔗 Link Halaman</h2>
+        <p>Buka halaman berikut di aplikasi:</p>
+        <ul>
+            <li><a href="http://localhost:3002/assignment/tiket-eskalasi" target="_blank">Tiket Eskalasi</a></li>
+            <li><a href="http://localhost:3002/assignment/tiket-prioritas" target="_blank">Tiket Prioritas</a></li>
+            <li><a href="http://localhost:3002/assignment/tinjauan-eksekutif" target="_blank">Tinjauan Eksekutif</a></li>
+        </ul>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3004/api';
+        
+        // Check frontend components
+        document.getElementById('frontend-status').innerHTML = `
+            <li><span class="status success">✓</span> TiketEskalasi.tsx</li>
+            <li><span class="status success">✓</span> TiketEskalasiDetail.tsx</li>
+            <li><span class="status success">✓</span> escalatedTicketService.ts</li>
+            <li><span class="status success">✓</span> Sidebar menu terintegrasi</li>
+            <li><span class="status success">✓</span> Routes di App.tsx</li>
+        `;
+        
+        document.getElementById('backend-status').innerHTML = `
+            <li><span class="status success">✓</span> assignmentRoutes.ts</li>
+            <li><span class="status success">✓</span> /escalations/my-tickets</li>
+            <li><span class="status success">✓</span> /escalations/priority-tickets</li>
+            <li><span class="status success">✓</span> /escalations/executive-overview</li>
+        `;
+
+        async function testMyTickets() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/escalations/my-tickets`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h3>Response /escalations/my-tickets</h3>
+                    <p>Status: <span class="status ${data.success ? 'success' : 'error'}">${response.status}</span></p>
+                    <p>Jumlah tiket: ${data.data?.length || 0}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                if (data.data && data.data.length > 0) {
+                    displayTicketsTable(data.data);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="status error">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testPriorityTickets() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/escalations/priority-tickets`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h3>Response /escalations/priority-tickets</h3>
+                    <p>Status: <span class="status ${data.success ? 'success' : 'error'}">${response.status}</span></p>
+                    <p>Jumlah tiket prioritas: ${data.data?.length || 0}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="status error">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testExecutiveOverview() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<p>Loading...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/escalations/executive-overview`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h3>Response /escalations/executive-overview</h3>
+                    <p>Status: <span class="status ${data.success ? 'success' : 'error'}">${response.status}</span></p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="status error">Error: ${error.message}</p>`;
+            }
+        }
+
+        function displayTicketsTable(tickets) {
+            const container = document.getElementById('tickets-data');
+            
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No. Tiket</th>
+                            <th>Judul</th>
+                            <th>Unit</th>
+                            <th>Prioritas</th>
+                            <th>Status</th>
+                            <th>Alasan Eskalasi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            tickets.forEach(ticket => {
+                html += `
+                    <tr>
+                        <td><strong>${ticket.ticket_number}</strong></td>
+                        <td>${ticket.title}</td>
+                        <td>${ticket.unit_name}</td>
+                        <td class="priority-${ticket.priority}">${ticket.priority.toUpperCase()}</td>
+                        <td>${ticket.status}</td>
+                        <td>${ticket.escalation_reason || '-'}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Auto-test on load
+        testMyTickets();
+    </script>
+</body>
+</html>

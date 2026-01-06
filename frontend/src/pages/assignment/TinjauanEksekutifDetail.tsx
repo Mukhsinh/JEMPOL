@@ -26,7 +26,7 @@ interface TicketDetail {
 
 export default function TinjauanEksekutifDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  useNavigate(); // Available for future navigation needs
   const [ticket, setTicket] = useState<TicketDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [responseText, setResponseText] = useState('');
@@ -38,34 +38,38 @@ export default function TinjauanEksekutifDetail() {
   const fetchTicketDetail = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/escalations/executive-tickets/${id}`);
-      if (response.data.success) setTicket(response.data.data);
+      const response = await api.get(`/escalations/tickets/${id}`);
+      if (response.data.success && response.data.data) {
+        const data = response.data.data;
+        setTicket({
+          id: data.id,
+          ticket_number: data.ticket_number,
+          title: data.title,
+          description: data.description,
+          unit_name: data.units?.name || 'Unit tidak diketahui',
+          priority: data.priority || 'medium',
+          status: data.status || 'open',
+          created_at: data.created_at,
+          sla_deadline: data.sla_deadline,
+          ai_classification: data.ai_classification,
+          ai_confidence: data.confidence_score ? Number(data.confidence_score) : undefined,
+          sentiment_score: data.sentiment_score ? Number(data.sentiment_score) : undefined,
+          submitter_name: data.submitter_name,
+          submitter_email: data.submitter_email,
+          submitter_phone: data.submitter_phone,
+          history: data.ticket_responses?.map((r: any) => ({
+            type: 'response',
+            user: r.users?.full_name || 'Sistem',
+            message: r.message,
+            timestamp: r.created_at
+          })) || []
+        });
+      } else {
+        setTicket(null);
+      }
     } catch (error) {
-      // Mock data
-      setTicket({
-        id: id || '1',
-        ticket_number: 'TKT-2094',
-        title: 'Kelangkaan Obat Insulin',
-        description: 'Stok obat insulin habis di unit farmasi. Pasien diabetes memerlukan obat segera.',
-        unit_name: 'Farmasi',
-        priority: 'critical',
-        status: 'escalated',
-        created_at: '2023-10-22T10:00:00Z',
-        sla_deadline: '2023-10-24T10:00:00Z',
-        ai_classification: { category: 'Keluhan Kritis', urgency: 'Sangat Tinggi', unit: 'Farmasi' },
-        ai_confidence: 98,
-        ai_recommendations: ['Koordinasi dengan supplier obat segera', 'Cari alternatif obat dari RS lain', 'Informasikan pasien tentang status'],
-        sentiment_score: -0.9,
-        submitter_name: 'Dr. Budi Santoso',
-        submitter_email: 'budi.santoso@rs.com',
-        submitter_phone: '+62 812 3456 7890',
-        history: [
-          { type: 'escalation', user: 'Manajer Farmasi', message: 'Dieskalasi ke Direktur karena stok kritis', timestamp: '2023-10-23T14:00:00Z' },
-          { type: 'response', user: 'Staff Farmasi', message: 'Sudah menghubungi supplier, estimasi 2 hari', timestamp: '2023-10-23T10:00:00Z' },
-          { type: 'created', user: 'Dr. Budi Santoso', message: 'Melaporkan kelangkaan obat insulin', timestamp: '2023-10-22T10:00:00Z' }
-        ],
-        unit_performance: { open_tickets: 8, avg_response: '2j', sla_compliance: '85%' }
-      });
+      console.error('Error fetching ticket detail:', error);
+      setTicket(null);
     } finally {
       setLoading(false);
     }
@@ -74,7 +78,7 @@ export default function TinjauanEksekutifDetail() {
   const handleSendResponse = async () => {
     if (!responseText.trim()) return;
     try {
-      await api.post(`/escalations/executive-tickets/${id}/respond`, { message: responseText });
+      await api.post(`/escalations/tickets/${id}/respond`, { message: responseText });
       setResponseText('');
       fetchTicketDetail();
     } catch (error) {

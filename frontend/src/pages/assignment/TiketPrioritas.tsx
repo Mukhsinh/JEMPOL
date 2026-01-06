@@ -1,7 +1,7 @@
 // Halaman Tiket Prioritas - Untuk Manager
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import escalatedTicketService from '../../services/escalatedTicketService';
 
 interface PriorityTicket {
   id: string;
@@ -48,58 +48,14 @@ export default function TiketPrioritas() {
   const fetchPriorityTickets = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/escalations/priority-tickets');
-      if (response.data.success) {
-        setTickets(response.data.data || []);
-        calculateStats(response.data.data || []);
-      }
+      // Gunakan escalatedTicketService yang sudah ada fallback Supabase
+      const data = await escalatedTicketService.getPriorityTickets();
+      setTickets(data as any);
+      calculateStats(data as any);
     } catch (error) {
       console.error('Error fetching priority tickets:', error);
-      // Mock data untuk demo
-      const mockTickets: PriorityTicket[] = [
-        {
-          id: '1', ticket_number: 'T-1045', title: 'Keluhan Waktu Tunggu IGD Melebihi 4 Jam',
-          description: 'Pasien mengeluh waktu tunggu terlalu lama', unit_name: 'IGD / Emergency',
-          priority: 'critical', status: 'in_progress',
-          created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-          sla_deadline: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-          sla_remaining: '-1j 15m', sla_status: 'breached',
-          ai_summary: 'Analisis AI: Sentimen pasien sangat negatif. Risiko viral di medsos tinggi.',
-          ai_alert_type: 'sentiment', assignee: { name: 'Dr. Budi S.', role: 'Ka. Unit' }
-        },
-        {
-          id: '2', ticket_number: 'T-1029', title: 'Fasilitas AC Ruang Rawat Inap 304 Rusak',
-          description: 'AC tidak berfungsi sejak kemarin', unit_name: 'Fasilitas',
-          priority: 'high', status: 'open',
-          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          sla_deadline: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-          sla_remaining: '2j 00m', sla_status: 'on_track',
-          ai_summary: 'Prediksi: Eskalasi otomatis dalam 2 jam jika tidak ditangani.',
-          ai_alert_type: 'prediction', assignee: { name: 'Ahmad R.', role: 'Teknisi' }
-        },
-        {
-          id: '3', ticket_number: 'T-1067', title: 'Permintaan Persetujuan Refund Obat',
-          description: 'Dieskalasi oleh Admin Farmasi', unit_name: 'Farmasi',
-          priority: 'medium', status: 'escalated',
-          created_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-          sla_deadline: new Date(Date.now() + 22 * 60 * 60 * 1000).toISOString(),
-          sla_remaining: '22j 15m', sla_status: 'on_track',
-          ai_summary: 'Validasi: Data sesuai prosedur refund. Memerlukan approval manager.',
-          ai_alert_type: 'validation'
-        },
-        {
-          id: '4', ticket_number: 'T-1011', title: 'Dugaan Malpraktik Ringan Poli Gigi',
-          description: 'Menunggu Review Manager', unit_name: 'Poli Gigi',
-          priority: 'high', status: 'escalated',
-          created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-          sla_deadline: new Date(Date.now() + 4.5 * 60 * 60 * 1000).toISOString(),
-          sla_remaining: '4j 30m', sla_status: 'warning',
-          ai_summary: 'Alert: Kata kunci sensitif terdeteksi "Sakit Berlebih", "Salah Prosedur".',
-          ai_alert_type: 'warning', assignee: { name: 'Drg. Ratna', role: 'Dokter Gigi' }
-        }
-      ];
-      setTickets(mockTickets);
-      calculateStats(mockTickets);
+      setTickets([]);
+      calculateStats([]);
     } finally {
       setLoading(false);
     }
@@ -241,6 +197,16 @@ export default function TiketPrioritas() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : paginatedTickets.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 px-4">
+            <div className="bg-slate-100 dark:bg-slate-700 rounded-full p-6 mb-4">
+              <span className="material-symbols-outlined text-5xl text-slate-400 dark:text-slate-500">priority_high</span>
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Tidak Ada Tiket Prioritas</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-center max-w-md">
+              Saat ini tidak ada tiket dengan prioritas tinggi atau kritis. Tiket akan muncul di sini ketika ada tiket prioritas baru.
+            </p>
           </div>
         ) : (
           <>
