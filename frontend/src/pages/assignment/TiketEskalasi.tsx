@@ -95,6 +95,24 @@ export default function TiketEskalasi() {
     fetchUnits();
   }, [fetchEscalatedTickets, fetchUnits]);
 
+  // Handle auth error - redirect to login if needed
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { supabase } = await import('../../utils/supabaseClient');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error?.message?.includes('Refresh Token') || (!session && !loading)) {
+          // Clear invalid session and let ProtectedRoute handle redirect
+          const { clearInvalidSession } = await import('../../utils/supabaseClient');
+          await clearInvalidSession();
+        }
+      } catch (e) {
+        console.log('Auth check error:', e);
+      }
+    };
+    checkAuth();
+  }, [loading]);
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);

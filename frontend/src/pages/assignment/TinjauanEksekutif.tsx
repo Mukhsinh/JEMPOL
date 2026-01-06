@@ -53,6 +53,23 @@ export default function TinjauanEksekutif() {
     fetchExecutiveData();
   }, []);
 
+  // Handle auth error - redirect to login if needed
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { supabase } = await import('../../utils/supabaseClient');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error?.message?.includes('Refresh Token') || (!session && !loading)) {
+          const { clearInvalidSession } = await import('../../utils/supabaseClient');
+          await clearInvalidSession();
+        }
+      } catch (e) {
+        console.log('Auth check error:', e);
+      }
+    };
+    checkAuth();
+  }, [loading]);
+
   const fetchExecutiveData = async () => {
     try {
       setLoading(true);
