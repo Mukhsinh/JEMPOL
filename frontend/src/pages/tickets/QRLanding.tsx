@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { qrCodeService, QRCode } from '../../services/qrCodeService';
 
 const OPTION_CONFIG = {
@@ -28,7 +28,6 @@ const OPTION_CONFIG = {
 
 const QRLanding: React.FC = () => {
   const { code } = useParams<{ code: string }>();
-  const navigate = useNavigate();
   
   const [qrData, setQrData] = useState<QRCode | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,7 +113,7 @@ const QRLanding: React.FC = () => {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-3">QR Code Tidak Valid</h2>
           <p className="text-gray-500 mb-6">{error}</p>
-          <button onClick={() => navigate('/')} className="w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl font-bold text-lg shadow-lg">
+          <button onClick={() => window.history.back()} className="w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl font-bold text-lg shadow-lg">
             Kembali
           </button>
         </div>

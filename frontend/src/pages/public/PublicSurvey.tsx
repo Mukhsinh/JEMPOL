@@ -147,10 +147,19 @@ const PublicSurvey: React.FC = () => {
               Isi Survei Lagi
             </button>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => {
+                // Kembali ke halaman QR landing jika ada qrCode, atau tutup window
+                if (qrCode) {
+                  window.location.href = `/scan/${qrCode}`;
+                } else {
+                  window.close();
+                  // Fallback jika window.close() tidak bekerja
+                  window.history.back();
+                }
+              }}
               className="w-full px-6 py-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
             >
-              Kembali ke Beranda
+              Kembali ke Menu Utama
             </button>
           </div>
         </div>
