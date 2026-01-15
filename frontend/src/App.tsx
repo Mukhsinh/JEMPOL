@@ -19,7 +19,6 @@ import CreateInternalTicket from './pages/tickets/CreateInternalTicket';
 import TiketEksternal from './pages/tickets/TiketEksternal';
 import ExternalTicketForm from './pages/tickets/ExternalTicketForm';
 import QRManagement from './pages/tickets/QRManagement';
-import QRLanding from './pages/tickets/QRLanding';
 
 import EscalationManagement from './pages/tickets/EscalationManagement';
 
@@ -30,7 +29,6 @@ import SurveyReport from './pages/survey/SurveyReport';
 import PublicSurveyForm from './pages/survey/PublicSurveyForm';
 
 // Public Pages (No Sidebar)
-import QRScanLanding from './pages/public/QRScanLanding';
 import PublicExternalTicket from './pages/public/PublicExternalTicket';
 import PublicInternalTicket from './pages/public/PublicInternalTicket';
 import PublicSurvey from './pages/public/PublicSurvey';
@@ -81,15 +79,14 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/ticket-tracker" element={<TicketTracker />} />
-          <Route path="/qr/:code" element={<QRLanding />} />
+          {/* QR Code routes - redirect ke mobile fullscreen */}
+          <Route path="/qr/:code" element={<MobileFormLanding />} />
+          <Route path="/scan/:code" element={<MobileFormLanding />} />
           <Route path="/tiket-eksternal" element={<ExternalTicketForm />} />
           <Route path="/tiket-eksternal/:qrCode" element={<ExternalTicketForm />} />
           <Route path="/survey/public" element={<PublicSurveyForm />} />
           <Route path="/survey/public/:qrCode" element={<PublicSurveyForm />} />
           <Route path="/buku-petunjuk" element={<BukuPetunjuk />} />
-
-          {/* Public Routes - QR Scan Integration (No Sidebar) */}
-          <Route path="/scan/:code" element={<QRScanLanding />} />
           <Route path="/public/tiket-eksternal" element={<PublicExternalTicket />} />
           <Route path="/public/tiket-internal" element={<PublicInternalTicket />} />
           <Route path="/public/survei" element={<PublicSurvey />} />

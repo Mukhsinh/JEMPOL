@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { qrCodeService } from '../../services/qrCodeService';
 
 interface QRCodeData {
@@ -23,7 +23,6 @@ interface QRCodeData {
 // Tampilan clean, modern, dan menarik dengan warna solid cerah
 const MobileFormLanding: React.FC = () => {
   const { code } = useParams<{ code: string }>();
-  const navigate = useNavigate();
   
   const [qrData, setQrData] = useState<QRCodeData | null>(null);
   const [loading, setLoading] = useState(true);

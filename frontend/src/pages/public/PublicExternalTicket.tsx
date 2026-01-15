@@ -174,7 +174,7 @@ const PublicExternalTicket: React.FC = () => {
               onClick={() => {
                 // Kembali ke halaman QR landing jika ada qrCode, atau tutup window
                 if (qrCode) {
-                  window.location.href = `/scan/${qrCode}`;
+                  window.location.href = `/m/${qrCode}`;
                 } else {
                   window.close();
                   // Fallback jika window.close() tidak bekerja

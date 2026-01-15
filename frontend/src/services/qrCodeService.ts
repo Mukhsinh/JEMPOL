@@ -308,31 +308,13 @@ export const qrCodeService = {
     return response.data;
   },
 
-  // Generate QR code URL - mengarah ke halaman landing QR scan fullscreen
-  // Jika redirect_type ditentukan, akan langsung ke form yang sesuai
+  // Generate QR code URL - SELALU mengarah ke halaman fullscreen tanpa sidebar
+  // Menggunakan route /m/:code untuk tampilan mobile-first yang clean
   generateQRUrl(code: string, redirectType?: string, unitId?: string, unitName?: string, autoFillUnit?: boolean): string {
     const baseUrl = window.location.origin;
     
-    // Jika redirect_type spesifik (bukan selection), langsung ke form fullscreen
-    if (redirectType && redirectType !== 'selection') {
-      const params = new URLSearchParams({
-        qr: code,
-        unit_id: unitId || '',
-        unit_name: unitName || '',
-        auto_fill: autoFillUnit !== false ? 'true' : 'false'
-      });
-      
-      switch (redirectType) {
-        case 'internal_ticket':
-          return `${baseUrl}/m/tiket-internal?${params.toString()}`;
-        case 'external_ticket':
-          return `${baseUrl}/m/pengaduan?${params.toString()}`;
-        case 'survey':
-          return `${baseUrl}/m/survei?${params.toString()}`;
-      }
-    }
-    
-    // Default: ke halaman mobile form landing yang fullscreen tanpa sidebar
+    // SELALU gunakan route /m/:code untuk tampilan fullscreen tanpa sidebar
+    // Route ini akan otomatis redirect ke form yang sesuai berdasarkan redirect_type
     return `${baseUrl}/m/${code}`;
   },
 
