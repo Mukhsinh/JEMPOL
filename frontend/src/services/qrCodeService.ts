@@ -308,14 +308,45 @@ export const qrCodeService = {
     return response.data;
   },
 
-  // Generate QR code URL - mengarah ke halaman landing QR scan
-  generateQRUrl(code: string): string {
-    return `${window.location.origin}/scan/${code}`;
+  // Generate QR code URL - mengarah ke halaman landing QR scan fullscreen
+  // Jika redirect_type ditentukan, akan langsung ke form yang sesuai
+  generateQRUrl(code: string, redirectType?: string, unitId?: string, unitName?: string, autoFillUnit?: boolean): string {
+    const baseUrl = window.location.origin;
+    
+    // Jika redirect_type spesifik (bukan selection), langsung ke form fullscreen
+    if (redirectType && redirectType !== 'selection') {
+      const params = new URLSearchParams({
+        qr: code,
+        unit_id: unitId || '',
+        unit_name: unitName || '',
+        auto_fill: autoFillUnit !== false ? 'true' : 'false'
+      });
+      
+      switch (redirectType) {
+        case 'internal_ticket':
+          return `${baseUrl}/m/tiket-internal?${params.toString()}`;
+        case 'external_ticket':
+          return `${baseUrl}/m/pengaduan?${params.toString()}`;
+        case 'survey':
+          return `${baseUrl}/m/survei?${params.toString()}`;
+      }
+    }
+    
+    // Default: ke halaman mobile form landing yang fullscreen tanpa sidebar
+    return `${baseUrl}/m/${code}`;
   },
 
   // Generate QR code image URL (for display)
-  generateQRImageUrl(code: string, size: number = 200): string {
-    const url = this.generateQRUrl(code);
+  // Mendukung redirect langsung ke form berdasarkan redirect_type
+  generateQRImageUrl(
+    code: string, 
+    size: number = 200, 
+    redirectType?: string, 
+    unitId?: string, 
+    unitName?: string, 
+    autoFillUnit?: boolean
+  ): string {
+    const url = this.generateQRUrl(code, redirectType, unitId, unitName, autoFillUnit);
     return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`;
   },
 };

@@ -57,7 +57,7 @@ const MobileFormLanding: React.FC = () => {
     const params = new URLSearchParams({
       qr: data.code,
       unit_id: data.unit_id,
-      unit_name: encodeURIComponent(data.units?.name || ''),
+      unit_name: data.units?.name || '',
       auto_fill: data.auto_fill_unit !== false ? 'true' : 'false'
     });
 
@@ -76,7 +76,8 @@ const MobileFormLanding: React.FC = () => {
         setLoading(false);
         return;
     }
-    window.location.href = targetUrl;
+    // Gunakan replace agar tidak bisa back ke halaman loading
+    window.location.replace(targetUrl);
   };
 
   const handleManualRedirect = (type: 'internal_ticket' | 'external_ticket' | 'survey') => {
@@ -85,7 +86,7 @@ const MobileFormLanding: React.FC = () => {
     const params = new URLSearchParams({
       qr: qrData.code,
       unit_id: qrData.unit_id,
-      unit_name: encodeURIComponent(qrData.units?.name || ''),
+      unit_name: qrData.units?.name || '',
       auto_fill: qrData.auto_fill_unit !== false ? 'true' : 'false'
     });
 
@@ -101,7 +102,7 @@ const MobileFormLanding: React.FC = () => {
         targetUrl = `/m/survei?${params.toString()}`;
         break;
     }
-    window.location.href = targetUrl;
+    window.location.replace(targetUrl);
   };
 
   if (loading) {

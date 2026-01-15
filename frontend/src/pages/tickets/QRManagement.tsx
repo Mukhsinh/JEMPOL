@@ -234,8 +234,8 @@ const QRManagement: React.FC = () => {
     ));
   };
 
-  const copyQRLink = (code: string) => {
-    const url = qrCodeService.generateQRUrl(code);
+  const copyQRLink = (code: string, redirectType?: string, unitId?: string, unitName?: string, autoFillUnit?: boolean) => {
+    const url = qrCodeService.generateQRUrl(code, redirectType, unitId, unitName, autoFillUnit);
     navigator.clipboard.writeText(url);
     alert('Link QR Code berhasil disalin!');
   };
@@ -394,18 +394,32 @@ const QRManagement: React.FC = () => {
                     <img
                       alt={`QR Code untuk ${qrCode.name}`}
                       className="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
-                      src={qrCodeService.generateQRImageUrl(qrCode.code, 48)}
+                      src={qrCodeService.generateQRImageUrl(
+                        qrCode.code, 
+                        48, 
+                        qrCode.redirect_type, 
+                        qrCode.unit_id, 
+                        qrCode.units?.name, 
+                        qrCode.auto_fill_unit
+                      )}
                     />
                   </div>
                   <div className="flex flex-col">
                     <button
-                      onClick={() => window.open(qrCodeService.generateQRImageUrl(qrCode.code, 400), '_blank')}
+                      onClick={() => window.open(qrCodeService.generateQRImageUrl(
+                        qrCode.code, 
+                        400, 
+                        qrCode.redirect_type, 
+                        qrCode.unit_id, 
+                        qrCode.units?.name, 
+                        qrCode.auto_fill_unit
+                      ), '_blank')}
                       className="text-xs font-medium text-primary hover:underline text-left"
                     >
                       Lihat
                     </button>
                     <button
-                      onClick={() => copyQRLink(qrCode.code)}
+                      onClick={() => copyQRLink(qrCode.code, qrCode.redirect_type, qrCode.unit_id, qrCode.units?.name, qrCode.auto_fill_unit)}
                       className="text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 text-left flex items-center gap-1"
                     >
                       <span className="material-symbols-outlined text-[14px]">content_copy</span>
@@ -462,7 +476,14 @@ const QRManagement: React.FC = () => {
                     <span className="material-symbols-outlined">settings</span>
                   </button>
                   <button
-                    onClick={() => window.open(qrCodeService.generateQRImageUrl(qrCode.code, 400), '_blank')}
+                    onClick={() => window.open(qrCodeService.generateQRImageUrl(
+                      qrCode.code, 
+                      400, 
+                      qrCode.redirect_type, 
+                      qrCode.unit_id, 
+                      qrCode.units?.name, 
+                      qrCode.auto_fill_unit
+                    ), '_blank')}
                     className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
                     title="Lihat QR Code"
                   >

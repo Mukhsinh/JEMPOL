@@ -109,7 +109,7 @@ export const createQRCode = async (req: Request, res: Response) => {
     res.status(201).json({
       success: true,
       qr_code: qrCode,
-      qr_url: `${req.protocol}://${req.get('host')}/tiket-eksternal/${code}`,
+      qr_url: `${req.protocol}://${req.get('host')}/m/${code}`,
       message: 'QR Code berhasil dibuat'
     });
 
