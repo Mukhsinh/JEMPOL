@@ -17,6 +17,8 @@ export default {
         "border-dark": "#2a3b4d",
         "text-main": "#0d141b",
         "text-sub": "#4c739a",
+        "primary-dark": "#0e5cb0",
+        "border-color": "#cfdbe7",
       },
       fontFamily: {
         "display": ["Public Sans", "sans-serif"]

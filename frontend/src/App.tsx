@@ -24,13 +24,13 @@ import AIEscalationManagement from './pages/tickets/AIEscalationManagement';
 import EscalationManagement from './pages/tickets/EscalationManagement';
 
 // Assignment/Penugasan Management
-import { 
-  TiketEskalasi, 
-  TiketEskalasiDetail, 
-  TiketPrioritas, 
-  TiketPrioritasDetail, 
-  TinjauanEksekutif, 
-  TinjauanEksekutifDetail 
+import {
+  TiketEskalasi,
+  TiketEskalasiDetail,
+  TiketPrioritas,
+  TiketPrioritasDetail,
+  TinjauanEksekutif,
+  TinjauanEksekutifDetail
 } from './pages/assignment';
 
 // Survey Management
@@ -67,6 +67,15 @@ import PatientTypesPage from './pages/master-data/PatientTypesPage';
 import SLASettingsPage from './pages/master-data/SLASettingsPage';
 import RolesPermissionsPage from './pages/master-data/RolesPermissionsPage';
 
+// Helper component for protected routes with MainLayout
+const ProtectedPage = ({ children }: { children: React.ReactNode }) => (
+  <ProtectedRoute requireAdmin={true}>
+    <MainLayout>
+      {children}
+    </MainLayout>
+  </ProtectedRoute>
+);
+
 function App() {
   return (
     <AuthProvider>
@@ -81,7 +90,7 @@ function App() {
           <Route path="/survey/public" element={<PublicSurveyForm />} />
           <Route path="/survey/public/:qrCode" element={<PublicSurveyForm />} />
           <Route path="/buku-petunjuk" element={<BukuPetunjuk />} />
-          
+
           {/* Public Routes - QR Scan Integration (No Sidebar) */}
           <Route path="/scan/:code" element={<QRScanLanding />} />
           <Route path="/public/tiket-eksternal" element={<PublicExternalTicket />} />
@@ -91,69 +100,60 @@ function App() {
           <Route path="/public/form-pengaduan" element={<PublicExternalTicketFullscreen />} />
           <Route path="/public/form-survei" element={<PublicSurveyFullscreen />} />
 
-          {/* Protected Admin Routes */}
-          <Route path="/*" element={
-            <ProtectedRoute requireAdmin={true}>
-              <MainLayout>
-                <Routes>
-                  {/* Dashboard */}
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="dashboard" element={<Dashboard />} />
+          {/* Protected Admin Routes - Dashboard */}
+          <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
+          <Route path="/dashboard" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
 
-                  {/* Ticket Management */}
-                  <Route path="tickets" element={<TicketList />} />
-                  <Route path="tickets/:id" element={<TicketDetail />} />
-                  <Route path="tickets/view" element={<TicketDetailView />} />
-                  <Route path="tickets/create/internal" element={<CreateInternalTicket />} />
-                  <Route path="tickets/tiket-eksternal" element={<TiketEksternal />} />
-                  <Route path="tickets/qr-management" element={<QRManagement />} />
-                  <Route path="qr-codes" element={<QRManagement />} />
-                  <Route path="tickets/ai-escalation" element={<AIEscalationManagement />} />
-                  <Route path="tickets/escalation" element={<EscalationManagement />} />
+          {/* Ticket Management */}
+          <Route path="/tickets" element={<ProtectedPage><TicketList /></ProtectedPage>} />
+          <Route path="/tickets/:id" element={<ProtectedPage><TicketDetail /></ProtectedPage>} />
+          <Route path="/tickets/view" element={<ProtectedPage><TicketDetailView /></ProtectedPage>} />
+          <Route path="/tickets/create/internal" element={<ProtectedPage><CreateInternalTicket /></ProtectedPage>} />
+          <Route path="/tickets/tiket-eksternal" element={<ProtectedPage><TiketEksternal /></ProtectedPage>} />
+          <Route path="/tickets/qr-management" element={<ProtectedPage><QRManagement /></ProtectedPage>} />
+          <Route path="/qr-codes" element={<ProtectedPage><QRManagement /></ProtectedPage>} />
+          <Route path="/tickets/ai-escalation" element={<ProtectedPage><AIEscalationManagement /></ProtectedPage>} />
+          <Route path="/tickets/escalation" element={<ProtectedPage><EscalationManagement /></ProtectedPage>} />
 
-                  {/* Assignment/Penugasan Management */}
-                  <Route path="assignment/tiket-eskalasi" element={<TiketEskalasi />} />
-                  <Route path="assignment/tiket-eskalasi/:id" element={<TiketEskalasiDetail />} />
-                  <Route path="assignment/tiket-prioritas" element={<TiketPrioritas />} />
-                  <Route path="assignment/tiket-prioritas/:id" element={<TiketPrioritasDetail />} />
-                  <Route path="assignment/tinjauan-eksekutif" element={<TinjauanEksekutif />} />
-                  <Route path="assignment/tinjauan-eksekutif/:id" element={<TinjauanEksekutifDetail />} />
+          {/* Assignment/Penugasan Management */}
+          <Route path="/assignment/tiket-eskalasi" element={<ProtectedPage><TiketEskalasi /></ProtectedPage>} />
+          <Route path="/assignment/tiket-eskalasi/:id" element={<ProtectedPage><TiketEskalasiDetail /></ProtectedPage>} />
+          <Route path="/assignment/tiket-prioritas" element={<ProtectedPage><TiketPrioritas /></ProtectedPage>} />
+          <Route path="/assignment/tiket-prioritas/:id" element={<ProtectedPage><TiketPrioritasDetail /></ProtectedPage>} />
+          <Route path="/assignment/tinjauan-eksekutif" element={<ProtectedPage><TinjauanEksekutif /></ProtectedPage>} />
+          <Route path="/assignment/tinjauan-eksekutif/:id" element={<ProtectedPage><TinjauanEksekutifDetail /></ProtectedPage>} />
 
-                  {/* Survey Management */}
-                  <Route path="survey" element={<SurveyLanding />} />
-                  <Route path="survey/admin" element={<SurveyLanding />} />
-                  <Route path="survey/form" element={<SurveyForm />} />
-                  <Route path="survey/report" element={<SurveyReport />} />
+          {/* Survey Management */}
+          <Route path="/survey" element={<ProtectedPage><SurveyLanding /></ProtectedPage>} />
+          <Route path="/survey/admin" element={<ProtectedPage><SurveyLanding /></ProtectedPage>} />
+          <Route path="/survey/form" element={<ProtectedPage><SurveyForm /></ProtectedPage>} />
+          <Route path="/survey/report" element={<ProtectedPage><SurveyReport /></ProtectedPage>} />
 
-                  {/* User Management */}
-                  <Route path="users" element={<UserManagement />} />
-                  <Route path="users/profile" element={<UserProfile />} />
+          {/* User Management */}
+          <Route path="/users" element={<ProtectedPage><UserManagement /></ProtectedPage>} />
+          <Route path="/users/profile" element={<ProtectedPage><UserProfile /></ProtectedPage>} />
 
-                  {/* Master Data Management */}
-                  <Route path="master-data" element={<MasterData />} />
-                  <Route path="master-data/units" element={<UnitsPage />} />
-                  <Route path="master-data/unit-types" element={<UnitTypesPage />} />
-                  <Route path="master-data/service-categories" element={<ServiceCategoriesPage />} />
-                  <Route path="master-data/ticket-types" element={<TicketTypesPage />} />
-                  <Route path="master-data/ticket-classifications" element={<TicketClassificationsPage />} />
-                  <Route path="master-data/ticket-statuses" element={<TicketStatusesPage />} />
-                  <Route path="master-data/patient-types" element={<PatientTypesPage />} />
-                  <Route path="master-data/roles-permissions" element={<RolesPermissionsPage />} />
-                  <Route path="master-data/sla-settings" element={<SLASettingsPage />} />
-                  <Route path="unified-master-data" element={<UnifiedMasterData />} />
+          {/* Master Data Management */}
+          <Route path="/master-data" element={<ProtectedPage><MasterData /></ProtectedPage>} />
+          <Route path="/master-data/units" element={<ProtectedPage><UnitsPage /></ProtectedPage>} />
+          <Route path="/master-data/unit-types" element={<ProtectedPage><UnitTypesPage /></ProtectedPage>} />
+          <Route path="/master-data/service-categories" element={<ProtectedPage><ServiceCategoriesPage /></ProtectedPage>} />
+          <Route path="/master-data/ticket-types" element={<ProtectedPage><TicketTypesPage /></ProtectedPage>} />
+          <Route path="/master-data/ticket-classifications" element={<ProtectedPage><TicketClassificationsPage /></ProtectedPage>} />
+          <Route path="/master-data/ticket-statuses" element={<ProtectedPage><TicketStatusesPage /></ProtectedPage>} />
+          <Route path="/master-data/patient-types" element={<ProtectedPage><PatientTypesPage /></ProtectedPage>} />
+          <Route path="/master-data/roles-permissions" element={<ProtectedPage><RolesPermissionsPage /></ProtectedPage>} />
+          <Route path="/master-data/sla-settings" element={<ProtectedPage><SLASettingsPage /></ProtectedPage>} />
+          <Route path="/unified-master-data" element={<ProtectedPage><UnifiedMasterData /></ProtectedPage>} />
 
-                  {/* Settings */}
-                  <Route path="settings/*" element={<SettingsPage />} />
+          {/* Settings */}
+          <Route path="/settings/*" element={<ProtectedPage><SettingsPage /></ProtectedPage>} />
 
-                  {/* Reports & Analytics */}
-                  <Route path="reports" element={<Reports />} />
-                  
-                  {/* Notifications */}
-                  <Route path="realtime-notification" element={<NotificationSettings />} />
-                </Routes>
-              </MainLayout>
-            </ProtectedRoute>
-          } />
+          {/* Reports & Analytics */}
+          <Route path="/reports" element={<ProtectedPage><Reports /></ProtectedPage>} />
+
+          {/* Notifications */}
+          <Route path="/realtime-notification" element={<ProtectedPage><NotificationSettings /></ProtectedPage>} />
         </Routes>
       </Router>
     </AuthProvider>

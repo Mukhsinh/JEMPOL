@@ -101,26 +101,33 @@ class EscalatedTicketService {
     try {
       // Gunakan anonSupabase untuk menghindari masalah token
       const { data: escalations, error: escError } = await anonSupabase
-        .from('ticket_escalations')
-        .select('id, ticket_id, from_role, to_role, reason, escalated_at')
-        .order('escalated_at', { ascending: false });
+        .from('eskalasi')
+        .select('id, tiket_id, dari_unit_id, ke_unit_id, alasan, dibuat_pada, pengguna_id')
+        .order('dibuat_pada', { ascending: false });
 
       if (escError) {
         console.error('Error fetching escalations:', escError);
         return [];
       }
 
-      if (!escalations || escalations.length === 0) {
+      if (!escalations || !Array.isArray(escalations) || escalations.length === 0) {
+        console.log('No escalations found or invalid format, returning empty array');
         return [];
       }
 
-      // Get ticket IDs
-      const ticketIds = escalations.map((e: any) => e.ticket_id).filter(Boolean);
-      
+      console.log('Found escalations:', escalations.length);
+
+      // Get ticket IDs safely
+      const ticketIds = escalations.map((e: any) => e?.tiket_id).filter(Boolean);
+
+      if (ticketIds.length === 0) {
+        return [];
+      }
+
       // Get tickets
       const { data: tickets, error: ticketError } = await anonSupabase
-        .from('tickets')
-        .select('id, ticket_number, title, description, priority, status, created_at, sla_deadline, submitter_name, unit_id, assigned_to')
+        .from('tiket')
+        .select('id, nomor_tiket, judul, deskripsi, prioritas, status, dibuat_pada, batas_waktu, nama_pelapor, unit_tujuan_id, pengguna_id')
         .in('id', ticketIds);
 
       if (ticketError) {
@@ -128,56 +135,87 @@ class EscalatedTicketService {
         return [];
       }
 
+      // Safe check for tickets
+      const safeTickets = Array.isArray(tickets) ? tickets : [];
+      console.log('Found tickets:', safeTickets.length);
+
       // Get units
-      const unitIds = tickets?.map((t: any) => t.unit_id).filter(Boolean) || [];
+      const unitIds = safeTickets.map((t: any) => t?.unit_tujuan_id).filter(Boolean);
       const unitsMap = new Map<string, any>();
       if (unitIds.length > 0) {
         const { data: units } = await anonSupabase
-          .from('units')
-          .select('id, name, code')
+          .from('unit')
+          .select('id, nama_unit, kode_unit')
           .in('id', unitIds);
-        units?.forEach((u: any) => unitsMap.set(u.id, u));
+
+        if (Array.isArray(units)) {
+          units.forEach((u: any) => {
+            if (u && u.id) unitsMap.set(u.id, u);
+          });
+        }
       }
 
       // Get assigned users
-      const userIds = tickets?.map((t: any) => t.assigned_to).filter(Boolean) || [];
+      const userIds = safeTickets.map((t: any) => t?.pengguna_id).filter(Boolean);
       const usersMap = new Map<string, any>();
       if (userIds.length > 0) {
         const { data: users } = await anonSupabase
-          .from('users')
-          .select('id, full_name, role')
+          .from('pengguna')
+          .select('id, nama_lengkap, peran')
           .in('id', userIds);
-        users?.forEach((u: any) => usersMap.set(u.id, u));
+
+        if (Array.isArray(users)) {
+          users.forEach((u: any) => {
+            if (u && u.id) usersMap.set(u.id, u);
+          });
+        }
       }
 
       // Create tickets map
       const ticketsMap = new Map<string, any>();
-      tickets?.forEach((t: any) => ticketsMap.set(t.id, t));
-
-      // Format data
-      const formattedData: EscalatedTicket[] = escalations.map((esc: any) => {
-        const ticket = ticketsMap.get(esc.ticket_id);
-        const unit = ticket?.unit_id ? unitsMap.get(ticket.unit_id) : null;
-        const user = ticket?.assigned_to ? usersMap.get(ticket.assigned_to) : null;
-        
-        return {
-          id: ticket?.id || esc.ticket_id,
-          ticket_number: ticket?.ticket_number || 'N/A',
-          title: ticket?.title || 'Tiket tidak ditemukan',
-          description: ticket?.description || '',
-          unit_name: unit?.name || 'Unit tidak diketahui',
-          unit_color: '#3B82F6',
-          priority: ticket?.priority || 'medium',
-          status: ticket?.status || 'open',
-          created_at: ticket?.created_at || esc.escalated_at,
-          sla_deadline: ticket?.sla_deadline || '',
-          escalated_at: esc.escalated_at,
-          escalation_reason: esc.reason || '',
-          submitter_name: ticket?.submitter_name,
-          assignee: user ? { name: user.full_name, role: user.role } : undefined
-        };
+      safeTickets.forEach((t: any) => {
+        if (t && t.id) ticketsMap.set(t.id, t);
       });
 
+      // Format data - map Indonesian field names to English interface
+      const formattedData: EscalatedTicket[] = escalations
+        .filter((esc: any) => esc && esc.tiket_id && ticketsMap.has(esc.tiket_id))
+        .map((esc: any) => {
+          const ticket = ticketsMap.get(esc.tiket_id);
+          // Double check just in case, though filter above handles it
+          if (!ticket) return null;
+
+          const unit = ticket.unit_tujuan_id ? unitsMap.get(ticket.unit_tujuan_id) : null;
+          const user = ticket.pengguna_id ? usersMap.get(ticket.pengguna_id) : null;
+
+          // Map priority from Indonesian to English
+          const priorityMap: Record<string, 'low' | 'medium' | 'high' | 'critical'> = {
+            'rendah': 'low',
+            'sedang': 'medium',
+            'tinggi': 'high',
+            'kritis': 'critical'
+          };
+
+          return {
+            id: ticket.id || esc.tiket_id,
+            ticket_number: ticket.nomor_tiket || 'N/A',
+            title: ticket.judul || 'Tiket tidak ditemukan',
+            description: ticket.deskripsi || '',
+            unit_name: unit?.nama_unit || 'Unit tidak diketahui',
+            unit_color: '#3B82F6',
+            priority: (priorityMap[ticket.prioritas] as any) || 'medium',
+            status: ticket.status || 'baru',
+            created_at: ticket.dibuat_pada || esc.dibuat_pada || new Date().toISOString(),
+            sla_deadline: ticket.batas_waktu || '',
+            escalated_at: esc.dibuat_pada || new Date().toISOString(),
+            escalation_reason: esc.alasan || '',
+            submitter_name: ticket.nama_pelapor,
+            assignee: user ? { name: user.nama_lengkap, role: user.peran } : undefined
+          };
+        })
+        .filter(Boolean) as EscalatedTicket[]; // Filter out any nulls
+
+      console.log('Formatted escalated tickets:', formattedData.length);
       return formattedData;
     } catch (error) {
       console.error('Error in getEscalatedTicketsFromSupabase:', error);
@@ -212,10 +250,10 @@ class EscalatedTicketService {
   private async getPriorityTicketsFromSupabase(): Promise<EscalatedTicket[]> {
     try {
       const { data: tickets, error } = await anonSupabase
-        .from('tickets')
-        .select('id, ticket_number, title, description, priority, status, created_at, sla_deadline, submitter_name, unit_id, assigned_to')
-        .in('priority', ['high', 'critical'])
-        .order('created_at', { ascending: false })
+        .from('tiket')
+        .select('id, nomor_tiket, judul, deskripsi, prioritas, status, dibuat_pada, batas_waktu, nama_pelapor, unit_tujuan_id, pengguna_id')
+        .in('prioritas', ['tinggi', 'kritis'])
+        .order('dibuat_pada', { ascending: false })
         .limit(20);
 
       if (error) {
@@ -224,57 +262,68 @@ class EscalatedTicketService {
       }
 
       if (!tickets || tickets.length === 0) {
+        console.log('No priority tickets found');
         return [];
       }
 
+      console.log('Found priority tickets:', tickets.length);
+
       // Get units
-      const unitIds = tickets.map((t: any) => t.unit_id).filter(Boolean);
+      const unitIds = tickets.map((t: any) => t.unit_tujuan_id).filter(Boolean);
       const unitsMap = new Map<string, any>();
       if (unitIds.length > 0) {
         const { data: units } = await anonSupabase
-          .from('units')
-          .select('id, name, code')
+          .from('unit')
+          .select('id, nama_unit, kode_unit')
           .in('id', unitIds);
         units?.forEach((u: any) => unitsMap.set(u.id, u));
       }
 
       // Get assigned users
-      const userIds = tickets.map((t: any) => t.assigned_to).filter(Boolean);
+      const userIds = tickets.map((t: any) => t.pengguna_id).filter(Boolean);
       const usersMap = new Map<string, any>();
       if (userIds.length > 0) {
         const { data: users } = await anonSupabase
-          .from('users')
-          .select('id, full_name, role')
+          .from('pengguna')
+          .select('id, nama_lengkap, peran')
           .in('id', userIds);
         users?.forEach((u: any) => usersMap.set(u.id, u));
       }
 
+      // Map priority from Indonesian to English
+      const priorityMap: Record<string, 'low' | 'medium' | 'high' | 'critical'> = {
+        'rendah': 'low',
+        'sedang': 'medium',
+        'tinggi': 'high',
+        'kritis': 'critical'
+      };
+
       const now = new Date();
       return tickets.map((ticket: any) => {
-        const unit = ticket.unit_id ? unitsMap.get(ticket.unit_id) : null;
-        const user = ticket.assigned_to ? usersMap.get(ticket.assigned_to) : null;
-        const deadline = ticket.sla_deadline ? new Date(ticket.sla_deadline) : new Date(Date.now() + 24 * 60 * 60 * 1000);
+        const unit = ticket.unit_tujuan_id ? unitsMap.get(ticket.unit_tujuan_id) : null;
+        const user = ticket.pengguna_id ? usersMap.get(ticket.pengguna_id) : null;
+        const deadline = ticket.batas_waktu ? new Date(ticket.batas_waktu) : new Date(Date.now() + 24 * 60 * 60 * 1000);
         const remaining = deadline.getTime() - now.getTime();
         const hours = Math.floor(Math.abs(remaining) / (1000 * 60 * 60));
         const minutes = Math.floor((Math.abs(remaining) % (1000 * 60 * 60)) / (1000 * 60));
 
         return {
           id: ticket.id,
-          ticket_number: ticket.ticket_number,
-          title: ticket.title,
-          description: ticket.description,
-          unit_name: unit?.name || 'Unit tidak diketahui',
+          ticket_number: ticket.nomor_tiket,
+          title: ticket.judul,
+          description: ticket.deskripsi,
+          unit_name: unit?.nama_unit || 'Unit tidak diketahui',
           unit_color: '#3B82F6',
-          priority: ticket.priority,
+          priority: priorityMap[ticket.prioritas] || 'medium',
           status: ticket.status,
-          created_at: ticket.created_at,
-          sla_deadline: ticket.sla_deadline || '',
-          escalated_at: ticket.created_at,
+          created_at: ticket.dibuat_pada,
+          sla_deadline: ticket.batas_waktu || '',
+          escalated_at: ticket.dibuat_pada,
           escalation_reason: '',
           sla_remaining: remaining < 0 ? `-${hours}j ${minutes}m` : `${hours}j ${minutes}m`,
           sla_status: remaining < 0 ? 'breached' : remaining < 2 * 60 * 60 * 1000 ? 'warning' : 'on_track',
-          submitter_name: ticket.submitter_name,
-          assignee: user ? { name: user.full_name, role: user.role } : undefined
+          submitter_name: ticket.nama_pelapor,
+          assignee: user ? { name: user.nama_lengkap, role: user.peran } : undefined
         } as EscalatedTicket;
       });
     } catch (error) {
@@ -305,40 +354,38 @@ class EscalatedTicketService {
       return null;
     }
   }
-
   // Query Supabase langsung untuk tinjauan eksekutif
   private async getExecutiveOverviewFromSupabase(): Promise<any> {
     try {
-      // Get escalations to director
+      // Get escalations - check for high priority tickets since we don't have specific director role escalations yet
       const { data: escalations, error: escError } = await anonSupabase
-        .from('ticket_escalations')
-        .select('id, ticket_id, from_role, to_role, reason, escalated_at')
-        .eq('to_role', 'director')
-        .order('escalated_at', { ascending: false })
+        .from('eskalasi')
+        .select('id, tiket_id, dari_unit_id, ke_unit_id, alasan, dibuat_pada')
+        .order('dibuat_pada', { ascending: false })
         .limit(10);
 
       if (escError) {
-        console.error('Error fetching director escalations:', escError);
+        console.error('Error fetching escalations:', escError);
       }
 
       // Get ticket IDs
-      const ticketIds = escalations?.map((e: any) => e.ticket_id).filter(Boolean) || [];
-      
+      const ticketIds = escalations?.map((e: any) => e.tiket_id).filter(Boolean) || [];
+
       let tickets: any[] = [];
       const unitsMap = new Map<string, any>();
 
       if (ticketIds.length > 0) {
         const { data: ticketData } = await anonSupabase
-          .from('tickets')
-          .select('id, ticket_number, title, priority, status, sla_deadline, unit_id')
+          .from('tiket')
+          .select('id, nomor_tiket, judul, prioritas, status, batas_waktu, unit_tujuan_id')
           .in('id', ticketIds);
         tickets = ticketData || [];
 
-        const unitIds = tickets.map((t: any) => t.unit_id).filter(Boolean);
+        const unitIds = tickets.map((t: any) => t.unit_tujuan_id).filter(Boolean);
         if (unitIds.length > 0) {
           const { data: units } = await anonSupabase
-            .from('units')
-            .select('id, name')
+            .from('unit')
+            .select('id, nama_unit')
             .in('id', unitIds);
           units?.forEach((u: any) => unitsMap.set(u.id, u));
         }
@@ -348,27 +395,27 @@ class EscalatedTicketService {
 
       // Get stats
       const { count: totalEscalations } = await anonSupabase
-        .from('ticket_escalations')
+        .from('eskalasi')
         .select('*', { count: 'exact', head: true });
 
       const now = new Date();
       const formattedTickets = escalations?.map((esc: any) => {
-        const ticket = ticketsMap.get(esc.ticket_id);
-        const unit = ticket ? unitsMap.get(ticket.unit_id) : null;
-        const deadline = ticket?.sla_deadline ? new Date(ticket.sla_deadline) : new Date(Date.now() + 24 * 60 * 60 * 1000);
+        const ticket = ticketsMap.get(esc.tiket_id);
+        const unit = ticket ? unitsMap.get(ticket.unit_tujuan_id) : null;
+        const deadline = ticket?.batas_waktu ? new Date(ticket.batas_waktu) : new Date(Date.now() + 24 * 60 * 60 * 1000);
         const remaining = deadline.getTime() - now.getTime();
         const hours = Math.floor(Math.abs(remaining) / (1000 * 60 * 60));
 
         return {
-          id: ticket?.id || esc.ticket_id,
-          ticket_number: ticket?.ticket_number || 'N/A',
-          title: ticket?.title || 'Tiket tidak ditemukan',
-          reporter: esc.reason,
-          department: unit?.name || 'Unit tidak diketahui',
+          id: ticket?.id || esc.tiket_id,
+          ticket_number: ticket?.nomor_tiket || 'N/A',
+          title: ticket?.judul || 'Tiket tidak ditemukan',
+          reporter: esc.alasan,
+          department: unit?.nama_unit || 'Unit tidak diketahui',
           duration: remaining < 0 ? `${hours} Jam (Over SLA)` : `${hours} Jam`,
           sla_status: remaining < 0 ? 'breached' : remaining < 4 * 60 * 60 * 1000 ? 'warning' : 'on_track',
-          status: esc.to_role === 'director' ? 'Eskalasi Direktur' : 'High Priority',
-          status_type: esc.to_role === 'director' ? 'escalation_director' : 'high_priority'
+          status: ticket?.prioritas === 'kritis' ? 'Eskalasi Direktur' : 'High Priority',
+          status_type: ticket?.prioritas === 'kritis' ? 'escalation_director' : 'high_priority'
         };
       }) || [];
 
@@ -458,8 +505,8 @@ class EscalatedTicketService {
       total_active: tickets.filter(t => !['resolved', 'closed'].includes(t.status)).length,
       high_urgency: tickets.filter(t => t.priority === 'high' || t.priority === 'critical').length,
       waiting_response: tickets.filter(t => t.status === 'escalated').length,
-      completed_this_month: tickets.filter(t => 
-        ['resolved', 'closed'].includes(t.status) && 
+      completed_this_month: tickets.filter(t =>
+        ['resolved', 'closed'].includes(t.status) &&
         new Date(t.created_at) >= startOfMonth
       ).length,
       new_today: tickets.filter(t => new Date(t.escalated_at) >= startOfDay).length
