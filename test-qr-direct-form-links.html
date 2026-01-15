@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Code Direct Form Links</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { color: white; text-align: center; margin-bottom: 30px; }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h2 { color: #333; margin-bottom: 16px; font-size: 18px; }
+        .link-group { margin-bottom: 20px; }
+        .link-group h3 { 
+            color: #666; 
+            font-size: 14px; 
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .link-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        .link-item:hover { background: #e9ecef; transform: translateX(5px); }
+        .icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+        .icon.purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .icon.orange { background: linear-gradient(135deg, #f97316, #ef4444); }
+        .icon.green { background: linear-gradient(135deg, #10b981, #14b8a6); }
+        .link-info { flex: 1; }
+        .link-title { font-weight: 600; color: #333; margin-bottom: 4px; }
+        .link-url { font-size: 12px; color: #666; word-break: break-all; }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: #4f46e5; color: white; }
+        .btn-primary:hover { background: #4338ca; }
+        .btn-outline { background: transparent; border: 2px solid #4f46e5; color: #4f46e5; }
+        .btn-outline:hover { background: #4f46e5; color: white; }
+        .qr-preview {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-top: 16px;
+        }
+        .qr-preview img { max-width: 200px; border-radius: 8px; }
+        .status { 
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status.success { background: #d1fae5; color: #059669; }
+        .status.info { background: #dbeafe; color: #2563eb; }
+        .note {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 16px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 20px;
+        }
+        .note h4 { color: #92400e; margin-bottom: 8px; }
+        .note p { color: #78350f; font-size: 14px; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Test QR Code Direct Form Links</h1>
+        
+        <div class="card">
+            <h2>📱 Direct Form Links (Public, Tanpa Login)</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Link berikut mengarah langsung ke form tanpa sidebar/menu navigasi. 
+                Cocok untuk QR Code per unit.
+            </p>
+            
+            <div class="link-group">
+                <h3>1. Form Tiket Internal</h3>
+                <div class="link-item">
+                    <div class="icon purple">📋</div>
+                    <div class="link-info">
+                        <div class="link-title">Tiket Internal (Tanpa Parameter)</div>
+                        <div class="link-url">http://localhost:5173/form/internal</div>
+                    </div>
+                    <a href="http://localhost:5173/form/internal" target="_blank" class="btn btn-primary">Buka</a>
+                </div>
+                <div class="link-item">
+                    <div class="icon purple">📋</div>
+                    <div class="link-info">
+                        <div class="link-title">Tiket Internal (Dengan Unit)</div>
+                        <div class="link-url">http://localhost:5173/form/internal?unit_id=123&unit_name=Unit%20IT</div>
+                    </div>
+                    <a href="http://localhost:5173/form/internal?unit_id=123&unit_name=Unit%20IT" target="_blank" class="btn btn-primary">Buka</a>
+                </div>
+            </div>
+            
+            <div class="link-group">
+                <h3>2. Form Tiket Eksternal / Pengaduan</h3>
+                <div class="link-item">
+                    <div class="icon orange">📢</div>
+                    <div class="link-info">
+                        <div class="link-title">Pengaduan (Tanpa Parameter)</div>
+                        <div class="link-url">http://localhost:5173/form/eksternal</div>
+                    </div>
+                    <a href="http://localhost:5173/form/eksternal" target="_blank" class="btn btn-primary">Buka</a>
+                </div>
+                <div class="link-item">
+                    <div class="icon orange">📢</div>
+                    <div class="link-info">
+                        <div class="link-title">Pengaduan (Dengan Unit)</div>
+                        <div class="link-url">http://localhost:5173/form/eksternal?unit_id=456&unit_name=Bagian%20Keuangan</div>
+                    </div>
+                    <a href="http://localhost:5173/form/eksternal?unit_id=456&unit_name=Bagian%20Keuangan" target="_blank" class="btn btn-primary">Buka</a>
+                </div>
+            </div>
+            
+            <div class="link-group">
+                <h3>3. Form Survei Kepuasan</h3>
+                <div class="link-item">
+                    <div class="icon green">⭐</div>
+                    <div class="link-info">
+                        <div class="link-title">Survei (Tanpa Parameter)</div>
+                        <div class="link-url">http://localhost:5173/form/survey</div>
+                    </div>
+                    <a href="http://localhost:5173/form/survey" target="_blank" class="btn btn-primary">Buka</a>
+                </div>
+                <div class="link-item">
+                    <div class="icon green">⭐</div>
+                    <div class="link-info">
+                        <div class="link-title">Survei (Dengan Unit)</div>
+                        <div class="link-url">http://localhost:5173/form/survey?unit_id=789&unit_name=Bagian%20Administrasi</div>
+                    </div>
+                    <a href="http://localhost:5173/form/survey?unit_id=789&unit_name=Bagian%20Administrasi" target="_blank" class="btn btn-primary">Buka</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🎯 Fitur Direct Form View</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                <div style="padding: 16px; background: #f0fdf4; border-radius: 12px;">
+                    <span class="status success">✓ Public Access</span>
+                    <p style="margin-top: 8px; font-size: 14px; color: #166534;">Tanpa login, langsung akses form</p>
+                </div>
+                <div style="padding: 16px; background: #eff6ff; border-radius: 12px;">
+                    <span class="status info">📱 Mobile-First</span>
+                    <p style="margin-top: 8px; font-size: 14px; color: #1e40af;">Tampilan responsif seperti native app</p>
+                </div>
+                <div style="padding: 16px; background: #fef3c7; border-radius: 12px;">
+                    <span class="status" style="background: #fef3c7; color: #92400e;">🎨 Warna Cerah</span>
+                    <p style="margin-top: 8px; font-size: 14px; color: #92400e;">Gradient solid profesional</p>
+                </div>
+                <div style="padding: 16px; background: #fce7f3; border-radius: 12px;">
+                    <span class="status" style="background: #fce7f3; color: #be185d;">🚫 No Sidebar</span>
+                    <p style="margin-top: 8px; font-size: 14px; color: #be185d;">Fullscreen tanpa navigasi</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📊 QR Code Preview</h2>
+            <p style="color: #666; margin-bottom: 16px;">
+                Contoh QR Code yang akan di-generate untuk setiap unit
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                <div class="qr-preview">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://localhost:5173/form/internal?unit_id=123%26unit_name=Unit%20IT" alt="QR Internal">
+                    <p style="margin-top: 12px; font-weight: 600; color: #7c3aed;">Tiket Internal</p>
+                    <p style="font-size: 12px; color: #666;">Unit IT</p>
+                </div>
+                <div class="qr-preview">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://localhost:5173/form/eksternal?unit_id=456%26unit_name=Bagian%20Keuangan" alt="QR Eksternal">
+                    <p style="margin-top: 12px; font-weight: 600; color: #ef4444;">Tiket Eksternal</p>
+                    <p style="font-size: 12px; color: #666;">Bagian Keuangan</p>
+                </div>
+                <div class="qr-preview">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://localhost:5173/form/survey?unit_id=789%26unit_name=Bagian%20Administrasi" alt="QR Survey">
+                    <p style="margin-top: 12px; font-weight: 600; color: #10b981;">Form Survei</p>
+                    <p style="font-size: 12px; color: #666;">Bagian Administrasi</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="note">
+            <h4>📝 Catatan Penggunaan</h4>
+            <p>
+                <strong>Cara membuat QR Code per unit:</strong><br>
+                1. Buka halaman QR Management di dashboard admin<br>
+                2. Klik "Buat QR Code Baru"<br>
+                3. Pilih Unit yang diinginkan<br>
+                4. Pilih "Arahkan ke" sesuai jenis form (Internal/Eksternal/Survei)<br>
+                5. QR Code akan otomatis mengarah ke form yang dipilih dengan unit terisi otomatis
+            </p>
+        </div>
+    </div>
+</body>
+</html>

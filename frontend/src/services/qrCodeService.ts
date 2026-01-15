@@ -309,12 +309,33 @@ export const qrCodeService = {
   },
 
   // Generate QR code URL - SELALU mengarah ke halaman fullscreen tanpa sidebar
-  // Menggunakan route /m/:code untuk tampilan mobile-first yang clean
-  generateQRUrl(code: string, redirectType?: string, unitId?: string, unitName?: string, autoFillUnit?: boolean): string {
+  // Menggunakan route /form/:type untuk tampilan mobile-first yang clean
+  // URL langsung ke form berdasarkan redirect_type
+  generateQRUrl(code: string, redirectType?: string, unitId?: string, unitName?: string, _autoFillUnit?: boolean): string {
     const baseUrl = window.location.origin;
     
-    // SELALU gunakan route /m/:code untuk tampilan fullscreen tanpa sidebar
-    // Route ini akan otomatis redirect ke form yang sesuai berdasarkan redirect_type
+    // Jika ada redirect_type spesifik, langsung ke form yang sesuai
+    if (redirectType && redirectType !== 'selection') {
+      const params = new URLSearchParams();
+      if (unitId) params.append('unit_id', unitId);
+      if (unitName) params.append('unit_name', unitName);
+      if (code) params.append('qr', code);
+      
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      
+      switch (redirectType) {
+        case 'internal_ticket':
+          return `${baseUrl}/form/internal${queryString}`;
+        case 'external_ticket':
+          return `${baseUrl}/form/eksternal${queryString}`;
+        case 'survey':
+          return `${baseUrl}/form/survey${queryString}`;
+        default:
+          return `${baseUrl}/m/${code}`;
+      }
+    }
+    
+    // Default: gunakan route /m/:code untuk tampilan selection menu
     return `${baseUrl}/m/${code}`;
   },
 

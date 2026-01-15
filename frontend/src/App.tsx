@@ -42,6 +42,11 @@ import MobilePengaduanForm from './pages/public/MobilePengaduanForm';
 import MobileSurveiForm from './pages/public/MobileSurveiForm';
 import MobileTiketInternalForm from './pages/public/MobileTiketInternalForm';
 
+// Direct Form Views (Public, Tanpa Login, Mobile-First) - untuk QR Code per unit
+import DirectInternalTicketForm from './pages/public/DirectInternalTicketForm';
+import DirectExternalTicketForm from './pages/public/DirectExternalTicketForm';
+import DirectSurveyForm from './pages/public/DirectSurveyForm';
+
 // User Management
 import UserManagement from './pages/users/UserManagement';
 import UserProfile from './pages/users/UserProfile';
@@ -100,6 +105,12 @@ function App() {
           <Route path="/m/pengaduan" element={<MobilePengaduanForm />} />
           <Route path="/m/survei" element={<MobileSurveiForm />} />
           <Route path="/m/tiket-internal" element={<MobileTiketInternalForm />} />
+
+          {/* Direct Form Views - Public Access (Tanpa Login, Mobile-First) */}
+          {/* QR Code per unit menautkan langsung ke form ini */}
+          <Route path="/form/internal" element={<DirectInternalTicketForm />} />
+          <Route path="/form/eksternal" element={<DirectExternalTicketForm />} />
+          <Route path="/form/survey" element={<DirectSurveyForm />} />
 
           {/* Protected Admin Routes - Dashboard */}
           <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />

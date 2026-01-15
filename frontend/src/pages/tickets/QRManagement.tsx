@@ -213,12 +213,53 @@ const QRManagement: React.FC = () => {
     }
   };
 
-  const getRedirectTypeBadge = (redirectType?: string) => {
+  const getRedirectTypeBadge = (redirectType?: string, qrCode?: QRCodeWithAnalytics) => {
     const option = REDIRECT_OPTIONS.find(o => o.value === redirectType) || REDIRECT_OPTIONS[0];
+    
+    // Generate direct link berdasarkan redirect_type
+    const getDirectLink = () => {
+      if (!qrCode) return '';
+      const baseUrl = window.location.origin;
+      const params = new URLSearchParams();
+      if (qrCode.unit_id) params.append('unit_id', qrCode.unit_id);
+      if (qrCode.units?.name) params.append('unit_name', qrCode.units.name);
+      if (qrCode.code) params.append('qr', qrCode.code);
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      
+      switch (redirectType) {
+        case 'internal_ticket':
+          return `${baseUrl}/form/internal${queryString}`;
+        case 'external_ticket':
+          return `${baseUrl}/form/eksternal${queryString}`;
+        case 'survey':
+          return `${baseUrl}/form/survey${queryString}`;
+        default:
+          return `${baseUrl}/m/${qrCode.code}`;
+      }
+    };
+    
+    const directLink = getDirectLink();
+    const linkLabel = redirectType === 'internal_ticket' ? 'Form Tiket Internal' :
+                      redirectType === 'external_ticket' ? 'Form Tiket Eksternal' :
+                      redirectType === 'survey' ? 'Form Survei' : 'Pilihan Menu';
+    
     return (
-      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
-        <span className="material-symbols-outlined text-sm">{option.icon}</span>
-        {option.label}
+      <div className="space-y-1">
+        <a
+          href={directLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-sm">{option.icon}</span>
+          {linkLabel}
+        </a>
+        {qrCode?.auto_fill_unit && (
+          <div className="text-xs text-slate-400 flex items-center gap-1">
+            <span className="material-symbols-outlined text-xs">check_circle</span>
+            Auto-fill unit
+          </div>
+        )}
       </div>
     );
   };
@@ -430,13 +471,7 @@ const QRManagement: React.FC = () => {
 
                 {/* Redirect Type */}
                 <div className="col-span-2 md:py-4">
-                  {getRedirectTypeBadge(qrCode.redirect_type)}
-                  {qrCode.auto_fill_unit && (
-                    <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-xs">check_circle</span>
-                      Auto-fill unit
-                    </div>
-                  )}
+                  {getRedirectTypeBadge(qrCode.redirect_type, qrCode)}
                 </div>
 
                 {/* Stats */}
