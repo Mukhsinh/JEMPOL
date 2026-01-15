@@ -40,9 +40,11 @@ const QRScanLanding: React.FC = () => {
       console.log('✅ QR code data received:', data);
       setQrData(data as QRCodeData);
       
-      // Langsung redirect jika redirect_type bukan selection
-      if (data.redirect_type && data.redirect_type !== 'selection') {
-        console.log('🚀 Auto-redirecting to:', data.redirect_type);
+      // Jika tidak ada redirect_type atau bukan selection, langsung redirect ke pengaduan
+      const redirectType = data.redirect_type || 'external_ticket';
+      
+      if (redirectType !== 'selection') {
+        console.log('🚀 Auto-redirecting to:', redirectType);
         handleRedirect(data as QRCodeData);
       } else {
         console.log('📋 Showing selection menu');
@@ -64,7 +66,11 @@ const QRScanLanding: React.FC = () => {
     });
 
     let targetUrl = '';
-    switch (data.redirect_type) {
+    
+    // Jika tidak ada redirect_type atau selection, default ke external_ticket (pengaduan)
+    const redirectType = data.redirect_type || 'external_ticket';
+    
+    switch (redirectType) {
       case 'internal_ticket':
         targetUrl = `/m/tiket-internal?${params.toString()}`;
         break;
@@ -74,9 +80,14 @@ const QRScanLanding: React.FC = () => {
       case 'survey':
         targetUrl = `/m/survei?${params.toString()}`;
         break;
-      default:
+      case 'selection':
+        // Jika selection, tampilkan menu pilihan
         setLoading(false);
         return;
+      default:
+        // Default ke pengaduan jika tidak ada redirect_type
+        targetUrl = `/m/pengaduan?${params.toString()}`;
+        break;
     }
     
     console.log('🔀 Redirecting to:', targetUrl);

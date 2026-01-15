@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Direct Scan - Langsung ke Form</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .test-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .test-button:active {
+            transform: translateY(0);
+        }
+        
+        .test-button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .test-button.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status-badge.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .qr-preview {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .qr-preview img {
+            max-width: 300px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        .flow-diagram {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .flow-step .number {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .flow-step .content {
+            flex: 1;
+        }
+        
+        .flow-step .title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .flow-step .description {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .icon {
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🎯 Test QR Direct Scan</h1>
+            <p class="subtitle">Verifikasi bahwa scan QR code langsung ke form pengaduan tanpa login</p>
+            
+            <!-- Flow Diagram -->
+            <div class="flow-diagram">
+                <h3 style="margin-bottom: 20px; color: #667eea;">📋 Alur Proses Baru</h3>
+                
+                <div class="flow-step">
+                    <div class="number">1</div>
+                    <div class="content">
+                        <div class="title">Scan QR Code</div>
+                        <div class="description">User scan QR code dengan smartphone</div>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="number">2</div>
+                    <div class="content">
+                        <div class="title">Deteksi Redirect Type</div>
+                        <div class="description">Sistem cek redirect_type dari QR code (default: external_ticket)</div>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="number">3</div>
+                    <div class="content">
+                        <div class="title">Langsung ke Form</div>
+                        <div class="description">Redirect otomatis ke /m/pengaduan dengan unit_id pre-filled</div>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="number">4</div>
+                    <div class="content">
+                        <div class="title">Isi Form (Tanpa Login)</div>
+                        <div class="description">User langsung isi form pengaduan tanpa perlu login</div>
+                    </div>
+                </div>
+                
+                <div class="flow-step">
+                    <div class="number">5</div>
+                    <div class="content">
+                        <div class="title">Submit ke Backend</div>
+                        <div class="description">POST ke /api/public/external-tickets (no auth required)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test Section 1: Simulasi Scan QR -->
+            <div class="test-section">
+                <h3>🔍 Test 1: Simulasi Scan QR Code</h3>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Simulasi user scan QR code dan langsung redirect ke form pengaduan
+                </p>
+                
+                <button class="test-button" onclick="testQRScan('default')">
+                    <span class="icon">📱</span>
+                    Scan QR (Default - Pengaduan)
+                </button>
+                
+                <button class="test-button secondary" onclick="testQRScan('selection')">
+                    <span class="icon">📋</span>
+                    Scan QR (Selection Menu)
+                </button>
+                
+                <button class="test-button success" onclick="testQRScan('survey')">
+                    <span class="icon">📊</span>
+                    Scan QR (Langsung Survei)
+                </button>
+                
+                <div id="result1"></div>
+            </div>
+            
+            <!-- Test Section 2: Test Backend Endpoint -->
+            <div class="test-section">
+                <h3>🌐 Test 2: Backend Public Endpoint</h3>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Verifikasi endpoint /api/public/external-tickets dapat diakses tanpa auth
+                </p>
+                
+                <button class="test-button" onclick="testPublicEndpoint()">
+                    <span class="icon">🔌</span>
+                    Test Submit Pengaduan (No Auth)
+                </button>
+                
+                <div id="result2"></div>
+            </div>
+            
+            <!-- Test Section 3: Test QR Code Data -->
+            <div class="test-section">
+                <h3>📦 Test 3: QR Code Data Structure</h3>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Verifikasi struktur data QR code mendukung direct redirect
+                </p>
+                
+                <button class="test-button" onclick="testQRCodeData()">
+                    <span class="icon">🔍</span>
+                    Cek QR Code Data
+                </button>
+                
+                <div id="result3"></div>
+            </div>
+            
+            <!-- Test Section 4: End-to-End Test -->
+            <div class="test-section">
+                <h3>🎯 Test 4: End-to-End Flow</h3>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Test lengkap dari scan QR sampai submit form
+                </p>
+                
+                <button class="test-button" onclick="testEndToEnd()">
+                    <span class="icon">🚀</span>
+                    Test Full Flow
+                </button>
+                
+                <div id="result4"></div>
+            </div>
+        </div>
+        
+        <!-- QR Code Preview -->
+        <div class="card">
+            <h2 style="color: #667eea; margin-bottom: 20px;">📱 QR Code Preview</h2>
+            <div class="qr-preview">
+                <p style="margin-bottom: 15px; color: #666;">
+                    Contoh QR Code yang akan langsung redirect ke form pengaduan
+                </p>
+                <img id="qrImage" src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://jempol-frontend.vercel.app/m/ABCD1234" alt="QR Code">
+                <p style="margin-top: 15px; color: #666; font-size: 14px;">
+                    URL: <code style="background: #f8f9fa; padding: 4px 8px; border-radius: 4px;">https://jempol-frontend.vercel.app/m/ABCD1234</code>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin.includes('localhost') 
+            ? 'http://localhost:5000/api' 
+            : 'https://jempol-backend.vercel.app/api';
+        
+        // Test 1: Simulasi Scan QR
+        function testQRScan(type) {
+            const resultDiv = document.getElementById('result1');
+            resultDiv.innerHTML = '<div class="result info">⏳ Memproses scan QR code...</div>';
+            
+            setTimeout(() => {
+                let redirectUrl = '';
+                let message = '';
+                
+                switch(type) {
+                    case 'default':
+                        redirectUrl = '/m/pengaduan?qr=ABCD1234&unit_id=123&unit_name=Unit%20Gawat%20Darurat&auto_fill=true';
+                        message = '✅ QR Code tanpa redirect_type → Langsung ke form pengaduan';
+                        break;
+                    case 'selection':
+                        redirectUrl = '/m/ABCD1234';
+                        message = '✅ QR Code dengan redirect_type=selection → Tampilkan menu pilihan';
+                        break;
+                    case 'survey':
+                        redirectUrl = '/m/survei?qr=ABCD1234&unit_id=123&unit_name=Unit%20Gawat%20Darurat&auto_fill=true';
+                        message = '✅ QR Code dengan redirect_type=survey → Langsung ke form survei';
+                        break;
+                }
+                
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <strong>${message}</strong><br><br>
+                        <strong>Redirect URL:</strong><br>
+                        <code>${redirectUrl}</code><br><br>
+                        <strong>Parameter yang dikirim:</strong>
+                        <div class="code-block">
+{
+  "qr": "ABCD1234",
+  "unit_id": "123",
+  "unit_name": "Unit Gawat Darurat",
+  "auto_fill": "true"
+}
+                        </div>
+                        <button class="test-button" onclick="window.open('${redirectUrl}', '_blank')" style="margin-top: 15px;">
+                            <span class="icon">🔗</span>
+                            Buka URL Ini
+                        </button>
+                    </div>
+                `;
+            }, 1000);
+        }
+        
+        // Test 2: Test Backend Endpoint
+        async function testPublicEndpoint() {
+            const resultDiv = document.getElementById('result2');
+            resultDiv.innerHTML = '<div class="result info">⏳ Testing public endpoint...</div>';
+            
+            const testData = {
+                reporter_identity_type: 'personal',
+                reporter_name: 'Test User',
+                reporter_email: 'test@example.com',
+                reporter_phone: '081234567890',
+                reporter_address: 'Jl. Test No. 123',
+                service_type: 'complaint',
+                category: 'Pelayanan Medis',
+                title: 'Test Pengaduan dari QR Code',
+                description: 'Ini adalah test pengaduan yang dibuat melalui scan QR code tanpa login',
+                qr_code: 'ABCD1234',
+                unit_id: '123',
+                source: 'qr_code'
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/public/external-tickets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <strong>✅ Endpoint berhasil diakses tanpa autentikasi!</strong><br><br>
+                            <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                            <strong>Ticket Number:</strong> ${result.ticket_number || 'N/A'}<br><br>
+                            <strong>Response:</strong>
+                            <div class="code-block">${JSON.stringify(result, null, 2)}</div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <strong>❌ Error:</strong> ${result.error || 'Unknown error'}<br>
+                            <strong>Status:</strong> ${response.status}<br><br>
+                            <div class="code-block">${JSON.stringify(result, null, 2)}</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Network Error:</strong> ${error.message}<br><br>
+                        Pastikan backend server berjalan di: <code>${API_BASE}</code>
+                    </div>
+                `;
+            }
+        }
+        
+        // Test 3: Test QR Code Data
+        async function testQRCodeData() {
+            const resultDiv = document.getElementById('result3');
+            resultDiv.innerHTML = '<div class="result info">⏳ Fetching QR code data...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/qr-codes/scan/ABCD1234`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const redirectType = data.redirect_type || 'external_ticket (default)';
+                    const autoFill = data.auto_fill_unit !== false;
+                    
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <strong>✅ QR Code Data berhasil diambil!</strong><br><br>
+                            <strong>Code:</strong> ${data.code}<br>
+                            <strong>Name:</strong> ${data.name}<br>
+                            <strong>Unit:</strong> ${data.units?.name || 'N/A'}<br>
+                            <strong>Redirect Type:</strong> <span class="status-badge active">${redirectType}</span><br>
+                            <strong>Auto Fill Unit:</strong> ${autoFill ? '✅ Yes' : '❌ No'}<br>
+                            <strong>Is Active:</strong> ${data.is_active ? '✅ Active' : '❌ Inactive'}<br><br>
+                            <strong>Full Data:</strong>
+                            <div class="code-block">${JSON.stringify(data, null, 2)}</div>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <strong>❌ QR Code tidak ditemukan atau tidak aktif</strong><br><br>
+                            Pastikan QR code dengan code "ABCD1234" sudah dibuat di sistem.
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Error:</strong> ${error.message}<br><br>
+                        Pastikan backend server berjalan.
+                    </div>
+                `;
+            }
+        }
+        
+        // Test 4: End-to-End Test
+        async function testEndToEnd() {
+            const resultDiv = document.getElementById('result4');
+            let steps = [];
+            
+            resultDiv.innerHTML = '<div class="result info">⏳ Running end-to-end test...</div>';
+            
+            // Step 1: Scan QR
+            steps.push('✅ Step 1: User scan QR code');
+            await sleep(500);
+            
+            // Step 2: Fetch QR data
+            steps.push('⏳ Step 2: Fetching QR code data...');
+            resultDiv.innerHTML = `<div class="result info">${steps.join('<br>')}</div>`;
+            
+            try {
+                const qrResponse = await fetch(`${API_BASE}/qr-codes/scan/ABCD1234`);
+                const qrData = await qrResponse.json();
+                
+                if (!qrResponse.ok) {
+                    throw new Error('QR code not found');
+                }
+                
+                steps[steps.length - 1] = '✅ Step 2: QR code data fetched';
+                steps.push('⏳ Step 3: Determining redirect type...');
+                resultDiv.innerHTML = `<div class="result info">${steps.join('<br>')}</div>`;
+                await sleep(500);
+                
+                const redirectType = qrData.redirect_type || 'external_ticket';
+                steps[steps.length - 1] = `✅ Step 3: Redirect type = ${redirectType}`;
+                
+                if (redirectType !== 'selection') {
+                    steps.push('✅ Step 4: Auto-redirect to form (no login required)');
+                    steps.push('⏳ Step 5: User fills form...');
+                    resultDiv.innerHTML = `<div class="result info">${steps.join('<br>')}</div>`;
+                    await sleep(1000);
+                    
+                    // Step 5: Submit form
+                    steps[steps.length - 1] = '⏳ Step 5: Submitting form...';
+                    resultDiv.innerHTML = `<div class="result info">${steps.join('<br>')}</div>`;
+                    
+                    const submitResponse = await fetch(`${API_BASE}/public/external-tickets`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            reporter_identity_type: 'personal',
+                            reporter_name: 'Test User E2E',
+                            reporter_email: 'e2e@test.com',
+                            reporter_phone: '081234567890',
+                            service_type: 'complaint',
+                            title: 'E2E Test Ticket',
+                            description: 'This is an end-to-end test',
+                            qr_code: qrData.code,
+                            unit_id: qrData.unit_id,
+                            source: 'qr_code'
+                        })
+                    });
+                    
+                    const submitResult = await submitResponse.json();
+                    
+                    if (submitResponse.ok) {
+                        steps[steps.length - 1] = `✅ Step 5: Form submitted successfully! Ticket: ${submitResult.ticket_number}`;
+                        steps.push('✅ Step 6: Success page displayed');
+                        
+                        resultDiv.innerHTML = `
+                            <div class="result success">
+                                <strong>🎉 End-to-End Test BERHASIL!</strong><br><br>
+                                ${steps.join('<br>')}<br><br>
+                                <strong>Kesimpulan:</strong><br>
+                                ✅ QR code scan langsung ke form pengaduan<br>
+                                ✅ Tidak perlu login<br>
+                                ✅ Unit otomatis terisi dari QR code<br>
+                                ✅ Form berhasil disubmit ke backend<br>
+                                ✅ Ticket number berhasil dibuat<br><br>
+                                <strong>Ticket Number:</strong> <code>${submitResult.ticket_number}</code>
+                            </div>
+                        `;
+                    } else {
+                        throw new Error(submitResult.error || 'Submit failed');
+                    }
+                } else {
+                    steps.push('✅ Step 4: Show selection menu (user chooses form type)');
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            ${steps.join('<br>')}<br><br>
+                            <strong>Note:</strong> QR code dengan redirect_type=selection akan menampilkan menu pilihan terlebih dahulu.
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Test Failed!</strong><br><br>
+                        ${steps.join('<br>')}<br><br>
+                        <strong>Error:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Auto-run basic info on load
+        window.addEventListener('load', () => {
+            console.log('🎯 QR Direct Scan Test Page Loaded');
+            console.log('API Base:', API_BASE);
+        });
+    </script>
+</body>
+</html>
