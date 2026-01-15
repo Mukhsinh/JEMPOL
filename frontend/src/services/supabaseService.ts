@@ -683,27 +683,45 @@ class SupabaseService {
 
   async getQRCodeByCode(code: string) {
     try {
+      console.log('🔍 Fetching QR code by code:', code);
+      
+      // Gunakan query tanpa auth untuk akses publik
       const { data, error } = await supabase
         .from('qr_codes')
         .select(`
-          *,
+          id,
+          unit_id,
+          code,
+          name,
+          description,
+          is_active,
+          redirect_type,
+          auto_fill_unit,
+          show_options,
           units:unit_id (id, name, code)
         `)
         .eq('code', code)
         .eq('is_active', true)
         .single();
 
-      if (error) throw error;
-
-      // Update usage count (ignore errors for public access)
-      if (data) {
-        supabase
-          .from('qr_codes')
-          .update({ usage_count: (data.usage_count || 0) + 1 })
-          .eq('id', data.id)
-          .then(() => {})
-          .catch(() => {});
+      if (error) {
+        console.error('❌ Supabase query error:', error.message, error.code);
+        throw error;
       }
+
+      if (!data) {
+        throw new Error('QR code tidak ditemukan');
+      }
+
+      console.log('✅ QR code found:', data.name, 'redirect_type:', data.redirect_type);
+
+      // Update usage count (fire and forget, ignore errors for anon users)
+      supabase
+        .from('qr_codes')
+        .update({ usage_count: (data.usage_count || 0) + 1 })
+        .eq('id', data.id)
+        .then(() => {})
+        .catch(() => {});
 
       return {
         success: true,
@@ -711,7 +729,7 @@ class SupabaseService {
         message: 'QR code berhasil diambil'
       };
     } catch (error: any) {
-      console.error('SupabaseService.getQRCodeByCode error:', error);
+      console.error('SupabaseService.getQRCodeByCode error:', error.message);
       return {
         success: false,
         data: null,
