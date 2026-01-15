@@ -4,14 +4,13 @@ import { UnitTypes } from './settings/UnitTypes';
 import { AITrustSettings } from './settings/AITrustSettings';
 import { ServiceCategories } from './settings/ServiceCategories';
 import TicketTypes from './settings/TicketTypes';
-import TicketClassifications from './settings/TicketClassifications';
 import TicketStatuses from './settings/TicketStatuses';
 import PatientTypes from './settings/PatientTypes';
 import SLASettings from './settings/SLASettings';
 import RolesPermissions from './settings/RolesPermissions';
 import ResponseTemplates from './settings/ResponseTemplates';
 
-type TabType = 'units' | 'unit-types' | 'service-categories' | 'ticket-types' | 'ticket-classifications' | 'ticket-statuses' | 'patient-types' | 'sla-settings' | 'roles-permissions' | 'response-templates' | 'ai-trust';
+type TabType = 'units' | 'unit-types' | 'service-categories' | 'ticket-types' | 'ticket-statuses' | 'patient-types' | 'sla-settings' | 'roles-permissions' | 'response-templates' | 'ai-trust';
 
 const MasterData: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('units');
@@ -24,7 +23,6 @@ const MasterData: React.FC = () => {
 
     const ticketTabs = [
         { id: 'ticket-types', name: 'Tipe Tiket', icon: 'confirmation_number' },
-        { id: 'ticket-classifications', name: 'Klasifikasi', icon: 'segment' },
         { id: 'ticket-statuses', name: 'Status Tiket', icon: 'flag' },
         { id: 'patient-types', name: 'Jenis Pasien', icon: 'accessibility_new' },
         { id: 'sla-settings', name: 'Pengaturan SLA', icon: 'timer' }
@@ -46,8 +44,6 @@ const MasterData: React.FC = () => {
                 return <ServiceCategories />;
             case 'ticket-types':
                 return <TicketTypes />;
-            case 'ticket-classifications':
-                return <TicketClassifications />;
             case 'ticket-statuses':
                 return <TicketStatuses />;
             case 'patient-types':

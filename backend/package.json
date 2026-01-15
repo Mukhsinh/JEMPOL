@@ -28,7 +28,8 @@
     "pdfkit": "^0.17.2",
     "puppeteer": "24.34.0",
     "socket.io": "^4.6.0",
-    "vite": "7.3.0"
+    "vite": "7.3.0",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

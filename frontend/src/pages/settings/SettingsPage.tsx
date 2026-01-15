@@ -19,8 +19,8 @@ const SettingsPage: React.FC = () => {
                 </div>
 
                 <Routes>
-                    <Route path="/" element={<Navigate to="/settings/app-settings" replace />} />
-                    <Route path="/app-settings" element={<AppSettings />} />
+                    <Route path="/" element={<Navigate to="/settings/app" replace />} />
+                    <Route path="/app" element={<AppSettings />} />
                     <Route path="/roles-permissions" element={<RolesPermissions />} />
                     <Route path="/response-templates" element={<ResponseTemplates />} />
                     <Route path="/ai-trust" element={<AITrustSettings />} />

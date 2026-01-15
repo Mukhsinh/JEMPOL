@@ -12,7 +12,8 @@
         "execute_sql",
         "get_advisors",
         "search_docs",
-        "list_edge_functions"
+        "list_edge_functions",
+        "list_migrations"
       ]
     }
   }

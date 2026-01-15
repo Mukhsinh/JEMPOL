@@ -21,20 +21,6 @@ const TicketTypesManagement = () => (
   </div>
 );
 
-const TicketClassificationsManagement = () => (
-  <div className="space-y-6">
-    <div>
-      <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Klasifikasi Tiket</h2>
-      <p className="text-slate-500 mt-1">Kelola klasifikasi hierarkis untuk tiket.</p>
-    </div>
-    <div className="bg-surface-light dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm p-8 text-center">
-      <span className="material-symbols-outlined text-6xl text-slate-300 dark:text-slate-600 mb-4">segment</span>
-      <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Klasifikasi Tiket</h3>
-      <p className="text-slate-500">Fitur ini sedang dalam pengembangan.</p>
-    </div>
-  </div>
-);
-
 const TicketStatusesManagement = () => (
   <div className="space-y-6">
     <div>
@@ -114,7 +100,6 @@ const SettingsRoutes: React.FC = () => {
         <Route path="/unit-types" element={<UnitTypesManagement />} />
         <Route path="/service-categories" element={<ServiceCategoriesManagement />} />
         <Route path="/ticket-types" element={<TicketTypesManagement />} />
-        <Route path="/ticket-classifications" element={<TicketClassificationsManagement />} />
         <Route path="/ticket-statuses" element={<TicketStatusesManagement />} />
         <Route path="/patient-types" element={<PatientTypesManagement />} />
         <Route path="/sla-settings" element={<SLASettingsManagement />} />

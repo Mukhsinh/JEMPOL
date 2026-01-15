@@ -1,6 +1,13 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect } from 'react';
+import { supabase } from '../utils/supabaseClient';
+
+interface AppSettings {
+    app_name: string;
+    institution_name: string;
+    logo_url: string;
+}
 
 export default function Sidebar() {
     const location = useLocation();
@@ -10,7 +17,11 @@ export default function Sidebar() {
     const [isTicketsOpen, setIsTicketsOpen] = useState(false);
     const [isSurveyOpen, setIsSurveyOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [isAssignmentOpen, setIsAssignmentOpen] = useState(false);
+    const [appSettings, setAppSettings] = useState<AppSettings>({
+        app_name: 'Sistem Pengaduan',
+        institution_name: 'Rumah Sakit',
+        logo_url: ''
+    });
 
     const isActive = (path: string) => {
         if (path === '/' && location.pathname === '/') return true;
@@ -34,10 +45,6 @@ export default function Sidebar() {
         return location.pathname.startsWith('/settings');
     };
 
-    const isAssignmentActive = () => {
-        return location.pathname.startsWith('/assignment');
-    };
-
     // Auto-open dropdown if user is on respective pages
     useEffect(() => {
         if (isMasterDataActive()) {
@@ -52,10 +59,38 @@ export default function Sidebar() {
         if (isSettingsActive()) {
             setIsSettingsOpen(true);
         }
-        if (isAssignmentActive()) {
-            setIsAssignmentOpen(true);
-        }
     }, [location.pathname]);
+
+    // Fetch app settings from database
+    useEffect(() => {
+        const fetchAppSettings = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('app_settings')
+                    .select('setting_key, setting_value')
+                    .in('setting_key', ['app_name', 'institution_name', 'logo_url']);
+
+                if (error) {
+                    console.error('Error fetching app settings:', error);
+                    return;
+                }
+
+                if (data) {
+                    const settings: Partial<AppSettings> = {};
+                    data.forEach((item: { setting_key: string; setting_value: string }) => {
+                        if (item.setting_key === 'app_name') settings.app_name = item.setting_value;
+                        if (item.setting_key === 'institution_name') settings.institution_name = item.setting_value;
+                        if (item.setting_key === 'logo_url') settings.logo_url = item.setting_value;
+                    });
+                    setAppSettings(prev => ({ ...prev, ...settings }));
+                }
+            } catch (err) {
+                console.error('Error loading app settings:', err);
+            }
+        };
+
+        fetchAppSettings();
+    }, []);
 
     const handleLogout = () => {
         logout();
@@ -67,12 +102,16 @@ export default function Sidebar() {
             {/* Brand - Fixed at top */}
             <div className="flex-shrink-0 p-4 pb-2">
                 <div className="flex items-center gap-3 px-2">
-                    <div className="bg-primary/10 flex items-center justify-center rounded-lg h-10 w-10 shrink-0">
-                        <span className="material-symbols-outlined text-primary text-2xl">local_hospital</span>
+                    <div className="bg-primary/10 flex items-center justify-center rounded-lg h-10 w-10 shrink-0 overflow-hidden">
+                        {appSettings.logo_url ? (
+                            <img src={appSettings.logo_url} alt="Logo" className="w-full h-full object-contain" />
+                        ) : (
+                            <span className="material-symbols-outlined text-primary text-2xl">local_hospital</span>
+                        )}
                     </div>
                     <div className="flex flex-col">
-                        <h1 className="text-slate-900 dark:text-white text-base font-bold leading-tight">Rumah Sakit Kota</h1>
-                        <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">Sistem Manajemen</p>
+                        <h1 className="text-slate-900 dark:text-white text-base font-bold leading-tight">{appSettings.institution_name || 'Rumah Sakit'}</h1>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">{appSettings.app_name || 'Sistem Manajemen'}</p>
                     </div>
                 </div>
             </div>
@@ -176,17 +215,6 @@ export default function Sidebar() {
                                 </Link>
                                 
                                 <Link
-                                    to="/tickets/ai-escalation"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/tickets/ai-escalation')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">AI Driven Eskalasi</p>
-                                </Link>
-                                
-                                <Link
                                     to="/tickets/escalation"
                                     className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/tickets/escalation')
                                         ? 'bg-primary text-white shadow-md shadow-blue-500/20'
@@ -241,63 +269,6 @@ export default function Sidebar() {
                                 >
                                     <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
                                     <p className="text-sm font-medium">Laporan Survei</p>
-                                </Link>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Assignment/Penugasan Dropdown */}
-                    <div className="mb-2">
-                        <button
-                            onClick={() => setIsAssignmentOpen(!isAssignmentOpen)}
-                            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors ${isAssignmentActive()
-                                ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                }`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <span className="material-symbols-outlined">assignment</span>
-                                <p className="text-sm font-medium">Penugasan</p>
-                            </div>
-                            <span className={`material-symbols-outlined text-sm transition-transform ${isAssignmentOpen ? 'rotate-180' : ''}`}>
-                                expand_more
-                            </span>
-                        </button>
-
-                        {/* Assignment Submenu */}
-                        {isAssignmentOpen && (
-                            <div className="mt-2 ml-6 flex flex-col gap-1">
-                                <Link
-                                    to="/assignment/tiket-eskalasi"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/assignment/tiket-eskalasi')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Tiket Eskalasi</p>
-                                </Link>
-                                
-                                <Link
-                                    to="/assignment/tiket-prioritas"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/assignment/tiket-prioritas')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Tiket Prioritas</p>
-                                </Link>
-                                
-                                <Link
-                                    to="/assignment/tinjauan-eksekutif"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/assignment/tinjauan-eksekutif')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Tinjauan Eksekutif</p>
                                 </Link>
                             </div>
                         )}
@@ -370,17 +341,6 @@ export default function Sidebar() {
                                 >
                                     <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
                                     <p className="text-sm font-medium">Tipe Tiket</p>
-                                </Link>
-                                
-                                <Link
-                                    to="/master-data/ticket-classifications"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/ticket-classifications')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Klasifikasi Tiket</p>
                                 </Link>
                                 
                                 <Link
@@ -495,7 +455,7 @@ export default function Sidebar() {
                                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                                         }`}
                                 >
-                                    <span className="material-symbols-outlined text-green-500">settings_applications</span>
+                                    <span className="material-symbols-outlined text-green-500">tune</span>
                                     <p className="text-sm font-medium">Pengaturan Aplikasi</p>
                                 </Link>
                                 

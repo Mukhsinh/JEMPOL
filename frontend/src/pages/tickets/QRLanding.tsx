@@ -8,21 +8,21 @@ const OPTION_CONFIG = {
     title: 'Buat Tiket Internal',
     description: 'Sampaikan keluhan atau permintaan untuk ditangani oleh unit terkait',
     color: 'blue',
-    path: '/public/tiket-internal'
+    path: '/public/form-tiket-internal'
   },
   external_ticket: {
     icon: 'description',
     title: 'Buat Tiket Eksternal',
     description: 'Sampaikan pengaduan, saran, atau permintaan informasi',
     color: 'green',
-    path: '/public/tiket-eksternal'
+    path: '/public/form-pengaduan'
   },
   survey: {
     icon: 'rate_review',
     title: 'Isi Survei Kepuasan',
     description: 'Berikan penilaian terhadap layanan yang telah Anda terima',
     color: 'purple',
-    path: '/public/survei'
+    path: '/public/form-survei'
   }
 };
 

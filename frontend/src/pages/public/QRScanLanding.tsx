@@ -81,7 +81,8 @@ const QRScanLanding: React.FC = () => {
     
     switch (data.redirect_type) {
       case 'internal_ticket':
-        targetUrl = `/public/tiket-internal?${params.toString()}`;
+        // Arahkan ke halaman fullscreen mobile untuk tiket internal
+        targetUrl = `/public/form-tiket-internal?${params.toString()}`;
         break;
       case 'external_ticket':
         // Arahkan ke halaman fullscreen untuk mobile
@@ -119,7 +120,8 @@ const QRScanLanding: React.FC = () => {
     
     switch (type) {
       case 'internal_ticket':
-        targetUrl = `/public/tiket-internal?${params.toString()}`;
+        // Arahkan ke halaman fullscreen mobile untuk tiket internal
+        targetUrl = `/public/form-tiket-internal?${params.toString()}`;
         break;
       case 'external_ticket':
         // Arahkan ke halaman fullscreen untuk mobile

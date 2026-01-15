@@ -29,7 +29,6 @@ const navigationConfig: NavigationItem[] = [
       { path: '/tickets/create/internal', label: 'Buat Tiket Internal', icon: '' },
       { path: '/tickets/tiket-eksternal', label: 'Tiket Eksternal', icon: '' },
       { path: '/tickets/qr-management', label: 'QR Code Management', icon: '' },
-      { path: '/tickets/ai-escalation', label: 'AI Driven Eskalasi', icon: '' },
       { path: '/tickets/escalation', label: 'Eskalasi', icon: '' }
     ]
   },
@@ -51,7 +50,6 @@ const navigationConfig: NavigationItem[] = [
       { path: '/master-data/unit-types', label: 'Tipe Unit Kerja', icon: '' },
       { path: '/master-data/service-categories', label: 'Kategori Layanan', icon: '' },
       { path: '/master-data/ticket-types', label: 'Tipe Tiket', icon: '' },
-      { path: '/master-data/ticket-classifications', label: 'Klasifikasi Tiket', icon: '' },
       { path: '/master-data/ticket-statuses', label: 'Status Tiket', icon: '' },
       { path: '/master-data/patient-types', label: 'Jenis Pasien', icon: '' },
       { path: '/master-data/sla-settings', label: 'Pengaturan SLA', icon: '' },
@@ -83,7 +81,6 @@ const navigationConfig: NavigationItem[] = [
     label: 'Pengaturan',
     icon: 'settings',
     children: [
-      { path: '/settings/app', label: 'Pengaturan Aplikasi', icon: 'settings_applications' },
       { path: '/settings/roles-permissions', label: 'Peran & Hak Akses', icon: 'security' },
       { path: '/settings/response-templates', label: 'Template Respon', icon: 'chat' },
       { path: '/settings/ai-trust', label: 'Pengaturan Kepercayaan AI', icon: 'psychology' }

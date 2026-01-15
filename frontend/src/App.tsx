@@ -20,18 +20,8 @@ import TiketEksternal from './pages/tickets/TiketEksternal';
 import ExternalTicketForm from './pages/tickets/ExternalTicketForm';
 import QRManagement from './pages/tickets/QRManagement';
 import QRLanding from './pages/tickets/QRLanding';
-import AIEscalationManagement from './pages/tickets/AIEscalationManagement';
-import EscalationManagement from './pages/tickets/EscalationManagement';
 
-// Assignment/Penugasan Management
-import {
-  TiketEskalasi,
-  TiketEskalasiDetail,
-  TiketPrioritas,
-  TiketPrioritasDetail,
-  TinjauanEksekutif,
-  TinjauanEksekutifDetail
-} from './pages/assignment';
+import EscalationManagement from './pages/tickets/EscalationManagement';
 
 // Survey Management
 import SurveyForm from './pages/survey/SurveyForm';
@@ -46,6 +36,7 @@ import PublicInternalTicket from './pages/public/PublicInternalTicket';
 import PublicSurvey from './pages/public/PublicSurvey';
 import PublicExternalTicketFullscreen from './pages/public/PublicExternalTicketFullscreen';
 import PublicSurveyFullscreen from './pages/public/PublicSurveyFullscreen';
+import FullscreenInternalTicket from './pages/public/FullscreenInternalTicket';
 
 // User Management
 import UserManagement from './pages/users/UserManagement';
@@ -61,7 +52,7 @@ import UnitsPage from './pages/master-data/UnitsPage';
 import UnitTypesPage from './pages/master-data/UnitTypesPage';
 import ServiceCategoriesPage from './pages/master-data/ServiceCategoriesPage';
 import TicketTypesPage from './pages/master-data/TicketTypesPage';
-import TicketClassificationsPage from './pages/master-data/TicketClassificationsPage';
+
 import TicketStatusesPage from './pages/master-data/TicketStatusesPage';
 import PatientTypesPage from './pages/master-data/PatientTypesPage';
 import SLASettingsPage from './pages/master-data/SLASettingsPage';
@@ -99,6 +90,7 @@ function App() {
           {/* Fullscreen Mobile Forms - untuk QR Code scan */}
           <Route path="/public/form-pengaduan" element={<PublicExternalTicketFullscreen />} />
           <Route path="/public/form-survei" element={<PublicSurveyFullscreen />} />
+          <Route path="/public/form-tiket-internal" element={<FullscreenInternalTicket />} />
 
           {/* Protected Admin Routes - Dashboard */}
           <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
@@ -112,16 +104,7 @@ function App() {
           <Route path="/tickets/tiket-eksternal" element={<ProtectedPage><TiketEksternal /></ProtectedPage>} />
           <Route path="/tickets/qr-management" element={<ProtectedPage><QRManagement /></ProtectedPage>} />
           <Route path="/qr-codes" element={<ProtectedPage><QRManagement /></ProtectedPage>} />
-          <Route path="/tickets/ai-escalation" element={<ProtectedPage><AIEscalationManagement /></ProtectedPage>} />
           <Route path="/tickets/escalation" element={<ProtectedPage><EscalationManagement /></ProtectedPage>} />
-
-          {/* Assignment/Penugasan Management */}
-          <Route path="/assignment/tiket-eskalasi" element={<ProtectedPage><TiketEskalasi /></ProtectedPage>} />
-          <Route path="/assignment/tiket-eskalasi/:id" element={<ProtectedPage><TiketEskalasiDetail /></ProtectedPage>} />
-          <Route path="/assignment/tiket-prioritas" element={<ProtectedPage><TiketPrioritas /></ProtectedPage>} />
-          <Route path="/assignment/tiket-prioritas/:id" element={<ProtectedPage><TiketPrioritasDetail /></ProtectedPage>} />
-          <Route path="/assignment/tinjauan-eksekutif" element={<ProtectedPage><TinjauanEksekutif /></ProtectedPage>} />
-          <Route path="/assignment/tinjauan-eksekutif/:id" element={<ProtectedPage><TinjauanEksekutifDetail /></ProtectedPage>} />
 
           {/* Survey Management */}
           <Route path="/survey" element={<ProtectedPage><SurveyLanding /></ProtectedPage>} />
@@ -139,7 +122,6 @@ function App() {
           <Route path="/master-data/unit-types" element={<ProtectedPage><UnitTypesPage /></ProtectedPage>} />
           <Route path="/master-data/service-categories" element={<ProtectedPage><ServiceCategoriesPage /></ProtectedPage>} />
           <Route path="/master-data/ticket-types" element={<ProtectedPage><TicketTypesPage /></ProtectedPage>} />
-          <Route path="/master-data/ticket-classifications" element={<ProtectedPage><TicketClassificationsPage /></ProtectedPage>} />
           <Route path="/master-data/ticket-statuses" element={<ProtectedPage><TicketStatusesPage /></ProtectedPage>} />
           <Route path="/master-data/patient-types" element={<ProtectedPage><PatientTypesPage /></ProtectedPage>} />
           <Route path="/master-data/roles-permissions" element={<ProtectedPage><RolesPermissionsPage /></ProtectedPage>} />

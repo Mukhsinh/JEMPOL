@@ -43,13 +43,6 @@ const masterDataTabs: TabItem[] = [
     description: 'Atur jenis-jenis tiket yang tersedia'
   },
   {
-    id: 'ticket-classifications',
-    name: 'Klasifikasi Tiket',
-    icon: 'segment',
-    path: '/settings/ticket-classifications',
-    description: 'Kelola klasifikasi hierarkis tiket'
-  },
-  {
     id: 'ticket-statuses',
     name: 'Status Tiket',
     icon: 'flag',

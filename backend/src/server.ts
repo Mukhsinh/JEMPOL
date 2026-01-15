@@ -32,8 +32,7 @@ import appSettingsRoutes from './routes/appSettingsRoutes.js';
 import ebookRoutes from './routes/ebookRoutes.js';
 import notificationSettingsRoutes from './routes/notificationSettingsRoutes.js';
 import publicDataRoutes from './routes/publicDataRoutes.js';
-import assignmentRoutes from './routes/assignmentRoutes.js';
-import myTaskRoutes from './routes/myTaskRoutes.js';
+import ticketActionRoutes from './routes/ticketActionRoutes.js';
 
 import { authenticateToken } from './middleware/auth.js';
 import { initializeAdminTable, createDefaultAdmin } from './models/Admin.js';
@@ -178,8 +177,7 @@ app.use('/api/ai-escalation', aiEscalationRoutes);
 app.use('/api/app-settings', appSettingsRoutes);
 app.use('/api/ebooks', ebookRoutes);
 app.use('/api/notification-settings', notificationSettingsRoutes);
-app.use('/api/escalations', assignmentRoutes);
-app.use('/api/my-tasks', myTaskRoutes);
+app.use('/api/ticket-actions', ticketActionRoutes);
 
 // Route aliases untuk kompatibilitas
 app.use('/api/escalation-rules', escalationRoutes);
