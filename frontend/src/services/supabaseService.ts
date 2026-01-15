@@ -690,16 +690,19 @@ class SupabaseService {
           units:unit_id (id, name, code)
         `)
         .eq('code', code)
+        .eq('is_active', true)
         .single();
 
       if (error) throw error;
 
-      // Update usage count
+      // Update usage count (ignore errors for public access)
       if (data) {
-        await supabase
+        supabase
           .from('qr_codes')
           .update({ usage_count: (data.usage_count || 0) + 1 })
-          .eq('id', data.id);
+          .eq('id', data.id)
+          .then(() => {})
+          .catch(() => {});
       }
 
       return {

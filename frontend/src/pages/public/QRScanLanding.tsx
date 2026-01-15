@@ -35,15 +35,21 @@ const QRScanLanding: React.FC = () => {
   const fetchQRCodeData = async () => {
     try {
       setLoading(true);
+      console.log('🔄 Fetching QR code data for:', code);
       const data = await qrCodeService.getByCode(code!);
+      console.log('✅ QR code data received:', data);
       setQrData(data as QRCodeData);
       
+      // Langsung redirect jika redirect_type bukan selection
       if (data.redirect_type && data.redirect_type !== 'selection') {
+        console.log('🚀 Auto-redirecting to:', data.redirect_type);
         handleRedirect(data as QRCodeData);
       } else {
+        console.log('📋 Showing selection menu');
         setLoading(false);
       }
     } catch (err: any) {
+      console.error('❌ Error fetching QR code:', err);
       setError('QR Code tidak valid atau sudah tidak aktif');
       setLoading(false);
     }
@@ -53,7 +59,7 @@ const QRScanLanding: React.FC = () => {
     const params = new URLSearchParams({
       qr: data.code,
       unit_id: data.unit_id,
-      unit_name: encodeURIComponent(data.units?.name || ''),
+      unit_name: data.units?.name || '',
       auto_fill: data.auto_fill_unit !== false ? 'true' : 'false'
     });
 
@@ -72,7 +78,10 @@ const QRScanLanding: React.FC = () => {
         setLoading(false);
         return;
     }
-    window.location.href = targetUrl;
+    
+    console.log('🔀 Redirecting to:', targetUrl);
+    // Gunakan window.location.replace untuk menghindari back button kembali ke loading
+    window.location.replace(targetUrl);
   };
 
   const handleManualRedirect = (type: 'internal_ticket' | 'external_ticket' | 'survey') => {
@@ -81,7 +90,7 @@ const QRScanLanding: React.FC = () => {
     const params = new URLSearchParams({
       qr: qrData.code,
       unit_id: qrData.unit_id,
-      unit_name: encodeURIComponent(qrData.units?.name || ''),
+      unit_name: qrData.units?.name || '',
       auto_fill: qrData.auto_fill_unit !== false ? 'true' : 'false'
     });
 
@@ -97,7 +106,9 @@ const QRScanLanding: React.FC = () => {
         targetUrl = `/m/survei?${params.toString()}`;
         break;
     }
-    window.location.href = targetUrl;
+    
+    console.log('🔀 Manual redirect to:', targetUrl);
+    window.location.replace(targetUrl);
   };
 
   if (loading) {
@@ -125,9 +136,12 @@ const QRScanLanding: React.FC = () => {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-3">QR Code Tidak Valid</h2>
           <p className="text-gray-500 mb-6">{error}</p>
-          <a href="/" className="inline-block w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all">
+          <button 
+            onClick={() => window.history.back()}
+            className="inline-block w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all"
+          >
             Kembali
-          </a>
+          </button>
         </div>
       </div>
     );
