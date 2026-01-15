@@ -37,22 +37,30 @@ const MobileFormLanding: React.FC = () => {
   const fetchQRCodeData = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Fetching QR code:', code);
       const data = await qrCodeService.getByCode(code!);
+      console.log('✅ QR data received:', data);
       setQrData(data as QRCodeData);
       
-      // Auto redirect jika sudah ditentukan
-      if (data.redirect_type && data.redirect_type !== 'selection') {
-        handleRedirect(data as QRCodeData);
+      // Cek redirect_type - jika bukan 'selection', langsung redirect
+      const redirectType = data.redirect_type || 'external_ticket'; // Default ke pengaduan
+      console.log('🎯 Redirect type:', redirectType);
+      
+      if (redirectType !== 'selection') {
+        console.log('🚀 Auto-redirecting to form...');
+        handleRedirect(data as QRCodeData, redirectType);
       } else {
+        console.log('📋 Showing selection menu');
         setLoading(false);
       }
     } catch (err: any) {
+      console.error('❌ Error fetching QR code:', err);
       setError('QR Code tidak valid atau sudah tidak aktif');
       setLoading(false);
     }
   };
 
-  const handleRedirect = (data: QRCodeData) => {
+  const handleRedirect = (data: QRCodeData, redirectType?: string) => {
     const params = new URLSearchParams({
       qr: data.code,
       unit_id: data.unit_id,
@@ -60,8 +68,10 @@ const MobileFormLanding: React.FC = () => {
       auto_fill: data.auto_fill_unit !== false ? 'true' : 'false'
     });
 
+    const type = redirectType || data.redirect_type || 'external_ticket';
     let targetUrl = '';
-    switch (data.redirect_type) {
+    
+    switch (type) {
       case 'internal_ticket':
         targetUrl = `/m/tiket-internal?${params.toString()}`;
         break;
@@ -71,10 +81,17 @@ const MobileFormLanding: React.FC = () => {
       case 'survey':
         targetUrl = `/m/survei?${params.toString()}`;
         break;
-      default:
+      case 'selection':
+        // Jika selection, tampilkan menu
         setLoading(false);
         return;
+      default:
+        // Default ke pengaduan jika tidak ada redirect_type
+        targetUrl = `/m/pengaduan?${params.toString()}`;
+        break;
     }
+    
+    console.log('🔀 Redirecting to:', targetUrl);
     // Gunakan replace agar tidak bisa back ke halaman loading
     window.location.replace(targetUrl);
   };

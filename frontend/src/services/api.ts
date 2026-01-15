@@ -164,11 +164,20 @@ api.interceptors.response.use(
             await authService.logout();
 
             // Hanya redirect jika di halaman yang dilindungi
+            // JANGAN redirect untuk halaman public seperti /m/, /public/, /login
+            const isPublicPage =
+              window.location.pathname.startsWith('/m/') ||
+              window.location.pathname.startsWith('/public/') ||
+              window.location.pathname.startsWith('/login');
+            
             const isProtectedPage =
-              window.location.pathname.startsWith('/admin') ||
-              window.location.pathname.startsWith('/dashboard') ||
-              window.location.pathname.startsWith('/tickets') ||
-              window.location.pathname.startsWith('/master-data');
+              !isPublicPage && (
+                window.location.pathname.startsWith('/admin') ||
+                window.location.pathname.startsWith('/dashboard') ||
+                window.location.pathname.startsWith('/tickets') ||
+                window.location.pathname.startsWith('/master-data') ||
+                window.location.pathname === '/'
+              );
 
             if (isProtectedPage) {
               window.location.href = '/login';

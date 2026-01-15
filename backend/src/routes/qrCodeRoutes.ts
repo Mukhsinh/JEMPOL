@@ -12,7 +12,8 @@ import { authenticateSupabase, optionalSupabaseAuth } from '../middleware/supaba
 
 const router = express.Router();
 
-// Public routes (for QR code scanning)
+// Public routes (for QR code scanning) - TIDAK PERLU AUTH
+// Route ini digunakan saat user scan QR code dari mobile
 router.get('/scan/:code', getQRCodeByCode);
 
 // Protected routes (authentication required for write operations)
