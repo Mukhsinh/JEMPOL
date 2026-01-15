@@ -38,6 +38,12 @@ import PublicExternalTicketFullscreen from './pages/public/PublicExternalTicketF
 import PublicSurveyFullscreen from './pages/public/PublicSurveyFullscreen';
 import FullscreenInternalTicket from './pages/public/FullscreenInternalTicket';
 
+// Mobile-First Public Forms (Clean & Modern UI)
+import MobileFormLanding from './pages/public/MobileFormLanding';
+import MobilePengaduanForm from './pages/public/MobilePengaduanForm';
+import MobileSurveiForm from './pages/public/MobileSurveiForm';
+import MobileTiketInternalForm from './pages/public/MobileTiketInternalForm';
+
 // User Management
 import UserManagement from './pages/users/UserManagement';
 import UserProfile from './pages/users/UserProfile';
@@ -91,6 +97,12 @@ function App() {
           <Route path="/public/form-pengaduan" element={<PublicExternalTicketFullscreen />} />
           <Route path="/public/form-survei" element={<PublicSurveyFullscreen />} />
           <Route path="/public/form-tiket-internal" element={<FullscreenInternalTicket />} />
+          
+          {/* Mobile-First Forms - Tampilan Clean & Modern (Recommended) */}
+          <Route path="/m/:code" element={<MobileFormLanding />} />
+          <Route path="/m/pengaduan" element={<MobilePengaduanForm />} />
+          <Route path="/m/survei" element={<MobileSurveiForm />} />
+          <Route path="/m/tiket-internal" element={<MobileTiketInternalForm />} />
 
           {/* Protected Admin Routes - Dashboard */}
           <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { qrCodeService } from '../../services/qrCodeService';
 
 interface QRCodeData {
@@ -11,25 +11,16 @@ interface QRCodeData {
   redirect_type?: 'selection' | 'internal_ticket' | 'external_ticket' | 'survey';
   auto_fill_unit?: boolean;
   show_options?: string[];
-  redirect_settings?: {
-    auto_fill_unit?: boolean;
-    show_unit_info?: boolean;
-    custom_title?: string;
-    custom_description?: string;
-  };
   units?: {
     id: string;
     name: string;
     code: string;
     description?: string;
-    contact_email?: string;
-    contact_phone?: string;
   };
 }
 
 const QRScanLanding: React.FC = () => {
   const { code } = useParams<{ code: string }>();
-  const navigate = useNavigate();
   
   const [qrData, setQrData] = useState<QRCodeData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -45,104 +36,79 @@ const QRScanLanding: React.FC = () => {
     try {
       setLoading(true);
       const data = await qrCodeService.getByCode(code!);
-      console.log('QR Code data loaded:', data);
       setQrData(data as QRCodeData);
       
-      // Auto redirect jika redirect_type BUKAN 'selection' dan sudah ditentukan
       if (data.redirect_type && data.redirect_type !== 'selection') {
-        console.log('Auto redirecting to:', data.redirect_type);
         handleRedirect(data as QRCodeData);
       } else {
-        // Jika selection atau tidak ada, tampilkan pilihan
         setLoading(false);
       }
     } catch (err: any) {
-      console.error('Error fetching QR code:', err);
       setError('QR Code tidak valid atau sudah tidak aktif');
       setLoading(false);
     }
   };
 
   const handleRedirect = (data: QRCodeData) => {
-    const unitId = data.unit_id;
-    const unitName = data.units?.name || '';
-    const qrCode = data.code;
-    const autoFillUnit = data.auto_fill_unit !== false;
-    
-    // Encode parameter untuk URL - pastikan unit_name di-encode dengan benar
     const params = new URLSearchParams({
-      qr: qrCode,
-      unit_id: unitId,
-      unit_name: encodeURIComponent(unitName),
-      auto_fill: autoFillUnit ? 'true' : 'false'
+      qr: data.code,
+      unit_id: data.unit_id,
+      unit_name: encodeURIComponent(data.units?.name || ''),
+      auto_fill: data.auto_fill_unit !== false ? 'true' : 'false'
     });
 
     let targetUrl = '';
-    
     switch (data.redirect_type) {
       case 'internal_ticket':
-        // Arahkan ke halaman fullscreen mobile untuk tiket internal
-        targetUrl = `/public/form-tiket-internal?${params.toString()}`;
+        targetUrl = `/m/tiket-internal?${params.toString()}`;
         break;
       case 'external_ticket':
-        // Arahkan ke halaman fullscreen untuk mobile
-        targetUrl = `/public/form-pengaduan?${params.toString()}`;
+        targetUrl = `/m/pengaduan?${params.toString()}`;
         break;
       case 'survey':
-        // Arahkan ke halaman fullscreen untuk mobile
-        targetUrl = `/public/form-survei?${params.toString()}`;
+        targetUrl = `/m/survei?${params.toString()}`;
         break;
       default:
-        // Jika tidak ada redirect_type atau selection, tampilkan pilihan
         setLoading(false);
         return;
     }
-    
-    // Gunakan window.location untuk redirect langsung tanpa login
     window.location.href = targetUrl;
   };
 
   const handleManualRedirect = (type: 'internal_ticket' | 'external_ticket' | 'survey') => {
     if (!qrData) return;
     
-    const autoFillUnit = qrData.auto_fill_unit !== false;
-    const unitName = qrData.units?.name || '';
-    
-    // Encode parameter untuk URL - pastikan unit_name di-encode dengan benar
     const params = new URLSearchParams({
       qr: qrData.code,
       unit_id: qrData.unit_id,
-      unit_name: encodeURIComponent(unitName),
-      auto_fill: autoFillUnit ? 'true' : 'false'
+      unit_name: encodeURIComponent(qrData.units?.name || ''),
+      auto_fill: qrData.auto_fill_unit !== false ? 'true' : 'false'
     });
 
     let targetUrl = '';
-    
     switch (type) {
       case 'internal_ticket':
-        // Arahkan ke halaman fullscreen mobile untuk tiket internal
-        targetUrl = `/public/form-tiket-internal?${params.toString()}`;
+        targetUrl = `/m/tiket-internal?${params.toString()}`;
         break;
       case 'external_ticket':
-        // Arahkan ke halaman fullscreen untuk mobile
-        targetUrl = `/public/form-pengaduan?${params.toString()}`;
+        targetUrl = `/m/pengaduan?${params.toString()}`;
         break;
       case 'survey':
-        // Arahkan ke halaman fullscreen untuk mobile
-        targetUrl = `/public/form-survei?${params.toString()}`;
+        targetUrl = `/m/survei?${params.toString()}`;
         break;
     }
-    
-    // Gunakan window.location untuk redirect langsung tanpa login
     window.location.href = targetUrl;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-          <p className="text-slate-600 dark:text-slate-400 text-lg">Memuat informasi...</p>
+          <div className="w-20 h-20 mx-auto mb-6 relative">
+            <div className="absolute inset-0 rounded-full border-4 border-white/30"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-white border-t-transparent animate-spin"></div>
+          </div>
+          <p className="text-white text-xl font-medium">Memuat...</p>
         </div>
       </div>
     );
@@ -150,134 +116,161 @@ const QRScanLanding: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-4xl">error</span>
+      <div className="min-h-screen bg-gradient-to-br from-rose-400 via-red-500 to-orange-500 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center">
+          <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-12 h-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">QR Code Tidak Valid</h2>
-          <p className="text-slate-600 dark:text-slate-400 mb-6">{error}</p>
-          <button
-            onClick={() => navigate('/')}
-            className="px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-blue-600 transition-colors"
-          >
-            Kembali ke Beranda
-          </button>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">QR Code Tidak Valid</h2>
+          <p className="text-gray-500 mb-6">{error}</p>
+          <a href="/" className="inline-block w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 text-white rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl transition-all">
+            Kembali
+          </a>
         </div>
       </div>
     );
   }
 
-  // Ambil show_options dari pengaturan QR Code, default semua opsi
   const showOptions = qrData?.show_options || ['internal_ticket', 'external_ticket', 'survey'];
 
-  // Tampilkan pilihan jika tidak ada auto-redirect - Mode Fullscreen Mobile
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex flex-col">
-      {/* Minimal Header */}
-      <div className="bg-white dark:bg-slate-800 px-4 py-3 shadow-sm safe-area-top">
-        <div className="max-w-lg mx-auto flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-            <span className="material-symbols-outlined text-primary text-2xl">local_hospital</span>
-          </div>
-          <div>
-            <h1 className="text-base font-bold text-slate-900 dark:text-white">Layanan Publik</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Sistem Pengaduan Terpadu</p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 flex flex-col">
+      {/* Decorative Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
       </div>
 
+      {/* Header */}
+      <header className="relative z-10 px-4 pt-safe-top">
+        <div className="max-w-lg mx-auto py-6">
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg">
+              <svg className="w-7 h-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <div className="text-white">
+              <h1 className="text-xl font-bold">Layanan Publik</h1>
+              <p className="text-sm text-white/80">Sistem Pengaduan Terpadu</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="max-w-md w-full space-y-4">
-          {/* Unit Info Card - Compact */}
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-6">
+        <div className="max-w-lg w-full space-y-5">
+          
+          {/* Unit Card */}
           {qrData?.units && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-5">
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 transform hover:scale-[1.02] transition-all">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                  <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-3xl">business</span>
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-2xl flex items-center justify-center shadow-lg">
+                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-semibold text-primary uppercase tracking-wider">Unit Tujuan</span>
-                    <span className="material-symbols-outlined text-green-500 text-sm">verified</span>
+                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Unit Tujuan</span>
+                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
                   </div>
-                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                    {qrData.units.name}
-                  </h2>
+                  <h2 className="text-xl font-bold text-gray-800">{qrData.units.name}</h2>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Action Cards - Mobile Optimized */}
-          <div className="space-y-3">
-            <p className="text-center text-sm text-slate-600 dark:text-slate-400 font-medium">
-              Pilih layanan yang Anda butuhkan
-            </p>
+          {/* Title */}
+          <div className="text-center py-2">
+            <h2 className="text-white text-lg font-medium">Pilih layanan yang Anda butuhkan</h2>
+          </div>
 
-            {/* Tiket Eksternal */}
+          {/* Service Options */}
+          <div className="space-y-4">
+            
+            {/* Pengaduan - Orange/Amber */}
             {showOptions.includes('external_ticket') && (
               <button
                 onClick={() => handleManualRedirect('external_ticket')}
-                className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-5 flex items-center gap-4 hover:shadow-xl transition-all active:scale-[0.98]"
+                className="w-full bg-gradient-to-r from-orange-400 to-amber-500 rounded-3xl p-5 flex items-center gap-4 shadow-xl hover:shadow-2xl transform hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                <div className="w-14 h-14 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center">
-                  <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-3xl">support_agent</span>
+                <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
+                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                  </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <h4 className="font-bold text-slate-900 dark:text-white text-base">Buat Pengaduan</h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Keluhan, saran, atau permintaan</p>
+                  <h3 className="text-white font-bold text-lg">Buat Pengaduan</h3>
+                  <p className="text-white/80 text-sm">Keluhan, saran, atau permintaan</p>
                 </div>
-                <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+                <svg className="w-6 h-6 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             )}
 
-            {/* Survei */}
+            {/* Survei - Green/Emerald */}
             {showOptions.includes('survey') && (
               <button
                 onClick={() => handleManualRedirect('survey')}
-                className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-5 flex items-center gap-4 hover:shadow-xl transition-all active:scale-[0.98]"
+                className="w-full bg-gradient-to-r from-emerald-400 to-green-500 rounded-3xl p-5 flex items-center gap-4 shadow-xl hover:shadow-2xl transform hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                <div className="w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
-                  <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-3xl">rate_review</span>
+                <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
+                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <h4 className="font-bold text-slate-900 dark:text-white text-base">Isi Survei Kepuasan</h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Berikan penilaian layanan</p>
+                  <h3 className="text-white font-bold text-lg">Isi Survei Kepuasan</h3>
+                  <p className="text-white/80 text-sm">Berikan penilaian layanan</p>
                 </div>
-                <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+                <svg className="w-6 h-6 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             )}
 
-            {/* Tiket Internal */}
+            {/* Tiket Internal - Purple/Violet */}
             {showOptions.includes('internal_ticket') && (
               <button
                 onClick={() => handleManualRedirect('internal_ticket')}
-                className="w-full bg-slate-100 dark:bg-slate-800/50 rounded-2xl p-5 flex items-center gap-4 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-[0.98] border border-dashed border-slate-300 dark:border-slate-600"
+                className="w-full bg-gradient-to-r from-violet-400 to-purple-500 rounded-3xl p-5 flex items-center gap-4 shadow-xl hover:shadow-2xl transform hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
-                  <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-3xl">assignment</span>
+                <div className="w-16 h-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center">
+                  <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <h4 className="font-bold text-slate-700 dark:text-slate-300 text-base">Tiket Internal</h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Khusus petugas internal</p>
+                  <h3 className="text-white font-bold text-lg">Tiket Internal</h3>
+                  <p className="text-white/80 text-sm">Khusus petugas internal</p>
                 </div>
-                <span className="material-symbols-outlined text-slate-400">chevron_right</span>
+                <svg className="w-6 h-6 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </button>
             )}
           </div>
 
           {/* Footer Info */}
-          <p className="text-center text-xs text-slate-500 dark:text-slate-400 pt-4">
+          <p className="text-center text-white/70 text-sm pt-4">
             Unit akan otomatis terisi dari QR Code
           </p>
         </div>
       </main>
 
-      {/* CSS for safe area */}
+      {/* Safe Area CSS */}
       <style>{`
-        .safe-area-top { padding-top: env(safe-area-inset-top); }
+        .pt-safe-top { padding-top: max(env(safe-area-inset-top), 1rem); }
       `}</style>
     </div>
   );
