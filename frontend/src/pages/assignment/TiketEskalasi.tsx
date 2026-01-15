@@ -1,41 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import escalatedTicketService, { EscalatedTicket, EscalationStats } from '../../services/escalatedTicketService';
+import assignmentService, { EscalatedTicket, AssignmentStats } from '../../services/assignmentService';
 
 export default function TiketEskalasi() {
   const [tickets, setTickets] = useState<EscalatedTicket[]>([]);
-  const [stats, setStats] = useState<EscalationStats>({
-    total_active: 0,
-    high_urgency: 0,
-    waiting_response: 0,
-    completed_this_month: 0,
-    new_today: 0
+  const [stats, setStats] = useState<AssignmentStats>({
+    total_escalations: 0, high_priority: 0, sla_breached: 0,
+    waiting_response: 0, resolved_this_month: 0, new_today: 0
   });
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterPriority, setFilterPriority] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterPriority, setFilterPriority] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await escalatedTicketService.getMyEscalatedTickets();
+      const data = await assignmentService.getEscalatedTickets();
       setTickets(data);
-      setStats(escalatedTicketService.calculateStats(data));
+      setStats(assignmentService.calculateStats(data));
     } catch (error) {
-      console.error('Error fetching escalated tickets:', error);
+      console.error('Error:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredTickets = tickets.filter(ticket => {
     const matchSearch = ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       ticket.ticket_number.toLowerCase().includes(searchTerm.toLowerCase());
+      ticket.ticket_number.toLowerCase().includes(searchTerm.toLowerCase());
     const matchPriority = filterPriority === 'all' || ticket.priority === filterPriority;
     const matchStatus = filterStatus === 'all' || ticket.status === filterStatus;
     return matchSearch && matchPriority && matchStatus;
@@ -43,25 +38,24 @@ export default function TiketEskalasi() {
 
   const getPriorityBadge = (priority: string) => {
     const styles: Record<string, string> = {
-      critical: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200',
-      high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200',
-      medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200',
-      low: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200'
+      critical: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+      high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+      medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+      low: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
     };
     const labels: Record<string, string> = { critical: 'Kritis', high: 'Tinggi', medium: 'Sedang', low: 'Rendah' };
-    return <span className={`px-2 py-0.5 text-xs font-semibold rounded border ${styles[priority] || styles.medium}`}>{labels[priority] || priority}</span>;
+    return <span className={`px-2 py-0.5 text-xs font-semibold rounded ${styles[priority] || styles.medium}`}>{labels[priority] || priority}</span>;
   };
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      baru: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
       open: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
       in_progress: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
       escalated: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
       resolved: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
       closed: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
     };
-    const labels: Record<string, string> = { baru: 'Baru', open: 'Terbuka', in_progress: 'Diproses', escalated: 'Dieskalasi', resolved: 'Selesai', closed: 'Ditutup' };
+    const labels: Record<string, string> = { open: 'Terbuka', in_progress: 'Diproses', escalated: 'Dieskalasi', resolved: 'Selesai', closed: 'Ditutup' };
     return <span className={`px-2 py-0.5 text-xs font-semibold rounded ${styles[status] || styles.open}`}>{labels[status] || status}</span>;
   };
 
@@ -70,16 +64,10 @@ export default function TiketEskalasi() {
     return new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
-  const calculateSLAStatus = (deadline: string) => {
-    if (!deadline) return { status: 'unknown', text: '-', color: 'text-slate-500' };
-    const now = new Date();
-    const slaDate = new Date(deadline);
-    const diff = slaDate.getTime() - now.getTime();
-    const hours = Math.floor(Math.abs(diff) / (1000 * 60 * 60));
-    const minutes = Math.floor((Math.abs(diff) % (1000 * 60 * 60)) / (1000 * 60));
-    if (diff < 0) return { status: 'breached', text: `Lewat ${hours}j ${minutes}m`, color: 'text-red-600' };
-    if (diff < 2 * 60 * 60 * 1000) return { status: 'warning', text: `${hours}j ${minutes}m`, color: 'text-orange-600' };
-    return { status: 'on_track', text: `${hours}j ${minutes}m`, color: 'text-green-600' };
+  const getSLAIcon = (status?: string) => {
+    if (status === 'breached') return { icon: 'error', color: 'text-red-500' };
+    if (status === 'warning') return { icon: 'warning', color: 'text-orange-500' };
+    return { icon: 'schedule', color: 'text-green-500' };
   };
 
   if (loading) {
@@ -95,6 +83,7 @@ export default function TiketEskalasi() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Tiket Eskalasi</h1>
@@ -106,17 +95,19 @@ export default function TiketEskalasi() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
-          { icon: 'confirmation_number', color: 'blue', value: stats.total_active, label: 'Total Aktif' },
-          { icon: 'priority_high', color: 'red', value: stats.high_urgency, label: 'Urgensi Tinggi' },
+          { icon: 'confirmation_number', color: 'blue', value: stats.total_escalations, label: 'Total Eskalasi' },
+          { icon: 'priority_high', color: 'red', value: stats.high_priority, label: 'Prioritas Tinggi' },
+          { icon: 'timer_off', color: 'orange', value: stats.sla_breached, label: 'SLA Terlewat' },
           { icon: 'hourglass_empty', color: 'yellow', value: stats.waiting_response, label: 'Menunggu Respon' },
-          { icon: 'check_circle', color: 'green', value: stats.completed_this_month, label: 'Selesai Bulan Ini' },
+          { icon: 'check_circle', color: 'green', value: stats.resolved_this_month, label: 'Selesai Bulan Ini' },
           { icon: 'new_releases', color: 'purple', value: stats.new_today, label: 'Baru Hari Ini' }
         ].map((stat, idx) => (
           <div key={idx} className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className={`p-2 bg-${stat.color}-100 dark:bg-${stat.color}-900/30 rounded-lg`}>
+              <div className={`p-2 rounded-lg bg-${stat.color}-100 dark:bg-${stat.color}-900/30`}>
                 <span className={`material-symbols-outlined text-${stat.color}-600 dark:text-${stat.color}-400`}>{stat.icon}</span>
               </div>
               <div>
@@ -128,6 +119,7 @@ export default function TiketEskalasi() {
         ))}
       </div>
 
+      {/* Filters */}
       <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
@@ -146,7 +138,6 @@ export default function TiketEskalasi() {
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
             className="px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white text-sm">
             <option value="all">Semua Status</option>
-            <option value="baru">Baru</option>
             <option value="open">Terbuka</option>
             <option value="in_progress">Diproses</option>
             <option value="escalated">Dieskalasi</option>
@@ -155,6 +146,7 @@ export default function TiketEskalasi() {
         </div>
       </div>
 
+      {/* Table */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
         {filteredTickets.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
@@ -179,7 +171,7 @@ export default function TiketEskalasi() {
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                 {filteredTickets.map((ticket) => {
-                  const sla = calculateSLAStatus(ticket.sla_deadline);
+                  const slaIcon = getSLAIcon(ticket.sla_status);
                   return (
                     <tr key={ticket.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                       <td className="px-4 py-3"><span className="text-sm font-mono font-medium text-primary">#{ticket.ticket_number}</span></td>
@@ -194,10 +186,10 @@ export default function TiketEskalasi() {
                       <td className="px-4 py-3">{getStatusBadge(ticket.status)}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
-                          <span className={`material-symbols-outlined text-[16px] ${sla.status === 'breached' ? 'text-red-500' : sla.status === 'warning' ? 'text-orange-500' : 'text-green-500'}`}>
-                            {sla.status === 'breached' ? 'error' : sla.status === 'warning' ? 'warning' : 'schedule'}
+                          <span className={`material-symbols-outlined text-[16px] ${slaIcon.color}`}>{slaIcon.icon}</span>
+                          <span className={`text-sm font-medium ${ticket.sla_status === 'breached' ? 'text-red-600' : ticket.sla_status === 'warning' ? 'text-orange-600' : 'text-green-600'}`}>
+                            {ticket.sla_remaining || '-'}
                           </span>
-                          <span className={`text-sm font-medium ${sla.color}`}>{sla.text}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3"><span className="text-sm text-slate-500">{formatDate(ticket.escalated_at)}</span></td>
