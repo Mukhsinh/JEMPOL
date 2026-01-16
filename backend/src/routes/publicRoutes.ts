@@ -806,6 +806,191 @@ router.post('/internal-tickets', async (req: Request, res: Response) => {
   }
 });
 
+// Get survey statistics (must be before :ticketId route)
+router.get('/surveys/stats', async (req: Request, res: Response) => {
+  try {
+    // Get survey statistics from public_surveys table
+    const { data: surveys, error } = await supabase
+      .from('public_surveys')
+      .select('*');
+
+    if (error) {
+      console.error('Error fetching survey stats:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil statistik survei'
+      });
+    }
+
+    const totalSurveys = surveys?.length || 0;
+
+    if (totalSurveys === 0) {
+      return res.json({
+        success: true,
+        data: {
+          total_surveys: 0,
+          total_responses: 0,
+          average_overall: 0,
+          average_q1: 0,
+          average_q2: 0,
+          average_q3: 0,
+          average_q4: 0,
+          average_q5: 0,
+          average_q6: 0,
+          average_q7: 0,
+          average_q8: 0,
+          ikm_score: 0,
+          nps_score: 0,
+          response_rate: 0,
+          average_completion_rate: 0,
+          active_surveys: 0
+        }
+      });
+    }
+
+    // Calculate averages for each question
+    const calcAvg = (field: string) => {
+      const values = surveys.filter((s: any) => s[field] != null).map((s: any) => s[field]);
+      return values.length > 0 ? (values.reduce((a: number, b: number) => a + b, 0) / values.length).toFixed(2) : 0;
+    };
+
+    // Calculate IKM (Indeks Kepuasan Masyarakat)
+    const allScores = surveys.flatMap((s: any) => [
+      s.q1_score, s.q2_score, s.q3_score, s.q4_score,
+      s.q5_score, s.q6_score, s.q7_score, s.q8_score
+    ].filter((v: any) => v != null));
+    const ikmScore = allScores.length > 0 
+      ? ((allScores.reduce((a: number, b: number) => a + b, 0) / allScores.length) / 5 * 100).toFixed(1)
+      : 0;
+
+    // Calculate NPS (simplified)
+    const overallScores = surveys.filter((s: any) => s.overall_score != null).map((s: any) => s.overall_score);
+    const promoters = overallScores.filter((s: number) => s >= 4).length;
+    const detractors = overallScores.filter((s: number) => s <= 2).length;
+    const npsScore = overallScores.length > 0 
+      ? Math.round(((promoters - detractors) / overallScores.length) * 100)
+      : 0;
+
+    res.json({
+      success: true,
+      data: {
+        total_surveys: totalSurveys,
+        total_responses: totalSurveys,
+        average_overall: calcAvg('overall_score'),
+        average_q1: calcAvg('q1_score'),
+        average_q2: calcAvg('q2_score'),
+        average_q3: calcAvg('q3_score'),
+        average_q4: calcAvg('q4_score'),
+        average_q5: calcAvg('q5_score'),
+        average_q6: calcAvg('q6_score'),
+        average_q7: calcAvg('q7_score'),
+        average_q8: calcAvg('q8_score'),
+        ikm_score: parseFloat(ikmScore as string),
+        nps_score: npsScore,
+        response_rate: 100,
+        average_completion_rate: 100,
+        active_surveys: 1
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching survey stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
+
+// Get survey responses with filters
+router.get('/surveys/responses', async (req: Request, res: Response) => {
+  try {
+    const { start_date, end_date, unit_id, service_type, limit = 100, offset = 0 } = req.query;
+
+    let query = supabase
+      .from('public_surveys')
+      .select(`
+        *,
+        units:unit_id (id, name, code)
+      `)
+      .order('created_at', { ascending: false });
+
+    // Apply filters
+    if (start_date) {
+      query = query.gte('created_at', start_date);
+    }
+    if (end_date) {
+      query = query.lte('created_at', end_date);
+    }
+    if (unit_id && unit_id !== 'all') {
+      query = query.eq('unit_id', unit_id);
+    }
+    if (service_type && service_type !== 'all') {
+      query = query.eq('service_type', service_type);
+    }
+
+    // Pagination
+    query = query.range(Number(offset), Number(offset) + Number(limit) - 1);
+
+    const { data: surveys, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching survey responses:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil data survei'
+      });
+    }
+
+    // Helper function to calculate average rating
+    const calculateAverageRating = (survey: any): number => {
+      const scores = [
+        survey.q1_score, survey.q2_score, survey.q3_score, survey.q4_score,
+        survey.q5_score, survey.q6_score, survey.q7_score, survey.q8_score
+      ].filter((s: any) => s != null);
+      
+      if (scores.length === 0) return 0;
+      return Math.round((scores.reduce((a: number, b: number) => a + b, 0) / scores.length) * 10) / 10;
+    };
+
+    // Transform data for frontend
+    const transformedSurveys = surveys?.map((survey: any) => ({
+      id: survey.id,
+      date: survey.created_at,
+      unit: survey.units?.name || 'Unknown',
+      unit_id: survey.unit_id,
+      service_type: survey.service_type,
+      visitor_name: survey.visitor_name,
+      visitor_phone: survey.visitor_phone,
+      is_anonymous: survey.is_anonymous,
+      age_range: survey.age_range,
+      gender: survey.gender,
+      q1_score: survey.q1_score,
+      q2_score: survey.q2_score,
+      q3_score: survey.q3_score,
+      q4_score: survey.q4_score,
+      q5_score: survey.q5_score,
+      q6_score: survey.q6_score,
+      q7_score: survey.q7_score,
+      q8_score: survey.q8_score,
+      overall_score: survey.overall_score,
+      comments: survey.comments,
+      average_rating: calculateAverageRating(survey)
+    })) || [];
+
+    res.json({
+      success: true,
+      data: transformedSurveys,
+      total: count || transformedSurveys.length
+    });
+  } catch (error) {
+    console.error('Error fetching survey responses:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server'
+    });
+  }
+});
+
 // Submit satisfaction survey
 router.post('/surveys/:ticketId', async (req: Request, res: Response) => {
   try {

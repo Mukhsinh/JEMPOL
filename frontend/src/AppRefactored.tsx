@@ -18,17 +18,17 @@ import Reports from './pages/Reports';
 import NotificationSettings from './pages/NotificationSettings';
 import BukuPetunjuk from './pages/BukuPetunjuk';
 
-// Ticket Management
-import TicketList from './pages/tickets/TicketList';
-import TicketDetail from './pages/tickets/TicketDetail';
-import TicketDetailView from './pages/tickets/TicketDetailView';
-import TicketTracker from './pages/tickets/TicketTracker';
-import CreateInternalTicket from './pages/tickets/CreateInternalTicket';
-import TiketEksternal from './pages/tickets/TiketEksternal';
-import ExternalTicketForm from './pages/tickets/ExternalTicketForm';
-import QRManagement from './pages/tickets/QRManagement';
-import AIEscalationManagement from './pages/tickets/AIEscalationManagement';
-import EscalationManagement from './pages/tickets/EscalationManagement';
+// Ticket Management (lazy loaded to avoid HMR issues)
+const TicketList = lazy(() => import('./pages/tickets/TicketList'));
+const TicketDetail = lazy(() => import('./pages/tickets/TicketDetail'));
+const TicketDetailView = lazy(() => import('./pages/tickets/TicketDetailView'));
+const InternalTicketForm = lazy(() => import('./pages/tickets/InternalTicketForm'));
+const TiketInternal = lazy(() => import('./pages/tickets/TiketInternal'));
+const TiketEksternal = lazy(() => import('./pages/tickets/TiketEksternal'));
+const ExternalTicketForm = lazy(() => import('./pages/tickets/ExternalTicketForm'));
+const QRManagement = lazy(() => import('./pages/tickets/QRManagement'));
+const AIEscalationManagement = lazy(() => import('./pages/tickets/AIEscalationManagement'));
+const EscalationManagement = lazy(() => import('./pages/tickets/EscalationManagement'));
 
 // Survey Management (lazy loaded)
 const SurveyForm = lazy(() => import('./pages/survey/SurveyForm'));
@@ -63,9 +63,8 @@ function AppRefactored() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/ticket-tracker" element={<TicketTracker />} />
-          <Route path="/tiket-eksternal" element={<ExternalTicketForm />} />
-          <Route path="/tiket-eksternal/:qrCode" element={<ExternalTicketForm />} />
+          <Route path="/tiket-eksternal" element={<Suspense fallback={<LoadingSpinner />}><ExternalTicketForm /></Suspense>} />
+          <Route path="/tiket-eksternal/:qrCode" element={<Suspense fallback={<LoadingSpinner />}><ExternalTicketForm /></Suspense>} />
           <Route path="/survey/public" element={<Suspense fallback={<LoadingSpinner />}><PublicSurveyForm /></Suspense>} />
           <Route path="/survey/public/:qrCode" element={<Suspense fallback={<LoadingSpinner />}><PublicSurveyForm /></Suspense>} />
           <Route path="/buku-petunjuk" element={<BukuPetunjuk />} />
@@ -80,15 +79,17 @@ function AppRefactored() {
                   <Route path="/dashboard" element={<Dashboard />} />
 
                   {/* Ticket Management */}
-                  <Route path="/tickets" element={<TicketList />} />
-                  <Route path="/tickets/:id" element={<TicketDetail />} />
-                  <Route path="/tickets/view" element={<TicketDetailView />} />
-                  <Route path="/tickets/create/internal" element={<CreateInternalTicket />} />
-                  <Route path="/tickets/tiket-eksternal" element={<TiketEksternal />} />
-                  <Route path="/tickets/qr-management" element={<QRManagement />} />
-                  <Route path="/qr-codes" element={<QRManagement />} />
-                  <Route path="/tickets/ai-escalation" element={<AIEscalationManagement />} />
-                  <Route path="/tickets/escalation" element={<EscalationManagement />} />
+                  <Route path="/tickets" element={<Suspense fallback={<LoadingSpinner />}><TicketList /></Suspense>} />
+                  <Route path="/tickets/:id" element={<Suspense fallback={<LoadingSpinner />}><TicketDetail /></Suspense>} />
+                  <Route path="/tickets/view" element={<Suspense fallback={<LoadingSpinner />}><TicketDetailView /></Suspense>} />
+                  <Route path="/tickets/create/internal" element={<Suspense fallback={<LoadingSpinner />}><InternalTicketForm /></Suspense>} />
+                  <Route path="/tickets/internal-form" element={<Suspense fallback={<LoadingSpinner />}><InternalTicketForm /></Suspense>} />
+                  <Route path="/tickets/tiket-internal" element={<Suspense fallback={<LoadingSpinner />}><TiketInternal /></Suspense>} />
+                  <Route path="/tickets/tiket-eksternal" element={<Suspense fallback={<LoadingSpinner />}><TiketEksternal /></Suspense>} />
+                  <Route path="/tickets/qr-management" element={<Suspense fallback={<LoadingSpinner />}><QRManagement /></Suspense>} />
+                  <Route path="/qr-codes" element={<Suspense fallback={<LoadingSpinner />}><QRManagement /></Suspense>} />
+                  <Route path="/tickets/ai-escalation" element={<Suspense fallback={<LoadingSpinner />}><AIEscalationManagement /></Suspense>} />
+                  <Route path="/tickets/escalation" element={<Suspense fallback={<LoadingSpinner />}><EscalationManagement /></Suspense>} />
 
                   {/* Survey Management */}
                   <Route path="/survey" element={<Suspense fallback={<LoadingSpinner />}><SurveyLanding /></Suspense>} />

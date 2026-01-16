@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import AppFooter from '../../components/AppFooter';
 
 interface FormData {
   reporter_identity_type: 'personal' | 'anonymous';
@@ -88,33 +89,33 @@ const PublicExternalTicket: React.FC = () => {
     setError('');
 
     try {
-      const submitData = new FormData();
-      
-      // Append form data
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key !== 'attachments') {
-          submitData.append(key, value as string);
-        }
-      });
-
-      // Append QR code info
-      submitData.append('qr_code', qrCode);
-      submitData.append('unit_id', unitId);
-      submitData.append('source', 'qr_code');
-
-      // Append files
-      formData.attachments.forEach((file, index) => {
-        submitData.append(`attachment_${index}`, file);
-      });
+      // Kirim sebagai JSON, bukan FormData
+      const submitData = {
+        reporter_identity_type: formData.reporter_identity_type,
+        reporter_name: formData.reporter_name,
+        reporter_email: formData.reporter_email,
+        reporter_phone: formData.reporter_phone,
+        reporter_address: formData.reporter_address,
+        service_type: formData.service_type,
+        category: formData.category,
+        title: formData.title,
+        description: formData.description,
+        qr_code: qrCode,
+        unit_id: unitId,
+        source: 'qr_code'
+      };
 
       const response = await fetch('/api/public/external-tickets', {
         method: 'POST',
-        body: submitData
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(submitData)
       });
 
       const result = await response.json();
 
-      if (response.ok) {
+      if (response.ok && result.success) {
         setTicketNumber(result.ticket_number);
         setSubmitted(true);
         window.scrollTo(0, 0);
@@ -537,11 +538,7 @@ const PublicExternalTicket: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-4 mt-auto">
-        <div className="max-w-4xl mx-auto px-4 text-center text-sm text-slate-500 dark:text-slate-400">
-          © 2024 Sistem Pengaduan Terpadu. Hak Cipta Dilindungi.
-        </div>
-      </footer>
+      <AppFooter variant="compact" className="mt-auto" />
     </div>
   );
 };

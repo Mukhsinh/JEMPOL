@@ -131,21 +131,6 @@ export default function Sidebar() {
                     </Link>
 
                     <div className="pt-2 pb-1">
-                        <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Layanan Publik</p>
-                    </div>
-
-                    <Link
-                        to="/ticket-tracker"
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive('/ticket-tracker')
-                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                            }`}
-                    >
-                        <span className="material-symbols-outlined">search</span>
-                        <p className="text-sm font-medium">Lacak Tiket</p>
-                    </Link>
-
-                    <div className="pt-2 pb-1">
                         <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Operasional</p>
                     </div>
 
@@ -189,7 +174,7 @@ export default function Sidebar() {
                                         }`}
                                 >
                                     <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Buat Tiket Internal</p>
+                                    <p className="text-sm font-medium">Tiket Internal</p>
                                 </Link>
                                 
                                 <Link

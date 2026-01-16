@@ -66,7 +66,7 @@ export default function DashboardPage() {
     
     // Filter states
     const [filters, setFilters] = useState<FilterState>({
-        dateRange: '7_days',
+        dateRange: '30_days',
         unitId: '',
         status: '',
         priority: '',
@@ -115,7 +115,7 @@ export default function DashboardPage() {
         try {
             // Calculate date filter
             const now = new Date();
-            let startDate = new Date();
+            let startDate: Date | null = new Date();
             
             switch (filters.dateRange) {
                 case '1_day':
@@ -129,6 +129,9 @@ export default function DashboardPage() {
                     break;
                 case '90_days':
                     startDate.setDate(now.getDate() - 90);
+                    break;
+                case 'all':
+                    startDate = null; // Tidak ada filter tanggal
                     break;
                 default:
                     startDate.setDate(now.getDate() - 7);
@@ -154,7 +157,7 @@ export default function DashboardPage() {
                 .order('created_at', { ascending: false });
 
             // Apply date filter
-            if (filters.dateRange !== '') {
+            if (startDate !== null && filters.dateRange !== 'all') {
                 internalQuery = internalQuery.gte('created_at', startDate.toISOString());
                 externalQuery = externalQuery.gte('created_at', startDate.toISOString());
             }
@@ -352,7 +355,8 @@ export default function DashboardPage() {
             case '7_days': return '7 Hari Terakhir';
             case '30_days': return '30 Hari Terakhir';
             case '90_days': return '90 Hari Terakhir';
-            default: return '7 Hari Terakhir';
+            case 'all': return 'Semua Waktu';
+            default: return '30 Hari Terakhir';
         }
     };
 
@@ -468,7 +472,7 @@ export default function DashboardPage() {
                             </button>
                             <button className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm shadow-blue-500/30">
                                 <span className="material-symbols-outlined text-[20px]">download</span>
-                                <span>Ekspor Laporan</span>
+                                <span>Unduh Laporan</span>
                             </button>
                         </div>
                     </div>
@@ -494,7 +498,8 @@ export default function DashboardPage() {
                                         { value: '1_day', label: '1 Hari Terakhir' },
                                         { value: '7_days', label: '7 Hari Terakhir' },
                                         { value: '30_days', label: '30 Hari Terakhir' },
-                                        { value: '90_days', label: '90 Hari Terakhir' }
+                                        { value: '90_days', label: '90 Hari Terakhir' },
+                                        { value: 'all', label: 'Semua Waktu' }
                                     ].map((option) => (
                                         <button
                                             key={option.value}
@@ -654,61 +659,66 @@ export default function DashboardPage() {
                                 <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                                     <span className="material-symbols-outlined text-primary text-2xl">confirmation_number</span>
                                 </div>
-                                <span className="flex items-center text-emerald-600 dark:text-emerald-400 text-sm font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">
-                                    <span className="material-symbols-outlined text-[16px] mr-1">trending_up</span> +12%
-                                </span>
+                                {stats.totalTickets > 0 && (
+                                    <span className="flex items-center text-blue-600 dark:text-blue-400 text-sm font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">
+                                        <span className="material-symbols-outlined text-[16px] mr-1">check_circle</span> Aktif
+                                    </span>
+                                )}
                             </div>
                             <div>
                                 <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Tiket</p>
                                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.totalTickets}</h3>
                             </div>
                         </div>
-                        {/* SLA Breach Rate */}
+                        {/* Tiket Terbuka */}
                         <div className="bg-white dark:bg-surface-dark p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-4">
                             <div className="flex justify-between items-start">
-                                <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                                    <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-2xl">timer_off</span>
+                                <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                                    <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400 text-2xl">pending</span>
                                 </div>
-                                <span className="flex items-center text-emerald-600 dark:text-emerald-400 text-sm font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">
-                                    <span className="material-symbols-outlined text-[16px] mr-1">trending_down</span> -2%
-                                </span>
+                                {statusDistribution.open > 0 && (
+                                    <span className="flex items-center text-yellow-600 dark:text-yellow-400 text-sm font-medium bg-yellow-50 dark:bg-yellow-900/20 px-2 py-0.5 rounded-full">
+                                        <span className="material-symbols-outlined text-[16px] mr-1">schedule</span> Menunggu
+                                    </span>
+                                )}
                             </div>
                             <div>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Pelanggaran SLA</p>
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.slaBreachRate.toFixed(1)}%</h3>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Tiket Terbuka</p>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{statusDistribution.open}</h3>
                             </div>
                         </div>
-                        {/* Avg Resolution Time */}
+                        {/* Diproses */}
                         <div className="bg-white dark:bg-surface-dark p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-4">
                             <div className="flex justify-between items-start">
                                 <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                                    <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-2xl">history</span>
+                                    <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-2xl">sync</span>
                                 </div>
-                                <span className="flex items-center text-emerald-600 dark:text-emerald-400 text-sm font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">
-                                    <span className="material-symbols-outlined text-[16px] mr-1">trending_down</span> -10m
-                                </span>
+                                {statusDistribution.in_progress > 0 && (
+                                    <span className="flex items-center text-orange-600 dark:text-orange-400 text-sm font-medium bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-full">
+                                        <span className="material-symbols-outlined text-[16px] mr-1">autorenew</span> Proses
+                                    </span>
+                                )}
                             </div>
                             <div>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Rata-rata Waktu Selesai</p>
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.avgResolutionTime}</h3>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Diproses</p>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{statusDistribution.in_progress}</h3>
                             </div>
                         </div>
-                        {/* CSAT Score */}
+                        {/* Selesai */}
                         <div className="bg-white dark:bg-surface-dark p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-4">
                             <div className="flex justify-between items-start">
-                                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                                    <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-2xl">thumb_up</span>
+                                <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                                    <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-2xl">task_alt</span>
                                 </div>
-                                <span className="flex items-center text-emerald-600 dark:text-emerald-400 text-sm font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">
-                                    <span className="material-symbols-outlined text-[16px] mr-1">trending_up</span> +0.2
-                                </span>
+                                {statusDistribution.resolved > 0 && (
+                                    <span className="flex items-center text-emerald-600 dark:text-emerald-400 text-sm font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">
+                                        <span className="material-symbols-outlined text-[16px] mr-1">done_all</span> Tuntas
+                                    </span>
+                                )}
                             </div>
                             <div>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Skor Kepuasan</p>
-                                <div className="flex items-baseline gap-2 mt-1">
-                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{stats.csatScore}</h3>
-                                    <span className="text-sm text-slate-400">/ 5.0</span>
-                                </div>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Selesai</p>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{statusDistribution.resolved + statusDistribution.closed}</h3>
                             </div>
                         </div>
                     </div>
@@ -725,36 +735,50 @@ export default function DashboardPage() {
                                 <button className="text-primary text-sm font-medium hover:underline">Lihat Laporan</button>
                             </div>
                             {/* Real Data Bar Chart */}
-                            <div className="h-64 flex flex-col justify-end gap-2">
-                                <div className="flex items-end justify-between h-full gap-4 px-2">
-                                    {unitTicketCounts.length === 0 ? (
-                                        <div className="w-full flex items-center justify-center text-slate-500 dark:text-slate-400">
-                                            Tidak ada data tiket
-                                        </div>
-                                    ) : (
-                                        unitTicketCounts.slice(0, 6).map((unit, index) => {
-                                            const maxCount = Math.max(...unitTicketCounts.map(u => u.count));
-                                            const heightPercent = maxCount > 0 ? (unit.count / maxCount) * 100 : 0;
+                            <div className="h-64 flex flex-col justify-end">
+                                {unitTicketCounts.length === 0 || unitTicketCounts.every(u => u.count === 0) ? (
+                                    <div className="w-full h-full flex items-center justify-center text-slate-500 dark:text-slate-400">
+                                        Tidak ada data tiket
+                                    </div>
+                                ) : (
+                                    <div className="flex items-end justify-around h-full gap-3 px-2">
+                                        {unitTicketCounts.filter(u => u.count > 0).slice(0, 6).map((unit, index) => {
+                                            const maxCount = Math.max(...unitTicketCounts.map(u => u.count), 1);
+                                            // Hitung tinggi proporsional berdasarkan volume riil
+                                            // Tinggi minimum 20px untuk unit dengan 0 tiket, maksimal 200px
+                                            const chartHeight = 200; // tinggi maksimal dalam pixel
+                                            const minBarHeight = 30; // tinggi minimum bar
+                                            const heightPixels = unit.count > 0 
+                                                ? Math.max(minBarHeight, (unit.count / maxCount) * chartHeight)
+                                                : minBarHeight;
+                                            const barColors = [
+                                                'bg-blue-500 hover:bg-blue-600',
+                                                'bg-emerald-500 hover:bg-emerald-600',
+                                                'bg-purple-500 hover:bg-purple-600',
+                                                'bg-orange-500 hover:bg-orange-600',
+                                                'bg-pink-500 hover:bg-pink-600',
+                                                'bg-cyan-500 hover:bg-cyan-600'
+                                            ];
                                             return (
-                                                <div key={index} className="flex flex-col items-center gap-2 flex-1 group">
-                                                    <div className="relative w-full max-w-[40px] bg-blue-100 dark:bg-blue-900/30 rounded-t-sm h-full flex flex-col justify-end overflow-hidden">
-                                                        <div 
-                                                            className="w-full bg-primary hover:bg-blue-600 transition-all duration-500" 
-                                                            style={{ height: `${heightPercent}%` }}
-                                                        >
-                                                            <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-slate-700 dark:text-slate-300">
-                                                                {unit.count}
-                                                            </span>
-                                                        </div>
-                                                    </div>
+                                                <div key={index} className="flex flex-col items-center gap-2 flex-1 max-w-[100px]" style={{ height: '100%', justifyContent: 'flex-end' }}>
+                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                        {unit.count}
+                                                    </span>
+                                                    <div 
+                                                        className={`w-full rounded-t-lg ${barColors[index % barColors.length]} transition-all duration-500 cursor-pointer shadow-md`}
+                                                        style={{ 
+                                                            height: `${heightPixels}px`
+                                                        }}
+                                                        title={`${unit.unit_name}: ${unit.count} tiket`}
+                                                    />
                                                     <span className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center truncate w-full" title={unit.unit_name}>
                                                         {unit.unit_name.length > 10 ? unit.unit_name.substring(0, 10) + '...' : unit.unit_name}
                                                     </span>
                                                 </div>
                                             );
-                                        })
-                                    )}
-                                </div>
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         </div>
                         {/* Status Distribution Panel */}
@@ -768,62 +792,83 @@ export default function DashboardPage() {
                             <div className="flex flex-col gap-5 flex-1 justify-center">
                                 {(() => {
                                     const totalStatus = statusDistribution.open + statusDistribution.in_progress + statusDistribution.escalated + statusDistribution.resolved + statusDistribution.closed;
-                                    const getPercent = (count: number) => totalStatus > 0 ? (count / totalStatus) * 100 : 0;
+                                    // Hitung persentase dengan skala yang lebih baik untuk visualisasi
+                                    const getBarWidth = (count: number) => {
+                                        if (totalStatus === 0) return 0;
+                                        // Minimal 5% jika ada data, maksimal 100%
+                                        const percent = (count / totalStatus) * 100;
+                                        return count > 0 ? Math.max(percent, 5) : 0;
+                                    };
                                     return (
                                         <>
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex justify-between text-sm">
                                                     <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                                        <span className="w-2 h-2 rounded-full bg-blue-400"></span> Terbuka
+                                                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Terbuka
                                                     </span>
                                                     <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.open}</span>
                                                 </div>
-                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-blue-400 rounded-full" style={{ width: `${getPercent(statusDistribution.open)}%` }}></div>
+                                                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-blue-500 rounded-full transition-all duration-500" 
+                                                        style={{ width: `${getBarWidth(statusDistribution.open)}%` }}
+                                                    ></div>
                                                 </div>
                                             </div>
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex justify-between text-sm">
                                                     <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                                        <span className="w-2 h-2 rounded-full bg-yellow-400"></span> Diproses
+                                                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span> Diproses
                                                     </span>
                                                     <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.in_progress}</span>
                                                 </div>
-                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${getPercent(statusDistribution.in_progress)}%` }}></div>
+                                                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-yellow-500 rounded-full transition-all duration-500" 
+                                                        style={{ width: `${getBarWidth(statusDistribution.in_progress)}%` }}
+                                                    ></div>
                                                 </div>
                                             </div>
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex justify-between text-sm">
                                                     <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                                        <span className="w-2 h-2 rounded-full bg-orange-500"></span> Eskalasi
+                                                        <span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span> Eskalasi
                                                     </span>
                                                     <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.escalated}</span>
                                                 </div>
-                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-orange-500 rounded-full" style={{ width: `${getPercent(statusDistribution.escalated)}%` }}></div>
+                                                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-orange-500 rounded-full transition-all duration-500" 
+                                                        style={{ width: `${getBarWidth(statusDistribution.escalated)}%` }}
+                                                    ></div>
                                                 </div>
                                             </div>
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex justify-between text-sm">
                                                     <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Selesai
+                                                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Selesai
                                                     </span>
                                                     <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.resolved}</span>
                                                 </div>
-                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${getPercent(statusDistribution.resolved)}%` }}></div>
+                                                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                                                        style={{ width: `${getBarWidth(statusDistribution.resolved)}%` }}
+                                                    ></div>
                                                 </div>
                                             </div>
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex justify-between text-sm">
                                                     <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                                        <span className="w-2 h-2 rounded-full bg-red-500"></span> Ditutup
+                                                        <span className="w-2.5 h-2.5 rounded-full bg-slate-500"></span> Ditutup
                                                     </span>
                                                     <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.closed}</span>
                                                 </div>
-                                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-red-500 rounded-full" style={{ width: `${getPercent(statusDistribution.closed)}%` }}></div>
+                                                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-slate-500 rounded-full transition-all duration-500" 
+                                                        style={{ width: `${getBarWidth(statusDistribution.closed)}%` }}
+                                                    ></div>
                                                 </div>
                                             </div>
                                         </>
@@ -833,15 +878,15 @@ export default function DashboardPage() {
                         </div>
                     </div>
 
-                    {/* Priority Attention List */}
+                    {/* Recent Tickets */}
                     <div className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col flex-1 min-h-[300px]">
                         <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex flex-wrap gap-4 justify-between items-center">
                             <div>
                                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                    <span className="material-symbols-outlined text-red-600">warning</span>
-                                    Perhatian Prioritas Diperlukan
+                                    <span className="material-symbols-outlined text-primary">confirmation_number</span>
+                                    Tiket Terbaru
                                 </h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">Tiket yang memerlukan tindakan segera (Eskalasi atau Kritis)</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Tiket terbaru berdasarkan filter saat ini</p>
                             </div>
                             <div className="flex gap-2">
                                 <div className="relative">
@@ -850,6 +895,12 @@ export default function DashboardPage() {
                                     </span>
                                     <input className="pl-10 pr-4 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 dark:text-white w-64" placeholder="Cari tiket..." type="text" />
                                 </div>
+                                <button 
+                                    onClick={fetchDashboardData}
+                                    className="px-3 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
+                                >
+                                    Refresh
+                                </button>
                             </div>
                         </div>
                         <div className="overflow-x-auto">

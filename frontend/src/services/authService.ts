@@ -44,14 +44,14 @@ class AuthService {
 
       console.log('📧 Login attempt for:', cleanEmail);
 
-      // Attempt login with Supabase Auth dengan timeout
+      // Attempt login with Supabase Auth dengan timeout lebih panjang (30 detik)
       const loginPromise = supabase.auth.signInWithPassword({
         email: cleanEmail,
         password: password,
       });
 
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Login timeout')), 15000);
+        setTimeout(() => reject(new Error('Login timeout')), 30000);
       });
 
       const { data: authData, error: authError } = await Promise.race([
@@ -84,7 +84,7 @@ class AuthService {
 
       console.log('✅ Auth successful, fetching admin profile...');
 
-      // Get admin profile from admins table dengan timeout
+      // Get admin profile from admins table dengan timeout lebih panjang (20 detik)
       const profilePromise = supabase
         .from('admins')
         .select('*')
@@ -93,7 +93,7 @@ class AuthService {
         .single();
 
       const profileTimeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 10000);
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 20000);
       });
 
       const { data: adminProfile, error: profileError } = await Promise.race([

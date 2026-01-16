@@ -33,9 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initAuth = async () => {
       try {
-        // Timeout yang lebih singkat untuk inisialisasi cepat
+        // Timeout yang cukup untuk inisialisasi
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Auth initialization timeout')), 2000);
+          setTimeout(() => reject(new Error('Auth initialization timeout')), 10000);
         });
 
         const authPromise = (async () => {
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .single();
 
             const profileTimeout = new Promise((_, reject) => {
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 1000);
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 5000);
             });
 
             const { data: profileData, error: profileError } = await Promise.race([profilePromise, profileTimeout]) as any;
@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .single();
 
           const profileTimeout = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Profile fetch timeout')), 1000);
+            setTimeout(() => reject(new Error('Profile fetch timeout')), 5000);
           });
 
           const { data: profileData, error: profileError } = await Promise.race([profilePromise, profileTimeout]) as any;
@@ -170,14 +170,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      // Login dengan timeout yang lebih singkat untuk performa
+      // Login dengan timeout yang cukup untuk koneksi stabil
       const loginPromise = supabase.auth.signInWithPassword({
         email: cleanEmail,
         password: password,
       });
 
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Login timeout')), 3000); // Kurangi timeout
+        setTimeout(() => reject(new Error('Login timeout')), 20000); // 20 detik untuk koneksi stabil
       });
 
       const { data: authData, error: authError } = await Promise.race([loginPromise, timeoutPromise]) as any;
@@ -204,7 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      // Get admin profile dengan timeout yang lebih singkat
+      // Get admin profile dengan timeout yang cukup
       const profilePromise = supabase
         .from('admins')
         .select('id, username, full_name, email, role, is_active')
@@ -213,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       const profileTimeout = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Profile timeout')), 1000); // Timeout lebih singkat
+        setTimeout(() => reject(new Error('Profile timeout')), 10000); // 10 detik
       });
 
       const { data: adminProfile, error: profileError } = await Promise.race([profilePromise, profileTimeout]) as any;

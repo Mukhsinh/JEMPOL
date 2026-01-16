@@ -59,7 +59,7 @@ export class UnitController {
         } : null
       }));
 
-      res.json(transformedUnits);
+      res.json({ success: true, data: transformedUnits });
     } catch (error) {
       console.error('Error fetching units:', error);
       res.status(500).json({ error: 'Internal server error' });

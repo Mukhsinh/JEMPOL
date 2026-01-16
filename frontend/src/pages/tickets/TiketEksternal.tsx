@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { masterDataService, ServiceCategory } from '../../services/masterDataService';
 import { qrCodeService, QRCode } from '../../services/qrCodeService';
 import { externalTicketService } from '../../services/externalTicketService';
+
+interface AppSettings {
+  app_name?: string;
+  app_footer?: string;
+  institution_name?: string;
+  institution_address?: string;
+}
 
 interface FormData {
   reporter_identity_type: 'personal' | 'anonymous';
@@ -14,15 +21,12 @@ interface FormData {
   category: string;
   title: string;
   description: string;
-  attachments: File[];
 }
 
 const TiketEksternal: React.FC = () => {
   const { qrCode } = useParams<{ qrCode: string }>();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   
-  // Ambil parameter dari URL (dari QR Landing)
   const unitIdFromUrl = searchParams.get('unit_id');
   const unitNameFromUrl = searchParams.get('unit_name');
   const qrCodeFromUrl = searchParams.get('qr_code');
@@ -34,6 +38,7 @@ const TiketEksternal: React.FC = () => {
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [charCount, setCharCount] = useState(0);
   const [unitLocked, setUnitLocked] = useState(false);
+  const [appSettings, setAppSettings] = useState<AppSettings>({});
   
   const [formData, setFormData] = useState<FormData>({
     reporter_identity_type: 'personal',
@@ -44,8 +49,7 @@ const TiketEksternal: React.FC = () => {
     service_type: '',
     category: '',
     title: '',
-    description: '',
-    attachments: []
+    description: ''
   });
 
   useEffect(() => {
@@ -56,11 +60,19 @@ const TiketEksternal: React.FC = () => {
     try {
       setLoading(true);
       
-      // Load service categories from master data
+      try {
+        const response = await fetch('/api/app-settings/public');
+        const result = await response.json();
+        if (result.success && result.data) {
+          setAppSettings(result.data);
+        }
+      } catch (error) {
+        console.error('Error loading app settings:', error);
+      }
+      
       const categories = await masterDataService.getServiceCategories();
       setServiceCategories(categories.filter(cat => cat.is_active));
       
-      // Jika ada unit_id dari URL (dari QR Landing dengan auto_fill_unit)
       if (unitIdFromUrl && unitNameFromUrl) {
         setQrData({
           id: 'from-qr-landing',
@@ -83,7 +95,6 @@ const TiketEksternal: React.FC = () => {
         return;
       }
       
-      // Load QR code data if available
       if (qrCode) {
         try {
           const qrCodeData = await qrCodeService.getByCode(qrCode);
@@ -138,23 +149,6 @@ const TiketEksternal: React.FC = () => {
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setFormData(prev => ({
-        ...prev,
-        attachments: [...prev.attachments, ...files]
-      }));
-    }
-  };
-
-  const removeFile = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index)
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -177,15 +171,13 @@ const TiketEksternal: React.FC = () => {
         service_type: formData.service_type,
         category: formData.category,
         title: formData.title,
-        description: formData.description,
-        attachments: formData.attachments
+        description: formData.description
       };
 
       const result = await externalTicketService.createTicket(submitData);
       
       alert(`Laporan berhasil dikirim! Nomor tiket: ${result.ticket_number}`);
       
-      // Reset form
       setFormData({
         reporter_identity_type: 'personal',
         reporter_name: '',
@@ -195,8 +187,7 @@ const TiketEksternal: React.FC = () => {
         service_type: '',
         category: '',
         title: '',
-        description: '',
-        attachments: []
+        description: ''
       });
       setCharCount(0);
       setCaptchaVerified(false);
@@ -211,95 +202,54 @@ const TiketEksternal: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-slate-600 dark:text-slate-400">Memuat formulir...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-500 text-sm">Memuat formulir...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between whitespace-nowrap border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1a2632] px-6 lg:px-10 py-3 sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="size-8 text-primary flex items-center justify-center bg-primary/10 rounded-lg">
-            <span className="material-symbols-outlined text-2xl">local_hospital</span>
-          </div>
-          <h2 className="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-[-0.015em]">
-            Sistem Pengaduan Terpadu
-          </h2>
-        </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => navigate('/login')}
-            className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-primary text-white hover:bg-primary/90 transition-colors text-sm font-bold leading-normal tracking-[0.015em]"
-          >
-            <span className="truncate">Masuk</span>
-          </button>
-          <button className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-sm font-bold leading-normal tracking-[0.015em]">
-            <span className="truncate">Bantuan</span>
-          </button>
-        </div>
-      </header>
-
-      <main className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-4xl space-y-6">
-          {/* Page Heading */}
-          <div className="flex flex-col gap-2">
-            <h1 className="text-slate-900 dark:text-white text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em]">
-              Sampaikan Laporan Anda
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-base md:text-lg font-normal leading-normal max-w-2xl">
-              Silakan isi formulir di bawah ini untuk menyampaikan pengaduan, permintaan, saran, atau survei secara aman dan terpercaya.
-            </p>
-          </div>
-
-          {/* Pre-filled Unit Info Card */}
+    <div className="min-h-screen bg-gray-50 font-sans">
+      {/* Main Content */}
+      <div className="px-4 py-6">
+        <div className="max-w-lg mx-auto">
+          {/* Unit Info Card */}
           {qrData?.units && (
-            <div className="bg-white dark:bg-[#1a2632] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-              <div className="flex flex-col md:flex-row items-stretch">
-                <div className="p-6 flex-1 flex flex-col justify-center gap-2">
-                  <div className="flex items-center gap-2 text-primary font-bold text-sm uppercase tracking-wide">
-                    <span className="material-symbols-outlined text-lg">verified</span>
-                    <span>Unit Terverifikasi</span>
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-white text-2xl">verified</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">Unit Terverifikasi</span>
                     {unitLocked && (
-                      <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs">
-                        <span className="material-symbols-outlined text-xs">lock</span>
-                        Otomatis Terisi
+                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-medium">
+                        <span className="material-symbols-outlined text-[10px]">lock</span>
+                        Auto
                       </span>
                     )}
                   </div>
-                  <h3 className="text-slate-900 dark:text-white text-xl font-bold leading-tight">
+                  <h3 className="text-gray-900 font-semibold text-base truncate">
                     {qrData.units.name}
                   </h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm font-normal leading-normal">
-                    {unitLocked ? 
-                      `Unit ini telah dipilih secara otomatis berdasarkan QR Code yang dipindai.` :
-                      `Formulir pengaduan umum untuk unit ini.`
-                    }
-                  </p>
-                </div>
-                <div className="h-32 md:h-auto md:w-48 bg-gradient-to-br from-primary/20 to-primary/10">
-                  <div className="h-full w-full bg-primary/10 backdrop-blur-[1px] flex items-center justify-center">
-                    <span className="material-symbols-outlined text-6xl text-primary/30">local_hospital</span>
-                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Main Form Container */}
-          <form onSubmit={handleSubmit} className="bg-white dark:bg-[#1a2632] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 md:p-8 space-y-8">
-            {/* Identity Toggle */}
-            <div className="space-y-3">
-              <label className="text-slate-900 dark:text-white text-sm font-bold uppercase tracking-wider">
+          {/* Form Card */}
+          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            {/* Identity Type Toggle */}
+            <div className="p-5 border-b border-gray-100">
+              <label className="text-gray-700 text-xs font-semibold uppercase tracking-wider mb-3 block">
                 Identitas Pelapor
               </label>
-              <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-lg w-full sm:w-fit">
-                <label className="flex-1 sm:flex-none cursor-pointer">
+              <div className="grid grid-cols-2 gap-2">
+                <label className="cursor-pointer">
                   <input
                     type="radio"
                     name="reporter_identity_type"
@@ -308,12 +258,12 @@ const TiketEksternal: React.FC = () => {
                     onChange={() => setFormData(prev => ({ ...prev, reporter_identity_type: 'personal' }))}
                     className="peer sr-only"
                   />
-                  <div className="px-4 py-2 rounded-md text-sm font-medium text-slate-500 dark:text-slate-400 peer-checked:bg-white dark:peer-checked:bg-[#2c3b4b] peer-checked:text-primary peer-checked:shadow-sm transition-all text-center flex items-center justify-center gap-2">
-                    <span className="material-symbols-outlined text-lg">person</span>
-                    Identitas Pribadi
+                  <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-500 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary transition-all">
+                    <span className="material-symbols-outlined text-xl">person</span>
+                    <span className="text-sm font-medium">Pribadi</span>
                   </div>
                 </label>
-                <label className="flex-1 sm:flex-none cursor-pointer">
+                <label className="cursor-pointer">
                   <input
                     type="radio"
                     name="reporter_identity_type"
@@ -322,310 +272,240 @@ const TiketEksternal: React.FC = () => {
                     onChange={() => setFormData(prev => ({ ...prev, reporter_identity_type: 'anonymous' }))}
                     className="peer sr-only"
                   />
-                  <div className="px-4 py-2 rounded-md text-sm font-medium text-slate-500 dark:text-slate-400 peer-checked:bg-white dark:peer-checked:bg-[#2c3b4b] peer-checked:text-primary peer-checked:shadow-sm transition-all text-center flex items-center justify-center gap-2">
-                    <span className="material-symbols-outlined text-lg">visibility_off</span>
-                    Anonim
+                  <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-500 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary transition-all">
+                    <span className="material-symbols-outlined text-xl">visibility_off</span>
+                    <span className="text-sm font-medium">Anonim</span>
                   </div>
                 </label>
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500">
-                Pilih "Anonim" jika Anda tidak ingin identitas Anda diketahui oleh unit terkait.
-              </p>
             </div>
 
-            <hr className="border-slate-100 dark:border-slate-800" />
-
-            {/* Personal Information (conditional) */}
+            {/* Personal Info Fields */}
             {formData.reporter_identity_type === 'personal' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col gap-2">
-                  <label className="text-slate-900 dark:text-white text-sm font-semibold" htmlFor="reporter_name">
-                    Nama Lengkap *
+              <div className="p-5 space-y-4 border-b border-gray-100 bg-gray-50/50">
+                {/* Nama */}
+                <div>
+                  <label className="text-gray-700 text-xs font-semibold mb-2 block">
+                    Nama Lengkap <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    id="reporter_name"
-                    name="reporter_name"
-                    value={formData.reporter_name}
-                    onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
-                    placeholder="Masukkan nama lengkap Anda"
-                    required
-                  />
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">badge</span>
+                    <input
+                      type="text"
+                      name="reporter_name"
+                      value={formData.reporter_name}
+                      onChange={handleInputChange}
+                      className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none transition-colors text-sm"
+                      placeholder="Masukkan nama lengkap"
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-slate-900 dark:text-white text-sm font-semibold" htmlFor="reporter_email">
+                {/* Email */}
+                <div>
+                  <label className="text-gray-700 text-xs font-semibold mb-2 block">
                     Email
                   </label>
-                  <input
-                    type="email"
-                    id="reporter_email"
-                    name="reporter_email"
-                    value={formData.reporter_email}
-                    onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
-                    placeholder="email@example.com"
-                  />
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">mail</span>
+                    <input
+                      type="email"
+                      name="reporter_email"
+                      value={formData.reporter_email}
+                      onChange={handleInputChange}
+                      className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none transition-colors text-sm"
+                      placeholder="email@contoh.com"
+                    />
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-slate-900 dark:text-white text-sm font-semibold" htmlFor="reporter_phone">
+                {/* Phone */}
+                <div>
+                  <label className="text-gray-700 text-xs font-semibold mb-2 block">
                     Nomor Telepon
                   </label>
-                  <input
-                    type="tel"
-                    id="reporter_phone"
-                    name="reporter_phone"
-                    value={formData.reporter_phone}
-                    onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
-                    placeholder="08xxxxxxxxxx"
-                  />
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">phone</span>
+                    <input
+                      type="tel"
+                      name="reporter_phone"
+                      value={formData.reporter_phone}
+                      onChange={handleInputChange}
+                      className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none transition-colors text-sm"
+                      placeholder="08xxxxxxxxxx"
+                    />
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-slate-900 dark:text-white text-sm font-semibold" htmlFor="reporter_address">
+                {/* Address */}
+                <div>
+                  <label className="text-gray-700 text-xs font-semibold mb-2 block">
                     Alamat
                   </label>
-                  <input
-                    type="text"
-                    id="reporter_address"
-                    name="reporter_address"
-                    value={formData.reporter_address}
-                    onChange={handleInputChange}
-                    className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
-                    placeholder="Alamat lengkap"
-                  />
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-3 text-gray-400 text-xl">location_on</span>
+                    <input
+                      type="text"
+                      name="reporter_address"
+                      value={formData.reporter_address}
+                      onChange={handleInputChange}
+                      className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none transition-colors text-sm"
+                      placeholder="Alamat lengkap"
+                    />
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Form Fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Report Details */}
+            <div className="p-5 space-y-4">
               {/* Service Type */}
-              <div className="flex flex-col gap-2 md:col-span-1">
-                <label className="text-slate-900 dark:text-white text-sm font-semibold" htmlFor="service_type">
-                  Jenis Layanan *
+              <div>
+                <label className="text-gray-700 text-xs font-semibold mb-2 block">
+                  Jenis Layanan <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">category</span>
                   <select
-                    id="service_type"
                     name="service_type"
                     value={formData.service_type}
                     onChange={handleInputChange}
-                    className="w-full appearance-none rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3 pr-10 text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
+                    className="w-full pl-11 pr-10 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-primary focus:outline-none transition-colors text-sm appearance-none"
                     required
                   >
-                    <option value="">Pilih jenis layanan...</option>
-                    <option value="complaint">Pengaduan</option>
-                    <option value="request">Permintaan Informasi</option>
-                    <option value="suggestion">Saran & Masukan</option>
-                    <option value="survey">Survei Kepuasan</option>
+                    <option value="">Pilih jenis layanan</option>
+                    <option value="complaint">📢 Pengaduan</option>
+                    <option value="request">📋 Permintaan Informasi</option>
+                    <option value="suggestion">💡 Saran & Masukan</option>
+                    <option value="survey">📊 Survei Kepuasan</option>
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                    <span className="material-symbols-outlined">expand_more</span>
-                  </div>
+                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                 </div>
               </div>
 
-              {/* Category - Integrated with Master Data */}
-              <div className="flex flex-col gap-2 md:col-span-1">
-                <label className="text-slate-900 dark:text-white text-sm font-semibold" htmlFor="category">
+              {/* Category */}
+              <div>
+                <label className="text-gray-700 text-xs font-semibold mb-2 block">
                   Kategori
                 </label>
                 <div className="relative">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">folder</span>
                   <select
-                    id="category"
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className="w-full appearance-none rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3 pr-10 text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
+                    className="w-full pl-11 pr-10 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-primary focus:outline-none transition-colors text-sm appearance-none"
                   >
-                    <option value="">Pilih kategori...</option>
+                    <option value="">Pilih kategori</option>
                     {serviceCategories.map((category) => (
                       <option key={category.id} value={category.id}>
                         {category.name}
                       </option>
                     ))}
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                    <span className="material-symbols-outlined">expand_more</span>
-                  </div>
+                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                 </div>
               </div>
 
               {/* Title */}
-              <div className="flex flex-col gap-2 md:col-span-2">
-                <label className="text-slate-900 dark:text-white text-sm font-semibold" htmlFor="title">
-                  Judul Laporan *
+              <div>
+                <label className="text-gray-700 text-xs font-semibold mb-2 block">
+                  Judul Laporan <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="Ringkasan singkat masalah Anda (Contoh: AC di ruang tunggu mati)"
-                  required
-                />
+                <div className="relative">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">title</span>
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none transition-colors text-sm"
+                    placeholder="Ringkasan singkat masalah Anda"
+                    required
+                  />
+                </div>
               </div>
 
               {/* Description */}
-              <div className="flex flex-col gap-2 md:col-span-2">
-                <label className="text-slate-900 dark:text-white text-sm font-semibold" htmlFor="description">
-                  Deskripsi Lengkap *
-                  <span className="text-slate-400 font-normal ml-1 text-xs">
-                    (Jelaskan kronologi kejadian secara detail)
-                  </span>
+              <div>
+                <label className="text-gray-700 text-xs font-semibold mb-2 block">
+                  Deskripsi Lengkap <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={5}
-                  maxLength={2000}
-                  className="w-full resize-y rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
-                  placeholder="Sampaikan detail laporan anda di sini..."
-                  required
-                />
-                <div className="text-right text-xs text-slate-400">
-                  {charCount} / 2000 karakter
-                </div>
-              </div>
-
-              {/* File Upload - Removed "terlampir" text */}
-              <div className="flex flex-col gap-2 md:col-span-2">
-                <label className="text-slate-900 dark:text-white text-sm font-semibold">
-                  Lampiran Bukti (Opsional)
-                </label>
-                <div className="group relative flex w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 py-8 hover:border-primary hover:bg-primary/5 transition-all">
-                  <div className="flex flex-col items-center justify-center gap-2 pb-2 text-center">
-                    <div className="rounded-full bg-slate-200 dark:bg-slate-700 p-3 text-slate-500 dark:text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                      <span className="material-symbols-outlined text-2xl">cloud_upload</span>
-                    </div>
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      <span className="text-primary font-bold">Klik untuk unggah</span> atau seret file ke sini
-                    </p>
-                    <p className="text-xs text-slate-500">JPG, PNG, PDF (Maks. 5MB)</p>
-                  </div>
-                  <input 
-                    type="file" 
-                    className="absolute h-full w-full cursor-pointer opacity-0"
-                    multiple
-                    accept=".jpg,.jpeg,.png,.pdf"
-                    onChange={handleFileUpload}
+                <div className="relative">
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows={4}
+                    maxLength={2000}
+                    className="w-full px-4 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none transition-colors text-sm resize-none"
+                    placeholder="Jelaskan detail laporan Anda di sini..."
+                    required
                   />
                 </div>
-                {formData.attachments.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">File terpilih:</p>
-                    <ul className="space-y-1">
-                      {formData.attachments.map((file, index) => (
-                        <li key={index} className="text-sm text-slate-600 dark:text-slate-400 flex items-center justify-between gap-2 bg-slate-100 dark:bg-slate-800 p-2 rounded">
-                          <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-sm">attach_file</span>
-                            {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeFile(index)}
-                            className="text-red-500 hover:text-red-700 transition-colors"
-                          >
-                            <span className="material-symbols-outlined text-sm">close</span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+                <div className="flex justify-end mt-1">
+                  <span className="text-xs text-gray-400">{charCount}/2000</span>
+                </div>
               </div>
             </div>
 
-            {/* Security & Submit */}
-            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 md:p-6 border border-slate-100 dark:border-slate-800 flex flex-col gap-6">
-              {/* CAPTCHA Placeholder */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 bg-white dark:bg-[#1a2632] border border-slate-300 dark:border-slate-600 rounded-md p-3 shadow-sm min-w-[240px]">
-                  <div className="relative flex items-center justify-center">
-                    <input
-                      type="checkbox"
-                      id="captcha"
-                      checked={captchaVerified}
-                      onChange={(e) => setCaptchaVerified(e.target.checked)}
-                      className="peer size-6 cursor-pointer rounded border-slate-300 text-primary focus:ring-primary/20"
-                      required
-                    />
-                  </div>
-                  <label htmlFor="captcha" className="text-sm text-slate-600 dark:text-slate-300 cursor-pointer select-none">
-                    Saya bukan robot
-                  </label>
-                  <div className="ml-auto flex flex-col items-center justify-center gap-0.5 opacity-50">
-                    <span className="material-symbols-outlined text-[18px]">security</span>
-                    <span className="text-[8px] uppercase font-bold tracking-tighter">Captcha</span>
-                  </div>
+            {/* Captcha & Submit */}
+            <div className="p-5 bg-gray-50 border-t border-gray-100">
+              {/* Captcha */}
+              <div className="flex items-center gap-3 p-4 bg-white rounded-xl border-2 border-gray-200 mb-4">
+                <input
+                  type="checkbox"
+                  id="captcha"
+                  checked={captchaVerified}
+                  onChange={(e) => setCaptchaVerified(e.target.checked)}
+                  className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary/20 cursor-pointer"
+                  required
+                />
+                <label htmlFor="captcha" className="text-sm text-gray-600 cursor-pointer flex-1">
+                  Saya bukan robot
+                </label>
+                <div className="flex flex-col items-center opacity-50">
+                  <span className="material-symbols-outlined text-lg text-gray-400">security</span>
+                  <span className="text-[8px] text-gray-400 font-bold">CAPTCHA</span>
                 </div>
               </div>
 
-              <div className="flex flex-col-reverse md:flex-row gap-4 items-center justify-between">
-                <p className="text-xs text-slate-500 dark:text-slate-400 text-center md:text-left max-w-sm">
-                  Dengan mengirimkan laporan ini, Anda menyetujui{' '}
-                  <a href="#" className="text-primary hover:underline">
-                    Kebijakan Privasi
-                  </a>{' '}
-                  kami.
-                </p>
-                <div className="flex w-full md:w-auto gap-3">
-                  <button
-                    type="button"
-                    onClick={() => navigate('/')}
-                    className="flex-1 md:flex-none h-11 px-6 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-transparent text-slate-700 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting || !captchaVerified}
-                    className="flex-1 md:flex-none h-11 px-8 rounded-lg bg-primary text-white shadow-lg shadow-primary/30 hover:bg-primary/90 hover:shadow-primary/40 active:translate-y-0.5 transition-all font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {submitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Mengirim...
-                      </>
-                    ) : (
-                      <>
-                        <span className="material-symbols-outlined text-[20px]">send</span>
-                        Kirim Laporan
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
+              {/* Privacy Notice */}
+              <p className="text-xs text-gray-500 text-center mb-4">
+                Dengan mengirim, Anda menyetujui{' '}
+                <a href="#" className="text-primary hover:underline">Kebijakan Privasi</a>
+              </p>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={submitting || !captchaVerified}
+                className="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-blue-600 text-white font-semibold text-base shadow-lg shadow-primary/30 hover:shadow-primary/40 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex items-center justify-center gap-2"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                    <span>Mengirim...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined">send</span>
+                    <span>Kirim Laporan</span>
+                  </>
+                )}
+              </button>
             </div>
           </form>
-        </div>
-      </main>
 
-      {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1a2632] py-6">
-        <div className="px-6 lg:px-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500 dark:text-slate-400">
-          <p>© 2024 Sistem Pengaduan Terpadu. Hak Cipta Dilindungi.</p>
-          <div className="flex gap-6">
-            <a href="#" className="hover:text-primary transition-colors">
-              Tentang Kami
-            </a>
-            <a href="#" className="hover:text-primary transition-colors">
-              Panduan
-            </a>
-            <a href="#" className="hover:text-primary transition-colors">
-              Hubungi Kami
-            </a>
+          {/* Footer */}
+          <div className="mt-6 text-center">
+            <p className="text-xs text-gray-400">
+              {appSettings.app_footer || `© ${new Date().getFullYear()} ${appSettings.institution_name || 'Sistem Pengaduan Terpadu'}`}
+            </p>
           </div>
         </div>
-      </footer>
+      </div>
     </div>
   );
 };

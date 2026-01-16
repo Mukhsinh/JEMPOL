@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { supabase } from '../../utils/supabaseClient';
 
 interface Unit {
   id: string;
@@ -7,15 +8,31 @@ interface Unit {
   code: string;
 }
 
+interface AppSettings {
+  app_name: string;
+  app_footer: string;
+  institution_name: string;
+  contact_phone: string;
+  logo_url: string;
+}
+
 const surveyQuestions = [
-  { id: 'q1', code: 'U1', text: 'Bagaimana kesesuaian persyaratan pelayanan?' },
-  { id: 'q2', code: 'U2', text: 'Bagaimana kemudahan prosedur pelayanan?' },
-  { id: 'q3', code: 'U3', text: 'Bagaimana kecepatan waktu pelayanan?' },
-  { id: 'q4', code: 'U4', text: 'Bagaimana kewajaran biaya/tarif?' },
-  { id: 'q5', code: 'U5', text: 'Bagaimana kesesuaian produk pelayanan?' },
-  { id: 'q6', code: 'U6', text: 'Bagaimana kompetensi petugas?' },
-  { id: 'q7', code: 'U7', text: 'Bagaimana kesopanan petugas?' },
-  { id: 'q8', code: 'U8', text: 'Bagaimana penanganan pengaduan?' }
+  { id: 'q1', code: 'U1', title: 'Persyaratan', text: 'Kesesuaian persyaratan pelayanan' },
+  { id: 'q2', code: 'U2', title: 'Prosedur', text: 'Kemudahan prosedur pelayanan' },
+  { id: 'q3', code: 'U3', title: 'Waktu', text: 'Kecepatan waktu pelayanan' },
+  { id: 'q4', code: 'U4', title: 'Biaya', text: 'Kewajaran biaya/tarif' },
+  { id: 'q5', code: 'U5', title: 'Produk', text: 'Kesesuaian produk pelayanan' },
+  { id: 'q6', code: 'U6', title: 'Kompetensi', text: 'Kompetensi petugas' },
+  { id: 'q7', code: 'U7', title: 'Perilaku', text: 'Kesopanan petugas' },
+  { id: 'q8', code: 'U8', title: 'Pengaduan', text: 'Penanganan pengaduan' }
+];
+
+const ratingOptions = [
+  { value: 1, emoji: '😞', color: 'from-red-400 to-red-500' },
+  { value: 2, emoji: '😕', color: 'from-orange-400 to-orange-500' },
+  { value: 3, emoji: '😐', color: 'from-yellow-400 to-yellow-500' },
+  { value: 4, emoji: '😊', color: 'from-green-400 to-green-500' },
+  { value: 5, emoji: '😍', color: 'from-emerald-400 to-emerald-500' }
 ];
 
 const SurveyForm: React.FC = () => {
@@ -25,6 +42,13 @@ const SurveyForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [units, setUnits] = useState<Unit[]>([]);
   const [unitFromQR, setUnitFromQR] = useState<string | null>(null);
+  const [appSettings, setAppSettings] = useState<AppSettings>({
+    app_name: 'Survei Kepuasan',
+    app_footer: '',
+    institution_name: 'RSUD',
+    contact_phone: '',
+    logo_url: ''
+  });
   const [formData, setFormData] = useState({
     service_type: '',
     full_name: '',
@@ -33,14 +57,7 @@ const SurveyForm: React.FC = () => {
     is_anonymous: false,
     age: '',
     gender: '',
-    q1: '',
-    q2: '',
-    q3: '',
-    q4: '',
-    q5: '',
-    q6: '',
-    q7: '',
-    q8: '',
+    q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: '',
     overall_satisfaction: '',
     suggestions: '',
     unit_id: ''
@@ -48,6 +65,7 @@ const SurveyForm: React.FC = () => {
 
   useEffect(() => {
     loadMasterData();
+    loadAppSettings();
   }, []);
 
   useEffect(() => {
@@ -56,6 +74,29 @@ const SurveyForm: React.FC = () => {
     }
   }, [qrToken, units]);
 
+  const loadAppSettings = async () => {
+    try {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('setting_key, setting_value');
+      
+      if (data) {
+        const map: Record<string, string> = {};
+        data.forEach((item: { setting_key: string; setting_value: string }) => {
+          map[item.setting_key] = item.setting_value || '';
+        });
+        setAppSettings({
+          app_name: map.app_name || 'Survei Kepuasan',
+          app_footer: map.app_footer || '',
+          institution_name: map.institution_name || 'RSUD',
+          contact_phone: map.contact_phone || '',
+          logo_url: map.logo_url || ''
+        });
+      }
+    } catch (e) {
+      console.error('Error loading app settings:', e);
+    }
+  };
 
   const loadMasterData = async () => {
     setIsLoading(true);
@@ -63,10 +104,14 @@ const SurveyForm: React.FC = () => {
       const res = await fetch('/api/public/units');
       if (res.ok) {
         const r = await res.json();
-        setUnits(r.data || []);
+        // Handle both formats: { data: [...] } or direct array
+        const unitsData = Array.isArray(r) ? r : (r.data || []);
+        // Filter only active units
+        const activeUnits = unitsData.filter((u: any) => u.is_active !== false);
+        setUnits(activeUnits);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Error loading units:', e);
     }
     setIsLoading(false);
   };
@@ -113,15 +158,16 @@ const SurveyForm: React.FC = () => {
         comments: formData.suggestions,
         is_anonymous: formData.is_anonymous,
         qr_token: qrToken,
-        unit_id: formData.unit_id || unitFromQR
+        unit_id: formData.unit_id || unitFromQR,
+        phone: formData.phone
       };
       const res = await fetch('/api/public/surveys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-      if (!res.ok) throw new Error('Gagal');
-      alert('Survei berhasil dikirim!');
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Gagal mengirim survei');
       navigate('/survey?survey=success');
     } catch (err) {
       alert('Error: ' + (err instanceof Error ? err.message : 'Unknown'));
@@ -135,122 +181,159 @@ const SurveyForm: React.FC = () => {
 
   if (isLoading && units.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-b-2 border-blue-500 rounded-full"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500 text-sm">Memuat...</p>
+        </div>
       </div>
     );
   }
 
-
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white border-b p-4">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="font-bold">Survei Kepuasan RSUD</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
+      <main className="flex-grow max-w-lg mx-auto w-full px-4 py-6 pb-24">
+        {/* Unit Selection */}
+        <div className="bg-white rounded-2xl shadow-lg p-5 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-2xl">📍</span>
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide">Unit Tujuan</p>
+              {unitFromQR ? (
+                <p className="text-lg font-bold text-gray-800">{units.find(u => u.id === unitFromQR)?.name}</p>
+              ) : (
+                <select
+                  className="w-full mt-1 text-sm border-0 border-b-2 border-gray-200 focus:border-blue-500 focus:ring-0 bg-transparent font-medium text-gray-800 py-1"
+                  value={formData.unit_id}
+                  onChange={e => handleChange('unit_id', e.target.value)}
+                >
+                  <option value="">Pilih Unit</option>
+                  {units.map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </div>
         </div>
-      </header>
-      <main className="flex-grow max-w-3xl mx-auto w-full p-4">
-        <h2 className="text-2xl font-bold mb-6">Survei Kepuasan Masyarakat</h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <section className="bg-white rounded-xl border p-4">
-            <label className="text-xs font-bold text-blue-600">Unit Tujuan</label>
-            {unitFromQR ? (
-              <p className="font-bold">{units.find(u => u.id === unitFromQR)?.name}</p>
-            ) : (
-              <select
-                className="w-full mt-2 rounded-lg border p-2"
-                value={formData.unit_id}
-                onChange={e => handleChange('unit_id', e.target.value)}
-              >
-                <option value="">Pilih Unit</option>
-                {units.map(u => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
-                ))}
-              </select>
-            )}
-          </section>
-          <section className="bg-white rounded-xl border p-4 space-y-4">
-            <h3 className="font-bold">Data Responden</h3>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Service Type */}
+          <div className="bg-white rounded-2xl shadow-lg p-5">
+            <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+              <span className="text-lg">🏥</span> Jenis Layanan
+            </h3>
             <div className="grid grid-cols-2 gap-2">
-              {['rawat_jalan', 'rawat_inap', 'darurat', 'lainnya'].map(t => (
-                <label key={t} className="cursor-pointer">
+              {[
+                { value: 'rawat_jalan', label: 'Rawat Jalan', icon: '🚶' },
+                { value: 'rawat_inap', label: 'Rawat Inap', icon: '🛏️' },
+                { value: 'darurat', label: 'IGD', icon: '🚑' },
+                { value: 'lainnya', label: 'Lainnya', icon: '📋' }
+              ].map(type => (
+                <label key={type.value} className="cursor-pointer">
                   <input
-                    className="sr-only"
-                    type="radio"
+                    className="sr-only peer"
                     name="service_type"
-                    value={t}
-                    checked={formData.service_type === t}
+                    type="radio"
+                    value={type.value}
+                    checked={formData.service_type === type.value}
                     onChange={e => handleChange('service_type', e.target.value)}
                   />
-                  <div className={`p-2 rounded-lg border text-center text-sm ${formData.service_type === t ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                    {t === 'rawat_jalan' ? 'Rawat Jalan' : t === 'rawat_inap' ? 'Rawat Inap' : t === 'darurat' ? 'IGD' : 'Lainnya'}
+                  <div className="flex items-center gap-2 p-3 rounded-xl border-2 border-gray-100 bg-gray-50 transition-all peer-checked:border-blue-500 peer-checked:bg-blue-50">
+                    <span className="text-xl">{type.icon}</span>
+                    <span className="text-xs font-medium text-gray-700">{type.label}</span>
                   </div>
                 </label>
               ))}
             </div>
-            <div className="flex justify-between">
-              <label className="text-sm font-medium">Nama</label>
-              <label className="text-xs">
-                <input
-                  type="checkbox"
-                  checked={formData.is_anonymous}
-                  onChange={e => handleChange('is_anonymous', e.target.checked)}
-                  className="mr-1"
-                />
-                Anonim
-              </label>
-            </div>
-            <input
-              className="w-full rounded-lg border p-2"
-              placeholder="Nama"
-              value={formData.full_name}
-              onChange={e => handleChange('full_name', e.target.value)}
-              disabled={formData.is_anonymous}
-            />
-            <div className="grid grid-cols-2 gap-4">
+          </div>
+
+          {/* Respondent Data */}
+          <div className="bg-white rounded-2xl shadow-lg p-5">
+            <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <span className="text-lg">👤</span> Data Responden
+            </h3>
+            <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">HP *</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-xs font-medium text-gray-600">Nama</label>
+                  <label className="flex items-center gap-1 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.is_anonymous}
+                      onChange={e => handleChange('is_anonymous', e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600"
+                    />
+                    <span className="text-xs text-gray-500">Anonim</span>
+                  </label>
+                </div>
                 <input
-                  className="w-full rounded-lg border p-2"
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={e => handleChange('phone', e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl bg-gray-50 border-0 text-sm focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                  placeholder="Nama Anda"
+                  value={formData.full_name}
+                  onChange={e => handleChange('full_name', e.target.value)}
+                  disabled={formData.is_anonymous}
                 />
               </div>
-              <div>
-                <label className="text-sm font-medium">Email</label>
-                <input
-                  className="w-full rounded-lg border p-2"
-                  type="email"
-                  value={formData.email}
-                  onChange={e => handleChange('email', e.target.value)}
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-2 block">HP *</label>
+                  <input
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 border-0 text-sm focus:ring-2 focus:ring-blue-500"
+                    type="tel"
+                    required
+                    placeholder="08xxx"
+                    value={formData.phone}
+                    onChange={e => handleChange('phone', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-2 block">Email</label>
+                  <input
+                    className="w-full px-4 py-3 rounded-xl bg-gray-50 border-0 text-sm focus:ring-2 focus:ring-blue-500"
+                    type="email"
+                    placeholder="email"
+                    value={formData.email}
+                    onChange={e => handleChange('email', e.target.value)}
+                  />
+                </div>
               </div>
             </div>
-          </section>
-          <section className="bg-white rounded-xl border overflow-hidden">
-            <div className="p-4 border-b bg-gray-50">
-              <h3 className="font-bold">Penilaian</h3>
+          </div>
+
+          {/* Rating Section */}
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-5 py-4">
+              <h3 className="text-white font-bold flex items-center gap-2">
+                <span className="text-xl">⭐</span> Penilaian
+              </h3>
             </div>
-            <div className="divide-y">
-              {surveyQuestions.map(q => (
+            <div className="divide-y divide-gray-100">
+              {surveyQuestions.map((q, idx) => (
                 <div key={q.id} className="p-4">
-                  <p className="text-xs text-blue-600 font-bold">{q.code}</p>
-                  <p className="text-sm mb-2">{q.text}</p>
-                  <div className="flex justify-between">
-                    {[1, 2, 3, 4, 5].map(val => (
-                      <label key={val} className="cursor-pointer">
+                  <div className="flex items-start gap-3 mb-3">
+                    <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+                      {idx + 1}
+                    </span>
+                    <p className="text-sm text-gray-700">{q.text}</p>
+                  </div>
+                  <div className="flex justify-between gap-1 pl-9">
+                    {ratingOptions.map(rating => (
+                      <label key={rating.value} className="cursor-pointer flex-1">
                         <input
-                          className="sr-only"
+                          className="sr-only peer"
                           name={q.id}
                           type="radio"
-                          value={val}
-                          checked={formData[q.id as keyof typeof formData] === val.toString()}
+                          value={rating.value}
+                          checked={formData[q.id as keyof typeof formData] === rating.value.toString()}
                           onChange={e => handleChange(q.id, e.target.value)}
                         />
-                        <div className={`w-10 h-10 rounded-full border flex items-center justify-center ${formData[q.id as keyof typeof formData] === val.toString() ? 'bg-yellow-50 border-yellow-400' : 'border-gray-200'}`}>
-                          <span className="text-lg">{val}</span>
+                        <div className={`flex flex-col items-center p-2 rounded-xl transition-all peer-checked:scale-110 peer-checked:bg-gradient-to-br ${rating.color} peer-checked:shadow-lg`}>
+                          <span className={`text-2xl transition-all ${formData[q.id as keyof typeof formData] === rating.value.toString() ? 'grayscale-0' : 'grayscale opacity-40'}`}>
+                            {rating.emoji}
+                          </span>
                         </div>
                       </label>
                     ))}
@@ -258,27 +341,43 @@ const SurveyForm: React.FC = () => {
                 </div>
               ))}
             </div>
-          </section>
-          <section className="bg-white rounded-xl border p-4">
-            <label className="text-sm font-medium">Saran</label>
+          </div>
+
+          {/* Suggestions */}
+          <div className="bg-white rounded-2xl shadow-lg p-5">
+            <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+              <span className="text-lg">💬</span> Saran
+            </h3>
             <textarea
-              className="w-full rounded-lg border p-2 mt-2"
+              className="w-full px-4 py-3 rounded-xl bg-gray-50 border-0 text-sm focus:ring-2 focus:ring-blue-500 resize-none"
               rows={3}
+              placeholder="Saran Anda..."
               value={formData.suggestions}
               onChange={e => handleChange('suggestions', e.target.value)}
             />
-          </section>
+          </div>
+
+          {/* Submit */}
           <button
-            className="w-full bg-blue-500 text-white py-3 rounded-xl font-bold disabled:opacity-50"
+            className="w-full py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/30 active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
             type="submit"
             disabled={isLoading}
           >
-            {isLoading ? 'Mengirim...' : 'Kirim Survei'}
+            {isLoading ? 'Mengirim...' : 'Kirim Survei'} 📤
           </button>
         </form>
       </main>
-      <footer className="bg-white border-t p-4 text-center text-xs text-gray-500">
-        © 2024 RSUD - e-SKM
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-100 py-4 px-4 mt-auto">
+        <div className="max-w-lg mx-auto text-center">
+          {appSettings.logo_url && (
+            <img src={appSettings.logo_url} alt="Logo" className="h-8 mx-auto mb-2 object-contain" />
+          )}
+          <p className="text-xs text-gray-500">
+            {appSettings.app_footer || `© ${new Date().getFullYear()} ${appSettings.institution_name}`}
+          </p>
+        </div>
       </footer>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface FormData {
@@ -12,6 +12,15 @@ interface FormData {
   q1: string; q2: string; q3: string; q4: string; q5: string; q6: string; q7: string; q8: string;
   overall_satisfaction: string;
   suggestions: string;
+}
+
+interface AppSettings {
+  app_name?: string;
+  app_footer?: string;
+  institution_name?: string;
+  institution_address?: string;
+  contact_phone?: string;
+  contact_email?: string;
 }
 
 // Mobile-optimized Public Survey Form
@@ -28,6 +37,29 @@ const PublicSurvey: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [appSettings, setAppSettings] = useState<AppSettings>({});
+
+  useEffect(() => {
+    loadAppSettings();
+  }, []);
+
+  const loadAppSettings = async () => {
+    try {
+      const res = await fetch('/api/app-settings/public');
+      if (res.ok) {
+        const r = await res.json();
+        if (r.success && r.data) {
+          const settings: AppSettings = {};
+          r.data.forEach((item: { setting_key: string; setting_value: string }) => {
+            settings[item.setting_key as keyof AppSettings] = item.setting_value;
+          });
+          setAppSettings(settings);
+        }
+      }
+    } catch (e) {
+      console.error('Error loading app settings:', e);
+    }
+  };
   
   const [formData, setFormData] = useState<FormData>({
     service_type: '',
@@ -169,44 +201,23 @@ const PublicSurvey: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 flex flex-col">
-      {/* Header - No Sidebar */}
+      {/* Header - Mobile App Style - No old header text */}
       <header className="bg-white dark:bg-slate-800 shadow-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary text-2xl">local_hospital</span>
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-slate-900 dark:text-white">Survei Kepuasan Masyarakat</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Layanan Publik Digital</p>
-            </div>
-          </div>
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-primary transition-colors"
+            className="flex items-center gap-1 text-slate-600 dark:text-slate-400 hover:text-primary transition-colors"
           >
-            <span className="material-symbols-outlined text-sm">arrow_back</span>
-            Kembali
+            <span className="material-symbols-outlined text-xl">arrow_back</span>
           </button>
+          <h1 className="text-base font-semibold text-slate-900 dark:text-white">Survei Kepuasan</h1>
+          <div className="w-8"></div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 py-8 px-4">
-        <div className="max-w-3xl mx-auto">
-          {/* Page Header */}
-          <div className="mb-6">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200 mb-3">
-              Edisi 2024
-            </span>
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2">
-              Survei Kepuasan Masyarakat (SKM)
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400">
-              Partisipasi Anda sangat berharga bagi kami. Bantu kami meningkatkan kualitas pelayanan dengan mengisi survei ini.
-            </p>
-          </div>
-
+      <main className="flex-1 py-6 px-4">
+        <div className="max-w-lg mx-auto">
           {/* Unit Info Card - Auto-filled from QR */}
           {unitName && autoFill && (
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 p-4 mb-6">
@@ -509,10 +520,32 @@ const PublicSurvey: React.FC = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-4 mt-8">
-        <div className="max-w-4xl mx-auto px-4 text-center text-sm text-slate-500 dark:text-slate-400">
-          © 2024 Sistem Pengaduan Terpadu. Hak Cipta Dilindungi.
+      {/* Footer - Dynamic from App Settings */}
+      <footer className="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-6 mt-8">
+        <div className="max-w-lg mx-auto px-4 text-center space-y-2">
+          {appSettings.institution_name && (
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{appSettings.institution_name}</p>
+          )}
+          {appSettings.institution_address && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">{appSettings.institution_address}</p>
+          )}
+          <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
+            {appSettings.contact_phone && (
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">call</span>
+                {appSettings.contact_phone}
+              </span>
+            )}
+            {appSettings.contact_email && (
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">mail</span>
+                {appSettings.contact_email}
+              </span>
+            )}
+          </div>
+          {appSettings.app_footer && (
+            <p className="text-xs text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-700">{appSettings.app_footer}</p>
+          )}
         </div>
       </footer>
     </div>

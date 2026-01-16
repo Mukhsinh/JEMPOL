@@ -7,6 +7,17 @@ interface Unit {
   code: string;
 }
 
+interface AppSettings {
+  app_name?: string;
+  app_logo?: string;
+  app_footer?: string;
+  institution_name?: string;
+  institution_address?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  website?: string;
+}
+
 const surveyQuestions = [
   { id: 'q1', code: 'U1', title: 'Persyaratan', text: 'Bagaimana pendapat Anda tentang kesesuaian persyaratan pelayanan dengan jenis pelayanannya?' },
   { id: 'q2', code: 'U2', title: 'Prosedur', text: 'Bagaimana kemudahan prosedur pelayanan di unit ini?' },
@@ -19,11 +30,11 @@ const surveyQuestions = [
 ];
 
 const ratingLabels = [
-  { value: 1, label: 'Sangat\nBuruk', icon: 'sentiment_very_dissatisfied' },
-  { value: 2, label: 'Buruk', icon: 'sentiment_dissatisfied' },
-  { value: 3, label: 'Cukup', icon: 'sentiment_neutral' },
-  { value: 4, label: 'Baik', icon: 'sentiment_satisfied' },
-  { value: 5, label: 'Sangat\nBaik', icon: 'sentiment_very_satisfied' }
+  { value: 1, label: 'Sangat Buruk', icon: 'sentiment_very_dissatisfied', color: '#ef4444' },
+  { value: 2, label: 'Buruk', icon: 'sentiment_dissatisfied', color: '#f97316' },
+  { value: 3, label: 'Cukup', icon: 'sentiment_neutral', color: '#eab308' },
+  { value: 4, label: 'Baik', icon: 'sentiment_satisfied', color: '#22c55e' },
+  { value: 5, label: 'Sangat Baik', icon: 'sentiment_very_satisfied', color: '#10b981' }
 ];
 
 const SurveyLanding = () => {
@@ -31,12 +42,13 @@ const SurveyLanding = () => {
   const [searchParams] = useSearchParams();
   const qrToken = searchParams.get('qr') || searchParams.get('token');
   const surveySuccess = searchParams.get('survey') === 'success';
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [units, setUnits] = useState<Unit[]>([]);
   const [unitFromQR, setUnitFromQR] = useState<Unit | null>(null);
-  const [showLegalInfo, setShowLegalInfo] = useState(false);
-  
+  const [appSettings, setAppSettings] = useState<AppSettings>({});
+  const [currentStep, setCurrentStep] = useState(0);
+
   const [formData, setFormData] = useState({
     service_type: '',
     full_name: '',
@@ -46,10 +58,6 @@ const SurveyLanding = () => {
     is_anonymous: false,
     age: '',
     gender: '',
-    province: '',
-    city: '',
-    district: '',
-    village: '',
     q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: '',
     overall_satisfaction: '',
     suggestions: '',
@@ -59,13 +67,33 @@ const SurveyLanding = () => {
 
   useEffect(() => {
     loadMasterData();
+    loadAppSettings();
   }, []);
 
   useEffect(() => {
     if (qrToken && units.length > 0) {
       detectUnitFromQR();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qrToken, units]);
+
+  const loadAppSettings = async () => {
+    try {
+      const res = await fetch('/api/app-settings/public');
+      if (res.ok) {
+        const r = await res.json();
+        if (r.success && r.data) {
+          const settings: AppSettings = {};
+          r.data.forEach((item: { setting_key: string; setting_value: string }) => {
+            settings[item.setting_key as keyof AppSettings] = item.setting_value;
+          });
+          setAppSettings(settings);
+        }
+      }
+    } catch (e) {
+      console.error('Error loading app settings:', e);
+    }
+  };
 
   const loadMasterData = async () => {
     setIsLoading(true);
@@ -73,10 +101,14 @@ const SurveyLanding = () => {
       const res = await fetch('/api/public/units');
       if (res.ok) {
         const r = await res.json();
-        setUnits(r.data || []);
+        // Handle both formats: { data: [...] } or direct array
+        const unitsData = Array.isArray(r) ? r : (r.data || []);
+        // Filter only active units
+        const activeUnits = unitsData.filter((u: Unit & { is_active?: boolean }) => u.is_active !== false);
+        setUnits(activeUnits);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Error loading units:', e);
     }
     setIsLoading(false);
   };
@@ -147,493 +179,489 @@ const SurveyLanding = () => {
     setFormData(p => ({ ...p, [field]: value }));
   };
 
+  const nextStep = () => setCurrentStep(p => Math.min(p + 1, 3));
+  const prevStep = () => setCurrentStep(p => Math.max(p - 1, 0));
+
+  // Footer Component
+  const renderFooter = () => (
+    <footer className="bg-white border-t border-gray-100 py-6 px-4 safe-area-bottom">
+      <div className="max-w-lg mx-auto text-center space-y-3">
+        {appSettings.institution_name && (
+          <p className="text-sm font-semibold text-gray-700">{appSettings.institution_name}</p>
+        )}
+        {appSettings.institution_address && (
+          <p className="text-xs text-gray-500">{appSettings.institution_address}</p>
+        )}
+        <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
+          {appSettings.contact_phone && (
+            <span className="flex items-center gap-1">
+              <span className="material-symbols-outlined text-sm">call</span>
+              {appSettings.contact_phone}
+            </span>
+          )}
+          {appSettings.contact_email && (
+            <span className="flex items-center gap-1">
+              <span className="material-symbols-outlined text-sm">mail</span>
+              {appSettings.contact_email}
+            </span>
+          )}
+        </div>
+        {appSettings.app_footer && (
+          <p className="text-xs text-gray-400 pt-2 border-t border-gray-100">{appSettings.app_footer}</p>
+        )}
+      </div>
+    </footer>
+  );
+
+  // Success Page
   if (surveySuccess) {
     return (
-      <div className="min-h-screen bg-[#f6f7f8] flex flex-col">
-        <header className="sticky top-0 z-50 w-full bg-white border-b border-[#e7edf3] shadow-sm">
-          <div className="max-w-[1200px] mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#137fec]/10 text-[#137fec]">
-                <span className="material-symbols-outlined text-2xl">local_hospital</span>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold leading-tight text-[#0d141b]">Sistem Pengaduan RSUD</h1>
-                <p className="text-xs text-[#4c739a] font-medium">Layanan Publik Terintegrasi</p>
-              </div>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex flex-col">
+        <main className="flex-grow flex items-center justify-center p-6">
+          <div className="bg-white rounded-3xl shadow-xl p-8 max-w-sm w-full text-center">
+            <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <span className="material-symbols-outlined text-white text-4xl">check</span>
             </div>
-          </div>
-        </header>
-        <main className="flex-grow flex items-center justify-center p-8">
-          <div className="bg-white rounded-2xl border border-green-200 p-8 max-w-md text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span className="material-symbols-outlined text-green-600 text-3xl">check_circle</span>
-            </div>
-            <h2 className="text-2xl font-bold text-[#0d141b] mb-2">Survei Berhasil Dikirim!</h2>
-            <p className="text-[#4c739a] mb-6">Terima kasih atas partisipasi Anda. Feedback Anda sangat berharga untuk peningkatan layanan kami.</p>
+            <h2 className="text-2xl font-bold text-gray-800 mb-3">Terima Kasih!</h2>
+            <p className="text-gray-500 mb-8 text-sm leading-relaxed">
+              Survei Anda telah berhasil dikirim. Masukan Anda sangat berharga untuk peningkatan layanan kami.
+            </p>
             <button
               onClick={() => navigate('/survey')}
-              className="px-6 py-3 bg-[#137fec] hover:bg-blue-600 text-white font-bold rounded-xl transition-all"
+              className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-2xl shadow-lg active:scale-95 transition-transform"
             >
               Isi Survei Lagi
             </button>
           </div>
         </main>
+        {renderFooter()}
       </div>
     );
   }
 
+  // Loading State
   if (isLoading && units.length === 0) {
     return (
-      <div className="min-h-screen bg-[#f6f7f8] flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-b-2 border-[#137fec] rounded-full"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500 text-sm">Memuat...</p>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[#f6f7f8] flex flex-col font-['Public_Sans',sans-serif] text-[#0d141b] antialiased">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full bg-white border-b border-[#e7edf3] shadow-sm">
-        <div className="max-w-[1200px] mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
+  // Step Indicator
+  const renderStepIndicator = () => (
+    <div className="flex items-center justify-center gap-2 py-4 px-5">
+      {[0, 1, 2, 3].map(step => (
+        <div
+          key={step}
+          className={`h-2 rounded-full transition-all duration-300 ${
+            step === currentStep ? 'w-8 bg-blue-500' : step < currentStep ? 'w-2 bg-blue-300' : 'w-2 bg-gray-200'
+          }`}
+        />
+      ))}
+    </div>
+  );
+
+  // Step 0: Unit Selection
+  const renderUnitStep = () => (
+    <div className="space-y-6 animate-fadeIn">
+      <div className="text-center space-y-2">
+        <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg mb-4">
+          <span className="material-symbols-outlined text-white text-3xl">location_on</span>
+        </div>
+        <h2 className="text-xl font-bold text-gray-800">Pilih Unit Layanan</h2>
+        <p className="text-sm text-gray-500">Pilih unit yang ingin Anda nilai</p>
+      </div>
+
+      {unitFromQR ? (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-5 border border-green-200">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#137fec]/10 text-[#137fec]">
-              <span className="material-symbols-outlined text-2xl">local_hospital</span>
+            <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+              <span className="material-symbols-outlined text-white">verified</span>
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-tight text-[#0d141b]">Sistem Pengaduan RSUD</h1>
-              <p className="text-xs text-[#4c739a] font-medium">Layanan Publik Terintegrasi</p>
+              <p className="text-xs text-green-600 font-medium">Unit Terdeteksi</p>
+              <p className="text-lg font-bold text-gray-800">{unitFromQR.name}</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#f6f7f8] hover:bg-gray-200 transition-colors text-[#0d141b]">
-              <span className="material-symbols-outlined">language</span>
-            </button>
-            <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-[#f6f7f8] hover:bg-gray-200 transition-colors text-[#0d141b]">
-              <span className="material-symbols-outlined">help</span>
-            </button>
-          </div>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-grow w-full max-w-[960px] mx-auto px-4 py-8 md:px-8">
-        {/* Introduction */}
-        <div className="mb-8 space-y-4">
-          <div className="space-y-2">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-              Edisi 2024
-            </span>
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-[#0d141b]">
-              Survei Kepuasan Masyarakat (SKM)
-            </h2>
-            <p className="text-lg text-[#4c739a] max-w-2xl">
-              Partisipasi Anda sangat berharga bagi kami. Bantu kami meningkatkan kualitas pelayanan kesehatan RSUD dengan mengisi survei singkat ini secara objektif.
-            </p>
-          </div>
-          
-          {/* Legal Info Accordion */}
-          <div className="pt-2">
-            <div className="border border-[#e7edf3] rounded-xl bg-white overflow-hidden transition-all duration-300">
+      ) : (
+        <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+          {units.length === 0 ? (
+            <div className="text-center py-8">
+              <span className="material-symbols-outlined text-4xl text-gray-300 mb-2">info</span>
+              <p className="text-gray-500 text-sm">Tidak ada unit layanan tersedia</p>
               <button
-                onClick={() => setShowLegalInfo(!showLegalInfo)}
-                className="flex cursor-pointer items-center justify-between gap-4 p-4 hover:bg-gray-50 transition-colors w-full text-left"
+                type="button"
+                onClick={loadMasterData}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-xl text-sm"
+              >
+                Muat Ulang
+              </button>
+            </div>
+          ) : (
+            units.map(u => (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => { handleChange('unit_id', u.id); nextStep(); }}
+                className={`w-full p-4 rounded-2xl border-2 text-left transition-all active:scale-98 ${
+                  formData.unit_id === u.id
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-100 bg-white hover:border-gray-200'
+                }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[#4c739a]">gavel</span>
-                  <span className="text-sm font-semibold text-[#0d141b]">Dasar Hukum & Kerahasiaan Data</span>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                    formData.unit_id === u.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-400'
+                  }`}>
+                    <span className="material-symbols-outlined text-xl">apartment</span>
+                  </div>
+                  <span className="font-medium text-gray-700">{u.name}</span>
                 </div>
-                <span className={`material-symbols-outlined text-[#4c739a] transition-transform ${showLegalInfo ? 'rotate-180' : ''}`}>
-                  expand_more
-                </span>
               </button>
-              {showLegalInfo && (
-                <div className="px-4 pb-4 pt-0 text-sm text-[#4c739a] border-t border-[#e7edf3]">
-                  <div className="mt-3 space-y-2">
-                    <p>Survei ini dilaksanakan berdasarkan Peraturan Menteri Pendayagunaan Aparatur Negara dan Reformasi Birokrasi Nomor 14 Tahun 2017 tentang Pedoman Penyusunan Survei Kepuasan Masyarakat Unit Penyelenggara Pelayanan Publik.</p>
-                    <p className="font-medium text-[#137fec]">Privasi Anda terjaga. Data yang dikumpulkan hanya digunakan untuk keperluan evaluasi dan peningkatan layanan.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+            ))
+          )}
         </div>
+      )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Unit Section */}
-          <section className="bg-blue-50/50 rounded-2xl border border-blue-100 p-6 flex items-start gap-4">
-            <div className="p-3 bg-white rounded-xl shadow-sm text-[#137fec]">
-              <span className="material-symbols-outlined text-3xl">qr_code_scanner</span>
+      {unitFromQR && (
+        <button
+          type="button"
+          onClick={nextStep}
+          className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-2xl shadow-lg active:scale-95 transition-transform"
+        >
+          Lanjutkan
+        </button>
+      )}
+    </div>
+  );
+
+  // Step 1: Respondent Data
+  const renderRespondentStep = () => (
+    <div className="space-y-6 animate-fadeIn">
+      <div className="text-center space-y-2">
+        <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg mb-4">
+          <span className="material-symbols-outlined text-white text-3xl">person</span>
+        </div>
+        <h2 className="text-xl font-bold text-gray-800">Data Responden</h2>
+        <p className="text-sm text-gray-500">Lengkapi informasi diri Anda</p>
+      </div>
+
+      {/* Service Type */}
+      <div className="space-y-3">
+        <label className="text-sm font-semibold text-gray-700">Jenis Layanan *</label>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { value: 'rawat_jalan', label: 'Rawat Jalan', icon: 'directions_walk' },
+            { value: 'rawat_inap', label: 'Rawat Inap', icon: 'hotel' },
+            { value: 'darurat', label: 'IGD', icon: 'emergency' },
+            { value: 'lainnya', label: 'Lainnya', icon: 'more_horiz' }
+          ].map(type => (
+            <button
+              key={type.value}
+              type="button"
+              onClick={() => handleChange('service_type', type.value)}
+              className={`p-4 rounded-2xl border-2 transition-all active:scale-95 ${
+                formData.service_type === type.value
+                  ? 'border-purple-500 bg-purple-50'
+                  : 'border-gray-100 bg-white'
+              }`}
+            >
+              <span className={`material-symbols-outlined text-2xl mb-2 block ${
+                formData.service_type === type.value ? 'text-purple-500' : 'text-gray-400'
+              }`}>{type.icon}</span>
+              <span className="text-sm font-medium text-gray-700">{type.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Anonymous Toggle */}
+      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-outlined text-gray-400">visibility_off</span>
+          <span className="text-sm font-medium text-gray-700">Kirim Anonim</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => handleChange('is_anonymous', !formData.is_anonymous)}
+          className={`w-12 h-7 rounded-full transition-colors ${formData.is_anonymous ? 'bg-purple-500' : 'bg-gray-300'}`}
+        >
+          <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform ${formData.is_anonymous ? 'translate-x-6' : 'translate-x-1'}`} />
+        </button>
+      </div>
+
+      {/* Name & Phone */}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-gray-700">Nama Lengkap</label>
+          <input
+            type="text"
+            placeholder="Masukkan nama Anda"
+            value={formData.full_name}
+            onChange={e => handleChange('full_name', e.target.value)}
+            disabled={formData.is_anonymous}
+            className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-purple-500 text-sm disabled:opacity-50"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-gray-700">Nomor HP (WhatsApp) *</label>
+          <input
+            type="tel"
+            placeholder="08xxxxxxxxxx"
+            value={formData.phone}
+            onChange={e => handleChange('phone', e.target.value)}
+            required
+            className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-purple-500 text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Age & Gender */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-gray-700">Usia</label>
+          <select
+            value={formData.age}
+            onChange={e => handleChange('age', e.target.value)}
+            className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-purple-500 text-sm"
+          >
+            <option value="">Pilih</option>
+            <option value="< 20 Th">&lt; 20 Th</option>
+            <option value="20 - 40 Th">20 - 40 Th</option>
+            <option value="41 - 60 Th">41 - 60 Th</option>
+            <option value="> 60 Th">&gt; 60 Th</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-gray-700">Jenis Kelamin</label>
+          <select
+            value={formData.gender}
+            onChange={e => handleChange('gender', e.target.value)}
+            className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-purple-500 text-sm"
+          >
+            <option value="">Pilih</option>
+            <option value="male">Laki-laki</option>
+            <option value="female">Perempuan</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex gap-3 pt-4">
+        <button type="button" onClick={prevStep} className="flex-1 py-4 bg-gray-100 text-gray-600 font-semibold rounded-2xl active:scale-95 transition-transform">
+          Kembali
+        </button>
+        <button type="button" onClick={nextStep} disabled={!formData.phone} className="flex-1 py-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg active:scale-95 transition-transform disabled:opacity-50">
+          Lanjutkan
+        </button>
+      </div>
+    </div>
+  );
+
+  // Step 2: Rating Questions
+  const renderRatingStep = () => (
+    <div className="space-y-6 animate-fadeIn">
+      <div className="text-center space-y-2">
+        <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto shadow-lg mb-4">
+          <span className="material-symbols-outlined text-white text-3xl">star</span>
+        </div>
+        <h2 className="text-xl font-bold text-gray-800">Penilaian Layanan</h2>
+        <p className="text-sm text-gray-500">Beri penilaian untuk setiap aspek</p>
+      </div>
+
+      <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
+        {surveyQuestions.map((q, idx) => (
+          <div key={q.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-bold text-amber-600">{idx + 1}</span>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-amber-600 mb-1">{q.title}</p>
+                <p className="text-sm text-gray-700 leading-relaxed">{q.text}</p>
+              </div>
             </div>
-            <div className="flex-1 space-y-1">
-              <label className="block text-xs font-bold uppercase tracking-wider text-[#137fec] mb-1">
-                Unit Tujuan {unitFromQR ? '(Otomatis)' : ''}
-              </label>
-              {unitFromQR ? (
-                <div className="text-xl font-bold text-[#0d141b] flex items-center gap-2">
-                  <span>{unitFromQR.name}</span>
-                  <span className="material-symbols-outlined text-green-500 text-lg" title="Terverifikasi">verified</span>
-                </div>
-              ) : (
-                <select
-                  className="w-full rounded-xl border-[#e7edf3] bg-white focus:border-[#137fec] focus:ring-[#137fec]/20 text-sm h-11"
-                  value={formData.unit_id}
-                  onChange={e => handleChange('unit_id', e.target.value)}
+            <div className="flex justify-between gap-1">
+              {ratingLabels.map(rating => (
+                <button
+                  key={rating.value}
+                  type="button"
+                  onClick={() => handleChange(q.id, rating.value.toString())}
+                  className={`flex-1 py-3 rounded-xl transition-all active:scale-95 ${
+                    formData[q.id as keyof typeof formData] === rating.value.toString()
+                      ? 'bg-amber-100 shadow-inner'
+                      : 'bg-gray-50'
+                  }`}
                 >
-                  <option value="">Pilih Unit</option>
-                  {units.map(u => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-              )}
-              <p className="text-sm text-[#4c739a]">
-                {unitFromQR ? 'Unit terdeteksi otomatis dari kode QR lokasi.' : 'Pilih unit layanan yang ingin Anda nilai.'}
-              </p>
-            </div>
-          </section>
-
-          {/* Respondent Data Section */}
-          <section className="bg-white rounded-2xl border border-[#e7edf3] shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-[#e7edf3] bg-gray-50/50 flex items-center gap-3">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#137fec]/20 text-[#137fec]">
-                <span className="material-symbols-outlined text-sm font-bold">person</span>
-              </div>
-              <h3 className="text-xl font-bold text-[#0d141b]">Data Responden</h3>
-            </div>
-            <div className="p-6 space-y-6">
-              {/* Service Type */}
-              <div className="space-y-3">
-                <label className="block text-sm font-bold text-[#0d141b]">
-                  Jenis Layanan yang Diterima <span className="text-red-500">*</span>
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[
-                    { value: 'rawat_jalan', label: 'Rawat Jalan' },
-                    { value: 'rawat_inap', label: 'Rawat Inap' },
-                    { value: 'darurat', label: 'IGD / Darurat' },
-                    { value: 'lainnya', label: 'Lainnya' }
-                  ].map(type => (
-                    <label key={type.value} className="cursor-pointer relative">
-                      <input
-                        className="sr-only peer"
-                        name="service_type"
-                        type="radio"
-                        value={type.value}
-                        checked={formData.service_type === type.value}
-                        onChange={e => handleChange('service_type', e.target.value)}
-                      />
-                      <div className="flex items-center justify-center gap-2 p-3 rounded-xl border border-[#e7edf3] bg-white hover:border-[#137fec]/50 transition-all h-full peer-checked:border-[#137fec] peer-checked:bg-[#137fec]/5 peer-checked:text-[#137fec]">
-                        <div className="w-4 h-4 rounded-full border-2 border-gray-300 bg-transparent flex-shrink-0 transition-all peer-checked:border-[#137fec] peer-checked:bg-[#137fec]"></div>
-                        <span className="text-sm font-medium">{type.label}</span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <hr className="border-[#e7edf3]" />
-
-              {/* Name Field */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <label className="block text-sm font-bold text-[#0d141b]" htmlFor="full_name">Nama Lengkap</label>
-                  <label className="inline-flex items-center cursor-pointer">
-                    <input
-                      className="rounded border-gray-300 text-[#137fec] focus:ring-[#137fec] h-4 w-4"
-                      type="checkbox"
-                      checked={formData.is_anonymous}
-                      onChange={e => handleChange('is_anonymous', e.target.checked)}
-                    />
-                    <span className="ml-2 text-sm text-[#4c739a]">Kirim sebagai Anonim</span>
-                  </label>
-                </div>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#4c739a]">badge</span>
-                  <input
-                    className="w-full pl-10 rounded-xl border-[#e7edf3] bg-[#f6f7f8] focus:border-[#137fec] focus:ring-[#137fec]/20 text-sm h-11"
-                    id="full_name"
-                    placeholder="Masukkan nama lengkap Anda"
-                    type="text"
-                    value={formData.full_name}
-                    onChange={e => handleChange('full_name', e.target.value)}
-                    disabled={formData.is_anonymous}
-                  />
-                </div>
-              </div>
-
-              {/* Contact Fields */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <label className="block text-sm font-bold text-[#0d141b]" htmlFor="phone">
-                    Nomor HP (WhatsApp) <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#4c739a]">smartphone</span>
-                    <input
-                      className="w-full pl-10 rounded-xl border-[#e7edf3] bg-[#f6f7f8] focus:border-[#137fec] focus:ring-[#137fec]/20 text-sm h-11"
-                      id="phone"
-                      placeholder="08xxxxxxxxxx"
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={e => handleChange('phone', e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <label className="block text-sm font-bold text-[#0d141b]" htmlFor="email">
-                    Email <span className="text-[#4c739a] font-normal">(Opsional)</span>
-                  </label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#4c739a]">mail</span>
-                    <input
-                      className="w-full pl-10 rounded-xl border-[#e7edf3] bg-[#f6f7f8] focus:border-[#137fec] focus:ring-[#137fec]/20 text-sm h-11"
-                      id="email"
-                      placeholder="contoh@email.com"
-                      type="email"
-                      value={formData.email}
-                      onChange={e => handleChange('email', e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-3 md:col-span-2">
-                  <label className="block text-sm font-bold text-[#0d141b]" htmlFor="job">
-                    Pekerjaan <span className="text-[#4c739a] font-normal">(Opsional)</span>
-                  </label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#4c739a]">work</span>
-                    <input
-                      className="w-full pl-10 rounded-xl border-[#e7edf3] bg-[#f6f7f8] focus:border-[#137fec] focus:ring-[#137fec]/20 text-sm h-11"
-                      id="job"
-                      placeholder="PNS, Swasta, Wiraswasta, dll"
-                      type="text"
-                      value={formData.job}
-                      onChange={e => handleChange('job', e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <hr className="border-[#e7edf3]" />
-
-              {/* Age and Gender */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <label className="block text-sm font-bold text-[#0d141b]">Usia Responden</label>
-                  <div className="flex flex-wrap gap-2">
-                    {['< 20 Th', '20 - 40 Th', '41 - 60 Th', '> 60 Th'].map((age, idx) => (
-                      <label key={idx} className="cursor-pointer group">
-                        <input
-                          className="peer sr-only"
-                          name="age"
-                          type="radio"
-                          value={age}
-                          checked={formData.age === age}
-                          onChange={e => handleChange('age', e.target.value)}
-                        />
-                        <span className="inline-flex px-4 py-2 rounded-lg border border-[#e7edf3] bg-white text-sm font-medium text-[#4c739a] peer-checked:bg-[#137fec] peer-checked:text-white peer-checked:border-[#137fec] transition-all">
-                          {age}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <label className="block text-sm font-bold text-[#0d141b]">Jenis Kelamin</label>
-                  <div className="flex gap-3">
-                    <label className="flex-1 cursor-pointer relative">
-                      <input
-                        className="sr-only peer"
-                        name="gender"
-                        type="radio"
-                        value="male"
-                        checked={formData.gender === 'male'}
-                        onChange={e => handleChange('gender', e.target.value)}
-                      />
-                      <div className="flex items-center justify-center gap-2 p-2.5 rounded-lg border border-[#e7edf3] bg-white hover:border-[#137fec]/50 transition-all peer-checked:border-[#137fec] peer-checked:bg-[#137fec]/5 peer-checked:text-[#137fec]">
-                        <span className="material-symbols-outlined text-[#4c739a] peer-checked:text-[#137fec]">male</span>
-                        <span className="text-sm font-medium">Laki-laki</span>
-                      </div>
-                    </label>
-                    <label className="flex-1 cursor-pointer relative">
-                      <input
-                        className="sr-only peer"
-                        name="gender"
-                        type="radio"
-                        value="female"
-                        checked={formData.gender === 'female'}
-                        onChange={e => handleChange('gender', e.target.value)}
-                      />
-                      <div className="flex items-center justify-center gap-2 p-2.5 rounded-lg border border-[#e7edf3] bg-white hover:border-[#137fec]/50 transition-all peer-checked:border-[#137fec] peer-checked:bg-[#137fec]/5 peer-checked:text-[#137fec]">
-                        <span className="material-symbols-outlined text-[#4c739a] peer-checked:text-[#137fec]">female</span>
-                        <span className="text-sm font-medium">Perempuan</span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Rating Section */}
-          <section className="bg-white rounded-2xl border border-[#e7edf3] shadow-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-[#e7edf3] bg-gray-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#137fec]/20 text-[#137fec]">
-                  <span className="material-symbols-outlined text-sm font-bold">analytics</span>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-[#0d141b]">Penilaian Layanan</h3>
-                  <p className="text-xs text-[#4c739a]">Beri penilaian dari 1 (Sangat Buruk) hingga 5 (Sangat Baik)</p>
-                </div>
-              </div>
-            </div>
-            <div className="divide-y divide-[#e7edf3]">
-              {surveyQuestions.map(q => (
-                <div key={q.id} className="p-6 hover:bg-gray-50 transition-colors">
-                  <div className="flex flex-col md:flex-row md:items-center gap-6">
-                    <div className="flex-1">
-                      <span className="text-xs font-bold text-[#137fec] uppercase tracking-wider mb-1 block">
-                        {q.code} - {q.title}
-                      </span>
-                      <p className="text-sm font-medium text-[#0d141b] leading-relaxed">{q.text}</p>
-                    </div>
-                    <div className="flex flex-col items-center w-full md:w-auto">
-                      <div className="flex items-center justify-between gap-3 md:gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-                        {ratingLabels.map(rating => (
-                          <label key={rating.value} className="cursor-pointer group relative flex flex-col items-center gap-1 min-w-[60px]">
-                            <input
-                              className="sr-only peer"
-                              name={q.id}
-                              type="radio"
-                              value={rating.value}
-                              checked={formData[q.id as keyof typeof formData] === rating.value.toString()}
-                              onChange={e => handleChange(q.id, e.target.value)}
-                            />
-                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-300 transition-all duration-300 group-hover:bg-yellow-50 shadow-sm peer-checked:bg-[#FFF8E1] peer-checked:border-[#FFC107]">
-                              <span 
-                                className="material-symbols-outlined text-3xl md:text-4xl transition-transform duration-200 text-[#FFC107]"
-                                style={{ fontVariationSettings: formData[q.id as keyof typeof formData] === rating.value.toString() ? "'FILL' 1, 'wght' 700" : "'FILL' 1, 'wght' 500" }}
-                              >
-                                {rating.icon}
-                              </span>
-                            </div>
-                            <span className={`text-[10px] md:text-xs text-center font-medium whitespace-pre-line ${formData[q.id as keyof typeof formData] === rating.value.toString() ? 'text-[#0d141b] font-bold' : 'text-[#4c739a]'}`}>
-                              {rating.label}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  <span
+                    className="material-symbols-outlined text-2xl block mx-auto"
+                    style={{
+                      color: formData[q.id as keyof typeof formData] === rating.value.toString() ? rating.color : '#d1d5db',
+                      fontVariationSettings: formData[q.id as keyof typeof formData] === rating.value.toString() ? "'FILL' 1" : "'FILL' 0"
+                    }}
+                  >
+                    {rating.icon}
+                  </span>
+                </button>
               ))}
             </div>
-          </section>
-
-          {/* Overall Satisfaction */}
-          <section className="grid md:grid-cols-12 gap-6">
-            <div className="md:col-span-12 bg-white rounded-2xl p-6 md:p-8 border border-[#e7edf3] shadow-md relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-yellow-50/50 to-orange-50/50 pointer-events-none"></div>
-              <div className="relative z-10 text-center mb-10">
-                <h3 className="text-2xl font-black text-[#0d141b] mb-2">Kepuasan Keseluruhan Layanan</h3>
-                <p className="text-[#4c739a]">Secara umum, bagaimana tingkat kepuasan Anda terhadap pelayanan kami?</p>
-              </div>
-              <div className="relative z-10 flex flex-wrap justify-center gap-4 md:gap-8">
-                {[
-                  { value: 'sangat_tidak_puas', label: 'Sangat\nBuruk', icon: 'sentiment_very_dissatisfied' },
-                  { value: 'tidak_puas', label: 'Buruk', icon: 'sentiment_dissatisfied' },
-                  { value: 'kurang_puas', label: 'Cukup', icon: 'sentiment_neutral' },
-                  { value: 'puas', label: 'Baik', icon: 'sentiment_satisfied' },
-                  { value: 'sangat_puas', label: 'Sangat\nBaik', icon: 'sentiment_very_satisfied' }
-                ].map(item => (
-                  <label key={item.value} className="cursor-pointer group flex flex-col items-center gap-3">
-                    <input
-                      className="sr-only peer"
-                      name="overall_satisfaction"
-                      type="radio"
-                      value={item.value}
-                      checked={formData.overall_satisfaction === item.value}
-                      onChange={e => handleChange('overall_satisfaction', e.target.value)}
-                    />
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-2 border-gray-100 bg-white flex items-center justify-center text-gray-300 transition-all duration-300 group-hover:bg-yellow-50 shadow-sm peer-checked:bg-[#FFF8E1] peer-checked:border-[#FFC107]">
-                      <span 
-                        className="material-symbols-outlined text-4xl md:text-5xl text-[#FFC107]"
-                        style={{ fontVariationSettings: formData.overall_satisfaction === item.value ? "'FILL' 1, 'wght' 700" : "'FILL' 1, 'wght' 500" }}
-                      >
-                        {item.icon}
-                      </span>
-                    </div>
-                    <span className={`text-sm font-bold text-center whitespace-pre-line transition-colors mt-1 ${formData.overall_satisfaction === item.value ? 'text-[#0d141b]' : 'text-[#4c739a] group-hover:text-[#0d141b]'}`}>
-                      {item.label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Suggestions */}
-            <div className="md:col-span-12 bg-white rounded-2xl border border-[#e7edf3] p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-[#0d141b] mb-2" htmlFor="suggestions">
-                  Saran dan Keluhan
-                </label>
-                <textarea
-                  className="w-full rounded-xl border-[#e7edf3] bg-[#f6f7f8] text-[#0d141b] focus:border-[#137fec] focus:ring-[#137fec]/20 placeholder:text-gray-400 text-sm p-4"
-                  id="suggestions"
-                  placeholder="Tuliskan saran atau keluhan Anda di sini untuk perbaikan pelayanan kami..."
-                  rows={4}
-                  value={formData.suggestions}
-                  onChange={e => handleChange('suggestions', e.target.value)}
-                />
-              </div>
-              <div className="pt-4 border-t border-[#e7edf3]">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#4c739a] mb-2" htmlFor="date">
-                  Tanggal Survei
-                </label>
-                <div className="relative max-w-sm">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#4c739a] text-lg">calendar_today</span>
-                  <input
-                    className="w-full pl-10 rounded-lg border-[#e7edf3] bg-[#f6f7f8] text-[#0d141b] focus:border-[#137fec] focus:ring-[#137fec]/20 text-sm h-11"
-                    id="date"
-                    type="date"
-                    value={formData.survey_date}
-                    onChange={e => handleChange('survey_date', e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Submit Button */}
-          <div className="flex justify-end pt-4 pb-12">
-            <button
-              className="w-full md:w-auto px-8 py-3 bg-[#137fec] hover:bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-[#137fec]/30 transition-all flex items-center justify-center gap-2 group transform active:scale-95 disabled:opacity-50"
-              type="submit"
-              disabled={isLoading}
-            >
-              <span>{isLoading ? 'Mengirim...' : 'Kirim Survei'}</span>
-              <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">send</span>
-            </button>
           </div>
-        </form>
-      </main>
+        ))}
+      </div>
+
+      {/* Navigation */}
+      <div className="flex gap-3 pt-4">
+        <button type="button" onClick={prevStep} className="flex-1 py-4 bg-gray-100 text-gray-600 font-semibold rounded-2xl active:scale-95 transition-transform">
+          Kembali
+        </button>
+        <button type="button" onClick={nextStep} className="flex-1 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-2xl shadow-lg active:scale-95 transition-transform">
+          Lanjutkan
+        </button>
+      </div>
+    </div>
+  );
+
+  // Step 3: Overall & Submit
+  const renderFinalStep = () => (
+    <div className="space-y-6 animate-fadeIn">
+      <div className="text-center space-y-2">
+        <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto shadow-lg mb-4">
+          <span className="material-symbols-outlined text-white text-3xl">thumb_up</span>
+        </div>
+        <h2 className="text-xl font-bold text-gray-800">Kepuasan Keseluruhan</h2>
+        <p className="text-sm text-gray-500">Bagaimana kepuasan Anda secara umum?</p>
+      </div>
+
+      {/* Overall Rating */}
+      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl p-6">
+        <div className="flex justify-center gap-3">
+          {[
+            { value: 'sangat_tidak_puas', icon: 'sentiment_very_dissatisfied', color: '#ef4444', label: 'Sangat Tidak Puas' },
+            { value: 'tidak_puas', icon: 'sentiment_dissatisfied', color: '#f97316', label: 'Tidak Puas' },
+            { value: 'kurang_puas', icon: 'sentiment_neutral', color: '#eab308', label: 'Cukup' },
+            { value: 'puas', icon: 'sentiment_satisfied', color: '#22c55e', label: 'Puas' },
+            { value: 'sangat_puas', icon: 'sentiment_very_satisfied', color: '#10b981', label: 'Sangat Puas' }
+          ].map(item => (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => handleChange('overall_satisfaction', item.value)}
+              className={`w-14 h-14 rounded-2xl transition-all active:scale-90 ${
+                formData.overall_satisfaction === item.value ? 'bg-white shadow-lg scale-110' : 'bg-white/50'
+              }`}
+            >
+              <span
+                className="material-symbols-outlined text-3xl"
+                style={{
+                  color: formData.overall_satisfaction === item.value ? item.color : '#d1d5db',
+                  fontVariationSettings: formData.overall_satisfaction === item.value ? "'FILL' 1" : "'FILL' 0"
+                }}
+              >
+                {item.icon}
+              </span>
+            </button>
+          ))}
+        </div>
+        {formData.overall_satisfaction && (
+          <p className="text-center text-sm font-medium text-gray-600 mt-4">
+            {formData.overall_satisfaction === 'sangat_puas' && '😊 Sangat Puas'}
+            {formData.overall_satisfaction === 'puas' && '🙂 Puas'}
+            {formData.overall_satisfaction === 'kurang_puas' && '😐 Cukup'}
+            {formData.overall_satisfaction === 'tidak_puas' && '😕 Tidak Puas'}
+            {formData.overall_satisfaction === 'sangat_tidak_puas' && '😞 Sangat Tidak Puas'}
+          </p>
+        )}
+      </div>
+
+      {/* Suggestions */}
+      <div className="space-y-2">
+        <label className="text-sm font-semibold text-gray-700">Saran & Masukan</label>
+        <textarea
+          placeholder="Tuliskan saran atau keluhan Anda..."
+          value={formData.suggestions}
+          onChange={e => handleChange('suggestions', e.target.value)}
+          rows={4}
+          className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-green-500 text-sm resize-none"
+        />
+      </div>
+
+      {/* Navigation */}
+      <div className="flex gap-3 pt-4">
+        <button type="button" onClick={prevStep} className="flex-1 py-4 bg-gray-100 text-gray-600 font-semibold rounded-2xl active:scale-95 transition-transform">
+          Kembali
+        </button>
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="flex-1 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-2xl shadow-lg active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {isLoading ? (
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <>
+              <span>Kirim Survei</span>
+              <span className="material-symbols-outlined text-xl">send</span>
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+
+  // Main Render
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex flex-col font-['Inter',sans-serif]">
+      {/* Mobile App Style Container */}
+      <div className="flex-grow w-full max-w-lg mx-auto flex flex-col">
+        {/* Progress Indicator */}
+        {renderStepIndicator()}
+
+        {/* Main Content */}
+        <main className="flex-grow px-5 pb-6 overflow-y-auto">
+          <form onSubmit={handleSubmit}>
+            {currentStep === 0 && renderUnitStep()}
+            {currentStep === 1 && renderRespondentStep()}
+            {currentStep === 2 && renderRatingStep()}
+            {currentStep === 3 && renderFinalStep()}
+          </form>
+        </main>
+      </div>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-[#e7edf3] mt-auto py-8">
-        <div className="max-w-[960px] mx-auto px-4 md:px-8 text-center">
-          <div className="flex justify-center items-center gap-2 mb-4 opacity-50 grayscale hover:grayscale-0 transition-all">
-            <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
-              <span className="material-symbols-outlined text-sm">apartment</span>
-            </div>
-            <span className="text-sm font-semibold text-[#0d141b]">RSUD Kabupaten</span>
-          </div>
-          <p className="text-xs text-[#4c739a]">
-            © 2024 RSUD Kabupaten. Hak Cipta Dilindungi Undang-undang.<br />
-            Sistem Survei Kepuasan Masyarakat Elektronik (e-SKM) v2.0
-          </p>
-        </div>
-      </footer>
+      {renderFooter()}
+
+      {/* Custom Styles */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+        .safe-area-bottom {
+          padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+        }
+        input, select, textarea {
+          -webkit-appearance: none;
+          appearance: none;
+        }
+        ::-webkit-scrollbar {
+          width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #e5e7eb;
+          border-radius: 4px;
+        }
+      `}</style>
     </div>
   );
 };

@@ -110,8 +110,6 @@ function LoginPage() {
               <div className="flex gap-4 text-xs text-[#4c739a]">
                 <a className="hover:text-primary" href="#">Bantuan IT</a>
                 <span>•</span>
-                <a className="hover:text-primary" href="/ticket-tracker">Lacak Tiket Publik</a>
-                <span>•</span>
                 <a className="hover:text-primary" href="#">Kebijakan Privasi</a>
                 <span>•</span>
                 <span>v3.0.0</span>

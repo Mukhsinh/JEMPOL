@@ -79,6 +79,7 @@ const MobileFormLanding: React.FC = () => {
         targetUrl = `/m/pengaduan?${params.toString()}`;
         break;
       case 'survey':
+        // Gunakan ModernSurveyForm yang lebih praktis
         targetUrl = `/m/survei?${params.toString()}`;
         break;
       case 'selection':
@@ -115,6 +116,7 @@ const MobileFormLanding: React.FC = () => {
         targetUrl = `/m/pengaduan?${params.toString()}`;
         break;
       case 'survey':
+        // Gunakan ModernSurveyForm yang lebih praktis
         targetUrl = `/m/survei?${params.toString()}`;
         break;
     }

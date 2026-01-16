@@ -215,8 +215,10 @@ const TicketTypes: React.FC = () => {
                                         <td className="px-6 py-4 text-slate-500 font-mono text-xs">{type.code}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-4 h-4 rounded-full" style={{backgroundColor: type.color}}></div>
-                                                <span className="text-xs font-mono text-slate-500">{type.color}</span>
+                                                <span className="material-symbols-outlined text-lg" style={{color: type.color || '#6B7280'}}>
+                                                    {type.icon || 'confirmation_number'}
+                                                </span>
+                                                <span className="text-xs font-mono text-slate-500">{type.icon || '-'}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">{getPriorityBadge(type.default_priority)}</td>

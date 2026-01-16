@@ -1,284 +1,391 @@
-
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { complaintService } from '../../services/complaintService';
+import { supabase } from '../../utils/supabaseClient';
 
 interface PublicTicket {
+  id: string;
+  ticket_number: string;
+  type: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  created_at: string;
+  resolved_at?: string;
+  units?: { name: string; code: string };
+  service_categories?: { name: string };
+  ticket_responses?: Array<{
     id: string;
-    ticket_number: string;
-    type: string;
-    title: string;
-    description: string;
-    status: string;
-    priority: string;
+    message: string;
+    response_type: string;
     created_at: string;
-    resolved_at?: string;
-    units?: { name: string; code: string };
-    service_categories?: { name: string };
-    ticket_responses?: Array<{
-        id: string;
-        message: string;
-        response_type: string;
-        created_at: string;
-    }>;
+  }>;
 }
 
+interface AppSettings {
+  app_name: string;
+  app_footer: string;
+  institution_name: string;
+  logo_url: string;
+}
+
+const hospitalServices = [
+  { id: 1, name: 'IGD 24 Jam', icon: '🏥', bgColor: 'bg-red-500' },
+  { id: 2, name: 'Rawat Inap', icon: '🛏️', bgColor: 'bg-blue-500' },
+  { id: 3, name: 'Laboratorium', icon: '🔬', bgColor: 'bg-purple-500' },
+  { id: 4, name: 'Radiologi', icon: '📷', bgColor: 'bg-cyan-500' },
+  { id: 5, name: 'Farmasi', icon: '💊', bgColor: 'bg-emerald-500' },
+  { id: 6, name: 'Poliklinik', icon: '👨‍⚕️', bgColor: 'bg-amber-500' },
+  { id: 7, name: 'Rehabilitasi', icon: '🏃', bgColor: 'bg-pink-500' },
+  { id: 8, name: 'Gizi & Nutrisi', icon: '🥗', bgColor: 'bg-lime-500' },
+];
+
 const TicketTracker = () => {
-    const [ticketNumber, setTicketNumber] = useState('');
-    const [ticket, setTicket] = useState<PublicTicket | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [searched, setSearched] = useState(false);
+  const navigate = useNavigate();
+  const [ticketNumber, setTicketNumber] = useState('');
+  const [ticket, setTicket] = useState<PublicTicket | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [searched, setSearched] = useState(false);
+  const [appSettings, setAppSettings] = useState<AppSettings>({
+    app_name: 'Sistem Pengaduan Terpadu',
+    app_footer: '',
+    institution_name: 'Rumah Sakit Kota',
+    logo_url: '',
+  });
 
-    const handleSearch = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!ticketNumber.trim()) return;
-
-        setLoading(true);
-        setError('');
-        setTicket(null);
-        setSearched(true);
-
-        try {
-            const response = await complaintService.getPublicTicket(ticketNumber);
-            if (response.success) {
-                setTicket(response.data);
-            } else {
-                setError(response.error || 'Tiket tidak ditemukan. Mohon periksa kembali nomor tiket Anda.');
-            }
-        } catch (err: any) {
-            console.error('Error fetching ticket:', err);
-            setError('Tiket tidak ditemukan. Mohon periksa kembali nomor tiket Anda.');
-        } finally {
-            setLoading(false);
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const { data } = await supabase.from('app_settings').select('setting_key, setting_value');
+        if (data) {
+          const map: Record<string, string> = {};
+          data.forEach((item: { setting_key: string; setting_value: string }) => {
+            map[item.setting_key] = item.setting_value || '';
+          });
+          setAppSettings({
+            app_name: map.app_name || 'Sistem Pengaduan Terpadu',
+            app_footer: map.app_footer || '',
+            institution_name: map.institution_name || 'Rumah Sakit Kota',
+            logo_url: map.logo_url || map.institution_logo || '',
+          });
         }
+      } catch (err) {
+        console.error('Error fetching settings:', err);
+      }
     };
+    fetchSettings();
+  }, []);
 
-    return (
-        <div className="bg-background-light dark:bg-background-dark font-display text-[#0d141b] dark:text-white flex flex-col min-h-screen overflow-x-hidden">
-            {/* Top Navigation */}
-            <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1a2634] px-4 py-3 md:px-10 sticky top-0 z-50">
-                <div className="flex items-center gap-4">
-                    <div className="size-8 text-primary">
-                        <svg className="w-full h-full" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                            <g clipPath="url(#clip0_6_319)">
-                                <path d="M8.57829 8.57829C5.52816 11.6284 3.451 15.5145 2.60947 19.7452C1.76794 23.9758 2.19984 28.361 3.85056 32.3462C5.50128 36.3314 8.29667 39.7376 11.8832 42.134C15.4698 44.5305 19.6865 45.8096 24 45.8096C28.3135 45.8096 32.5302 44.5305 36.1168 42.134C39.7033 39.7375 42.4987 36.3314 44.1494 32.3462C45.8002 28.361 46.2321 23.9758 45.3905 19.7452C44.549 15.5145 42.4718 11.6284 39.4217 8.57829L24 24L8.57829 8.57829Z" fill="currentColor"></path>
-                            </g>
-                            <defs>
-                                <clipPath id="clip0_6_319"><rect fill="white" height="48" width="48"></rect></clipPath>
-                            </defs>
-                        </svg>
-                    </div>
-                    <h2 className="text-[#0d141b] dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] hidden sm:block">Portal Layanan Publik</h2>
-                </div>
-                <div className="flex items-center gap-4 md:gap-8">
-                    <div className="hidden md:flex items-center gap-6">
-                        <a className="text-[#0d141b] dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors text-sm font-medium leading-normal" href="/">Beranda</a>
-                        <a className="text-[#0d141b] dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors text-sm font-medium leading-normal" href="#">Panduan</a>
-                        <a className="text-[#0d141b] dark:text-gray-300 hover:text-primary dark:hover:text-primary transition-colors text-sm font-medium leading-normal" href="#">Kontak</a>
-                    </div>
-                    <a href="/login" className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-primary text-slate-50 text-sm font-bold leading-normal tracking-[0.015em] hover:bg-blue-600 transition-colors">
-                        <span className="truncate">Masuk Petugas</span>
-                    </a>
-                </div>
-            </header>
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ticketNumber.trim()) return;
+    setLoading(true);
+    setError('');
+    setTicket(null);
+    setSearched(true);
+    try {
+      const response = await complaintService.getPublicTicket(ticketNumber);
+      if (response.success) {
+        setTicket(response.data);
+      } else {
+        setError(response.error || 'Tiket tidak ditemukan.');
+      }
+    } catch {
+      setError('Tiket tidak ditemukan.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            <main className="flex-grow flex flex-col items-center">
-                {/* Hero Search Section */}
-                <section className="w-full bg-gradient-to-b from-[#eef4fa] to-background-light dark:from-[#15202b] dark:to-background-dark py-12 md:py-20 px-4 flex justify-center">
-                    <div className="w-full max-w-4xl flex flex-col items-center text-center gap-8">
-                        <div className="flex flex-col gap-3">
-                            <h1 className="text-[#0d141b] dark:text-white text-3xl md:text-5xl font-black leading-tight tracking-[-0.033em]">
-                                Layanan Pelacakan Tiket Terpadu
-                            </h1>
-                            <p className="text-[#4c739a] dark:text-gray-400 text-base md:text-lg font-normal leading-relaxed max-w-2xl mx-auto">
-                                Pantau status aduan Anda secara real-time. Masukkan nomor tiket unik Anda untuk melihat perkembangan terbaru penanganan laporan.
-                            </p>
-                        </div>
-                        <div className="w-full max-w-xl mx-auto relative group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-blue-200 to-blue-400 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
-                            <form onSubmit={handleSearch} className="relative flex flex-col md:flex-row h-auto md:h-16 w-full rounded-xl bg-white dark:bg-[#1e2936] shadow-lg p-1">
-                                <div className="flex w-full items-center px-4 py-3 md:py-0 border-b md:border-b-0 md:border-r border-slate-100 dark:border-slate-700">
-                                    <span className="material-symbols-outlined text-[#4c739a] mr-3">search</span>
-                                    <input
-                                        className="w-full bg-transparent border-none p-0 text-[#0d141b] dark:text-white placeholder:text-[#94a3b8] focus:ring-0 text-base"
-                                        placeholder="Nomor Tiket (Contoh: TKT-2024-0001)"
-                                        value={ticketNumber}
-                                        onChange={(e) => setTicketNumber(e.target.value)}
-                                    />
-                                </div>
-                                <div className="p-1 md:w-auto w-full">
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="w-full md:w-auto h-12 px-6 bg-primary hover:bg-blue-600 text-white font-bold rounded-lg transition-all flex items-center justify-center gap-2 whitespace-nowrap shadow-md disabled:opacity-70"
-                                    >
-                                        {loading ? (
-                                            <span>Mencari...</span>
-                                        ) : (
-                                            <>
-                                                <span>Lacak Tiket</span>
-                                                <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-[#4c739a] dark:text-gray-500 bg-white/50 dark:bg-white/5 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
-                            <span className="material-symbols-outlined text-[16px]">lock</span>
-                            <span>Data sensitif disembunyikan untuk menjaga privasi Anda</span>
-                        </div>
-                    </div>
-                </section>
+  const getStatusLabel = (s: string) =>
+    ({ open: 'Dibuka', in_progress: 'Sedang Diproses', resolved: 'Selesai', closed: 'Ditutup', pending: 'Menunggu' }[s] || s);
 
-                {/* Status Result Section */}
-                {searched && !loading && (
-                    <section className="w-full max-w-5xl px-4 pb-20 -mt-8">
-                        {error ? (
-                            <div className="bg-white dark:bg-[#1a2634] rounded-xl shadow p-8 text-center border border-red-100 dark:border-red-900/30">
-                                <span className="material-symbols-outlined text-red-500 text-5xl mb-4">error_outline</span>
-                                <h3 className="text-xl font-bold text-[#0d141b] dark:text-white mb-2">Tiket Tidak Ditemukan</h3>
-                                <p className="text-[#4c739a] dark:text-gray-400">{error}</p>
-                            </div>
-                        ) : ticket ? (
-                            <div className="bg-white dark:bg-[#1a2634] rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-slate-700 overflow-hidden">
-                                {/* Card Header */}
-                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-6 border-b border-slate-100 dark:border-slate-700 gap-4 bg-slate-50/50 dark:bg-slate-800/30">
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <h2 className="text-xl font-bold text-[#0d141b] dark:text-white">Detail Status Tiket</h2>
-                                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${ticket.status === 'resolved' || ticket.status === 'closed' ? 'bg-green-100 text-green-700' :
-                                                ticket.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                                                    'bg-yellow-100 text-yellow-700'
-                                                }`}>
-                                                {ticket.status}
-                                            </span>
-                                        </div>
-                                        <p className="text-[#4c739a] dark:text-gray-400 text-sm">
-                                            Dibuat pada: {new Date(ticket.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-xs text-[#4c739a] dark:text-gray-400 uppercase font-semibold tracking-wider">Nomor Referensi</span>
-                                        <span className="text-lg font-mono font-bold text-[#0d141b] dark:text-white selection:bg-primary selection:text-white">#{ticket.ticket_number}</span>
-                                    </div>
-                                </div>
+  const getStatusColor = (s: string) =>
+    s === 'resolved' || s === 'closed'
+      ? 'bg-emerald-500 text-white'
+      : s === 'in_progress'
+      ? 'bg-blue-500 text-white'
+      : s === 'pending'
+      ? 'bg-amber-500 text-white'
+      : 'bg-gray-500 text-white';
 
-                                {/* Ticket Details */}
-                                <div className="p-6 md:p-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div>
-                                            <h3 className="text-sm font-bold text-[#0d141b] dark:text-white mb-4">Informasi Aduan</h3>
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <p className="text-xs text-[#4c739a] dark:text-gray-500 mb-1">Judul</p>
-                                                    <p className="text-base font-medium text-[#0d141b] dark:text-white">{ticket.title}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs text-[#4c739a] dark:text-gray-500 mb-1">Deskripsi</p>
-                                                    <p className="text-sm text-[#0d141b] dark:text-gray-300 leading-relaxed">{ticket.description || '-'}</p>
-                                                </div>
-                                                {ticket.ticket_responses && ticket.ticket_responses.length > 0 && (
-                                                    <div>
-                                                        <p className="text-xs text-[#4c739a] dark:text-gray-500 mb-2">Respon Terbaru</p>
-                                                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border-l-4 border-blue-500">
-                                                            <p className="text-sm text-[#0d141b] dark:text-gray-300">{ticket.ticket_responses[0].message}</p>
-                                                            <p className="text-xs text-[#4c739a] dark:text-gray-500 mt-1">
-                                                                {new Date(ticket.ticket_responses[0].created_at).toLocaleDateString('id-ID')}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
+  const getPriorityLabel = (p: string) =>
+    ({ low: 'Rendah', medium: 'Sedang', high: 'Tinggi', urgent: 'Mendesak' }[p] || p);
 
-                                        <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-5 border border-slate-100 dark:border-slate-700">
-                                            <h3 className="text-sm font-bold text-[#0d141b] dark:text-white mb-4 flex items-center gap-2">
-                                                <span className="material-symbols-outlined text-slate-400">info</span>
-                                                Status & Metadata
-                                            </h3>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <p className="text-xs text-[#4c739a] dark:text-gray-500 mb-1">Prioritas</p>
-                                                    <p className="text-sm font-medium text-[#0d141b] dark:text-white capitalize">{ticket.priority}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs text-[#4c739a] dark:text-gray-500 mb-1">Kategori</p>
-                                                    <p className="text-sm font-medium text-[#0d141b] dark:text-white">{ticket.service_categories?.name || '-'}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs text-[#4c739a] dark:text-gray-500 mb-1">Unit</p>
-                                                    <p className="text-sm font-medium text-[#0d141b] dark:text-white">{ticket.units?.name || '-'}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs text-[#4c739a] dark:text-gray-500 mb-1">Tipe</p>
-                                                    <p className="text-sm font-medium text-[#0d141b] dark:text-white capitalize">{ticket.type}</p>
-                                                </div>
-                                                {ticket.resolved_at && (
-                                                    <div className="col-span-2">
-                                                        <p className="text-xs text-[#4c739a] dark:text-gray-500 mb-1">Diselesaikan pada</p>
-                                                        <p className="text-sm font-medium text-green-600 dark:text-green-400">
-                                                            {new Date(ticket.resolved_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : null}
-                    </section>
-                )}
-
-                {/* Help/FAQ Section Teaser */}
-                <section className="w-full max-w-4xl px-4 pb-20 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 rounded-lg bg-white dark:bg-[#1a2634] shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4">
-                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-primary">
-                            <span className="material-symbols-outlined">help</span>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-bold text-[#0d141b] dark:text-white">Butuh Bantuan?</h4>
-                            <p className="text-xs text-[#4c739a] dark:text-gray-400">Hubungi call center 112</p>
-                        </div>
-                    </div>
-                    <div className="p-4 rounded-lg bg-white dark:bg-[#1a2634] shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4">
-                        <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-600">
-                            <span className="material-symbols-outlined">chat</span>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-bold text-[#0d141b] dark:text-white">Live Chat</h4>
-                            <p className="text-xs text-[#4c739a] dark:text-gray-400">Senin - Jumat, 08:00 - 16:00</p>
-                        </div>
-                    </div>
-                    <div className="p-4 rounded-lg bg-white dark:bg-[#1a2634] shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow cursor-pointer flex items-center gap-4">
-                        <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg text-orange-600">
-                            <span className="material-symbols-outlined">menu_book</span>
-                        </div>
-                        <div>
-                            <h4 className="text-sm font-bold text-[#0d141b] dark:text-white">Panduan Pengaduan</h4>
-                            <p className="text-xs text-[#4c739a] dark:text-gray-400">Pelajari alur penyelesaian</p>
-                        </div>
-                    </div>
-                </section>
-            </main>
-
-            {/* Footer */}
-            <footer className="bg-white dark:bg-[#1a2634] border-t border-slate-200 dark:border-slate-800 py-8 px-4 md:px-10 mt-auto">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-[#4c739a] dark:text-gray-500 text-sm">
-                        © 2023 Sistem Manajemen Pengaduan Terpadu. Pemerintah Kota Jakarta.
-                    </p>
-                    <div className="flex gap-6">
-                        <a className="text-[#4c739a] dark:text-gray-500 text-sm hover:text-primary transition-colors" href="#">Kebijakan Privasi</a>
-                        <a className="text-[#4c739a] dark:text-gray-500 text-sm hover:text-primary transition-colors" href="#">Syarat & Ketentuan</a>
-                        <a className="text-[#4c739a] dark:text-gray-500 text-sm hover:text-primary transition-colors" href="#">Aksesibilitas</a>
-                    </div>
-                </div>
-            </footer>
+  return (
+    <div className="bg-gray-50 font-sans text-gray-900 flex flex-col min-h-screen">
+      {/* Header */}
+      <header className="flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 md:px-8 sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          {appSettings.logo_url ? (
+            <img src={appSettings.logo_url} alt="Logo" className="h-10 w-10 object-contain rounded-lg" />
+          ) : (
+            <div className="h-10 w-10 rounded-lg flex items-center justify-center bg-blue-600">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+          )}
+          <div>
+            <h2 className="text-gray-900 text-base md:text-lg font-bold">{appSettings.app_name}</h2>
+            <p className="text-xs text-gray-500">{appSettings.institution_name}</p>
+          </div>
         </div>
-    );
+        <button
+          onClick={() => navigate('/login')}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+          </svg>
+          <span className="hidden sm:inline">Masuk Petugas</span>
+        </button>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-grow flex flex-col items-center">
+        {/* Hero Section */}
+        <section className="w-full py-10 md:py-16 px-4 flex justify-center bg-blue-50">
+          <div className="w-full max-w-4xl flex flex-col items-center text-center gap-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white text-blue-600 rounded-full text-sm font-medium shadow-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative rounded-full h-2 w-2 bg-blue-500"></span>
+              </span>
+              Layanan Aktif 24/7
+            </div>
+            <h1 className="text-gray-900 text-3xl md:text-5xl font-extrabold">
+              Lacak Status <span className="text-blue-600">Tiket Anda</span>
+            </h1>
+            <p className="text-gray-600 text-base md:text-lg max-w-xl">
+              Masukkan nomor tiket untuk melihat status terbaru penanganan laporan Anda.
+            </p>
+
+            {/* Search Form */}
+            <form onSubmit={handleSearch} className="w-full max-w-xl flex flex-col sm:flex-row rounded-2xl bg-white shadow-lg p-2 border border-gray-200">
+              <div className="flex w-full items-center px-3 py-2 sm:py-0 gap-3">
+                <div className="p-2 rounded-lg bg-blue-100">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  className="w-full bg-transparent border-none p-2 text-gray-900 placeholder:text-gray-400 focus:outline-none"
+                  placeholder="Masukkan Nomor Tiket (Contoh: TKT-2024-0001)"
+                  value={ticketNumber}
+                  onChange={(e) => setTicketNumber(e.target.value)}
+                />
+              </div>
+              <div className="p-1 sm:w-auto w-full">
+                <button
+                  type="submit"
+                  disabled={loading || !ticketNumber.trim()}
+                  className="w-full sm:w-auto h-12 px-6 bg-blue-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-blue-700 transition-colors"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      <span>Mencari...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Lacak Tiket</span>
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        {/* Mozaik Layanan Unggulan - Tampil saat belum search */}
+        {!searched && (
+          <section className="w-full max-w-5xl px-4 py-10">
+            <h2 className="text-center text-xl md:text-2xl font-bold text-gray-800 mb-6">Layanan Unggulan Kami</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-3 md:gap-4">
+              {hospitalServices.map((service) => (
+                <div
+                  key={service.id}
+                  className="flex flex-col items-center p-4 rounded-xl bg-white shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                >
+                  <div className={`w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-2xl md:text-3xl mb-3 ${service.bgColor} bg-opacity-20`}>
+                    {service.icon}
+                  </div>
+                  <span className="text-xs md:text-sm font-medium text-gray-700 text-center">{service.name}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Error State */}
+        {searched && !loading && error && (
+          <section className="w-full max-w-5xl px-4 py-8">
+            <div className="bg-white rounded-2xl shadow-lg p-8 text-center border border-red-100">
+              <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Tiket Tidak Ditemukan</h3>
+              <p className="text-gray-600 mb-6">{error}</p>
+              <button
+                onClick={() => {
+                  setSearched(false);
+                  setTicketNumber('');
+                }}
+                className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          </section>
+        )}
+
+        {/* Ticket Result */}
+        {searched && !loading && ticket && (
+          <section className="w-full max-w-5xl px-4 py-8">
+            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+              {/* Ticket Header */}
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-6 border-b border-gray-100 gap-4 bg-gray-50">
+                <div>
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <h2 className="text-xl font-bold text-gray-900">Detail Status Tiket</h2>
+                    <span className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase ${getStatusColor(ticket.status)}`}>
+                      {getStatusLabel(ticket.status)}
+                    </span>
+                  </div>
+                  <p className="text-gray-600 text-sm flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Dibuat: {new Date(ticket.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+                <div className="bg-white px-4 py-3 rounded-xl border border-gray-200">
+                  <span className="text-xs text-gray-500 uppercase font-semibold">Nomor Referensi</span>
+                  <p className="text-lg font-mono font-bold text-blue-600">#{ticket.ticket_number}</p>
+                </div>
+              </div>
+
+              {/* Ticket Content */}
+              <div className="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Left Column - Info */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Informasi Aduan
+                  </h3>
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs text-gray-500 mb-1">Judul</p>
+                    <p className="font-semibold text-gray-900">{ticket.title}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs text-gray-500 mb-1">Deskripsi</p>
+                    <p className="text-sm text-gray-700">{ticket.description || '-'}</p>
+                  </div>
+                  {ticket.ticket_responses && ticket.ticket_responses.length > 0 && (
+                    <div className="rounded-xl p-4 bg-blue-50 border-l-4 border-blue-600">
+                      <p className="text-xs mb-2 font-semibold text-blue-600">Respon Terbaru</p>
+                      <p className="text-sm text-gray-700">{ticket.ticket_responses[0].message}</p>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {new Date(ticket.ticket_responses[0].created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column - Metadata */}
+                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <h3 className="text-sm font-bold text-gray-900 mb-4">Status & Metadata</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Prioritas</p>
+                      <p className="text-sm font-semibold text-gray-900">{getPriorityLabel(ticket.priority)}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Kategori</p>
+                      <p className="text-sm font-semibold text-gray-900">{ticket.service_categories?.name || '-'}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Unit</p>
+                      <p className="text-sm font-semibold text-gray-900">{ticket.units?.name || '-'}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3">
+                      <p className="text-xs text-gray-500 mb-1">Tipe</p>
+                      <p className="text-sm font-semibold text-gray-900">{ticket.type === 'internal' ? 'Internal' : 'Eksternal'}</p>
+                    </div>
+                    {ticket.resolved_at && (
+                      <div className="col-span-2 bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+                        <p className="text-xs text-emerald-600 mb-1">Diselesaikan</p>
+                        <p className="text-sm font-semibold text-emerald-700">
+                          {new Date(ticket.resolved_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="px-6 pb-6 flex flex-wrap gap-3">
+                <button
+                  onClick={() => {
+                    setSearched(false);
+                    setTicketNumber('');
+                    setTicket(null);
+                  }}
+                  className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-medium flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  Cari Tiket Lain
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="px-5 py-2.5 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 font-medium flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  Cetak
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-6 px-4 mt-auto">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row justify-center items-center gap-3">
+          {appSettings.logo_url ? (
+            <img src={appSettings.logo_url} alt="Logo" className="h-8 w-8 object-contain rounded-lg" />
+          ) : (
+            <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-blue-600">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+          )}
+          <p className="text-gray-600 text-sm text-center">
+            {appSettings.app_footer || `© ${new Date().getFullYear()} ${appSettings.institution_name}`}
+          </p>
+        </div>
+      </footer>
+    </div>
+  );
 };
 
 export default TicketTracker;

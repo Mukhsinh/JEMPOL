@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
+interface AppSettings {
+    app_footer?: string;
+    institution_name?: string;
+    institution_address?: string;
+    contact_phone?: string;
+    contact_email?: string;
+}
+
 const PublicSurveyForm = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -34,6 +42,29 @@ const PublicSurveyForm = () => {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [error, setError] = useState('');
     const [unitLocked, setUnitLocked] = useState(!!unitIdFromUrl);
+    const [appSettings, setAppSettings] = useState<AppSettings>({});
+
+    useEffect(() => {
+        loadAppSettings();
+    }, []);
+
+    const loadAppSettings = async () => {
+        try {
+            const res = await fetch('/api/app-settings/public');
+            if (res.ok) {
+                const r = await res.json();
+                if (r.success && r.data) {
+                    const settings: AppSettings = {};
+                    r.data.forEach((item: { setting_key: string; setting_value: string }) => {
+                        settings[item.setting_key as keyof AppSettings] = item.setting_value;
+                    });
+                    setAppSettings(settings);
+                }
+            }
+        } catch (e) {
+            console.error('Error loading app settings:', e);
+        }
+    };
 
     // Update unit jika ada dari URL
     useEffect(() => {
@@ -158,63 +189,19 @@ const PublicSurveyForm = () => {
     ];
 
     return (
-        <div className="bg-background-light dark:bg-background-dark font-display text-text-main antialiased min-h-screen flex flex-col">
-            <header className="sticky top-0 z-50 w-full bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark shadow-sm">
-                <div className="max-w-[1200px] mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
-                            <span className="material-symbols-outlined text-2xl">local_hospital</span>
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold leading-tight text-text-main dark:text-white">Sistem Pengaduan RSUD</h1>
-                            <p className="text-xs text-text-sub font-medium">Layanan Publik Terintegrasi</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-2">
-                        <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-background-light dark:bg-background-dark hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-text-main dark:text-white">
-                            <span className="material-symbols-outlined">language</span>
-                        </button>
-                        <button className="flex items-center justify-center w-10 h-10 rounded-lg bg-background-light dark:bg-background-dark hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-text-main dark:text-white">
-                            <span className="material-symbols-outlined">help</span>
-                        </button>
-                    </div>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex flex-col font-['Inter',sans-serif]">
+            {/* Simple Mobile Header */}
+            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100">
+                <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-center">
+                    <h1 className="text-base font-semibold text-gray-800">Survei Kepuasan</h1>
                 </div>
             </header>
 
-            <main className="flex-grow w-full max-w-[960px] mx-auto px-4 py-8 md:px-8">
-                <div className="mb-8 space-y-4">
-                    <div className="space-y-2">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-200">
-                            Edisi 2024
-                        </span>
-                        <h2 className="text-3xl md:text-4xl font-black tracking-tight text-text-main dark:text-white">Survei Kepuasan Masyarakat (SKM)</h2>
-                        <p className="text-lg text-text-sub dark:text-gray-400 max-w-2xl">
-                            Partisipasi Anda sangat berharga bagi kami. Bantu kami meningkatkan kualitas pelayanan kesehatan RSUD dengan mengisi survei singkat ini secara objektif.
-                        </p>
-                    </div>
-                    <div className="pt-2">
-                        <details className="group border border-border-light dark:border-border-dark rounded-xl bg-surface-light dark:bg-surface-dark overflow-hidden transition-all duration-300">
-                            <summary className="flex cursor-pointer items-center justify-between gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                <div className="flex items-center gap-3">
-                                    <span className="material-symbols-outlined text-text-sub">gavel</span>
-                                    <span className="text-sm font-semibold text-text-main dark:text-white">Dasar Hukum & Kerahasiaan Data</span>
-                                </div>
-                                <span className="material-symbols-outlined text-text-sub transition-transform group-open:rotate-180">expand_more</span>
-                            </summary>
-                            <div className="px-4 pb-4 pt-0 text-sm text-text-sub dark:text-gray-400 border-t border-transparent group-open:border-border-light dark:group-open:border-border-dark">
-                                <div className="mt-3 space-y-2">
-                                    <p>Survei ini dilaksanakan berdasarkan Peraturan Menteri Pendayagunaan Aparatur Negara dan Reformasi Birokrasi Nomor 14 Tahun 2017 tentang Pedoman Penyusunan Survei Kepuasan Masyarakat Unit Penyelenggara Pelayanan Publik.</p>
-                                    <p className="font-medium text-primary">Privasi Anda terjaga. Data yang dikumpulkan hanya digunakan untuk keperluan evaluasi dan peningkatan layanan.</p>
-                                </div>
-                            </div>
-                        </details>
-                    </div>
-                </div>
-
+            <main className="flex-grow w-full max-w-lg mx-auto px-5 py-6">
                 {error && (
-                    <div className="mb-8 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-center gap-3">
+                    <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3">
                         <span className="material-symbols-outlined text-red-600">error</span>
-                        <p className="text-red-700 dark:text-red-300 font-medium">{error}</p>
+                        <p className="text-red-700 text-sm font-medium">{error}</p>
                     </div>
                 )}
 
@@ -583,18 +570,31 @@ const PublicSurveyForm = () => {
                 </form>
             </main>
 
-            <footer className="bg-surface-light dark:bg-surface-dark border-t border-border-light dark:border-border-dark mt-auto py-8">
-                <div className="max-w-[960px] mx-auto px-4 md:px-8 text-center">
-                    <div className="flex justify-center items-center gap-2 mb-4 opacity-50 grayscale hover:grayscale-0 transition-all">
-                        <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
-                            <span className="material-symbols-outlined text-sm">apartment</span>
-                        </div>
-                        <span className="text-sm font-semibold text-text-main dark:text-white">RSUD Kabupaten</span>
+            <footer className="bg-white border-t border-gray-100 mt-auto py-6 px-4">
+                <div className="max-w-lg mx-auto text-center space-y-2">
+                    {appSettings.institution_name && (
+                        <p className="text-sm font-semibold text-gray-700">{appSettings.institution_name}</p>
+                    )}
+                    {appSettings.institution_address && (
+                        <p className="text-xs text-gray-500">{appSettings.institution_address}</p>
+                    )}
+                    <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
+                        {appSettings.contact_phone && (
+                            <span className="flex items-center gap-1">
+                                <span className="material-symbols-outlined text-sm">call</span>
+                                {appSettings.contact_phone}
+                            </span>
+                        )}
+                        {appSettings.contact_email && (
+                            <span className="flex items-center gap-1">
+                                <span className="material-symbols-outlined text-sm">mail</span>
+                                {appSettings.contact_email}
+                            </span>
+                        )}
                     </div>
-                    <p className="text-xs text-text-sub">
-                        © 2024 RSUD Kabupaten. Hak Cipta Dilindungi Undang-undang.<br />
-                        Sistem Survei Kepuasan Masyarakat Elektronik (e-SKM) v2.0
-                    </p>
+                    {appSettings.app_footer && (
+                        <p className="text-xs text-gray-400 pt-2 border-t border-gray-100">{appSettings.app_footer}</p>
+                    )}
                 </div>
             </footer>
         </div>

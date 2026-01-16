@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface FormData {
@@ -13,6 +13,14 @@ interface FormData {
   suggestions: string;
 }
 
+interface AppSettings {
+  app_footer?: string;
+  institution_name?: string;
+  institution_address?: string;
+  contact_phone?: string;
+  contact_email?: string;
+}
+
 const PublicSurveyFullscreen: React.FC = () => {
   const [searchParams] = useSearchParams();
   
@@ -25,6 +33,7 @@ const PublicSurveyFullscreen: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
+  const [appSettings, setAppSettings] = useState<AppSettings>({});
   
   const [formData, setFormData] = useState<FormData>({
     service_type: '',
@@ -37,6 +46,28 @@ const PublicSurveyFullscreen: React.FC = () => {
     overall_satisfaction: '',
     suggestions: ''
   });
+
+  useEffect(() => {
+    loadAppSettings();
+  }, []);
+
+  const loadAppSettings = async () => {
+    try {
+      const res = await fetch('/api/app-settings/public');
+      if (res.ok) {
+        const r = await res.json();
+        if (r.success && r.data) {
+          const settings: AppSettings = {};
+          r.data.forEach((item: { setting_key: string; setting_value: string }) => {
+            settings[item.setting_key as keyof AppSettings] = item.setting_value;
+          });
+          setAppSettings(settings);
+        }
+      }
+    } catch (e) {
+      console.error('Error loading app settings:', e);
+    }
+  };
 
   const questions = [
     { id: 'q1', code: 'U1', title: 'Persyaratan', text: 'Kesesuaian persyaratan pelayanan' },
@@ -300,6 +331,18 @@ const PublicSurveyFullscreen: React.FC = () => {
           )}
         </div>
       </form>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-100 py-4 px-4 mt-auto">
+        <div className="text-center space-y-1">
+          {appSettings.institution_name && (
+            <p className="text-xs font-medium text-gray-600">{appSettings.institution_name}</p>
+          )}
+          {appSettings.app_footer && (
+            <p className="text-xs text-gray-400">{appSettings.app_footer}</p>
+          )}
+        </div>
+      </footer>
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

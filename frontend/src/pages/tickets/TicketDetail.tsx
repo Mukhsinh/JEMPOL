@@ -78,8 +78,21 @@ const TicketDetail: React.FC = () => {
   const [closeTicketModal, setCloseTicketModal] = useState(false);
   const [feedbackModal, setFeedbackModal] = useState<{ isOpen: boolean; responseId: string }>({ isOpen: false, responseId: '' });
 
+  // Validasi UUID - pastikan id adalah UUID yang valid, bukan route path
+  const isValidUUID = (str: string) => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(str);
+  };
+
   useEffect(() => {
     if (id) {
+      // Jika id bukan UUID valid, redirect ke halaman tickets
+      if (!isValidUUID(id)) {
+        console.warn('Invalid ticket ID format:', id);
+        setError('ID tiket tidak valid');
+        setLoading(false);
+        return;
+      }
       fetchTicketData();
     }
   }, [id]);

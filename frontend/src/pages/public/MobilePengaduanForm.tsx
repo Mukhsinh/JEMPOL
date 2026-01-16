@@ -63,24 +63,30 @@ const MobilePengaduanForm: React.FC = () => {
     setError('');
 
     try {
-      const submitData = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key !== 'attachments') submitData.append(key, value as string);
-      });
-      submitData.append('qr_code', qrCode);
-      submitData.append('unit_id', unitId);
-      submitData.append('source', 'qr_code');
-      formData.attachments.forEach((file, index) => {
-        submitData.append(`attachment_${index}`, file);
-      });
+      // Kirim sebagai JSON
+      const submitData = {
+        reporter_identity_type: formData.reporter_identity_type,
+        reporter_name: formData.reporter_name,
+        reporter_email: formData.reporter_email,
+        reporter_phone: formData.reporter_phone,
+        service_type: formData.service_type,
+        title: formData.title,
+        description: formData.description,
+        qr_code: qrCode,
+        unit_id: unitId,
+        source: 'qr_code'
+      };
 
       const response = await fetch('/api/public/external-tickets', {
         method: 'POST',
-        body: submitData
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(submitData)
       });
       const result = await response.json();
 
-      if (response.ok) {
+      if (response.ok && result.success) {
         setTicketNumber(result.ticket_number || 'TKT-' + Date.now());
         setSubmitted(true);
       } else {

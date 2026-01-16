@@ -160,9 +160,11 @@ app.use('/uploads', (req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', authVerifyRoutes);
 app.use('/api/complaints', complaintRoutes);
-app.use('/api/public', publicRoutes);
+// PENTING: publicSurveyRoutes harus di-mount SEBELUM publicRoutes
+// karena publicRoutes punya route /surveys/:ticketId yang bisa menangkap /surveys/stats
 app.use('/api/public', publicSurveyRoutes);
 app.use('/api/public', publicDataRoutes);
+app.use('/api/public', publicRoutes);
 app.use('/api/escalation', escalationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/units', unitRoutes);

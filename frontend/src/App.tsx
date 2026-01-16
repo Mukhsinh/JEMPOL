@@ -14,8 +14,8 @@ import BukuPetunjuk from './pages/BukuPetunjuk';
 import TicketList from './pages/tickets/TicketList';
 import TicketDetail from './pages/tickets/TicketDetail';
 import TicketDetailView from './pages/tickets/TicketDetailView';
-import TicketTracker from './pages/tickets/TicketTracker';
-import CreateInternalTicket from './pages/tickets/CreateInternalTicket';
+
+import InternalTicketForm from './pages/tickets/InternalTicketForm';
 import TiketEksternal from './pages/tickets/TiketEksternal';
 import ExternalTicketForm from './pages/tickets/ExternalTicketForm';
 import QRManagement from './pages/tickets/QRManagement';
@@ -39,8 +39,8 @@ import FullscreenInternalTicket from './pages/public/FullscreenInternalTicket';
 // Mobile-First Public Forms (Clean & Modern UI)
 import MobileFormLanding from './pages/public/MobileFormLanding';
 import MobilePengaduanForm from './pages/public/MobilePengaduanForm';
-import MobileSurveiForm from './pages/public/MobileSurveiForm';
 import MobileTiketInternalForm from './pages/public/MobileTiketInternalForm';
+import ModernSurveyForm from './pages/public/ModernSurveyForm';
 
 // Direct Form Views (Public, Tanpa Login, Mobile-First) - untuk QR Code per unit
 import DirectInternalTicketForm from './pages/public/DirectInternalTicketForm';
@@ -61,7 +61,7 @@ import UnitsPage from './pages/master-data/UnitsPage';
 import UnitTypesPage from './pages/master-data/UnitTypesPage';
 import ServiceCategoriesPage from './pages/master-data/ServiceCategoriesPage';
 import TicketTypesPage from './pages/master-data/TicketTypesPage';
-
+import TicketClassificationsPage from './pages/master-data/TicketClassificationsPage';
 import TicketStatusesPage from './pages/master-data/TicketStatusesPage';
 import PatientTypesPage from './pages/master-data/PatientTypesPage';
 import SLASettingsPage from './pages/master-data/SLASettingsPage';
@@ -83,7 +83,6 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/ticket-tracker" element={<TicketTracker />} />
           {/* QR Code routes - redirect ke mobile fullscreen */}
           <Route path="/qr/:code" element={<MobileFormLanding />} />
           <Route path="/scan/:code" element={<MobileFormLanding />} />
@@ -103,8 +102,11 @@ function App() {
           {/* Mobile-First Forms - Tampilan Clean & Modern (Recommended) */}
           <Route path="/m/:code" element={<MobileFormLanding />} />
           <Route path="/m/pengaduan" element={<MobilePengaduanForm />} />
-          <Route path="/m/survei" element={<MobileSurveiForm />} />
+          <Route path="/m/survei" element={<ModernSurveyForm />} />
           <Route path="/m/tiket-internal" element={<MobileTiketInternalForm />} />
+          
+          {/* Modern Survey Form - Single Page */}
+          <Route path="/survey/modern" element={<ModernSurveyForm />} />
 
           {/* Direct Form Views - Public Access (Tanpa Login, Mobile-First) */}
           {/* QR Code per unit menautkan langsung ke form ini */}
@@ -120,7 +122,8 @@ function App() {
           <Route path="/tickets" element={<ProtectedPage><TicketList /></ProtectedPage>} />
           <Route path="/tickets/:id" element={<ProtectedPage><TicketDetail /></ProtectedPage>} />
           <Route path="/tickets/view" element={<ProtectedPage><TicketDetailView /></ProtectedPage>} />
-          <Route path="/tickets/create/internal" element={<ProtectedPage><CreateInternalTicket /></ProtectedPage>} />
+          <Route path="/tickets/create/internal" element={<ProtectedPage><InternalTicketForm /></ProtectedPage>} />
+          <Route path="/tickets/internal-form" element={<ProtectedPage><InternalTicketForm /></ProtectedPage>} />
           <Route path="/tickets/tiket-eksternal" element={<ProtectedPage><TiketEksternal /></ProtectedPage>} />
           <Route path="/tickets/qr-management" element={<ProtectedPage><QRManagement /></ProtectedPage>} />
           <Route path="/qr-codes" element={<ProtectedPage><QRManagement /></ProtectedPage>} />
@@ -142,6 +145,7 @@ function App() {
           <Route path="/master-data/unit-types" element={<ProtectedPage><UnitTypesPage /></ProtectedPage>} />
           <Route path="/master-data/service-categories" element={<ProtectedPage><ServiceCategoriesPage /></ProtectedPage>} />
           <Route path="/master-data/ticket-types" element={<ProtectedPage><TicketTypesPage /></ProtectedPage>} />
+          <Route path="/master-data/ticket-classifications" element={<ProtectedPage><TicketClassificationsPage /></ProtectedPage>} />
           <Route path="/master-data/ticket-statuses" element={<ProtectedPage><TicketStatusesPage /></ProtectedPage>} />
           <Route path="/master-data/patient-types" element={<ProtectedPage><PatientTypesPage /></ProtectedPage>} />
           <Route path="/master-data/roles-permissions" element={<ProtectedPage><RolesPermissionsPage /></ProtectedPage>} />

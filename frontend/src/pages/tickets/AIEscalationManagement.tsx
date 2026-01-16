@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AppFooter from '../../components/AppFooter';
 
 interface EscalationRule {
   id: string;
@@ -658,16 +659,7 @@ const AIEscalationManagement: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-surface-light dark:bg-surface-dark border-t border-slate-200 dark:border-slate-800 py-6 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
-          <p>© 2024 Sistem Manajemen Pengaduan Pemerintah. Hak cipta dilindungi.</p>
-          <div className="flex gap-6">
-            <a className="hover:text-primary" href="#">Kebijakan Privasi</a>
-            <a className="hover:text-primary" href="#">Syarat Layanan</a>
-            <a className="hover:text-primary" href="#">Dukungan</a>
-          </div>
-        </div>
-      </footer>
+      <AppFooter variant="default" className="mt-auto" />
     </div>
   );
 };

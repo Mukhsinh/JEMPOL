@@ -16,11 +16,6 @@ const navigationConfig: NavigationItem[] = [
     icon: 'dashboard'
   },
   {
-    path: '/ticket-tracker',
-    label: 'Lacak Tiket',
-    icon: 'search'
-  },
-  {
     path: '/tickets',
     label: 'Tickets',
     icon: 'confirmation_number',

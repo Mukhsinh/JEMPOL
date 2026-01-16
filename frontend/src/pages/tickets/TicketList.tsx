@@ -21,7 +21,7 @@ export default function TicketList() {
         isOpen: false, ticketId: '', ticketNumber: ''
     });
     
-    const { isAuthenticated, isLoading: authLoading } = useAuth();
+    const { isAuthenticated, isLoading: authLoading, user } = useAuth();
 
     useEffect(() => {
         if (!authLoading && isAuthenticated) {
@@ -116,8 +116,9 @@ export default function TicketList() {
                     <button onClick={fetchTickets} className="p-2 text-slate-500 hover:text-primary transition-colors bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-lg">
                         <span className="material-symbols-outlined">refresh</span>
                     </button>
-                    <div className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                        API: {(import.meta as any).env?.VITE_API_URL || 'http://localhost:5000/api'}
+                    <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">
+                        <span className="material-symbols-outlined text-[16px] text-primary">person</span>
+                        <span className="font-medium">{user?.name || user?.email || 'User'}</span>
                     </div>
                     <Link to="/tickets/create/internal" className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm shadow-blue-500/30">
                         <span className="material-symbols-outlined text-[20px]">add</span>

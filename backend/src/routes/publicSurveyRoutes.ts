@@ -3,18 +3,16 @@ import {
     submitPublicSurvey,
     getPublicUnits,
     getPublicServiceCategories,
-    getSurveyStats
+    getSurveyStats,
+    getSurveyResponses
 } from '../controllers/publicSurveyController.js';
 
 const router = Router();
 
-// Survey endpoints
+// Survey endpoints - support multiple paths for compatibility
 router.post('/survey/submit', submitPublicSurvey);
+router.post('/surveys', submitPublicSurvey); // Alias untuk SurveyForm.tsx
 router.get('/surveys/stats', getSurveyStats);
-
-// These might be handled by publicRoutes.ts if mounted first, 
-// but we define them here just in case or for specific survey needs if paths differ
-// router.get('/units', getPublicUnits);
-// router.get('/service-categories', getPublicServiceCategories);
+router.get('/surveys/responses', getSurveyResponses);
 
 export default router;

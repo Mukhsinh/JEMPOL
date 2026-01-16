@@ -151,12 +151,17 @@ class UnitService {
       console.log('🔄 Fetching units from main endpoint...');
       const response = await api.get('/units', { params });
       
+      // Handle berbagai format response dari backend
       if (Array.isArray(response.data)) {
         return { units: response.data };
+      } else if (response.data && Array.isArray(response.data.data)) {
+        // Backend mengembalikan { success: true, data: [...] }
+        return { units: response.data.data };
       } else if (response.data && Array.isArray(response.data.units)) {
         return response.data;
       } else {
-        return { units: response.data || [] };
+        console.warn('Format response units tidak dikenali:', response.data);
+        return { units: [] };
       }
     } catch (error: any) {
       console.warn('⚠️ Main endpoint failed, trying Supabase direct:', error.message);

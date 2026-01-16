@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { complaintService } from '../services/complaintService';
+import { useAuth } from '../contexts/AuthContext';
 import KPICard from '../components/KPICard';
 import StatusChart from '../components/StatusChart';
 import TicketTable from '../components/TicketTable';
@@ -24,6 +25,7 @@ interface ServiceCategory {
 }
 
 const Dashboard = () => {
+    const { user } = useAuth();
     const [metrics, setMetrics] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [units, setUnits] = useState<Unit[]>([]);
@@ -209,37 +211,37 @@ const Dashboard = () => {
 
     const getDateRangeLabel = (range: string) => {
         switch (range) {
-            case 'last_7_days': return 'Last 7 Days';
-            case 'last_30_days': return 'Last 30 Days';
-            case 'last_90_days': return 'Last 90 Days';
-            case 'this_month': return 'This Month';
-            case 'last_month': return 'Last Month';
-            default: return 'Last 7 Days';
+            case 'last_7_days': return '7 Hari Terakhir';
+            case 'last_30_days': return '30 Hari Terakhir';
+            case 'last_90_days': return '90 Hari Terakhir';
+            case 'this_month': return 'Bulan Ini';
+            case 'last_month': return 'Bulan Lalu';
+            default: return '7 Hari Terakhir';
         }
     };
 
     const getUnitLabel = (unitId: string) => {
-        if (unitId === 'all') return 'All Units';
+        if (unitId === 'all') return 'Semua Unit';
         const unit = units.find(u => u.id === unitId);
-        return unit ? unit.name : 'All Units';
+        return unit ? unit.name : 'Semua Unit';
     };
 
     const getStatusLabel = (status: string) => {
         switch (status) {
-            case 'all': return 'All Statuses';
-            case 'open': return 'Open';
-            case 'in_progress': return 'In Progress';
-            case 'escalated': return 'Escalated';
-            case 'resolved': return 'Resolved';
-            case 'closed': return 'Closed';
-            default: return 'All Statuses';
+            case 'all': return 'Semua Status';
+            case 'open': return 'Terbuka';
+            case 'in_progress': return 'Diproses';
+            case 'escalated': return 'Eskalasi';
+            case 'resolved': return 'Selesai';
+            case 'closed': return 'Ditutup';
+            default: return 'Semua Status';
         }
     };
 
     const getCategoryLabel = (categoryId: string) => {
-        if (categoryId === 'all') return 'All Categories';
+        if (categoryId === 'all') return 'Semua Kategori';
         const category = categories.find(c => c.id === categoryId);
-        return category ? category.name : 'All Categories';
+        return category ? category.name : 'Semua Kategori';
     };
 
     return (
@@ -247,8 +249,8 @@ const Dashboard = () => {
             {/* Page Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                    <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Dashboard Overview</h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">Welcome back, Director Johnson. Here's what's happening today.</p>
+                    <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Ringkasan Dasbor</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Selamat datang kembali, {user?.full_name || 'Pengguna'}. Berikut adalah ringkasan hari ini.</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button 
@@ -257,14 +259,14 @@ const Dashboard = () => {
                         className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
                     >
                         <span className={`material-symbols-outlined text-[20px] ${loading ? 'animate-spin' : ''}`}>refresh</span>
-                        <span>{loading ? 'Refreshing...' : 'Refresh'}</span>
+                        <span>{loading ? 'Memuat...' : 'Perbarui'}</span>
                     </button>
                     <button 
                         onClick={handleExportReport}
                         className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm shadow-blue-500/30"
                     >
                         <span className="material-symbols-outlined text-[20px]">download</span>
-                        <span>Export Report</span>
+                        <span>Unduh Laporan</span>
                     </button>
                 </div>
             </div>
@@ -272,7 +274,7 @@ const Dashboard = () => {
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-surface-dark p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 <div className="pl-2 pr-4 border-r border-slate-200 dark:border-slate-700">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Filters</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Filter</span>
                 </div>
                 
                 {/* Date Range Filter */}
@@ -292,11 +294,11 @@ const Dashboard = () => {
                     {showDateDropdown && (
                         <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-10 min-w-[160px]">
                             {[
-                                { value: 'last_7_days', label: 'Last 7 Days' },
-                                { value: 'last_30_days', label: 'Last 30 Days' },
-                                { value: 'last_90_days', label: 'Last 90 Days' },
-                                { value: 'this_month', label: 'This Month' },
-                                { value: 'last_month', label: 'Last Month' }
+                                { value: 'last_7_days', label: '7 Hari Terakhir' },
+                                { value: 'last_30_days', label: '30 Hari Terakhir' },
+                                { value: 'last_90_days', label: '90 Hari Terakhir' },
+                                { value: 'this_month', label: 'Bulan Ini' },
+                                { value: 'last_month', label: 'Bulan Lalu' }
                             ].map(option => (
                                 <button
                                     key={option.value}
@@ -334,7 +336,7 @@ const Dashboard = () => {
                                     filters.unit_id === 'all' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
                                 }`}
                             >
-                                All Units
+                                Semua Unit
                             </button>
                             {units.map(unit => (
                                 <button
@@ -368,12 +370,12 @@ const Dashboard = () => {
                     {showStatusDropdown && (
                         <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-10 min-w-[160px]">
                             {[
-                                { value: 'all', label: 'All Statuses' },
-                                { value: 'open', label: 'Open' },
-                                { value: 'in_progress', label: 'In Progress' },
-                                { value: 'escalated', label: 'Escalated' },
-                                { value: 'resolved', label: 'Resolved' },
-                                { value: 'closed', label: 'Closed' }
+                                { value: 'all', label: 'Semua Status' },
+                                { value: 'open', label: 'Terbuka' },
+                                { value: 'in_progress', label: 'Diproses' },
+                                { value: 'escalated', label: 'Eskalasi' },
+                                { value: 'resolved', label: 'Selesai' },
+                                { value: 'closed', label: 'Ditutup' }
                             ].map(option => (
                                 <button
                                     key={option.value}
@@ -411,7 +413,7 @@ const Dashboard = () => {
                                     filters.category_id === 'all' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
                                 }`}
                             >
-                                All Categories
+                                Semua Kategori
                             </button>
                             {categories.map(category => (
                                 <button
@@ -439,7 +441,7 @@ const Dashboard = () => {
                             });
                         }}
                         className="p-1.5 text-slate-400 hover:text-primary transition-colors"
-                        title="Reset Filters"
+                        title="Reset Filter"
                     >
                         <span className="material-symbols-outlined text-[20px]">filter_list_off</span>
                     </button>
@@ -449,7 +451,7 @@ const Dashboard = () => {
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard
-                    title="Total Tickets"
+                    title="Total Tiket"
                     value={loading ? "..." : totalTickets.toString()}
                     icon="confirmation_number"
                     trend="+12%"
@@ -459,7 +461,7 @@ const Dashboard = () => {
                     iconColor="text-primary"
                 />
                 <KPICard
-                    title="Open Tickets"
+                    title="Tiket Terbuka"
                     value={loading ? "..." : getStatusCount('open').toString()}
                     icon="timer_off"
                     trend="-2%"
@@ -469,7 +471,7 @@ const Dashboard = () => {
                     iconColor="text-red-600 dark:text-red-400"
                 />
                 <KPICard
-                    title="In Progress"
+                    title="Diproses"
                     value={loading ? "..." : getStatusCount('in_progress').toString()}
                     icon="history"
                     trend="-10m"
@@ -479,7 +481,7 @@ const Dashboard = () => {
                     iconColor="text-orange-600 dark:text-orange-400"
                 />
                 <KPICard
-                    title="Resolved"
+                    title="Selesai"
                     value={loading ? "..." : getStatusCount('resolved').toString()}
                     subValue=""
                     icon="thumb_up"
@@ -497,15 +499,15 @@ const Dashboard = () => {
                 <div className="lg:col-span-1 bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 flex flex-col">
                     <div className="flex justify-between items-center mb-6">
                         <div>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Status Distribution</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">Current workload</p>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Distribusi Status</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">Beban kerja saat ini</p>
                         </div>
                     </div>
                     <div className="flex flex-col gap-5 flex-1 justify-center">
                         <div className="flex flex-col gap-1">
                             <div className="flex justify-between text-sm">
                                 <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-slate-400"></span> Open
+                                    <span className="w-2 h-2 rounded-full bg-slate-400"></span> Terbuka
                                 </span>
                                 <span className="font-bold text-slate-900 dark:text-white">{getStatusCount('open')}</span>
                             </div>
@@ -516,7 +518,7 @@ const Dashboard = () => {
                         <div className="flex flex-col gap-1">
                             <div className="flex justify-between text-sm">
                                 <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-primary"></span> In Progress
+                                    <span className="w-2 h-2 rounded-full bg-primary"></span> Diproses
                                 </span>
                                 <span className="font-bold text-slate-900 dark:text-white">{getStatusCount('in_progress')}</span>
                             </div>
@@ -527,7 +529,7 @@ const Dashboard = () => {
                         <div className="flex flex-col gap-1">
                             <div className="flex justify-between text-sm">
                                 <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-orange-500"></span> Escalated
+                                    <span className="w-2 h-2 rounded-full bg-orange-500"></span> Eskalasi
                                 </span>
                                 <span className="font-bold text-slate-900 dark:text-white">{getStatusCount('escalated')}</span>
                             </div>
@@ -538,7 +540,7 @@ const Dashboard = () => {
                         <div className="flex flex-col gap-1">
                             <div className="flex justify-between text-sm">
                                 <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Resolved
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Selesai
                                 </span>
                                 <span className="font-bold text-slate-900 dark:text-white">{getStatusCount('resolved')}</span>
                             </div>

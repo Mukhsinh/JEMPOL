@@ -29,15 +29,32 @@ const createSupabaseClient = () => {
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
-        fetch: (url, options = {}) => {
-          // Timeout lebih panjang untuk koneksi yang stabil (15 detik)
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000);
+        fetch: async (url, options = {}) => {
+          // Timeout lebih panjang (30 detik) dengan retry
+          const maxRetries = 2;
+          const timeout = 30000;
           
-          return fetch(url, {
-            ...options,
-            signal: controller.signal
-          }).finally(() => clearTimeout(timeoutId));
+          for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            
+            try {
+              const response = await fetch(url, {
+                ...options,
+                signal: controller.signal
+              });
+              clearTimeout(timeoutId);
+              return response;
+            } catch (error: any) {
+              clearTimeout(timeoutId);
+              if (attempt === maxRetries || error.name !== 'AbortError') {
+                throw error;
+              }
+              // Wait before retry
+              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+            }
+          }
+          throw new Error('Request failed after retries');
         }
       },
       realtime: {
