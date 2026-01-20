@@ -220,7 +220,7 @@ export class UserModel {
     while (currentUnitId && !visited.has(currentUnitId)) {
       visited.add(currentUnitId);
       
-      const { data: unit } = await supabase
+      const { data: unit }: { data: any } = await supabase
         .from('units')
         .select('parent_unit_id')
         .eq('id', currentUnitId)

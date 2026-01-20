@@ -741,11 +741,14 @@ router.post('/internal-tickets', async (req: Request, res: Response) => {
         slaDeadline.setHours(slaDeadline.getHours() + 24);
     }
 
+    // Gabungkan info department dan position ke dalam description
+    const fullDescription = `${description}\n\n--- Info Pelapor ---\nDepartemen: ${reporter_department || '-'}\nJabatan: ${reporter_position || '-'}`;
+
     const ticketData: any = {
       ticket_number: ticketNumber,
-      type: 'internal',
+      type: 'complaint', // Gunakan 'complaint' karena ini tiket internal staff
       title,
-      description,
+      description: fullDescription,
       unit_id: unit_id || null,
       priority: priority || 'medium',
       status: 'open',
@@ -755,8 +758,6 @@ router.post('/internal-tickets', async (req: Request, res: Response) => {
       submitter_name: reporter_name,
       submitter_email: reporter_email,
       submitter_phone: reporter_phone,
-      submitter_department: reporter_department,
-      submitter_position: reporter_position,
       ip_address: req.ip,
       user_agent: req.get('User-Agent')
     };

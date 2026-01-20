@@ -36,6 +36,9 @@ const SurveyLanding = lazy(() => import('./pages/survey/SurveyLanding'));
 const SurveyReport = lazy(() => import('./pages/survey/SurveyReport'));
 const PublicSurveyForm = lazy(() => import('./pages/survey/PublicSurveyForm'));
 
+// Public Pages
+const TrackTicket = lazy(() => import('./pages/public/TrackTicket'));
+
 // User Management
 import UserManagement from './pages/users/UserManagement';
 import UserProfile from './pages/users/UserProfile';
@@ -63,6 +66,8 @@ function AppRefactored() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/lacak-tiket" element={<Suspense fallback={<LoadingSpinner />}><TrackTicket /></Suspense>} />
+          <Route path="/track-ticket" element={<Suspense fallback={<LoadingSpinner />}><TrackTicket /></Suspense>} />
           <Route path="/tiket-eksternal" element={<Suspense fallback={<LoadingSpinner />}><ExternalTicketForm /></Suspense>} />
           <Route path="/tiket-eksternal/:qrCode" element={<Suspense fallback={<LoadingSpinner />}><ExternalTicketForm /></Suspense>} />
           <Route path="/survey/public" element={<Suspense fallback={<LoadingSpinner />}><PublicSurveyForm /></Suspense>} />

@@ -1,521 +1,417 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../utils/supabaseClient';
-
-interface AppSettings {
-  app_name: string;
-  app_footer: string;
-  institution_name: string;
-  institution_address: string;
-  contact_email: string;
-  contact_phone: string;
-  logo_url: string;
-}
-
-interface Unit {
-  id: string;
-  name: string;
-  code: string;
-}
-
-interface ServiceCategory {
-  id: string;
-  name: string;
-  code: string;
-}
-
-interface TicketType {
-  id: string;
-  name: string;
-  code: string;
-  default_priority: string;
-}
-
-interface PatientType {
-  id: string;
-  name: string;
-  code: string;
-}
-
-interface FormData {
-  title: string;
-  description: string;
-  type: string;
-  category_id: string;
-  unit_id: string;
-  priority: string;
-  patient_type_id: string;
-  submitter_name: string;
-  submitter_email: string;
-  submitter_phone: string;
-  submitter_address: string;
-  is_anonymous: boolean;
-}
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { complaintService } from '../../services/complaintService';
+import { masterDataService, TicketType, ServiceCategory } from '../../services/masterDataService';
+import unitService, { Unit } from '../../services/unitService';
 
 const InternalTicketForm: React.FC = () => {
-  const [formData, setFormData] = useState<FormData>({
-    title: '',
-    description: '',
-    type: 'information',
-    category_id: '',
-    unit_id: '',
-    priority: 'medium',
-    patient_type_id: '',
-    submitter_name: '',
-    submitter_email: '',
-    submitter_phone: '',
-    submitter_address: '',
-    is_anonymous: false
-  });
-
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  const unitIdFromUrl = searchParams.get('unit_id');
+  
   const [units, setUnits] = useState<Unit[]>([]);
   const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [ticketTypes, setTicketTypes] = useState<TicketType[]>([]);
-  const [patientTypes, setPatientTypes] = useState<PatientType[]>([]);
-  const [appSettings, setAppSettings] = useState<AppSettings>({
-    app_name: 'Sistem Pengaduan',
-    app_footer: '',
-    institution_name: '',
-    institution_address: '',
-    contact_email: '',
-    contact_phone: '',
-    logo_url: ''
-  });
-
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [ticketNumber, setTicketNumber] = useState<string>('');
-  const [activeSection, setActiveSection] = useState<'identity' | 'ticket'>('identity');
+  const [unitLocked, setUnitLocked] = useState(!!unitIdFromUrl);
+  const [charCount, setCharCount] = useState(0);
+
+  // Form State
+  const [title, setTitle] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [priority, setPriority] = useState('medium');
+  const [unitId, setUnitId] = useState(unitIdFromUrl || '');
+  const [type, setType] = useState('');
+  const [description, setDescription] = useState('');
 
   useEffect(() => {
     fetchMasterData();
-    fetchAppSettings();
   }, []);
 
+  useEffect(() => {
+    if (unitIdFromUrl) {
+      setUnitId(unitIdFromUrl);
+      setUnitLocked(true);
+    }
+  }, [unitIdFromUrl]);
+
   const fetchMasterData = async () => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      const { data: unitsData } = await supabase.from('units').select('id, name, code').eq('is_active', true).order('name');
-      const { data: categoriesData } = await supabase.from('service_categories').select('id, name, code').eq('is_active', true).order('name');
-      const { data: ticketTypesData } = await supabase.from('ticket_types').select('id, name, code, default_priority').eq('is_active', true).order('name');
-      const { data: patientTypesData } = await supabase.from('patient_types').select('id, name, code').eq('is_active', true).order('name');
-      setUnits(unitsData || []);
-      setCategories(categoriesData || []);
-      setTicketTypes(ticketTypesData || []);
-      setPatientTypes(patientTypesData || []);
-    } catch (err) {
-      console.error('Error fetching master data:', err);
+      // Fetch units
+      try {
+        const unitsResponse: any = await unitService.getUnits();
+        let unitsArray: Unit[] = [];
+        if (Array.isArray(unitsResponse)) {
+          unitsArray = unitsResponse;
+        } else if (unitsResponse && Array.isArray(unitsResponse.units)) {
+          unitsArray = unitsResponse.units;
+        } else if (unitsResponse && unitsResponse.data && Array.isArray(unitsResponse.data)) {
+          unitsArray = unitsResponse.data;
+        } else if (unitsResponse && typeof unitsResponse === 'object') {
+          const possibleArrays = Object.values(unitsResponse).filter(v => Array.isArray(v));
+          if (possibleArrays.length > 0) {
+            unitsArray = possibleArrays[0] as Unit[];
+          }
+        }
+        setUnits(Array.isArray(unitsArray) ? unitsArray : []);
+      } catch (unitError) {
+        console.error('Error fetching units:', unitError);
+        setUnits([]);
+      }
+
+      // Fetch service categories
+      try {
+        const categoriesResponse: any = await masterDataService.getServiceCategories();
+        let categoriesArray: ServiceCategory[] = [];
+        if (Array.isArray(categoriesResponse)) {
+          categoriesArray = categoriesResponse;
+        } else if (categoriesResponse && Array.isArray(categoriesResponse.data)) {
+          categoriesArray = categoriesResponse.data;
+        } else if (categoriesResponse && Array.isArray(categoriesResponse.categories)) {
+          categoriesArray = categoriesResponse.categories;
+        } else if (categoriesResponse && typeof categoriesResponse === 'object') {
+          const possibleArrays = Object.values(categoriesResponse).filter(v => Array.isArray(v));
+          if (possibleArrays.length > 0) {
+            categoriesArray = possibleArrays[0] as ServiceCategory[];
+          }
+        }
+        setCategories(Array.isArray(categoriesArray) ? categoriesArray : []);
+      } catch (catError) {
+        console.error('Error fetching categories:', catError);
+        setCategories([]);
+      }
+
+      // Fetch ticket types
+      try {
+        const ticketTypesResponse: any = await masterDataService.getTicketTypes();
+        let ticketTypesArray: TicketType[] = [];
+        if (Array.isArray(ticketTypesResponse)) {
+          ticketTypesArray = ticketTypesResponse;
+        } else if (ticketTypesResponse && Array.isArray(ticketTypesResponse.data)) {
+          ticketTypesArray = ticketTypesResponse.data;
+        } else if (ticketTypesResponse && Array.isArray(ticketTypesResponse.ticketTypes)) {
+          ticketTypesArray = ticketTypesResponse.ticketTypes;
+        } else if (ticketTypesResponse && typeof ticketTypesResponse === 'object') {
+          const possibleArrays = Object.values(ticketTypesResponse).filter(v => Array.isArray(v));
+          if (possibleArrays.length > 0) {
+            ticketTypesArray = possibleArrays[0] as TicketType[];
+          }
+        }
+        setTicketTypes(Array.isArray(ticketTypesArray) ? ticketTypesArray : []);
+      } catch (typeError) {
+        console.error('Error fetching ticket types:', typeError);
+        setTicketTypes([]);
+      }
+    } catch (error) {
+      console.error('Error fetching master data:', error);
+      setError('Gagal memuat data master. Silakan refresh halaman.');
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchAppSettings = async () => {
-    try {
-      const { data } = await supabase
-        .from('app_settings')
-        .select('setting_key, setting_value')
-        .in('setting_key', ['app_name', 'app_footer', 'institution_name', 'institution_address', 'contact_email', 'contact_phone', 'logo_url']);
-      if (data) {
-        const settings: Partial<AppSettings> = {};
-        data.forEach((item: { setting_key: string; setting_value: string }) => {
-          (settings as any)[item.setting_key] = item.setting_value || '';
-        });
-        setAppSettings(prev => ({ ...prev, ...settings }));
-      }
-    } catch (err) {
-      console.error('Error fetching app settings:', err);
-    }
-  };
-
-  const generateTicketNumber = () => {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `TKT-${year}${month}${day}-${random}`;
-  };
-
-  const handleChange = (field: keyof FormData, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (field === 'type') {
-      const selectedType = ticketTypes.find(t => t.code === value);
-      if (selectedType?.default_priority) {
-        setFormData(prev => ({ ...prev, priority: selectedType.default_priority }));
-      }
+      setIsLoading(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
+    
+    if (!title || !categoryId || !priority || !unitId || !type || !description) {
+      setError('Harap isi semua field yang diperlukan.');
+      return;
+    }
+
+    setIsSubmitting(true);
     setError(null);
+
     try {
-      const newTicketNumber = generateTicketNumber();
       const ticketData = {
-        ticket_number: newTicketNumber,
-        title: formData.title,
-        description: formData.description,
-        type: formData.type,
-        category_id: formData.category_id || null,
-        unit_id: formData.unit_id || null,
-        priority: formData.priority,
-        submitter_name: formData.is_anonymous ? 'Anonim' : formData.submitter_name,
-        submitter_email: formData.is_anonymous ? null : formData.submitter_email,
-        submitter_phone: formData.is_anonymous ? null : formData.submitter_phone,
-        submitter_address: formData.is_anonymous ? null : formData.submitter_address,
-        is_anonymous: formData.is_anonymous,
-        status: 'open',
-        source: 'web',
-        created_at: new Date().toISOString()
+        type,
+        category_id: categoryId,
+        title,
+        description,
+        unit_id: unitId,
+        priority,
       };
-      const { error: insertError } = await supabase.from('tickets').insert([ticketData]);
-      if (insertError) throw insertError;
-      setTicketNumber(newTicketNumber);
-      setSuccess(true);
-      setFormData({
-        title: '', description: '', type: 'information', category_id: '', unit_id: '',
-        priority: 'medium', patient_type_id: '', submitter_name: '', submitter_email: '',
-        submitter_phone: '', submitter_address: '', is_anonymous: false
-      });
+
+      const response = await complaintService.createTicket(ticketData);
+      
+      if (response.success) {
+        alert(`Tiket berhasil dibuat! Nomor tiket: ${response.data?.ticket_number || 'N/A'}`);
+        navigate('/tickets');
+      } else {
+        setError(response.error || 'Gagal membuat tiket');
+      }
     } catch (err: any) {
-      setError(err.message || 'Gagal membuat tiket');
+      console.error('Error creating ticket:', err);
+      setError(err.message || 'Terjadi kesalahan saat membuat tiket');
     } finally {
-      setSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleNewTicket = () => {
-    setSuccess(false);
-    setTicketNumber('');
-    setActiveSection('identity');
-  };
+  const priorityOptions = [
+    { value: 'low', label: 'Rendah', color: 'bg-emerald-500', icon: 'arrow_downward' },
+    { value: 'medium', label: 'Sedang', color: 'bg-amber-500', icon: 'remove' },
+    { value: 'high', label: 'Tinggi', color: 'bg-orange-500', icon: 'arrow_upward' },
+    { value: 'critical', label: 'Kritis', color: 'bg-red-500', icon: 'priority_high' }
+  ];
 
-  const canProceedToTicket = formData.is_anonymous || (formData.submitter_name.trim() !== '');
-
-  // Loading State - Modern Mobile Style
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="relative w-20 h-20 mx-auto mb-6">
-            <div className="absolute inset-0 rounded-full border-4 border-blue-500/30"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-400 animate-spin"></div>
-            <div className="absolute inset-3 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 animate-pulse"></div>
-          </div>
-          <p className="text-white/80 text-sm font-medium">Memuat formulir...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-500 text-sm">Memuat formulir...</p>
         </div>
       </div>
     );
   }
 
-  // Success State - Modern Mobile Style
-  if (success) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900 flex flex-col">
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-sm">
-            {/* Success Animation */}
-            <div className="relative w-32 h-32 mx-auto mb-8">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400/20 to-teal-400/20 animate-ping"></div>
-              <div className="absolute inset-2 rounded-full bg-gradient-to-br from-emerald-500/30 to-teal-500/30"></div>
-              <div className="absolute inset-4 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-2xl shadow-emerald-500/50">
-                <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            
-            <h2 className="text-2xl font-bold text-white text-center mb-2">Berhasil Terkirim!</h2>
-            <p className="text-white/60 text-center text-sm mb-6">Tiket Anda telah berhasil dibuat</p>
-            
-            {/* Ticket Number Card */}
-            <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 mb-6 border border-white/20">
-              <p className="text-white/60 text-xs text-center mb-2 uppercase tracking-wider">Nomor Tiket</p>
-              <p className="text-3xl font-mono font-bold text-center bg-gradient-to-r from-emerald-300 to-teal-300 bg-clip-text text-transparent">
-                {ticketNumber}
-              </p>
-              <p className="text-white/40 text-xs text-center mt-3">Simpan nomor ini untuk melacak status</p>
-            </div>
-            
-            <button onClick={handleNewTicket}
-              className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-semibold text-base shadow-xl shadow-emerald-500/30 active:scale-[0.98] transition-all">
-              Buat Tiket Baru
-            </button>
-          </div>
-        </div>
-        
-        {/* Minimal Footer */}
-        <div className="py-4 text-center">
-          <p className="text-white/30 text-xs">© {new Date().getFullYear()} {appSettings.institution_name || appSettings.app_name}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Main Form - Ultra Modern Mobile App Style
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex flex-col">
-      {/* Floating Header */}
-      <header className="sticky top-0 z-50 px-4 pt-4">
-        <div className="bg-white/10 backdrop-blur-xl rounded-2xl px-5 py-4 border border-white/20 shadow-xl">
-          <div className="flex items-center gap-4">
-            {appSettings.logo_url ? (
-              <img src={appSettings.logo_url} alt="Logo" className="h-11 w-11 rounded-xl object-contain bg-white/10 p-1" />
-            ) : (
-              <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-white font-bold text-lg truncate">{appSettings.institution_name || 'Sistem Pengaduan'}</h1>
-              <p className="text-blue-300/80 text-xs">Tiket Internal</p>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-rose-50 to-pink-50 font-sans">
+      {/* Decorative Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-orange-200/30 to-rose-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-gradient-to-br from-pink-200/30 to-rose-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-rose-200/30 to-orange-200/30 rounded-full blur-3xl"></div>
+      </div>
+
+      {/* Header Modern */}
+      <header className="relative z-10 bg-white/80 backdrop-blur-xl border-b border-gray-100/50 sticky top-0">
+        <div className="max-w-lg mx-auto px-6 py-4">
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+              <span className="material-symbols-outlined text-white text-xl">confirmation_number</span>
             </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-rose-600 bg-clip-text text-transparent">
+              Buat Tiket Baru
+            </h1>
           </div>
         </div>
       </header>
 
-      {/* Progress Steps */}
-      <div className="px-6 py-5">
-        <div className="flex items-center justify-center gap-3">
-          <button onClick={() => setActiveSection('identity')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              activeSection === 'identity' 
-                ? 'bg-white text-slate-900 shadow-lg shadow-white/20' 
-                : 'bg-white/10 text-white/60 hover:bg-white/20'
-            }`}>
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-              activeSection === 'identity' ? 'bg-blue-500 text-white' : 'bg-white/20'
-            }`}>1</span>
-            Identitas
-          </button>
-          <div className="w-8 h-0.5 bg-white/20 rounded-full"></div>
-          <button onClick={() => canProceedToTicket && setActiveSection('ticket')}
-            disabled={!canProceedToTicket}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              activeSection === 'ticket' 
-                ? 'bg-white text-slate-900 shadow-lg shadow-white/20' 
-                : canProceedToTicket 
-                  ? 'bg-white/10 text-white/60 hover:bg-white/20' 
-                  : 'bg-white/5 text-white/30 cursor-not-allowed'
-            }`}>
-            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-              activeSection === 'ticket' ? 'bg-blue-500 text-white' : 'bg-white/20'
-            }`}>2</span>
-            Detail Tiket
-          </button>
-        </div>
-      </div>
-
       {/* Main Content */}
-      <main className="flex-1 px-4 pb-6 overflow-y-auto">
-        {error && (
-          <div className="mb-4 p-4 bg-red-500/20 backdrop-blur-xl rounded-2xl border border-red-500/30 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-red-500/30 flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5 text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <p className="text-red-200 text-sm">{error}</p>
-          </div>
-        )}
+      <div className="relative z-10 px-4 py-6">
+        <div className="max-w-lg mx-auto">
+          <form onSubmit={handleSubmit} className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
+            {/* Error Alert */}
+            {error && (
+              <div className="mx-6 mt-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                <span className="material-symbols-outlined text-red-500 text-xl">error</span>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
 
-        <form onSubmit={handleSubmit}>
-          {/* Section 1: Identity */}
-          {activeSection === 'identity' && (
-            <div className="space-y-4 animate-fadeIn">
-              {/* Anonymous Toggle - Modern Card */}
-              <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-5 border border-white/20">
-                <label className="flex items-center gap-4 cursor-pointer">
-                  <div className={`relative w-14 h-8 rounded-full transition-all duration-300 ${formData.is_anonymous ? 'bg-gradient-to-r from-blue-500 to-indigo-500' : 'bg-white/20'}`}>
-                    <div className={`absolute top-1 w-6 h-6 rounded-full bg-white shadow-lg transition-all duration-300 ${formData.is_anonymous ? 'left-7' : 'left-1'}`}></div>
-                  </div>
-                  <input type="checkbox" checked={formData.is_anonymous} onChange={(e) => handleChange('is_anonymous', e.target.checked)} className="sr-only" />
-                  <div>
-                    <p className="text-white font-medium">Lapor Anonim</p>
-                    <p className="text-white/50 text-xs">Identitas Anda akan dirahasiakan</p>
-                  </div>
+            <div className="p-6 space-y-5">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-orange-500">description</span>
+                <h3 className="text-gray-800 text-base font-bold">Detail Tiket</h3>
+              </div>
+
+              {/* Judul */}
+              <div>
+                <label className="text-gray-800 text-sm font-bold mb-2.5 block">
+                  Judul Tiket <span className="text-rose-500">*</span>
                 </label>
+                <div className="relative group">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-orange-500 transition-colors">title</span>
+                  <input
+                    type="text"
+                    className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base shadow-sm"
+                    placeholder="Ringkasan singkat masalah..."
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
 
-              {!formData.is_anonymous && (
-                <div className="space-y-4">
-                  {/* Name Input - Floating Label Style */}
-                  <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-                    <div className="px-5 pt-4 pb-1">
-                      <label className="text-blue-300/80 text-xs font-medium uppercase tracking-wider">Nama Lengkap *</label>
-                    </div>
-                    <input type="text" value={formData.submitter_name} onChange={(e) => handleChange('submitter_name', e.target.value)}
-                      required={!formData.is_anonymous} placeholder="Masukkan nama lengkap Anda"
-                      className="w-full px-5 pb-4 pt-1 bg-transparent text-white placeholder-white/30 text-base focus:outline-none" />
-                  </div>
-
-                  {/* Email & Phone Row */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-                      <div className="px-4 pt-3 pb-1">
-                        <label className="text-blue-300/80 text-[10px] font-medium uppercase tracking-wider">Email</label>
-                      </div>
-                      <input type="email" value={formData.submitter_email} onChange={(e) => handleChange('submitter_email', e.target.value)}
-                        placeholder="email@contoh.com" className="w-full px-4 pb-3 pt-1 bg-transparent text-white placeholder-white/30 text-sm focus:outline-none" />
-                    </div>
-                    <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-                      <div className="px-4 pt-3 pb-1">
-                        <label className="text-blue-300/80 text-[10px] font-medium uppercase tracking-wider">No. Telepon</label>
-                      </div>
-                      <input type="tel" value={formData.submitter_phone} onChange={(e) => handleChange('submitter_phone', e.target.value)}
-                        placeholder="08xxxxxxxxxx" className="w-full px-4 pb-3 pt-1 bg-transparent text-white placeholder-white/30 text-sm focus:outline-none" />
-                    </div>
-                  </div>
-
-                  {/* Patient Type - Modern Select */}
-                  <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-                    <div className="px-5 pt-4 pb-1">
-                      <label className="text-blue-300/80 text-xs font-medium uppercase tracking-wider">Jenis Pasien</label>
-                    </div>
-                    <select value={formData.patient_type_id} onChange={(e) => handleChange('patient_type_id', e.target.value)}
-                      className="w-full px-5 pb-4 pt-1 bg-transparent text-white text-base focus:outline-none appearance-none cursor-pointer">
-                      <option value="" className="bg-slate-800">Pilih jenis pasien</option>
-                      {patientTypes.map(pt => (<option key={pt.id} value={pt.id} className="bg-slate-800">{pt.name}</option>))}
+              {/* Tipe & Kategori */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-gray-800 text-sm font-bold mb-2.5 block">
+                    Tipe <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-orange-500 transition-colors pointer-events-none">category</span>
+                    <select
+                      className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                      value={type}
+                      onChange={(e) => setType(e.target.value)}
+                      required
+                    >
+                      <option value="">Pilih tipe...</option>
+                      {(Array.isArray(ticketTypes) ? ticketTypes : []).map(ticketType => (
+                        <option key={ticketType.id} value={ticketType.code.toLowerCase()}>
+                          {ticketType.name}
+                        </option>
+                      ))}
                     </select>
-                  </div>
-
-                  {/* Address */}
-                  <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-                    <div className="px-5 pt-4 pb-1">
-                      <label className="text-blue-300/80 text-xs font-medium uppercase tracking-wider">Alamat</label>
-                    </div>
-                    <textarea value={formData.submitter_address} onChange={(e) => handleChange('submitter_address', e.target.value)}
-                      rows={2} placeholder="Masukkan alamat lengkap"
-                      className="w-full px-5 pb-4 pt-1 bg-transparent text-white placeholder-white/30 text-base focus:outline-none resize-none" />
+                    <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                   </div>
                 </div>
-              )}
 
-              {/* Next Button */}
-              <button type="button" onClick={() => setActiveSection('ticket')} disabled={!canProceedToTicket}
-                className="w-full py-4 mt-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-2xl font-semibold text-base shadow-xl shadow-blue-500/30 disabled:opacity-50 disabled:shadow-none active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-                Lanjutkan
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
-              </button>
-            </div>
-          )}
-
-          {/* Section 2: Ticket Details */}
-          {activeSection === 'ticket' && (
-            <div className="space-y-4 animate-fadeIn">
-              {/* Back Button */}
-              <button type="button" onClick={() => setActiveSection('identity')}
-                className="flex items-center gap-2 text-white/60 hover:text-white text-sm mb-2 transition-colors">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                Kembali
-              </button>
-
-              {/* Ticket Type & Category */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-                  <div className="px-4 pt-3 pb-1">
-                    <label className="text-blue-300/80 text-[10px] font-medium uppercase tracking-wider">Jenis Tiket *</label>
+                <div>
+                  <label className="text-gray-800 text-sm font-bold mb-2.5 block">
+                    Kategori <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-orange-500 transition-colors pointer-events-none">folder</span>
+                    <select
+                      className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                      value={categoryId}
+                      onChange={(e) => setCategoryId(e.target.value)}
+                      required
+                    >
+                      <option value="">Pilih kategori...</option>
+                      {(Array.isArray(categories) ? categories : []).map(category => (
+                        <option key={category.id} value={category.id}>{category.name}</option>
+                      ))}
+                    </select>
+                    <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                   </div>
-                  <select value={formData.type} onChange={(e) => handleChange('type', e.target.value)} required
-                    className="w-full px-4 pb-3 pt-1 bg-transparent text-white text-sm focus:outline-none appearance-none cursor-pointer">
-                    <option value="information" className="bg-slate-800">Informasi</option>
-                    <option value="complaint" className="bg-slate-800">Pengaduan</option>
-                    <option value="suggestion" className="bg-slate-800">Saran</option>
-                    <option value="satisfaction" className="bg-slate-800">Kepuasan</option>
-                  </select>
-                </div>
-                <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-                  <div className="px-4 pt-3 pb-1">
-                    <label className="text-blue-300/80 text-[10px] font-medium uppercase tracking-wider">Prioritas</label>
-                  </div>
-                  <select value={formData.priority} onChange={(e) => handleChange('priority', e.target.value)}
-                    className="w-full px-4 pb-3 pt-1 bg-transparent text-white text-sm focus:outline-none appearance-none cursor-pointer">
-                    <option value="low" className="bg-slate-800">🟢 Rendah</option>
-                    <option value="medium" className="bg-slate-800">🟡 Sedang</option>
-                    <option value="high" className="bg-slate-800">🟠 Tinggi</option>
-                    <option value="critical" className="bg-slate-800">🔴 Kritis</option>
-                  </select>
                 </div>
               </div>
 
-              {/* Category */}
-              <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-                <div className="px-5 pt-4 pb-1">
-                  <label className="text-blue-300/80 text-xs font-medium uppercase tracking-wider">Kategori Layanan *</label>
+              {/* Prioritas */}
+              <div>
+                <label className="text-gray-800 text-sm font-bold mb-2.5 block">
+                  Prioritas <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {priorityOptions.map(option => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setPriority(option.value)}
+                      className={`relative p-3 rounded-xl border-2 transition-all ${
+                        priority === option.value
+                          ? 'border-orange-500 bg-orange-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-1.5">
+                        <div className={`w-8 h-8 ${option.color} rounded-lg flex items-center justify-center`}>
+                          <span className="material-symbols-outlined text-white text-lg">{option.icon}</span>
+                        </div>
+                        <span className={`text-xs font-medium ${
+                          priority === option.value 
+                            ? 'text-orange-700' 
+                            : 'text-gray-600'
+                        }`}>
+                          {option.label}
+                        </span>
+                      </div>
+                      {priority === option.value && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
+                          <span className="material-symbols-outlined text-white text-xs">check</span>
+                        </div>
+                      )}
+                    </button>
+                  ))}
                 </div>
-                <select value={formData.category_id} onChange={(e) => handleChange('category_id', e.target.value)} required
-                  className="w-full px-5 pb-4 pt-1 bg-transparent text-white text-base focus:outline-none appearance-none cursor-pointer">
-                  <option value="" className="bg-slate-800">Pilih kategori</option>
-                  {categories.map(cat => (<option key={cat.id} value={cat.id} className="bg-slate-800">{cat.name}</option>))}
-                </select>
               </div>
 
               {/* Unit */}
-              <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-                <div className="px-5 pt-4 pb-1">
-                  <label className="text-blue-300/80 text-xs font-medium uppercase tracking-wider">Unit Tujuan *</label>
+              <div>
+                <label className="text-gray-800 text-sm font-bold mb-2.5 block">
+                  Unit <span className="text-rose-500">*</span>
+                  {unitLocked && (
+                    <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full inline-flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs">lock</span>
+                      Terkunci
+                    </span>
+                  )}
+                </label>
+                <div className="relative group">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-orange-500 transition-colors pointer-events-none">apartment</span>
+                  <select
+                    className={`w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm ${
+                      unitLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
+                    }`}
+                    value={unitId}
+                    onChange={(e) => setUnitId(e.target.value)}
+                    disabled={unitLocked}
+                    required
+                  >
+                    <option value="">Pilih unit...</option>
+                    {(Array.isArray(units) ? units : []).map(unit => (
+                      <option key={unit.id} value={unit.id}>{unit.name}</option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                 </div>
-                <select value={formData.unit_id} onChange={(e) => handleChange('unit_id', e.target.value)} required
-                  className="w-full px-5 pb-4 pt-1 bg-transparent text-white text-base focus:outline-none appearance-none cursor-pointer">
-                  <option value="" className="bg-slate-800">Pilih unit</option>
-                  {units.map(unit => (<option key={unit.id} value={unit.id} className="bg-slate-800">{unit.name}</option>))}
-                </select>
               </div>
 
-              {/* Title */}
-              <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-                <div className="px-5 pt-4 pb-1">
-                  <label className="text-blue-300/80 text-xs font-medium uppercase tracking-wider">Judul Tiket *</label>
+              {/* Deskripsi */}
+              <div>
+                <label className="text-gray-800 text-sm font-bold mb-2.5 block">
+                  Deskripsi Lengkap <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative group">
+                  <textarea
+                    className="w-full px-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base resize-none shadow-sm"
+                    rows={5}
+                    maxLength={2000}
+                    placeholder="Jelaskan detail laporan Anda di sini..."
+                    value={description}
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                      setCharCount(e.target.value.length);
+                    }}
+                    required
+                  />
                 </div>
-                <input type="text" value={formData.title} onChange={(e) => handleChange('title', e.target.value)}
-                  required placeholder="Ringkasan singkat masalah Anda"
-                  className="w-full px-5 pb-4 pt-1 bg-transparent text-white placeholder-white/30 text-base focus:outline-none" />
-              </div>
-
-              {/* Description */}
-              <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 overflow-hidden">
-                <div className="px-5 pt-4 pb-1">
-                  <label className="text-blue-300/80 text-xs font-medium uppercase tracking-wider">Deskripsi *</label>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-xs text-gray-400">Maksimal 2000 karakter</span>
+                  <span className={`text-xs font-medium ${charCount > 1800 ? 'text-rose-500' : 'text-gray-500'}`}>
+                    {charCount}/2000
+                  </span>
                 </div>
-                <textarea value={formData.description} onChange={(e) => handleChange('description', e.target.value)}
-                  required rows={4} placeholder="Jelaskan detail masalah atau permintaan Anda..."
-                  className="w-full px-5 pb-4 pt-1 bg-transparent text-white placeholder-white/30 text-base focus:outline-none resize-none" />
               </div>
+            </div>
 
-              {/* Submit Button */}
-              <button type="submit" disabled={submitting}
-                className="w-full py-4 mt-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-semibold text-base shadow-xl shadow-emerald-500/30 disabled:opacity-50 disabled:shadow-none active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-                {submitting ? (
+            {/* Action Buttons */}
+            <div className="p-6 bg-gradient-to-br from-gray-50/50 to-white border-t border-gray-100/50">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-5 rounded-2xl bg-gradient-to-r from-orange-500 via-rose-500 to-pink-500 text-white font-bold text-lg shadow-2xl shadow-orange-500/40 hover:shadow-orange-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:shadow-lg flex items-center justify-center gap-3 group"
+              >
+                {isSubmitting ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Mengirim...
+                    <div className="animate-spin rounded-full h-6 w-6 border-3 border-white border-t-transparent"></div>
+                    <span>Mengirim Tiket...</span>
                   </>
                 ) : (
                   <>
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
-                    Kirim Tiket
+                    <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">send</span>
+                    <span>Kirim Tiket</span>
                   </>
                 )}
               </button>
+              
+              <button
+                type="button"
+                onClick={() => navigate('/tickets')}
+                className="w-full mt-3 py-3 rounded-2xl border-2 border-gray-200 text-gray-700 font-medium hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+                Batal
+              </button>
             </div>
-          )}
-        </form>
-      </main>
+          </form>
 
-      {/* Minimal Footer - No Phone */}
-      <footer className="py-4 text-center">
-        <p className="text-white/30 text-xs">© {new Date().getFullYear()} {appSettings.institution_name || appSettings.app_name}</p>
-      </footer>
-
-      <style>{`
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
-      `}</style>
+          {/* Footer */}
+          <div className="mt-8 text-center space-y-2">
+            <p className="text-xs text-gray-400">
+              Tiket Anda akan diproses dalam 1x24 jam
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

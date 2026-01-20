@@ -308,28 +308,35 @@ export const qrCodeService = {
     return response.data;
   },
 
-  // Generate QR code URL - SELALU mengarah ke halaman fullscreen tanpa sidebar
+  // Generate QR code URL - LANGSUNG ke form input tanpa login dan tanpa sidebar
   // Menggunakan route /form/:type untuk tampilan mobile-first yang clean
-  // URL langsung ke form berdasarkan redirect_type
-  generateQRUrl(code: string, redirectType?: string, unitId?: string, unitName?: string, _autoFillUnit?: boolean): string {
+  generateQRUrl(code: string, redirectType?: string, unitId?: string, unitName?: string, autoFillUnit?: boolean): string {
     const baseUrl = window.location.origin;
     
-    // Jika ada redirect_type spesifik, langsung ke form yang sesuai
+    // Jika ada redirect_type spesifik (bukan 'selection'), langsung ke form
     if (redirectType && redirectType !== 'selection') {
       const params = new URLSearchParams();
-      if (unitId) params.append('unit_id', unitId);
-      if (unitName) params.append('unit_name', unitName);
-      if (code) params.append('qr', code);
       
-      const queryString = params.toString() ? `?${params.toString()}` : '';
+      // Selalu tambahkan QR code untuk tracking
+      params.append('qr', code);
       
+      // Auto-fill unit jika diaktifkan (default true)
+      if (autoFillUnit !== false) {
+        if (unitId) params.append('unit_id', unitId);
+        if (unitName) params.append('unit_name', unitName);
+        params.append('auto_fill', 'true');
+      }
+      
+      const queryString = params.toString();
+      
+      // REDIRECT LANGSUNG KE FORM TANPA LOGIN DAN TANPA SIDEBAR
       switch (redirectType) {
         case 'internal_ticket':
-          return `${baseUrl}/form/internal${queryString}`;
+          return `${baseUrl}/form/internal?${queryString}`;
         case 'external_ticket':
-          return `${baseUrl}/form/eksternal${queryString}`;
+          return `${baseUrl}/form/eksternal?${queryString}`;
         case 'survey':
-          return `${baseUrl}/form/survey${queryString}`;
+          return `${baseUrl}/form/survey?${queryString}`;
         default:
           return `${baseUrl}/m/${code}`;
       }

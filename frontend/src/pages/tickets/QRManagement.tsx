@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { qrCodeService, QRCode, CreateQRCodeData } from '../../services/qrCodeService';
 import unitService from '../../services/unitService';
-import AppFooter from '../../components/AppFooter';
 
 interface Unit {
   id: string;
@@ -31,10 +30,10 @@ interface CreateQRCodeDataExtended extends CreateQRCodeData {
 }
 
 const REDIRECT_OPTIONS = [
-  { value: 'selection', label: 'Tampilkan Pilihan', icon: 'list_alt', description: 'Pelanggan memilih jenis layanan' },
-  { value: 'internal_ticket', label: 'Form Tiket Internal', icon: 'assignment', description: 'Langsung ke form tiket internal' },
-  { value: 'external_ticket', label: 'Form Tiket Eksternal', icon: 'description', description: 'Langsung ke form tiket eksternal' },
-  { value: 'survey', label: 'Form Survei', icon: 'rate_review', description: 'Langsung ke form survei kepuasan' }
+  { value: 'selection', label: 'Tampilkan Pilihan', icon: 'list_alt', description: 'Pengguna memilih jenis form (Internal/Eksternal/Survei)' },
+  { value: 'internal_ticket', label: 'Form Tiket Internal', icon: 'assignment', description: 'Langsung ke form tiket internal tanpa login' },
+  { value: 'external_ticket', label: 'Form Tiket Eksternal', icon: 'description', description: 'Langsung ke form tiket eksternal tanpa login' },
+  { value: 'survey', label: 'Form Survei', icon: 'rate_review', description: 'Langsung ke form survei kepuasan tanpa login' }
 ];
 
 const SHOW_OPTIONS_LIST = [
@@ -217,16 +216,22 @@ const QRManagement: React.FC = () => {
   const getRedirectTypeBadge = (redirectType?: string, qrCode?: QRCodeWithAnalytics) => {
     const option = REDIRECT_OPTIONS.find(o => o.value === redirectType) || REDIRECT_OPTIONS[0];
     
-    // Generate direct link berdasarkan redirect_type
+    // Generate direct link berdasarkan redirect_type - LANGSUNG KE FORM TANPA LOGIN
     const getDirectLink = () => {
       if (!qrCode) return '';
       const baseUrl = window.location.origin;
       const params = new URLSearchParams();
-      if (qrCode.unit_id) params.append('unit_id', qrCode.unit_id);
-      if (qrCode.units?.name) params.append('unit_name', qrCode.units.name);
+      
+      // Auto-fill unit jika diaktifkan (default true)
+      if (qrCode.auto_fill_unit !== false) {
+        if (qrCode.unit_id) params.append('unit_id', qrCode.unit_id);
+        if (qrCode.units?.name) params.append('unit_name', qrCode.units.name);
+      }
+      
       if (qrCode.code) params.append('qr', qrCode.code);
       const queryString = params.toString() ? `?${params.toString()}` : '';
       
+      // REDIRECT LANGSUNG KE FORM TANPA LOGIN DAN TANPA SIDEBAR
       switch (redirectType) {
         case 'internal_ticket':
           return `${baseUrl}/form/internal${queryString}`;
@@ -235,6 +240,7 @@ const QRManagement: React.FC = () => {
         case 'survey':
           return `${baseUrl}/form/survey${queryString}`;
         default:
+          // Selection menu - tampilkan pilihan form
           return `${baseUrl}/m/${qrCode.code}`;
       }
     };
@@ -246,16 +252,25 @@ const QRManagement: React.FC = () => {
     
     return (
       <div className="space-y-1">
-        <a
-          href={directLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-sm">{option.icon}</span>
-          {linkLabel}
-        </a>
-        {qrCode?.auto_fill_unit && (
+        <div className="flex flex-col gap-1">
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400">
+            <span className="material-symbols-outlined text-sm">{option.icon}</span>
+            {linkLabel}
+          </div>
+          <a
+            href={directLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            className="text-xs text-primary hover:text-blue-700 dark:hover:text-blue-300 hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-xs">open_in_new</span>
+            Buka Link
+          </a>
+        </div>
+        {qrCode?.auto_fill_unit !== false && (
           <div className="text-xs text-slate-400 flex items-center gap-1">
             <span className="material-symbols-outlined text-xs">check_circle</span>
             Auto-fill unit
@@ -277,54 +292,21 @@ const QRManagement: React.FC = () => {
   };
 
   const copyQRLink = (code: string, redirectType?: string, unitId?: string, unitName?: string, autoFillUnit?: boolean) => {
+    // Generate URL langsung ke form tanpa login dan tanpa sidebar
     const url = qrCodeService.generateQRUrl(code, redirectType, unitId, unitName, autoFillUnit);
     navigator.clipboard.writeText(url);
-    alert('Link QR Code berhasil disalin!');
+    
+    // Tampilkan notifikasi dengan URL yang disalin
+    const formType = redirectType === 'internal_ticket' ? 'Tiket Internal' :
+                     redirectType === 'external_ticket' ? 'Tiket Eksternal' :
+                     redirectType === 'survey' ? 'Survei' : 'Pilihan Menu';
+    alert(`Link QR Code berhasil disalin!\n\nForm: ${formType}\nURL: ${url}\n\nLink ini langsung mengarah ke form tanpa perlu login.`);
   };
 
   return (
     <div className="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col overflow-x-hidden transition-colors duration-200">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-50 bg-surface-light dark:bg-surface-dark border-b border-slate-200 dark:border-slate-800 px-6 py-3 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="size-8 text-primary flex items-center justify-center bg-primary/10 rounded-lg">
-              <span className="material-symbols-outlined text-2xl">local_police</span>
-            </div>
-            <h2 className="text-lg font-bold leading-tight tracking-tight text-slate-900 dark:text-white">
-              Sistem Manajemen Keluhan
-            </h2>
-          </div>
-          <nav className="hidden md:flex items-center gap-1">
-            <Link className="text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors" to="/dashboard">
-              Dashboard
-            </Link>
-            <Link className="text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors" to="/tickets">
-              Keluhan
-            </Link>
-            <Link className="text-primary bg-primary/10 px-3 py-2 rounded-lg text-sm font-medium transition-colors" to="/qr-codes">
-              Unit & QR Code
-            </Link>
-            <Link className="text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors" to="/reports">
-              Laporan
-            </Link>
-            <Link className="text-slate-600 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 px-3 py-2 rounded-lg text-sm font-medium transition-colors" to="/settings">
-              Pengaturan
-            </Link>
-          </nav>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-8">
-        {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 mb-6 text-sm">
-          <Link className="text-slate-500 dark:text-slate-400 hover:text-primary transition-colors" to="/dashboard">
-            Dashboard
-          </Link>
-          <span className="material-symbols-outlined text-slate-400 text-sm">chevron_right</span>
-          <span className="text-slate-900 dark:text-white font-medium">Manajemen QR Code</span>
-        </div>
 
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
@@ -333,7 +315,7 @@ const QRManagement: React.FC = () => {
               Manajemen QR Code Unit
             </h1>
             <p className="text-slate-500 dark:text-slate-400 text-base leading-relaxed">
-              Kelola titik akses fisik untuk pengajuan keluhan warga. Generate, cetak, dan lacak QR code untuk setiap unit departemen. Atur kemana QR code akan mengarahkan pelanggan.
+              Kelola QR Code untuk akses langsung ke form input. QR Code yang dibuat akan langsung mengarahkan pengguna ke form yang dipilih <strong>tanpa perlu login dan tanpa sidebar navigasi</strong>. Cocok untuk dipasang di lokasi fisik unit departemen.
             </p>
           </div>
           <button
@@ -739,7 +721,7 @@ const QRManagement: React.FC = () => {
                       Otomatis Isi Unit
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Unit akan terisi otomatis, pelanggan tidak perlu memilih
+                      Unit akan terisi otomatis di form, pengguna tidak perlu memilih unit lagi
                     </p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -751,6 +733,21 @@ const QRManagement: React.FC = () => {
                     />
                     <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer dark:bg-slate-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-primary"></div>
                   </label>
+                </div>
+
+                {/* Informasi Penting */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <div className="flex gap-3">
+                    <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-xl">info</span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                        QR Code Langsung ke Form
+                      </p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        QR Code yang dibuat akan langsung mengarahkan pengguna ke form input <strong>tanpa perlu login</strong> dan <strong>tanpa sidebar navigasi</strong>. Cocok untuk dipasang di lokasi fisik seperti loket, ruang tunggu, atau area publik.
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Action Buttons */}
@@ -776,8 +773,6 @@ const QRManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Footer */}
-      <AppFooter variant="default" className="mt-auto" />
     </div>
   );
 };

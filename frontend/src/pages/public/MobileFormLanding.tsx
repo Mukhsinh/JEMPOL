@@ -71,16 +71,16 @@ const MobileFormLanding: React.FC = () => {
     const type = redirectType || data.redirect_type || 'external_ticket';
     let targetUrl = '';
     
+    // PERBAIKAN: Gunakan route /form/:type yang sudah benar (tanpa sidebar, tanpa login)
     switch (type) {
       case 'internal_ticket':
-        targetUrl = `/m/tiket-internal?${params.toString()}`;
+        targetUrl = `/form/internal?${params.toString()}`;
         break;
       case 'external_ticket':
-        targetUrl = `/m/pengaduan?${params.toString()}`;
+        targetUrl = `/form/eksternal?${params.toString()}`;
         break;
       case 'survey':
-        // Gunakan ModernSurveyForm yang lebih praktis
-        targetUrl = `/m/survei?${params.toString()}`;
+        targetUrl = `/form/survey?${params.toString()}`;
         break;
       case 'selection':
         // Jika selection, tampilkan menu
@@ -88,7 +88,7 @@ const MobileFormLanding: React.FC = () => {
         return;
       default:
         // Default ke pengaduan jika tidak ada redirect_type
-        targetUrl = `/m/pengaduan?${params.toString()}`;
+        targetUrl = `/form/eksternal?${params.toString()}`;
         break;
     }
     
@@ -107,17 +107,17 @@ const MobileFormLanding: React.FC = () => {
       auto_fill: qrData.auto_fill_unit !== false ? 'true' : 'false'
     });
 
+    // PERBAIKAN: Gunakan route /form/:type yang sudah benar (tanpa sidebar, tanpa login)
     let targetUrl = '';
     switch (type) {
       case 'internal_ticket':
-        targetUrl = `/m/tiket-internal?${params.toString()}`;
+        targetUrl = `/form/internal?${params.toString()}`;
         break;
       case 'external_ticket':
-        targetUrl = `/m/pengaduan?${params.toString()}`;
+        targetUrl = `/form/eksternal?${params.toString()}`;
         break;
       case 'survey':
-        // Gunakan ModernSurveyForm yang lebih praktis
-        targetUrl = `/m/survei?${params.toString()}`;
+        targetUrl = `/form/survey?${params.toString()}`;
         break;
     }
     window.location.replace(targetUrl);

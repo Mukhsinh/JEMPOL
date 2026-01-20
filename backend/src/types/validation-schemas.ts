@@ -285,7 +285,7 @@ export function validateData<T>(schema: z.ZodSchema<T>, data: unknown): {
 export function formatValidationErrors(errors: z.ZodError): Record<string, string[]> {
   const formatted: Record<string, string[]> = {};
   
-  errors.errors.forEach((error) => {
+  errors.issues.forEach((error: z.ZodIssue) => {
     const path = error.path.join('.');
     if (!formatted[path]) {
       formatted[path] = [];

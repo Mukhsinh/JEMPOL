@@ -86,14 +86,41 @@ const TicketTracker = () => {
     setTicket(null);
     setSearched(true);
     try {
+      // Try backend first
       const response = await complaintService.getPublicTicket(ticketNumber);
-      if (response.success) {
+      if (response.success && response.data) {
         setTicket(response.data);
       } else {
-        setError(response.error || 'Tiket tidak ditemukan.');
+        // Fallback to Supabase direct
+        console.log('Backend failed, trying Supabase direct...');
+        const { data, error: supabaseError } = await supabase
+          .from('tickets')
+          .select(`
+            id,
+            ticket_number,
+            type,
+            title,
+            description,
+            status,
+            priority,
+            created_at,
+            resolved_at,
+            units:unit_id(name, code),
+            service_categories:category_id(name),
+            ticket_responses:ticket_responses(id, message, response_type, created_at)
+          `)
+          .eq('ticket_number', ticketNumber.trim())
+          .single();
+
+        if (supabaseError || !data) {
+          setError('Tiket tidak ditemukan. Pastikan nomor tiket benar.');
+        } else {
+          setTicket(data as any);
+        }
       }
-    } catch {
-      setError('Tiket tidak ditemukan.');
+    } catch (err) {
+      console.error('Error searching ticket:', err);
+      setError('Terjadi kesalahan saat mencari tiket. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }

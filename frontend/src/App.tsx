@@ -35,6 +35,7 @@ import PublicSurvey from './pages/public/PublicSurvey';
 import PublicExternalTicketFullscreen from './pages/public/PublicExternalTicketFullscreen';
 import PublicSurveyFullscreen from './pages/public/PublicSurveyFullscreen';
 import FullscreenInternalTicket from './pages/public/FullscreenInternalTicket';
+import TrackTicket from './pages/public/TrackTicket';
 
 // Mobile-First Public Forms (Clean & Modern UI)
 import MobileFormLanding from './pages/public/MobileFormLanding';
@@ -46,6 +47,9 @@ import ModernSurveyForm from './pages/public/ModernSurveyForm';
 import DirectInternalTicketForm from './pages/public/DirectInternalTicketForm';
 import DirectExternalTicketForm from './pages/public/DirectExternalTicketForm';
 import DirectSurveyForm from './pages/public/DirectSurveyForm';
+
+// Standalone Form - Clean UI tanpa sidebar untuk QR Management redirect
+import StandaloneInternalTicketForm from './pages/public/StandaloneInternalTicketForm';
 
 // User Management
 import UserManagement from './pages/users/UserManagement';
@@ -83,6 +87,11 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
+          
+          {/* Lacak Tiket - Public Access */}
+          <Route path="/lacak-tiket" element={<TrackTicket />} />
+          <Route path="/track-ticket" element={<TrackTicket />} />
+          
           {/* QR Code routes - redirect ke mobile fullscreen */}
           <Route path="/qr/:code" element={<MobileFormLanding />} />
           <Route path="/scan/:code" element={<MobileFormLanding />} />
@@ -113,6 +122,10 @@ function App() {
           <Route path="/form/internal" element={<DirectInternalTicketForm />} />
           <Route path="/form/eksternal" element={<DirectExternalTicketForm />} />
           <Route path="/form/survey" element={<DirectSurveyForm />} />
+          
+          {/* Standalone Form - Clean UI untuk QR Management redirect */}
+          <Route path="/standalone/internal-ticket" element={<StandaloneInternalTicketForm />} />
+          <Route path="/standalone/tiket-internal" element={<StandaloneInternalTicketForm />} />
 
           {/* Protected Admin Routes - Dashboard */}
           <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />

@@ -17,6 +17,7 @@ interface FormData {
   reporter_email: string;
   reporter_phone: string;
   reporter_address: string;
+  age_range: string;
   service_type: string;
   category: string;
   title: string;
@@ -46,6 +47,7 @@ const TiketEksternal: React.FC = () => {
     reporter_email: '',
     reporter_phone: '',
     reporter_address: '',
+    age_range: '',
     service_type: '',
     category: '',
     title: '',
@@ -168,6 +170,7 @@ const TiketEksternal: React.FC = () => {
         reporter_email: formData.reporter_identity_type === 'personal' ? formData.reporter_email : undefined,
         reporter_phone: formData.reporter_identity_type === 'personal' ? formData.reporter_phone : undefined,
         reporter_address: formData.reporter_identity_type === 'personal' ? formData.reporter_address : undefined,
+        age_range: formData.reporter_identity_type === 'personal' ? formData.age_range : undefined,
         service_type: formData.service_type,
         category: formData.category,
         title: formData.title,
@@ -184,6 +187,7 @@ const TiketEksternal: React.FC = () => {
         reporter_email: '',
         reporter_phone: '',
         reporter_address: '',
+        age_range: '',
         service_type: '',
         category: '',
         title: '',
@@ -212,44 +216,67 @@ const TiketEksternal: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-rose-50 to-pink-50 font-sans">
+      {/* Decorative Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-orange-200/30 to-rose-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-gradient-to-br from-pink-200/30 to-rose-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-rose-200/30 to-orange-200/30 rounded-full blur-3xl"></div>
+      </div>
+
+      {/* Header Modern */}
+      <header className="relative z-10 bg-white/80 backdrop-blur-xl border-b border-gray-100/50 sticky top-0">
+        <div className="max-w-lg mx-auto px-6 py-4">
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-rose-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+              <span className="material-symbols-outlined text-white text-xl">support_agent</span>
+            </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-orange-600 to-rose-600 bg-clip-text text-transparent">
+              Formulir Pengaduan
+            </h1>
+          </div>
+        </div>
+      </header>
+
       {/* Main Content */}
-      <div className="px-4 py-6">
+      <div className="relative z-10 px-4 py-6">
         <div className="max-w-lg mx-auto">
-          {/* Unit Info Card */}
+          {/* Unit Info Card - Modern */}
           {qrData?.units && (
-            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 mb-4">
-              <div className="flex items-start gap-3">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center flex-shrink-0">
+            <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 p-5 mb-6 transform hover:scale-[1.02] transition-transform">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-500/30">
                   <span className="material-symbols-outlined text-white text-2xl">verified</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-semibold text-green-600 uppercase tracking-wide">Unit Terverifikasi</span>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Unit Terverifikasi</span>
                     {unitLocked && (
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-medium">
-                        <span className="material-symbols-outlined text-[10px]">lock</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">
+                        <span className="material-symbols-outlined text-xs">lock</span>
                         Auto
                       </span>
                     )}
                   </div>
-                  <h3 className="text-gray-900 font-semibold text-base truncate">
+                  <h3 className="text-gray-900 font-bold text-lg truncate">
                     {qrData.units.name}
                   </h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Tujuan laporan Anda</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Form Card */}
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-            {/* Identity Type Toggle */}
-            <div className="p-5 border-b border-gray-100">
-              <label className="text-gray-700 text-xs font-semibold uppercase tracking-wider mb-3 block">
+          {/* Form Card - Modern */}
+          <form onSubmit={handleSubmit} className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
+            {/* Identity Type Toggle - Modern */}
+            <div className="p-6 border-b border-gray-100/50 bg-gradient-to-br from-gray-50/50 to-white">
+              <label className="text-gray-800 text-sm font-bold mb-4 block flex items-center gap-2">
+                <span className="material-symbols-outlined text-orange-500">badge</span>
                 Identitas Pelapor
               </label>
-              <div className="grid grid-cols-2 gap-2">
-                <label className="cursor-pointer">
+              <div className="grid grid-cols-2 gap-3">
+                <label className="cursor-pointer group">
                   <input
                     type="radio"
                     name="reporter_identity_type"
@@ -258,12 +285,12 @@ const TiketEksternal: React.FC = () => {
                     onChange={() => setFormData(prev => ({ ...prev, reporter_identity_type: 'personal' }))}
                     className="peer sr-only"
                   />
-                  <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-500 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary transition-all">
-                    <span className="material-symbols-outlined text-xl">person</span>
-                    <span className="text-sm font-medium">Pribadi</span>
+                  <div className="flex items-center justify-center gap-2 px-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-500 peer-checked:border-orange-500 peer-checked:bg-gradient-to-br peer-checked:from-orange-50 peer-checked:to-rose-50 peer-checked:text-orange-600 transition-all shadow-sm peer-checked:shadow-lg peer-checked:shadow-orange-500/20 group-hover:border-gray-300">
+                    <span className="material-symbols-outlined text-2xl">person</span>
+                    <span className="text-sm font-bold">Pribadi</span>
                   </div>
                 </label>
-                <label className="cursor-pointer">
+                <label className="cursor-pointer group">
                   <input
                     type="radio"
                     name="reporter_identity_type"
@@ -272,30 +299,30 @@ const TiketEksternal: React.FC = () => {
                     onChange={() => setFormData(prev => ({ ...prev, reporter_identity_type: 'anonymous' }))}
                     className="peer sr-only"
                   />
-                  <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 text-gray-500 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary transition-all">
-                    <span className="material-symbols-outlined text-xl">visibility_off</span>
-                    <span className="text-sm font-medium">Anonim</span>
+                  <div className="flex items-center justify-center gap-2 px-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-500 peer-checked:border-orange-500 peer-checked:bg-gradient-to-br peer-checked:from-orange-50 peer-checked:to-rose-50 peer-checked:text-orange-600 transition-all shadow-sm peer-checked:shadow-lg peer-checked:shadow-orange-500/20 group-hover:border-gray-300">
+                    <span className="material-symbols-outlined text-2xl">visibility_off</span>
+                    <span className="text-sm font-bold">Anonim</span>
                   </div>
                 </label>
               </div>
             </div>
 
-            {/* Personal Info Fields */}
+            {/* Personal Info Fields - Modern */}
             {formData.reporter_identity_type === 'personal' && (
-              <div className="p-5 space-y-4 border-b border-gray-100 bg-gray-50/50">
+              <div className="p-6 space-y-5 border-b border-gray-100/50 bg-gradient-to-br from-white to-gray-50/30">
                 {/* Nama */}
                 <div>
-                  <label className="text-gray-700 text-xs font-semibold mb-2 block">
-                    Nama Lengkap <span className="text-red-500">*</span>
+                  <label className="text-gray-800 text-sm font-bold mb-2.5 block">
+                    Nama Lengkap <span className="text-rose-500">*</span>
                   </label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">badge</span>
+                  <div className="relative group">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-orange-500 transition-colors">badge</span>
                     <input
                       type="text"
                       name="reporter_name"
                       value={formData.reporter_name}
                       onChange={handleInputChange}
-                      className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none transition-colors text-sm"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base shadow-sm"
                       placeholder="Masukkan nama lengkap"
                       required
                     />
@@ -304,17 +331,17 @@ const TiketEksternal: React.FC = () => {
 
                 {/* Email */}
                 <div>
-                  <label className="text-gray-700 text-xs font-semibold mb-2 block">
+                  <label className="text-gray-800 text-sm font-bold mb-2.5 block">
                     Email
                   </label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">mail</span>
+                  <div className="relative group">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-orange-500 transition-colors">mail</span>
                     <input
                       type="email"
                       name="reporter_email"
                       value={formData.reporter_email}
                       onChange={handleInputChange}
-                      className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none transition-colors text-sm"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base shadow-sm"
                       placeholder="email@contoh.com"
                     />
                   </div>
@@ -322,17 +349,17 @@ const TiketEksternal: React.FC = () => {
 
                 {/* Phone */}
                 <div>
-                  <label className="text-gray-700 text-xs font-semibold mb-2 block">
+                  <label className="text-gray-800 text-sm font-bold mb-2.5 block">
                     Nomor Telepon
                   </label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">phone</span>
+                  <div className="relative group">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-orange-500 transition-colors">phone</span>
                     <input
                       type="tel"
                       name="reporter_phone"
                       value={formData.reporter_phone}
                       onChange={handleInputChange}
-                      className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none transition-colors text-sm"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base shadow-sm"
                       placeholder="08xxxxxxxxxx"
                     />
                   </div>
@@ -340,38 +367,66 @@ const TiketEksternal: React.FC = () => {
 
                 {/* Address */}
                 <div>
-                  <label className="text-gray-700 text-xs font-semibold mb-2 block">
+                  <label className="text-gray-800 text-sm font-bold mb-2.5 block">
                     Alamat
                   </label>
-                  <div className="relative">
-                    <span className="material-symbols-outlined absolute left-3 top-3 text-gray-400 text-xl">location_on</span>
+                  <div className="relative group">
+                    <span className="material-symbols-outlined absolute left-4 top-4 text-gray-400 text-xl group-focus-within:text-orange-500 transition-colors">location_on</span>
                     <input
                       type="text"
                       name="reporter_address"
                       value={formData.reporter_address}
                       onChange={handleInputChange}
-                      className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none transition-colors text-sm"
+                      className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base shadow-sm"
                       placeholder="Alamat lengkap"
                     />
+                  </div>
+                </div>
+
+                {/* Age Range */}
+                <div>
+                  <label className="text-gray-800 text-sm font-bold mb-2.5 block">
+                    Usia
+                  </label>
+                  <div className="relative group">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-orange-500 transition-colors pointer-events-none">cake</span>
+                    <select
+                      name="age_range"
+                      value={formData.age_range}
+                      onChange={handleInputChange}
+                      className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                    >
+                      <option value="">Pilih rentang usia</option>
+                      <option value="< 20 Th">Kurang dari 20 Tahun</option>
+                      <option value="20-40 Th">20 - 40 Tahun</option>
+                      <option value="41-60 Th">41 - 60 Tahun</option>
+                      <option value="> 60 Th">Lebih dari 60 Tahun</option>
+                    </select>
+                    <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Report Details */}
-            <div className="p-5 space-y-4">
+            {/* Report Details - Modern */}
+            <div className="p-6 space-y-5">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="material-symbols-outlined text-orange-500">description</span>
+                <h3 className="text-gray-800 text-base font-bold">Detail Laporan</h3>
+              </div>
+
               {/* Service Type */}
               <div>
-                <label className="text-gray-700 text-xs font-semibold mb-2 block">
-                  Jenis Layanan <span className="text-red-500">*</span>
+                <label className="text-gray-800 text-sm font-bold mb-2.5 block">
+                  Jenis Layanan <span className="text-rose-500">*</span>
                 </label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">category</span>
+                <div className="relative group">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-orange-500 transition-colors pointer-events-none">category</span>
                   <select
                     name="service_type"
                     value={formData.service_type}
                     onChange={handleInputChange}
-                    className="w-full pl-11 pr-10 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-primary focus:outline-none transition-colors text-sm appearance-none"
+                    className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
                     required
                   >
                     <option value="">Pilih jenis layanan</option>
@@ -380,22 +435,22 @@ const TiketEksternal: React.FC = () => {
                     <option value="suggestion">💡 Saran & Masukan</option>
                     <option value="survey">📊 Survei Kepuasan</option>
                   </select>
-                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                  <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                 </div>
               </div>
 
               {/* Category */}
               <div>
-                <label className="text-gray-700 text-xs font-semibold mb-2 block">
+                <label className="text-gray-800 text-sm font-bold mb-2.5 block">
                   Kategori
                 </label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">folder</span>
+                <div className="relative group">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-orange-500 transition-colors pointer-events-none">folder</span>
                   <select
                     name="category"
                     value={formData.category}
                     onChange={handleInputChange}
-                    className="w-full pl-11 pr-10 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 focus:border-primary focus:outline-none transition-colors text-sm appearance-none"
+                    className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
                   >
                     <option value="">Pilih kategori</option>
                     {serviceCategories.map((category) => (
@@ -404,23 +459,23 @@ const TiketEksternal: React.FC = () => {
                       </option>
                     ))}
                   </select>
-                  <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                  <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                 </div>
               </div>
 
               {/* Title */}
               <div>
-                <label className="text-gray-700 text-xs font-semibold mb-2 block">
-                  Judul Laporan <span className="text-red-500">*</span>
+                <label className="text-gray-800 text-sm font-bold mb-2.5 block">
+                  Judul Laporan <span className="text-rose-500">*</span>
                 </label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xl">title</span>
+                <div className="relative group">
+                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-orange-500 transition-colors">title</span>
                   <input
                     type="text"
                     name="title"
                     value={formData.title}
                     onChange={handleInputChange}
-                    className="w-full pl-11 pr-4 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none transition-colors text-sm"
+                    className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base shadow-sm"
                     placeholder="Ringkasan singkat masalah Anda"
                     required
                   />
@@ -429,68 +484,71 @@ const TiketEksternal: React.FC = () => {
 
               {/* Description */}
               <div>
-                <label className="text-gray-700 text-xs font-semibold mb-2 block">
-                  Deskripsi Lengkap <span className="text-red-500">*</span>
+                <label className="text-gray-800 text-sm font-bold mb-2.5 block">
+                  Deskripsi Lengkap <span className="text-rose-500">*</span>
                 </label>
-                <div className="relative">
+                <div className="relative group">
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    rows={4}
+                    rows={5}
                     maxLength={2000}
-                    className="w-full px-4 py-3.5 rounded-xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-primary focus:outline-none transition-colors text-sm resize-none"
+                    className="w-full px-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 focus:outline-none transition-all text-base resize-none shadow-sm"
                     placeholder="Jelaskan detail laporan Anda di sini..."
                     required
                   />
                 </div>
-                <div className="flex justify-end mt-1">
-                  <span className="text-xs text-gray-400">{charCount}/2000</span>
+                <div className="flex justify-between items-center mt-2">
+                  <span className="text-xs text-gray-400">Maksimal 2000 karakter</span>
+                  <span className={`text-xs font-medium ${charCount > 1800 ? 'text-rose-500' : 'text-gray-500'}`}>
+                    {charCount}/2000
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Captcha & Submit */}
-            <div className="p-5 bg-gray-50 border-t border-gray-100">
+            {/* Captcha & Submit - Modern */}
+            <div className="p-6 bg-gradient-to-br from-gray-50/50 to-white border-t border-gray-100/50">
               {/* Captcha */}
-              <div className="flex items-center gap-3 p-4 bg-white rounded-xl border-2 border-gray-200 mb-4">
+              <div className="flex items-center gap-4 p-5 bg-white rounded-2xl border-2 border-gray-200 mb-5 shadow-sm hover:border-orange-300 transition-colors">
                 <input
                   type="checkbox"
                   id="captcha"
                   checked={captchaVerified}
                   onChange={(e) => setCaptchaVerified(e.target.checked)}
-                  className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary/20 cursor-pointer"
+                  className="w-6 h-6 rounded-lg border-gray-300 text-orange-500 focus:ring-orange-500/20 cursor-pointer"
                   required
                 />
-                <label htmlFor="captcha" className="text-sm text-gray-600 cursor-pointer flex-1">
+                <label htmlFor="captcha" className="text-base text-gray-700 cursor-pointer flex-1 font-medium">
                   Saya bukan robot
                 </label>
-                <div className="flex flex-col items-center opacity-50">
-                  <span className="material-symbols-outlined text-lg text-gray-400">security</span>
-                  <span className="text-[8px] text-gray-400 font-bold">CAPTCHA</span>
+                <div className="flex flex-col items-center opacity-60">
+                  <span className="material-symbols-outlined text-xl text-gray-400">security</span>
+                  <span className="text-[9px] text-gray-400 font-bold tracking-wider">CAPTCHA</span>
                 </div>
               </div>
 
               {/* Privacy Notice */}
-              <p className="text-xs text-gray-500 text-center mb-4">
+              <p className="text-xs text-gray-500 text-center mb-5 leading-relaxed">
                 Dengan mengirim, Anda menyetujui{' '}
-                <a href="#" className="text-primary hover:underline">Kebijakan Privasi</a>
+                <a href="#" className="text-orange-600 hover:text-orange-700 font-semibold hover:underline">Kebijakan Privasi</a> kami
               </p>
 
               {/* Submit Button */}
               <button
                 type="submit"
                 disabled={submitting || !captchaVerified}
-                className="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-blue-600 text-white font-semibold text-base shadow-lg shadow-primary/30 hover:shadow-primary/40 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex items-center justify-center gap-2"
+                className="w-full py-5 rounded-2xl bg-gradient-to-r from-orange-500 via-rose-500 to-pink-500 text-white font-bold text-lg shadow-2xl shadow-orange-500/40 hover:shadow-orange-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:shadow-lg flex items-center justify-center gap-3 group"
               >
                 {submitting ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                    <span>Mengirim...</span>
+                    <div className="animate-spin rounded-full h-6 w-6 border-3 border-white border-t-transparent"></div>
+                    <span>Mengirim Laporan...</span>
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined">send</span>
+                    <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">send</span>
                     <span>Kirim Laporan</span>
                   </>
                 )}
@@ -498,10 +556,13 @@ const TiketEksternal: React.FC = () => {
             </div>
           </form>
 
-          {/* Footer */}
-          <div className="mt-6 text-center">
+          {/* Footer - Modern */}
+          <div className="mt-8 text-center space-y-2">
             <p className="text-xs text-gray-400">
               {appSettings.app_footer || `© ${new Date().getFullYear()} ${appSettings.institution_name || 'Sistem Pengaduan Terpadu'}`}
+            </p>
+            <p className="text-xs text-gray-400">
+              Laporan Anda akan diproses dalam 1x24 jam
             </p>
           </div>
         </div>

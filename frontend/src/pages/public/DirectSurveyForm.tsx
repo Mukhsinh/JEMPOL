@@ -134,32 +134,9 @@ const DirectSurveyForm: React.FC = () => {
         <div className="absolute bottom-10 right-10 w-32 h-32 bg-cyan-300/20 rounded-full blur-2xl"></div>
       </div>
 
-      {/* Header */}
-      <header className="relative z-10 px-6 pt-10 pb-6">
-        <div className="flex items-center justify-center mb-4">
-          <div className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center shadow-lg">
-            <span className="material-symbols-outlined text-white text-3xl">rate_review</span>
-          </div>
-        </div>
-        
-        <h1 className="text-white text-2xl font-bold text-center mb-1">Survei Kepuasan</h1>
-        <p className="text-white/80 text-sm text-center">Berikan penilaian layanan kami</p>
-        
-        {/* Progress */}
-        <div className="mt-6 flex items-center gap-3 max-w-md mx-auto">
-          <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-white rounded-full transition-all duration-500" 
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <span className="text-white/80 text-sm font-medium">{currentStep}/{totalSteps}</span>
-        </div>
-      </header>
-
-      {/* Unit Info */}
+      {/* Unit Info - Minimal Header */}
       {unitName && (
-        <div className="relative z-10 px-6 mb-4">
+        <div className="relative z-10 px-6 pt-8 pb-4">
           <div className="max-w-md mx-auto bg-white/20 backdrop-blur-xl rounded-xl px-4 py-3 flex items-center gap-3">
             <span className="material-symbols-outlined text-white">business</span>
             <span className="text-white font-medium flex-1">{unitName}</span>
@@ -179,10 +156,21 @@ const DirectSurveyForm: React.FC = () => {
       )}
 
       {/* Form Content */}
-      <main className="relative z-10 flex-1 bg-white rounded-t-[2.5rem] overflow-hidden shadow-2xl">
+      <main className="relative z-10 flex-1 bg-white rounded-t-[2.5rem] overflow-hidden shadow-2xl mt-4">
         <form onSubmit={handleSubmit} className="h-full flex flex-col">
           <div className="flex-1 overflow-y-auto px-6 py-8">
             <div className="max-w-md mx-auto space-y-6">
+              
+              {/* Progress Indicator */}
+              <div className="flex items-center justify-center gap-3 mb-6">
+                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500" 
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <span className="text-gray-500 text-sm font-medium">{currentStep}/{totalSteps}</span>
+              </div>
 
               {/* Step 1: Service Type & Identity */}
               {currentStep === 1 && (

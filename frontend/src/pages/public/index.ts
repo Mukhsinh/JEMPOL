@@ -17,3 +17,9 @@ export { default as MobileTiketInternalForm } from './MobileTiketInternalForm';
 export { default as DirectInternalTicketForm } from './DirectInternalTicketForm';
 export { default as DirectExternalTicketForm } from './DirectExternalTicketForm';
 export { default as DirectSurveyForm } from './DirectSurveyForm';
+
+// Standalone Form - Clean UI untuk QR Management redirect
+export { default as StandaloneInternalTicketForm } from './StandaloneInternalTicketForm';
+
+// Track Ticket - Public Tracking
+export { default as TrackTicket } from './TrackTicket';

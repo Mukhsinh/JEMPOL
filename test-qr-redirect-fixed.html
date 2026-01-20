@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Code Redirect - Langsung ke Form Tanpa Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .info-box {
+            background: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        
+        .info-box h3 {
+            color: #2c5282;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .info-box ul {
+            color: #2d3748;
+            margin-left: 20px;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+        }
+        
+        .test-section h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .test-card {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .test-card h3 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .test-card p {
+            color: #718096;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+        
+        .test-card .url {
+            background: white;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            color: #4a5568;
+            word-break: break-all;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #48bb78;
+        }
+        
+        .btn-secondary:hover {
+            background: #38a169;
+        }
+        
+        .icon {
+            font-size: 24px;
+        }
+        
+        .success {
+            color: #38a169;
+        }
+        
+        .warning {
+            color: #ed8936;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        
+        .status.active {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .status.public {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Test QR Code Redirect</h1>
+        <p class="subtitle">Verifikasi bahwa QR Code langsung mengarah ke form tanpa login dan tanpa sidebar</p>
+        
+        <div class="info-box">
+            <h3>✅ Fitur yang Sudah Diperbaiki:</h3>
+            <ul>
+                <li><strong>Redirect Langsung:</strong> QR Code langsung ke form input yang dipilih</li>
+                <li><strong>Tanpa Login:</strong> Pengguna tidak perlu login untuk mengakses form</li>
+                <li><strong>Tanpa Sidebar:</strong> Tampilan fullscreen mobile-first tanpa navigasi</li>
+                <li><strong>Auto-fill Unit:</strong> Unit otomatis terisi dari QR Code</li>
+                <li><strong>URL Parameter:</strong> unit_id, unit_name, dan qr code dikirim via URL</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h2><span class="icon">📋</span> Test Form Tiket Internal</h2>
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>🏥 IT - Bagian Administrasi</h3>
+                    <p>Form tiket internal dengan auto-fill unit</p>
+                    <div class="url">
+                        /form/internal?unit_id=123&unit_name=IT&qr=QR001
+                    </div>
+                    <a href="http://localhost:3002/form/internal?unit_id=123&unit_name=IT&qr=QR001" 
+                       class="btn" target="_blank">
+                        Buka Form Internal
+                    </a>
+                    <span class="status public">Public Access</span>
+                </div>
+                
+                <div class="test-card">
+                    <h3>🏥 Direktur Utama</h3>
+                    <p>Form tiket internal tanpa auto-fill</p>
+                    <div class="url">
+                        /form/internal?qr=QR002
+                    </div>
+                    <a href="http://localhost:3002/form/internal?qr=QR002" 
+                       class="btn" target="_blank">
+                        Buka Form Internal
+                    </a>
+                    <span class="status public">Public Access</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2><span class="icon">📝</span> Test Form Tiket Eksternal</h2>
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>🏥 Bagian IT dan Inovasi</h3>
+                    <p>Form pengaduan eksternal dengan auto-fill</p>
+                    <div class="url">
+                        /form/eksternal?unit_id=456&unit_name=Bagian%20IT%20dan%20Inovasi&qr=QR003
+                    </div>
+                    <a href="http://localhost:3002/form/eksternal?unit_id=456&unit_name=Bagian%20IT%20dan%20Inovasi&qr=QR003" 
+                       class="btn" target="_blank">
+                        Buka Form Eksternal
+                    </a>
+                    <span class="status public">Public Access</span>
+                </div>
+                
+                <div class="test-card">
+                    <h3>🏥 Bagian Administrasi</h3>
+                    <p>Form pengaduan eksternal</p>
+                    <div class="url">
+                        /form/eksternal?unit_id=789&unit_name=Bagian%20Administrasi&qr=QR004
+                    </div>
+                    <a href="http://localhost:3002/form/eksternal?unit_id=789&unit_name=Bagian%20Administrasi&qr=QR004" 
+                       class="btn" target="_blank">
+                        Buka Form Eksternal
+                    </a>
+                    <span class="status public">Public Access</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2><span class="icon">⭐</span> Test Form Survei Kepuasan</h2>
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>📊 Survei IT</h3>
+                    <p>Form survei kepuasan dengan auto-fill</p>
+                    <div class="url">
+                        /form/survey?unit_id=123&unit_name=IT&qr=QR005
+                    </div>
+                    <a href="http://localhost:3002/form/survey?unit_id=123&unit_name=IT&qr=QR005" 
+                       class="btn btn-secondary" target="_blank">
+                        Buka Form Survei
+                    </a>
+                    <span class="status public">Public Access</span>
+                </div>
+                
+                <div class="test-card">
+                    <h3>📊 Survei Umum</h3>
+                    <p>Form survei tanpa auto-fill unit</p>
+                    <div class="url">
+                        /form/survey?qr=QR006
+                    </div>
+                    <a href="http://localhost:3002/form/survey?qr=QR006" 
+                       class="btn btn-secondary" target="_blank">
+                        Buka Form Survei
+                    </a>
+                    <span class="status public">Public Access</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2><span class="icon">🎯</span> Test QR Management (Admin)</h2>
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>⚙️ Halaman QR Management</h3>
+                    <p>Kelola QR Code dan lihat redirect URL</p>
+                    <div class="url">
+                        /tickets/qr-management
+                    </div>
+                    <a href="http://localhost:3002/tickets/qr-management" 
+                       class="btn" target="_blank">
+                        Buka QR Management
+                    </a>
+                    <span class="status active">Perlu Login</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-box" style="background: #fef5e7; border-left-color: #f39c12;">
+            <h3>📝 Cara Test:</h3>
+            <ul>
+                <li>Klik tombol "Buka Form" untuk membuka form di tab baru</li>
+                <li>Pastikan form terbuka <strong>tanpa perlu login</strong></li>
+                <li>Pastikan <strong>tidak ada sidebar navigasi</strong> (fullscreen)</li>
+                <li>Periksa apakah unit sudah terisi otomatis (jika ada unit_id dan unit_name)</li>
+                <li>Coba isi dan submit form untuk memastikan berfungsi</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

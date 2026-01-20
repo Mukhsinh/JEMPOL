@@ -364,8 +364,57 @@ class ComplaintService {
   }
 
   async getPublicTicket(trackingNumber: string) {
-    const response = await api.get(`/public/tickets/${trackingNumber}`);
-    return response.data;
+    try {
+      // Try backend first
+      const response = await api.get(`/public/tickets/${trackingNumber}`, { timeout: 5000 });
+      return response.data;
+    } catch (error: any) {
+      console.log('Backend not available, using Supabase direct...');
+      
+      // Fallback to Supabase direct
+      try {
+        const { supabase } = await import('../utils/supabaseClient');
+        const { data, error: supabaseError } = await supabase
+          .from('tickets')
+          .select(`
+            id,
+            ticket_number,
+            type,
+            title,
+            description,
+            status,
+            priority,
+            created_at,
+            resolved_at,
+            units:unit_id(name, code),
+            service_categories:category_id(name),
+            ticket_responses:ticket_responses(id, message, response_type, created_at)
+          `)
+          .eq('ticket_number', trackingNumber)
+          .single();
+
+        if (supabaseError || !data) {
+          return {
+            success: false,
+            error: 'Tiket tidak ditemukan',
+            data: null
+          };
+        }
+
+        return {
+          success: true,
+          data: data,
+          message: 'Tiket ditemukan'
+        };
+      } catch (supabaseErr: any) {
+        console.error('Supabase error:', supabaseErr);
+        return {
+          success: false,
+          error: supabaseErr.message || 'Gagal mengambil data tiket',
+          data: null
+        };
+      }
+    }
   }
 
   async submitSurvey(ticketId: string, data: {

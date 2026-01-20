@@ -478,8 +478,8 @@ describe('Complaint Management System - Property Tests', () => {
               'director': 4,
               'admin': 5
             };
-            expect(roleHierarchy[user.role]).toBeGreaterThanOrEqual(1);
-            expect(roleHierarchy[user.role]).toBeLessThanOrEqual(5);
+            expect(roleHierarchy[user.role as keyof typeof roleHierarchy]).toBeGreaterThanOrEqual(1);
+            expect(roleHierarchy[user.role as keyof typeof roleHierarchy]).toBeLessThanOrEqual(5);
 
             // Property 4: User is active by default
             expect(user.is_active).toBe(true);

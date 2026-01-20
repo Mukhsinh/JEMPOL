@@ -38,15 +38,23 @@ const QRScanLanding: React.FC = () => {
       console.log('🔄 Fetching QR code data for:', code);
       const data = await qrCodeService.getByCode(code!);
       console.log('✅ QR code data received:', data);
+      
+      // Set data dulu untuk digunakan di handleRedirect
       setQrData(data as QRCodeData);
       
-      // Jika tidak ada redirect_type atau bukan selection, langsung redirect ke pengaduan
-      const redirectType = data.redirect_type || 'external_ticket';
+      // PERBAIKAN: Langsung redirect ke form berdasarkan redirect_type
+      // Jika tidak ada redirect_type, default ke 'selection' untuk menampilkan menu
+      const redirectType = data.redirect_type || 'selection';
+      
+      console.log('🔍 Redirect type:', redirectType);
       
       if (redirectType !== 'selection') {
+        // Langsung redirect ke form tanpa menampilkan menu
         console.log('🚀 Auto-redirecting to:', redirectType);
-        handleRedirect(data as QRCodeData);
+        handleRedirect(data as QRCodeData, redirectType);
+        // JANGAN set loading false, biarkan di loading state karena akan redirect
       } else {
+        // Tampilkan menu pilihan
         console.log('📋 Showing selection menu');
         setLoading(false);
       }
@@ -57,69 +65,55 @@ const QRScanLanding: React.FC = () => {
     }
   };
 
-  const handleRedirect = (data: QRCodeData) => {
-    const params = new URLSearchParams({
-      qr: data.code,
-      unit_id: data.unit_id,
-      unit_name: data.units?.name || '',
-      auto_fill: data.auto_fill_unit !== false ? 'true' : 'false'
-    });
+  const handleRedirect = (data: QRCodeData, redirectType?: string) => {
+    const type = redirectType || data.redirect_type || 'external_ticket';
+    
+    // Jika selection, tampilkan menu pilihan (tidak redirect)
+    if (type === 'selection') {
+      console.log('📋 Showing selection menu');
+      setQrData(data);
+      setLoading(false);
+      return;
+    }
+    
+    // PERBAIKAN: Gunakan route /form/:type untuk tampilan fullscreen tanpa sidebar
+    const params = new URLSearchParams();
+    params.append('qr', data.code);
+    params.append('unit_id', data.unit_id);
+    if (data.units?.name) params.append('unit_name', encodeURIComponent(data.units.name));
+    if (data.auto_fill_unit !== false) params.append('auto_fill', 'true');
 
     let targetUrl = '';
     
-    // Jika tidak ada redirect_type atau selection, default ke external_ticket (pengaduan)
-    const redirectType = data.redirect_type || 'external_ticket';
-    
-    switch (redirectType) {
+    // Route langsung ke form fullscreen (tanpa sidebar, tanpa login)
+    switch (type) {
       case 'internal_ticket':
-        targetUrl = `/m/tiket-internal?${params.toString()}`;
+        targetUrl = `/form/internal?${params.toString()}`;
         break;
       case 'external_ticket':
-        targetUrl = `/m/pengaduan?${params.toString()}`;
+        targetUrl = `/form/eksternal?${params.toString()}`;
         break;
       case 'survey':
-        targetUrl = `/m/survei?${params.toString()}`;
+        targetUrl = `/form/survey?${params.toString()}`;
         break;
-      case 'selection':
-        // Jika selection, tampilkan menu pilihan
-        setLoading(false);
-        return;
       default:
-        // Default ke pengaduan jika tidak ada redirect_type
-        targetUrl = `/m/pengaduan?${params.toString()}`;
+        // Default ke pengaduan eksternal
+        targetUrl = `/form/eksternal?${params.toString()}`;
         break;
     }
     
     console.log('🔀 Redirecting to:', targetUrl);
-    // Gunakan window.location.replace untuk menghindari back button kembali ke loading
-    window.location.replace(targetUrl);
+    console.log('📍 Full URL:', window.location.origin + targetUrl);
+    
+    // Gunakan window.location.href untuk redirect langsung
+    window.location.href = targetUrl;
   };
 
   const handleManualRedirect = (type: 'internal_ticket' | 'external_ticket' | 'survey') => {
     if (!qrData) return;
     
-    const params = new URLSearchParams({
-      qr: qrData.code,
-      unit_id: qrData.unit_id,
-      unit_name: qrData.units?.name || '',
-      auto_fill: qrData.auto_fill_unit !== false ? 'true' : 'false'
-    });
-
-    let targetUrl = '';
-    switch (type) {
-      case 'internal_ticket':
-        targetUrl = `/m/tiket-internal?${params.toString()}`;
-        break;
-      case 'external_ticket':
-        targetUrl = `/m/pengaduan?${params.toString()}`;
-        break;
-      case 'survey':
-        targetUrl = `/m/survei?${params.toString()}`;
-        break;
-    }
-    
-    console.log('🔀 Manual redirect to:', targetUrl);
-    window.location.replace(targetUrl);
+    // PERBAIKAN: Gunakan handleRedirect yang sudah diperbaiki
+    handleRedirect(qrData, type);
   };
 
   if (loading) {

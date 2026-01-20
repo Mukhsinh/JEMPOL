@@ -33,6 +33,7 @@ import ebookRoutes from './routes/ebookRoutes.js';
 import notificationSettingsRoutes from './routes/notificationSettingsRoutes.js';
 import publicDataRoutes from './routes/publicDataRoutes.js';
 import ticketActionRoutes from './routes/ticketActionRoutes.js';
+import publicTrackingRoutes from './routes/publicTrackingRoutes.js';
 
 import { authenticateToken } from './middleware/auth.js';
 import { initializeAdminTable, createDefaultAdmin } from './models/Admin.js';
@@ -164,6 +165,7 @@ app.use('/api/complaints', complaintRoutes);
 // karena publicRoutes punya route /surveys/:ticketId yang bisa menangkap /surveys/stats
 app.use('/api/public', publicSurveyRoutes);
 app.use('/api/public', publicDataRoutes);
+app.use('/api/public', publicTrackingRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/escalation', escalationRoutes);
 app.use('/api/reports', reportRoutes);

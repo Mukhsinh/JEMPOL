@@ -111,23 +111,23 @@ const Footer = () => {
             <h3 className="text-white font-semibold mb-4">Tautan Cepat</h3>
             <ul className="space-y-2">
               <li>
-                <a href="/#registration" className="text-sm hover:text-primary-400 transition-colors">
-                  Daftar Pengunjung
+                <a href="/lacak-tiket" className="text-sm hover:text-primary-400 transition-colors">
+                  Lacak Tiket Pengaduan
                 </a>
               </li>
               <li>
-                <a href="/#gallery" className="text-sm hover:text-primary-400 transition-colors">
-                  Galeri Inovasi
+                <a href="/tiket-eksternal" className="text-sm hover:text-primary-400 transition-colors">
+                  Buat Pengaduan
                 </a>
               </li>
               <li>
-                <a href="/game" className="text-sm hover:text-primary-400 transition-colors">
-                  Game Interaktif
+                <a href="/survey/public" className="text-sm hover:text-primary-400 transition-colors">
+                  Isi Survei
                 </a>
               </li>
               <li>
-                <a href="/#leaderboard" className="text-sm hover:text-primary-400 transition-colors">
-                  Leaderboard
+                <a href="/buku-petunjuk" className="text-sm hover:text-primary-400 transition-colors">
+                  Buku Petunjuk
                 </a>
               </li>
             </ul>
@@ -137,7 +137,7 @@ const Footer = () => {
           <div>
             <h3 className="text-white font-semibold mb-4 flex items-center">
               <span className="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center mr-2">
-                <Phone className="w-4 h-4 text-white" />
+                <User className="w-4 h-4 text-white" />
               </span>
               Kontak
             </h3>
@@ -163,19 +163,6 @@ const Footer = () => {
                     <p className="text-white font-semibold">{settings.manager_name}</p>
                   </div>
                 </div>
-                {settings.contact_phone && (
-                  <div className="flex items-center space-x-3 group hover:bg-gray-600/50 p-2 rounded-lg transition-all">
-                    <div className="w-8 h-8 bg-green-500/20 rounded-lg flex items-center justify-center group-hover:bg-green-500/30 transition-all">
-                      <Phone className="w-4 h-4 text-green-400" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400">WhatsApp</p>
-                      <a href={`tel:${settings.contact_phone}`} className="text-white font-semibold hover:text-green-400 transition-colors">
-                        {settings.contact_phone}
-                      </a>
-                    </div>
-                  </div>
-                )}
                 {settings.contact_email && (
                   <div className="flex items-center space-x-3 group hover:bg-gray-600/50 p-2 rounded-lg transition-all">
                     <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center group-hover:bg-blue-500/30 transition-all">
@@ -218,19 +205,10 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="border-t border-gray-700 mt-10 pt-8">
-          <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+          <div className="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0">
             <p className="text-sm text-gray-400">
               {getFooterText()}
             </p>
-            <div className="flex items-center space-x-4">
-              <a href="#" className="text-gray-400 hover:text-primary-400 transition-colors">
-                <span className="text-sm">Kebijakan Privasi</span>
-              </a>
-              <span className="text-gray-600">•</span>
-              <a href="#" className="text-gray-400 hover:text-primary-400 transition-colors">
-                <span className="text-sm">Syarat & Ketentuan</span>
-              </a>
-            </div>
           </div>
         </div>
       </div>

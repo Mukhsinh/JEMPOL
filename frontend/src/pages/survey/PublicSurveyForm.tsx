@@ -41,7 +41,6 @@ const PublicSurveyForm = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [error, setError] = useState('');
-    const [unitLocked, setUnitLocked] = useState(!!unitIdFromUrl);
     const [appSettings, setAppSettings] = useState<AppSettings>({});
 
     useEffect(() => {
@@ -74,7 +73,6 @@ const PublicSurveyForm = () => {
                 unit_tujuan: decodeURIComponent(unitNameFromUrl),
                 unit_id: unitIdFromUrl || ''
             }));
-            setUnitLocked(true);
         }
     }, [unitIdFromUrl, unitNameFromUrl]);
 
@@ -189,51 +187,67 @@ const PublicSurveyForm = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex flex-col font-['Inter',sans-serif]">
-            {/* Simple Mobile Header */}
-            <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-100">
-                <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-center">
-                    <h1 className="text-base font-semibold text-gray-800">Survei Kepuasan</h1>
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex flex-col font-['Inter',sans-serif]">
+            {/* Decorative Background */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-emerald-200/30 to-teal-200/30 rounded-full blur-3xl"></div>
+                <div className="absolute top-1/2 -left-40 w-80 h-80 bg-gradient-to-br from-cyan-200/30 to-teal-200/30 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-teal-200/30 to-emerald-200/30 rounded-full blur-3xl"></div>
+            </div>
+
+            {/* Simple Mobile Header - Modern */}
+            <header className="relative z-10 bg-white/80 backdrop-blur-xl border-b border-gray-100/50 sticky top-0">
+                <div className="max-w-lg mx-auto px-6 py-4">
+                    <div className="flex items-center justify-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                            <span className="material-symbols-outlined text-white text-xl">rate_review</span>
+                        </div>
+                        <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                            Survei Kepuasan
+                        </h1>
+                    </div>
                 </div>
             </header>
 
-            <main className="flex-grow w-full max-w-lg mx-auto px-5 py-6">
+            <main className="relative z-10 flex-grow w-full max-w-lg mx-auto px-5 py-6">
                 {error && (
-                    <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3">
-                        <span className="material-symbols-outlined text-red-600">error</span>
-                        <p className="text-red-700 text-sm font-medium">{error}</p>
+                    <div className="mb-6 bg-rose-50/90 backdrop-blur-xl border-2 border-rose-200 rounded-2xl p-5 flex items-center gap-4 shadow-lg">
+                        <div className="w-10 h-10 rounded-xl bg-rose-500 flex items-center justify-center flex-shrink-0">
+                            <span className="material-symbols-outlined text-white text-xl">error</span>
+                        </div>
+                        <p className="text-rose-700 text-sm font-medium flex-1">{error}</p>
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-8">
-                    <section className="bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100 dark:border-blue-800 p-6 flex items-start gap-4">
-                        <div className="p-3 bg-white dark:bg-surface-dark rounded-xl shadow-sm text-primary">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <section className="bg-white/90 backdrop-blur-xl rounded-3xl border border-white/50 shadow-xl p-6 flex items-start gap-4">
+                        <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl shadow-lg shadow-emerald-500/30 text-white">
                             <span className="material-symbols-outlined text-3xl">qr_code_scanner</span>
                         </div>
-                        <div className="flex-1 space-y-1">
-                            <label className="block text-xs font-bold uppercase tracking-wider text-primary mb-1">Unit Tujuan (Otomatis)</label>
-                            <div className="text-xl font-bold text-text-main dark:text-white flex items-center gap-2">
+                        <div className="flex-1 space-y-1.5">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-emerald-600 mb-1">Unit Tujuan (Otomatis)</label>
+                            <div className="text-xl font-bold text-gray-900 flex items-center gap-2">
                                 <span>{formData.unit_tujuan}</span>
-                                <span className="material-symbols-outlined text-green-500 text-lg" title="Terverifikasi">verified</span>
+                                <span className="material-symbols-outlined text-emerald-500 text-lg" title="Terverifikasi">verified</span>
                             </div>
-                            <p className="text-sm text-text-sub">Unit terdeteksi otomatis dari kode QR lokasi.</p>
+                            <p className="text-sm text-gray-600">Unit terdeteksi otomatis dari kode QR lokasi.</p>
                             <input type="hidden" name="unit_tujuan" value={formData.unit_tujuan} />
                         </div>
                     </section>
 
-                    <section className="bg-surface-light dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark shadow-sm overflow-hidden">
-                        <div className="px-6 py-5 border-b border-border-light dark:border-border-dark bg-gray-50/50 dark:bg-gray-800/50 flex items-center gap-3">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 text-primary">
-                                <span className="material-symbols-outlined text-sm font-bold">person</span>
+                    <section className="bg-white/90 backdrop-blur-xl rounded-3xl border border-white/50 shadow-xl overflow-hidden">
+                        <div className="px-6 py-5 border-b border-gray-100/50 bg-gradient-to-br from-gray-50/50 to-white flex items-center gap-3">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/30">
+                                <span className="material-symbols-outlined text-white text-xl">person</span>
                             </div>
-                            <h3 className="text-xl font-bold text-text-main dark:text-white">Data Responden</h3>
+                            <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Data Responden</h3>
                         </div>
                         <div className="p-6 space-y-6">
                             <div className="space-y-3">
-                                <label className="block text-sm font-bold text-text-main dark:text-white">Jenis Layanan yang Diterima <span className="text-red-500">*</span></label>
+                                <label className="block text-sm font-bold text-gray-800 mb-3">Jenis Layanan yang Diterima <span className="text-rose-500">*</span></label>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     {['rawat_jalan', 'rawat_inap', 'darurat', 'lainnya'].map((type) => (
-                                        <label key={type} className="cursor-pointer relative">
+                                        <label key={type} className="cursor-pointer relative group">
                                             <input
                                                 type="radio"
                                                 name="service_type"
@@ -242,31 +256,31 @@ const PublicSurveyForm = () => {
                                                 onChange={(e) => handleRadioChange('service_type', e.target.value)}
                                                 className="custom-radio sr-only"
                                             />
-                                            <div className={`flex items-center justify-center gap-2 p-3 rounded-xl border transition-all h-full ${formData.service_type === type ? 'border-primary bg-primary/5 text-primary' : 'border-border-light dark:border-border-dark bg-white dark:bg-surface-dark hover:border-primary/50'}`}>
-                                                <div className={`radio-dot w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all ${formData.service_type === type ? 'border-primary bg-primary shadow-[0_0_0_3px_rgba(19,127,236,0.2)]' : 'border-gray-300 dark:border-gray-600 bg-transparent'}`}></div>
-                                                <span className="text-sm font-medium capitalize">{type.replace('_', ' ')}</span>
+                                            <div className={`flex items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all h-full shadow-sm ${formData.service_type === type ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 shadow-lg shadow-emerald-500/20' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-600'}`}>
+                                                <div className={`radio-dot w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${formData.service_type === type ? 'border-emerald-500 bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.2)]' : 'border-gray-300 bg-transparent'}`}></div>
+                                                <span className="text-sm font-bold capitalize">{type.replace('_', ' ')}</span>
                                             </div>
                                         </label>
                                     ))}
                                 </div>
                             </div>
-                            <hr className="border-border-light dark:border-border-dark" />
+                            <hr className="border-gray-100/50" />
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">
-                                    <label className="block text-sm font-bold text-text-main dark:text-white" htmlFor="full_name">Nama Lengkap</label>
-                                    <label className="inline-flex items-center cursor-pointer">
+                                    <label className="block text-sm font-bold text-gray-800" htmlFor="full_name">Nama Lengkap</label>
+                                    <label className="inline-flex items-center cursor-pointer group">
                                         <input
                                             type="checkbox"
                                             name="is_anonymous"
                                             checked={formData.is_anonymous}
                                             onChange={handleInputChange}
-                                            className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                                            className="rounded-lg border-gray-300 text-emerald-500 focus:ring-emerald-500/20 h-5 w-5 cursor-pointer"
                                         />
-                                        <span className="ml-2 text-sm text-text-sub">Kirim sebagai Anonim</span>
+                                        <span className="ml-2 text-sm text-gray-600 group-hover:text-gray-800 transition-colors">Kirim sebagai Anonim</span>
                                     </label>
                                 </div>
-                                <div className="relative">
-                                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub">badge</span>
+                                <div className="relative group">
+                                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-emerald-500 transition-colors">badge</span>
                                     <input
                                         type="text"
                                         id="full_name"
@@ -275,15 +289,15 @@ const PublicSurveyForm = () => {
                                         onChange={handleInputChange}
                                         disabled={formData.is_anonymous}
                                         placeholder="Masukkan nama lengkap Anda"
-                                        className="w-full pl-10 rounded-xl border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:border-primary focus:ring-primary/20 text-sm h-11 disabled:opacity-50"
+                                        className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base shadow-sm disabled:opacity-50 disabled:bg-gray-50"
                                     />
                                 </div>
                             </div>
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="space-y-3">
-                                    <label className="block text-sm font-bold text-text-main dark:text-white" htmlFor="phone">Nomor HP (WhatsApp) <span className="text-red-500">*</span></label>
-                                    <div className="relative">
-                                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub">smartphone</span>
+                                    <label className="block text-sm font-bold text-gray-800" htmlFor="phone">Nomor HP (WhatsApp) <span className="text-rose-500">*</span></label>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-emerald-500 transition-colors">smartphone</span>
                                         <input
                                             type="tel"
                                             id="phone"
@@ -292,14 +306,14 @@ const PublicSurveyForm = () => {
                                             onChange={handleInputChange}
                                             required
                                             placeholder="08xxxxxxxxxx"
-                                            className="w-full pl-10 rounded-xl border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:border-primary focus:ring-primary/20 text-sm h-11"
+                                            className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base shadow-sm"
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="block text-sm font-bold text-text-main dark:text-white" htmlFor="email">Email <span className="text-text-sub font-normal">(Opsional)</span></label>
-                                    <div className="relative">
-                                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub">mail</span>
+                                    <label className="block text-sm font-bold text-gray-800" htmlFor="email">Email <span className="text-gray-500 font-normal">(Opsional)</span></label>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-emerald-500 transition-colors">mail</span>
                                         <input
                                             type="email"
                                             id="email"
@@ -307,14 +321,14 @@ const PublicSurveyForm = () => {
                                             value={formData.email}
                                             onChange={handleInputChange}
                                             placeholder="contoh@email.com"
-                                            className="w-full pl-10 rounded-xl border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:border-primary focus:ring-primary/20 text-sm h-11"
+                                            className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base shadow-sm"
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-3 md:col-span-2">
-                                    <label className="block text-sm font-bold text-text-main dark:text-white" htmlFor="job">Pekerjaan <span className="text-text-sub font-normal">(Opsional)</span></label>
-                                    <div className="relative">
-                                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub">work</span>
+                                    <label className="block text-sm font-bold text-gray-800" htmlFor="job">Pekerjaan <span className="text-gray-500 font-normal">(Opsional)</span></label>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-emerald-500 transition-colors">work</span>
                                         <input
                                             type="text"
                                             id="job"
@@ -322,59 +336,75 @@ const PublicSurveyForm = () => {
                                             value={formData.job}
                                             onChange={handleInputChange}
                                             placeholder="PNS, Swasta, Wiraswasta, dll"
-                                            className="w-full pl-10 rounded-xl border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:border-primary focus:ring-primary/20 text-sm h-11"
+                                            className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base shadow-sm"
                                         />
                                     </div>
                                 </div>
                             </div>
                             <div className="space-y-3">
-                                <label className="block text-sm font-bold text-text-main dark:text-white">Alamat Domisili</label>
+                                <label className="block text-sm font-bold text-gray-800 mb-3">Alamat Domisili</label>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <select
-                                        name="provinsi"
-                                        value={formData.provinsi}
-                                        onChange={handleInputChange}
-                                        className="rounded-xl border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:border-primary focus:ring-primary/20 text-sm h-11 text-text-main dark:text-white"
-                                    >
-                                        <option value="">Pilih Provinsi</option>
-                                        <option value="Jawa Tengah">Jawa Tengah</option>
-                                        <option value="Jawa Barat">Jawa Barat</option>
-                                        <option value="Jawa Timur">Jawa Timur</option>
-                                        <option value="DKI Jakarta">DKI Jakarta</option>
-                                        <option value="DI Yogyakarta">DI Yogyakarta</option>
-                                    </select>
-                                    <select
-                                        name="kota_kabupaten"
-                                        value={formData.kota_kabupaten}
-                                        onChange={handleInputChange}
-                                        className="rounded-xl border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:border-primary focus:ring-primary/20 text-sm h-11 text-text-main dark:text-white"
-                                    >
-                                        <option value="">Pilih Kota/Kabupaten</option>
-                                        <option value="Kota Semarang">Kota Semarang</option>
-                                        <option value="Kabupaten Semarang">Kabupaten Semarang</option>
-                                    </select>
-                                    <select
-                                        name="kecamatan"
-                                        value={formData.kecamatan}
-                                        onChange={handleInputChange}
-                                        className="rounded-xl border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:border-primary focus:ring-primary/20 text-sm h-11 text-text-main dark:text-white"
-                                    >
-                                        <option value="">Pilih Kecamatan</option>
-                                    </select>
-                                    <select
-                                        name="kelurahan"
-                                        value={formData.kelurahan}
-                                        onChange={handleInputChange}
-                                        className="rounded-xl border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark focus:border-primary focus:ring-primary/20 text-sm h-11 text-text-main dark:text-white"
-                                    >
-                                        <option value="">Pilih Kelurahan/Desa</option>
-                                    </select>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">location_city</span>
+                                        <select
+                                            name="provinsi"
+                                            value={formData.provinsi}
+                                            onChange={handleInputChange}
+                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                                        >
+                                            <option value="">Pilih Provinsi</option>
+                                            <option value="Jawa Tengah">Jawa Tengah</option>
+                                            <option value="Jawa Barat">Jawa Barat</option>
+                                            <option value="Jawa Timur">Jawa Timur</option>
+                                            <option value="DKI Jakarta">DKI Jakarta</option>
+                                            <option value="DI Yogyakarta">DI Yogyakarta</option>
+                                        </select>
+                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                                    </div>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">apartment</span>
+                                        <select
+                                            name="kota_kabupaten"
+                                            value={formData.kota_kabupaten}
+                                            onChange={handleInputChange}
+                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                                        >
+                                            <option value="">Pilih Kota/Kabupaten</option>
+                                            <option value="Kota Semarang">Kota Semarang</option>
+                                            <option value="Kabupaten Semarang">Kabupaten Semarang</option>
+                                        </select>
+                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                                    </div>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">signpost</span>
+                                        <select
+                                            name="kecamatan"
+                                            value={formData.kecamatan}
+                                            onChange={handleInputChange}
+                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                                        >
+                                            <option value="">Pilih Kecamatan</option>
+                                        </select>
+                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                                    </div>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">home</span>
+                                        <select
+                                            name="kelurahan"
+                                            value={formData.kelurahan}
+                                            onChange={handleInputChange}
+                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                                        >
+                                            <option value="">Pilih Kelurahan/Desa</option>
+                                        </select>
+                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                                    </div>
                                 </div>
                             </div>
-                            <hr className="border-border-light dark:border-border-dark" />
+                            <hr className="border-gray-100/50" />
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="space-y-3">
-                                    <label className="block text-sm font-bold text-text-main dark:text-white">Usia Responden</label>
+                                    <label className="block text-sm font-bold text-gray-800 mb-3">Usia Responden</label>
                                     <div className="flex flex-wrap gap-2">
                                         {['< 20 Th', '20 - 40 Th', '41 - 60 Th', '> 60 Th'].map((range) => (
                                             <label key={range} className="cursor-pointer group">
@@ -386,7 +416,7 @@ const PublicSurveyForm = () => {
                                                     onChange={(e) => handleRadioChange('age', e.target.value)}
                                                     className="peer sr-only"
                                                 />
-                                                <span className="inline-flex px-4 py-2 rounded-lg border border-border-light dark:border-border-dark bg-white dark:bg-surface-dark text-sm font-medium text-text-sub peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary transition-all">
+                                                <span className="inline-flex px-5 py-3 rounded-xl border-2 border-gray-200 bg-white text-base font-bold text-gray-600 peer-checked:bg-gradient-to-br peer-checked:from-emerald-500 peer-checked:to-teal-500 peer-checked:text-white peer-checked:border-emerald-500 peer-checked:shadow-lg peer-checked:shadow-emerald-500/30 transition-all hover:border-gray-300">
                                                     {range}
                                                 </span>
                                             </label>
@@ -394,9 +424,9 @@ const PublicSurveyForm = () => {
                                     </div>
                                 </div>
                                 <div className="space-y-3">
-                                    <label className="block text-sm font-bold text-text-main dark:text-white">Jenis Kelamin</label>
+                                    <label className="block text-sm font-bold text-gray-800 mb-3">Jenis Kelamin</label>
                                     <div className="flex gap-3">
-                                        <label className="flex-1 cursor-pointer relative">
+                                        <label className="flex-1 cursor-pointer relative group">
                                             <input
                                                 type="radio"
                                                 name="gender"
@@ -405,12 +435,12 @@ const PublicSurveyForm = () => {
                                                 onChange={(e) => handleRadioChange('gender', e.target.value)}
                                                 className="custom-radio sr-only"
                                             />
-                                            <div className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border transition-all ${formData.gender === 'male' ? 'border-primary bg-primary/5 text-primary' : 'border-border-light dark:border-border-dark bg-white dark:bg-surface-dark hover:border-primary/50'}`}>
-                                                <span className="material-symbols-outlined text-text-sub">male</span>
-                                                <span className="text-sm font-medium">Laki-laki</span>
+                                            <div className={`flex items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all shadow-sm ${formData.gender === 'male' ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 shadow-lg shadow-emerald-500/20' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-600'}`}>
+                                                <span className="material-symbols-outlined text-2xl">male</span>
+                                                <span className="text-base font-bold">Laki-laki</span>
                                             </div>
                                         </label>
-                                        <label className="flex-1 cursor-pointer relative">
+                                        <label className="flex-1 cursor-pointer relative group">
                                             <input
                                                 type="radio"
                                                 name="gender"
@@ -419,9 +449,9 @@ const PublicSurveyForm = () => {
                                                 onChange={(e) => handleRadioChange('gender', e.target.value)}
                                                 className="custom-radio sr-only"
                                             />
-                                            <div className={`flex items-center justify-center gap-2 p-2.5 rounded-lg border transition-all ${formData.gender === 'female' ? 'border-primary bg-primary/5 text-primary' : 'border-border-light dark:border-border-dark bg-white dark:bg-surface-dark hover:border-primary/50'}`}>
-                                                <span className="material-symbols-outlined text-text-sub">female</span>
-                                                <span className="text-sm font-medium">Perempuan</span>
+                                            <div className={`flex items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all shadow-sm ${formData.gender === 'female' ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 shadow-lg shadow-emerald-500/20' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-600'}`}>
+                                                <span className="material-symbols-outlined text-2xl">female</span>
+                                                <span className="text-base font-bold">Perempuan</span>
                                             </div>
                                         </label>
                                     </div>
@@ -430,31 +460,32 @@ const PublicSurveyForm = () => {
                         </div>
                     </section>
 
-                    <section className="bg-surface-light dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark shadow-sm overflow-hidden">
-                        <div className="px-6 py-5 border-b border-border-light dark:border-border-dark bg-gray-50/50 dark:bg-gray-800/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/20 text-primary">
-                                    <span className="material-symbols-outlined text-sm font-bold">analytics</span>
+                    <section className="bg-white/90 backdrop-blur-xl rounded-3xl border border-white/50 shadow-xl overflow-hidden">
+                        <div className="px-6 py-5 border-b border-gray-100/50 bg-gradient-to-br from-gray-50/50 to-white">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/30">
+                                    <span className="material-symbols-outlined text-white text-xl">analytics</span>
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold text-text-main dark:text-white">Penilaian Layanan</h3>
-                                    <p className="text-xs text-text-sub">Beri penilaian dari 1 (Sangat Buruk) hingga 5 (Sangat Baik)</p>
+                                    <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Penilaian Layanan</h3>
+                                    <p className="text-xs text-gray-500">Beri penilaian dari 1 (Sangat Buruk) hingga 5 (Sangat Baik)</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="divide-y divide-border-light dark:divide-border-dark">
+                        <div className="divide-y divide-gray-100/50">
                             {questions.map((q) => (
-                                <div key={q.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                                <div key={q.id} className="p-6 hover:bg-gradient-to-br hover:from-emerald-50/30 hover:to-teal-50/30 transition-all">
                                     <div className="flex flex-col md:flex-row md:items-center gap-6">
                                         <div className="flex-1">
-                                            <span className="text-xs font-bold text-primary uppercase tracking-wider mb-1 block">{q.code} - {q.title}</span>
-                                            <p className="text-sm font-medium text-text-main dark:text-white leading-relaxed">{q.text}</p>
+                                            <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1 block">{q.code} - {q.title}</span>
+                                            <p className="text-sm font-medium text-gray-800 leading-relaxed">{q.text}</p>
                                         </div>
-                                        <div className="flex items-center justify-between gap-2 md:gap-4 min-w-[320px]">
+                                        <div className="flex items-center justify-between gap-2 md:gap-3 min-w-[320px]">
                                             {[1, 2, 3, 4, 5].map((val) => {
-                                                const colors = ['text-red-600', 'text-orange-500', 'text-yellow-400', 'text-green-500', 'text-blue-600'];
-                                                const bgColors = ['bg-red-50', 'bg-orange-50', 'bg-yellow-50', 'bg-green-50', 'bg-blue-50'];
-                                                const borderColors = ['border-red-500/50', 'border-orange-500/50', 'border-yellow-400/50', 'border-green-500/50', 'border-blue-600/50'];
+                                                const colors = ['text-rose-600', 'text-orange-500', 'text-amber-400', 'text-emerald-500', 'text-teal-600'];
+                                                const bgColors = ['bg-rose-50', 'bg-orange-50', 'bg-amber-50', 'bg-emerald-50', 'bg-teal-50'];
+                                                const borderColors = ['border-rose-500', 'border-orange-500', 'border-amber-400', 'border-emerald-500', 'border-teal-600'];
+                                                const shadowColors = ['shadow-rose-500/30', 'shadow-orange-500/30', 'shadow-amber-400/30', 'shadow-emerald-500/30', 'shadow-teal-600/30'];
                                                 const icons = ['sentiment_very_dissatisfied', 'sentiment_dissatisfied', 'sentiment_neutral', 'sentiment_satisfied', 'sentiment_very_satisfied'];
 
                                                 const isChecked = (formData as any)[q.id] === val.toString();
@@ -469,7 +500,7 @@ const PublicSurveyForm = () => {
                                                             onChange={(e) => handleRadioChange(q.id, e.target.value)}
                                                             className="rating-input sr-only"
                                                         />
-                                                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full border flex items-center justify-center transition-all duration-300 ${isChecked ? `${borderColors[val - 1]} ${bgColors[val - 1]} ${colors[val - 1]} shadow-lg` : 'border-gray-200 bg-white dark:bg-surface-dark text-gray-300 group-hover:bg-gray-50'}`}>
+                                                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isChecked ? `${borderColors[val - 1]} ${bgColors[val - 1]} ${colors[val - 1]} shadow-lg ${shadowColors[val - 1]}` : 'border-gray-200 bg-white text-gray-300 group-hover:bg-gray-50 group-hover:border-gray-300'}`}>
                                                             <span className={`rating-icon material-symbols-outlined text-3xl md:text-4xl transition-transform duration-200 ${isChecked ? 'scale-110' : ''}`}>{icons[val - 1]}</span>
                                                         </div>
                                                     </label>
@@ -483,19 +514,22 @@ const PublicSurveyForm = () => {
                     </section>
 
                     <section className="grid md:grid-cols-12 gap-6">
-                        <div className="md:col-span-12 bg-white dark:bg-surface-dark rounded-2xl p-6 md:p-8 border border-border-light dark:border-border-dark shadow-md relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 pointer-events-none"></div>
+                        <div className="md:col-span-12 bg-white/90 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/50 shadow-xl relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 via-orange-50/50 to-rose-50/50 pointer-events-none"></div>
                             <div className="relative z-10 text-center mb-10">
-                                <h3 className="text-2xl font-black text-text-main dark:text-white mb-2">Kepuasan Keseluruhan Layanan</h3>
-                                <p className="text-text-sub dark:text-gray-400">Secara umum, bagaimana tingkat kepuasan Anda terhadap pelayanan kami?</p>
+                                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+                                    <span className="material-symbols-outlined text-white text-3xl">star</span>
+                                </div>
+                                <h3 className="text-2xl font-black bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent mb-2">Kepuasan Keseluruhan Layanan</h3>
+                                <p className="text-gray-600">Secara umum, bagaimana tingkat kepuasan Anda terhadap pelayanan kami?</p>
                             </div>
                             <div className="relative z-10 flex flex-wrap justify-center gap-4 md:gap-10">
                                 {[
-                                    { val: 'sangat_tidak_puas', label: 'Sangat Buruk', icon: 'sentiment_very_dissatisfied', color: 'red' },
-                                    { val: 'tidak_puas', label: 'Buruk', icon: 'sentiment_dissatisfied', color: 'orange' },
-                                    { val: 'kurang_puas', label: 'Cukup', icon: 'sentiment_neutral', color: 'yellow' },
-                                    { val: 'puas', label: 'Baik', icon: 'sentiment_satisfied', color: 'green' },
-                                    { val: 'sangat_puas', label: 'Sangat Baik', icon: 'sentiment_very_satisfied', color: 'blue' }
+                                    { val: 'sangat_tidak_puas', label: 'Sangat Buruk', icon: 'sentiment_very_dissatisfied', color: 'rose', gradient: 'from-rose-400 to-red-500' },
+                                    { val: 'tidak_puas', label: 'Buruk', icon: 'sentiment_dissatisfied', color: 'orange', gradient: 'from-orange-400 to-amber-500' },
+                                    { val: 'kurang_puas', label: 'Cukup', icon: 'sentiment_neutral', color: 'amber', gradient: 'from-amber-400 to-yellow-500' },
+                                    { val: 'puas', label: 'Baik', icon: 'sentiment_satisfied', color: 'emerald', gradient: 'from-emerald-400 to-green-500' },
+                                    { val: 'sangat_puas', label: 'Sangat Baik', icon: 'sentiment_very_satisfied', color: 'teal', gradient: 'from-teal-400 to-cyan-500' }
                                 ].map((item) => {
                                     const isChecked = formData.overall_satisfaction === item.val;
                                     return (
@@ -508,7 +542,7 @@ const PublicSurveyForm = () => {
                                                 onChange={(e) => handleRadioChange('overall_satisfaction', e.target.value)}
                                                 className="rating-input sr-only"
                                             />
-                                            <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isChecked ? `border-${item.color}-500/50 bg-${item.color}-50 text-${item.color}-600 shadow-xl` : 'border-gray-100 bg-white dark:bg-surface-dark text-gray-300 group-hover:bg-gray-50'}`}>
+                                            <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isChecked ? `border-${item.color}-500 bg-gradient-to-br ${item.gradient} text-white shadow-2xl shadow-${item.color}-500/40` : 'border-gray-200 bg-white text-gray-300 group-hover:bg-gray-50 group-hover:border-gray-300'}`}>
                                                 <span className="rating-icon material-symbols-outlined text-4xl md:text-5xl">{item.icon}</span>
                                             </div>
                                             <span className={`text-xs font-bold transition-colors ${isChecked ? `text-${item.color}-600` : 'text-gray-400 group-hover:text-gray-500'}`}>{item.label}</span>
@@ -518,9 +552,12 @@ const PublicSurveyForm = () => {
                             </div>
                         </div>
 
-                        <div className="md:col-span-12 bg-surface-light dark:bg-surface-dark rounded-2xl border border-border-light dark:border-border-dark p-6 space-y-6">
+                        <div className="md:col-span-12 bg-white/90 backdrop-blur-xl rounded-3xl border border-white/50 shadow-xl p-6 space-y-6">
                             <div>
-                                <label className="block text-sm font-bold text-text-main dark:text-white mb-2" htmlFor="suggestions">Saran dan Keluhan</label>
+                                <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2" htmlFor="suggestions">
+                                    <span className="material-symbols-outlined text-emerald-500">edit_note</span>
+                                    Saran dan Keluhan
+                                </label>
                                 <textarea
                                     id="suggestions"
                                     name="suggestions"
@@ -528,20 +565,20 @@ const PublicSurveyForm = () => {
                                     onChange={handleInputChange}
                                     rows={4}
                                     placeholder="Tuliskan saran atau keluhan Anda di sini untuk perbaikan pelayanan kami..."
-                                    className="w-full rounded-xl border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-main dark:text-white focus:border-primary focus:ring-primary/20 placeholder:text-gray-400 text-sm p-4"
+                                    className="w-full px-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base resize-none shadow-sm"
                                 ></textarea>
                             </div>
-                            <div className="pt-4 border-t border-border-light dark:border-border-dark">
-                                <label className="block text-xs font-bold uppercase tracking-wider text-text-sub mb-2" htmlFor="date">Tanggal Survei</label>
-                                <div className="relative max-w-sm">
-                                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-sub text-lg">calendar_today</span>
+                            <div className="pt-4 border-t border-gray-100/50">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-3" htmlFor="date">Tanggal Survei</label>
+                                <div className="relative max-w-sm group">
+                                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-emerald-500 transition-colors">calendar_today</span>
                                     <input
                                         type="date"
                                         id="date"
                                         name="date"
                                         value={formData.date}
                                         onChange={handleInputChange}
-                                        className="w-full pl-10 rounded-lg border-border-light dark:border-border-dark bg-background-light dark:bg-background-dark text-text-main dark:text-white focus:border-primary focus:ring-primary/20 text-sm h-11"
+                                        className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base shadow-sm"
                                     />
                                 </div>
                             </div>
@@ -552,17 +589,17 @@ const PublicSurveyForm = () => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full md:w-auto px-8 py-3 bg-primary hover:bg-blue-600 text-white font-bold rounded-xl shadow-lg shadow-primary/30 transition-all flex items-center justify-center gap-2 group transform active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="w-full md:w-auto px-10 py-5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white font-bold text-lg shadow-2xl shadow-emerald-500/40 hover:shadow-emerald-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:shadow-lg flex items-center justify-center gap-3 group"
                         >
                             {isLoading ? (
                                 <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                    <span>Mengirim...</span>
+                                    <div className="animate-spin rounded-full h-6 w-6 border-3 border-white border-t-transparent"></div>
+                                    <span>Mengirim Survei...</span>
                                 </>
                             ) : (
                                 <>
+                                    <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">send</span>
                                     <span>Kirim Survei</span>
-                                    <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">send</span>
                                 </>
                             )}
                         </button>
@@ -570,10 +607,10 @@ const PublicSurveyForm = () => {
                 </form>
             </main>
 
-            <footer className="bg-white border-t border-gray-100 mt-auto py-6 px-4">
+            <footer className="relative z-10 bg-white/80 backdrop-blur-xl border-t border-gray-100/50 mt-auto py-6 px-4">
                 <div className="max-w-lg mx-auto text-center space-y-2">
                     {appSettings.institution_name && (
-                        <p className="text-sm font-semibold text-gray-700">{appSettings.institution_name}</p>
+                        <p className="text-sm font-bold text-gray-800">{appSettings.institution_name}</p>
                     )}
                     {appSettings.institution_address && (
                         <p className="text-xs text-gray-500">{appSettings.institution_address}</p>

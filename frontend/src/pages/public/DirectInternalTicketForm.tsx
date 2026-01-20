@@ -15,13 +15,28 @@ interface FormData {
 }
 
 // Direct Form View - Tiket Internal (Public, Tanpa Login, Mobile-First)
-// Route: /tickets/create/internal?unit_id=xxx&unit_name=xxx
+// Route: /form/internal?unit_id=xxx&unit_name=xxx
+// PENTING: Halaman ini TANPA SIDEBAR - Full screen form
 const DirectInternalTicketForm: React.FC = () => {
   const [searchParams] = useSearchParams();
   
   const unitId = searchParams.get('unit_id') || searchParams.get('unit') || '';
   const unitName = decodeURIComponent(searchParams.get('unit_name') || searchParams.get('name') || '');
   const qrCode = searchParams.get('qr') || '';
+  
+  // Debug logging
+  React.useEffect(() => {
+    console.log('DirectInternalTicketForm mounted');
+    console.log('URL params:', { unitId, unitName, qrCode });
+  }, [unitId, unitName, qrCode]);
+  
+  // Pastikan tidak ada scroll pada body untuk fullscreen experience
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -88,6 +103,13 @@ const DirectInternalTicketForm: React.FC = () => {
     setError('');
 
     try {
+      console.log('Submitting ticket:', {
+        ...formData,
+        qr_code: qrCode,
+        unit_id: unitId,
+        source: 'direct_form'
+      });
+
       const response = await fetch('/api/public/internal-tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -98,7 +120,10 @@ const DirectInternalTicketForm: React.FC = () => {
           source: 'direct_form'
         })
       });
+      
+      console.log('Response status:', response.status);
       const result = await response.json();
+      console.log('Response data:', result);
 
       if (response.ok) {
         setTicketNumber(result.ticket_number || 'INT-' + Date.now());
@@ -107,7 +132,8 @@ const DirectInternalTicketForm: React.FC = () => {
         setError(result.error || 'Gagal mengirim tiket');
       }
     } catch (err: any) {
-      setError('Terjadi kesalahan saat mengirim tiket');
+      console.error('Submit error:', err);
+      setError('Terjadi kesalahan saat mengirim tiket: ' + err.message);
     } finally {
       setSubmitting(false);
     }
@@ -165,7 +191,7 @@ const DirectInternalTicketForm: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-700 flex flex-col">
+    <div className="fixed inset-0 bg-gradient-to-br from-violet-500 via-purple-600 to-indigo-700 flex flex-col overflow-hidden">
       {/* Decorative */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
@@ -173,32 +199,9 @@ const DirectInternalTicketForm: React.FC = () => {
         <div className="absolute bottom-10 right-10 w-32 h-32 bg-indigo-300/20 rounded-full blur-2xl"></div>
       </div>
 
-      {/* Header */}
-      <header className="relative z-10 px-6 pt-10 pb-6">
-        <div className="flex items-center justify-center mb-4">
-          <div className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center shadow-lg">
-            <span className="material-symbols-outlined text-white text-3xl">assignment</span>
-          </div>
-        </div>
-        
-        <h1 className="text-white text-2xl font-bold text-center mb-1">Buat Tiket Internal</h1>
-        <p className="text-white/80 text-sm text-center">Khusus untuk petugas internal</p>
-        
-        {/* Progress */}
-        <div className="mt-6 flex items-center gap-3 max-w-md mx-auto">
-          <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-white rounded-full transition-all duration-500" 
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <span className="text-white/80 text-sm font-medium">{currentStep}/{totalSteps}</span>
-        </div>
-      </header>
-
-      {/* Unit Info */}
+      {/* Unit Info - Minimal Header */}
       {unitName && (
-        <div className="relative z-10 px-6 mb-4">
+        <div className="relative z-10 px-6 pt-8 pb-4 flex-shrink-0">
           <div className="max-w-md mx-auto bg-white/20 backdrop-blur-xl rounded-xl px-4 py-3 flex items-center gap-3">
             <span className="material-symbols-outlined text-white">business</span>
             <span className="text-white font-medium flex-1">{unitName}</span>
@@ -209,7 +212,7 @@ const DirectInternalTicketForm: React.FC = () => {
 
       {/* Error */}
       {error && (
-        <div className="relative z-10 px-6 mb-4">
+        <div className="relative z-10 px-6 mb-4 flex-shrink-0">
           <div className="max-w-md mx-auto bg-red-500/90 backdrop-blur-xl rounded-xl px-4 py-3 flex items-center gap-3">
             <span className="material-symbols-outlined text-white">error</span>
             <span className="text-white text-sm">{error}</span>
@@ -218,10 +221,21 @@ const DirectInternalTicketForm: React.FC = () => {
       )}
 
       {/* Form Content */}
-      <main className="relative z-10 flex-1 bg-white rounded-t-[2.5rem] overflow-hidden shadow-2xl">
-        <form onSubmit={handleSubmit} className="h-full flex flex-col">
+      <main className="relative z-10 flex-1 bg-white rounded-t-[2.5rem] overflow-hidden shadow-2xl flex flex-col">
+        <form onSubmit={handleSubmit} className="h-full flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto px-6 py-8">
             <div className="max-w-md mx-auto space-y-6">
+              
+              {/* Progress Indicator */}
+              <div className="flex items-center justify-center gap-3 mb-6">
+                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-violet-500 to-purple-600 rounded-full transition-all duration-500" 
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <span className="text-gray-500 text-sm font-medium">{currentStep}/{totalSteps}</span>
+              </div>
 
               {/* Step 1: Reporter Info */}
               {currentStep === 1 && (

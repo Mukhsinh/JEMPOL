@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Redirect - Form Tiket Internal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-link {
+            display: block;
+            padding: 15px;
+            margin: 10px 0;
+            background: #2196F3;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .test-link:hover {
+            background: #1976D2;
+        }
+        .info {
+            background: #E3F2FD;
+            padding: 15px;
+            border-left: 4px solid #2196F3;
+            margin: 15px 0;
+        }
+        .success {
+            background: #E8F5E9;
+            border-left-color: #4CAF50;
+        }
+        .warning {
+            background: #FFF3E0;
+            border-left-color: #FF9800;
+        }
+        .error {
+            background: #FFEBEE;
+            border-left-color: #F44336;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .url-display {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            word-break: break-all;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test QR Redirect - Form Tiket Internal</h1>
+    
+    <div class="test-section">
+        <h2>📋 Informasi Test</h2>
+        <div class="info">
+            <strong>Tujuan:</strong> Memverifikasi redirect QR code ke form tiket internal berfungsi dengan benar
+        </div>
+        <div class="info warning">
+            <strong>Masalah yang Dilaporkan:</strong> Halaman blank/kosong saat QR code di-scan
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔗 Test Links - Form Tiket Internal</h2>
+        
+        <h3>1. Direct Form (Tanpa Parameter)</h3>
+        <a href="http://localhost:3002/form/internal" class="test-link" target="_blank">
+            Buka Form Internal (Tanpa Parameter)
+        </a>
+        <div class="url-display">http://localhost:3002/form/internal</div>
+        
+        <h3>2. Form dengan Unit ID & Name (Simulasi QR Scan)</h3>
+        <a href="http://localhost:3002/form/internal?unit_id=550e8400-e29b-41d4-a716-446655440004&unit_name=Bagian%20Keuangan&qr=QR-MKI-Z4438" class="test-link" target="_blank">
+            Buka Form Internal - Bagian Keuangan
+        </a>
+        <div class="url-display">http://localhost:3002/form/internal?unit_id=550e8400-e29b-41d4-a716-446655440004&unit_name=Bagian%20Keuangan&qr=QR-MKI-Z4438</div>
+        
+        <h3>3. Form dengan Unit ID & Name (Format Alternatif)</h3>
+        <a href="http://localhost:3002/form/internal?unit=550e8400-e29b-41d4-a716-446655440004&name=Unit%20IT&qr=QR-IT-12345" class="test-link" target="_blank">
+            Buka Form Internal - Unit IT
+        </a>
+        <div class="url-display">http://localhost:3002/form/internal?unit=550e8400-e29b-41d4-a716-446655440004&name=Unit%20IT&qr=QR-IT-12345</div>
+        
+        <h3>4. Form dengan Spasi di Nama Unit</h3>
+        <a href="http://localhost:3002/form/internal?unit_id=123&unit_name=Bagian%20Administrasi%20Umum&qr=QR-ADM-001" class="test-link" target="_blank">
+            Buka Form Internal - Bagian Administrasi Umum
+        </a>
+        <div class="url-display">http://localhost:3002/form/internal?unit_id=123&unit_name=Bagian%20Administrasi%20Umum&qr=QR-ADM-001</div>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Checklist Verifikasi</h2>
+        <div class="info">
+            <p><strong>Yang Harus Dicek:</strong></p>
+            <ol>
+                <li>✓ Halaman form muncul (tidak blank)</li>
+                <li>✓ Header menampilkan nama unit dengan benar</li>
+                <li>✓ Field "Unit/Departemen" terisi otomatis dengan nama unit</li>
+                <li>✓ Form dapat diisi dan di-submit</li>
+                <li>✓ Setelah submit, muncul nomor tiket</li>
+                <li>✓ Tidak ada error di console browser (F12)</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Troubleshooting</h2>
+        <div class="info warning">
+            <p><strong>Jika Halaman Blank:</strong></p>
+            <ol>
+                <li>Buka Developer Console (F12)</li>
+                <li>Cek tab Console untuk error JavaScript</li>
+                <li>Cek tab Network untuk error API</li>
+                <li>Pastikan frontend berjalan di port 3002</li>
+                <li>Pastikan backend berjalan di port 3001</li>
+            </ol>
+        </div>
+        
+        <div class="info error">
+            <p><strong>Error Umum:</strong></p>
+            <ul>
+                <li><code>Cannot read property 'get' of undefined</code> → Masalah dengan useSearchParams</li>
+                <li><code>404 Not Found</code> → Route tidak terdaftar di App.tsx</li>
+                <li><code>Failed to fetch</code> → Backend tidak berjalan atau CORS error</li>
+                <li><code>Blank page</code> → Error rendering React component</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Test API Endpoint</h2>
+        <button onclick="testAPIEndpoint()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px;">
+            Test API: POST /api/public/internal-tickets
+        </button>
+        <div id="apiResult" style="margin-top: 15px;"></div>
+    </div>
+
+    <script>
+        async function testAPIEndpoint() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.innerHTML = '<p>⏳ Testing API endpoint...</p>';
+            
+            const testData = {
+                reporter_name: 'Test User',
+                reporter_email: 'test@example.com',
+                reporter_phone: '08123456789',
+                reporter_department: 'Bagian Keuangan',
+                reporter_position: 'Staff',
+                category: 'it_support',
+                priority: 'medium',
+                title: 'Test Tiket dari QR Code',
+                description: 'Ini adalah test tiket untuk memverifikasi endpoint API',
+                qr_code: 'QR-TEST-001',
+                unit_id: '550e8400-e29b-41d4-a716-446655440004',
+                source: 'qr_code'
+            };
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/public/internal-tickets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="info success">
+                            <h4>✅ API Test Berhasil!</h4>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Nomor Tiket:</strong> ${result.ticket_number || 'N/A'}</p>
+                            <p><strong>Message:</strong> ${result.message || 'Success'}</p>
+                            <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto;">${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="info error">
+                            <h4>❌ API Test Gagal</h4>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Error:</strong> ${result.error || 'Unknown error'}</p>
+                            <pre style="background: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto;">${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="info error">
+                        <h4>❌ Connection Error</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>Pastikan backend berjalan di <code>http://localhost:3001</code></p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Auto-detect current environment
+        window.addEventListener('DOMContentLoaded', () => {
+            const currentHost = window.location.hostname;
+            const currentPort = window.location.port;
+            
+            if (currentHost !== 'localhost' || currentPort !== '3002') {
+                const warningDiv = document.createElement('div');
+                warningDiv.className = 'test-section';
+                warningDiv.innerHTML = `
+                    <div class="info warning">
+                        <h3>⚠️ Peringatan Environment</h3>
+                        <p>File ini dibuka dari: <code>${window.location.href}</code></p>
+                        <p>Test links menggunakan <code>localhost:3002</code></p>
+                        <p>Pastikan aplikasi frontend berjalan di port 3002</p>
+                    </div>
+                `;
+                document.body.insertBefore(warningDiv, document.body.firstChild);
+            }
+        });
+    </script>
+</body>
+</html>

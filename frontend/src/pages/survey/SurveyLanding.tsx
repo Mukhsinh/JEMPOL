@@ -30,11 +30,11 @@ const surveyQuestions = [
 ];
 
 const ratingLabels = [
-  { value: 1, label: 'Sangat Buruk', icon: 'sentiment_very_dissatisfied', color: '#ef4444' },
-  { value: 2, label: 'Buruk', icon: 'sentiment_dissatisfied', color: '#f97316' },
-  { value: 3, label: 'Cukup', icon: 'sentiment_neutral', color: '#eab308' },
-  { value: 4, label: 'Baik', icon: 'sentiment_satisfied', color: '#22c55e' },
-  { value: 5, label: 'Sangat Baik', icon: 'sentiment_very_satisfied', color: '#10b981' }
+  { value: 1, label: 'Sangat Buruk', icon: 'sentiment_very_dissatisfied', color: '#ef4444', bgColor: '#fee2e2' },
+  { value: 2, label: 'Buruk', icon: 'sentiment_dissatisfied', color: '#f97316', bgColor: '#fed7aa' },
+  { value: 3, label: 'Cukup', icon: 'sentiment_neutral', color: '#eab308', bgColor: '#fef3c7' },
+  { value: 4, label: 'Baik', icon: 'sentiment_satisfied', color: '#22c55e', bgColor: '#dcfce7' },
+  { value: 5, label: 'Sangat Baik', icon: 'sentiment_very_satisfied', color: '#10b981', bgColor: '#d1fae5' }
 ];
 
 const SurveyLanding = () => {
@@ -101,9 +101,7 @@ const SurveyLanding = () => {
       const res = await fetch('/api/public/units');
       if (res.ok) {
         const r = await res.json();
-        // Handle both formats: { data: [...] } or direct array
         const unitsData = Array.isArray(r) ? r : (r.data || []);
-        // Filter only active units
         const activeUnits = unitsData.filter((u: Unit & { is_active?: boolean }) => u.is_active !== false);
         setUnits(activeUnits);
       }
@@ -182,59 +180,64 @@ const SurveyLanding = () => {
   const nextStep = () => setCurrentStep(p => Math.min(p + 1, 3));
   const prevStep = () => setCurrentStep(p => Math.max(p - 1, 0));
 
-  // Footer Component
-  const renderFooter = () => (
-    <footer className="bg-white border-t border-gray-100 py-6 px-4 safe-area-bottom">
-      <div className="max-w-lg mx-auto text-center space-y-3">
-        {appSettings.institution_name && (
-          <p className="text-sm font-semibold text-gray-700">{appSettings.institution_name}</p>
-        )}
-        {appSettings.institution_address && (
-          <p className="text-xs text-gray-500">{appSettings.institution_address}</p>
-        )}
-        <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
-          {appSettings.contact_phone && (
-            <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-sm">call</span>
-              {appSettings.contact_phone}
-            </span>
-          )}
-          {appSettings.contact_email && (
-            <span className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-sm">mail</span>
-              {appSettings.contact_email}
-            </span>
-          )}
-        </div>
-        {appSettings.app_footer && (
-          <p className="text-xs text-gray-400 pt-2 border-t border-gray-100">{appSettings.app_footer}</p>
-        )}
-      </div>
-    </footer>
-  );
-
   // Success Page
   if (surveySuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex flex-col">
-        <main className="flex-grow flex items-center justify-center p-6">
-          <div className="bg-white rounded-3xl shadow-xl p-8 max-w-sm w-full text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-              <span className="material-symbols-outlined text-white text-4xl">check</span>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 font-sans">
+        {/* Decorative Background */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-green-200/30 to-emerald-200/30 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 left-20 w-64 h-64 bg-gradient-to-br from-teal-200/30 to-green-200/30 rounded-full blur-3xl"></div>
+        </div>
+
+        {/* Header Modern */}
+        <header className="relative z-10 bg-white/80 backdrop-blur-xl border-b border-gray-100/50">
+          <div className="max-w-lg mx-auto px-6 py-4">
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30">
+                <span className="material-symbols-outlined text-white text-xl">check_circle</span>
+              </div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                Survei Berhasil
+              </h1>
             </div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-3">Terima Kasih!</h2>
-            <p className="text-gray-500 mb-8 text-sm leading-relaxed">
-              Survei Anda telah berhasil dikirim. Masukan Anda sangat berharga untuk peningkatan layanan kami.
-            </p>
-            <button
-              onClick={() => navigate('/survey')}
-              className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-2xl shadow-lg active:scale-95 transition-transform"
-            >
-              Isi Survei Lagi
-            </button>
           </div>
-        </main>
-        {renderFooter()}
+        </header>
+
+        {/* Main Content */}
+        <div className="relative z-10 px-4 py-12">
+          <div className="max-w-lg mx-auto">
+            <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 p-8 text-center">
+              <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-green-500/40">
+                <span className="material-symbols-outlined text-white text-5xl">check</span>
+              </div>
+              <h2 className="text-3xl font-bold text-gray-800 mb-4">Terima Kasih!</h2>
+              <p className="text-gray-600 mb-8 text-base leading-relaxed">
+                Survei Anda telah berhasil dikirim. Masukan Anda sangat berharga untuk peningkatan layanan kami.
+              </p>
+              <button
+                onClick={() => navigate('/survey')}
+                className="w-full py-5 rounded-2xl bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white font-bold text-lg shadow-2xl shadow-green-500/40 hover:shadow-green-500/50 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
+              >
+                <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">refresh</span>
+                <span>Isi Survei Lagi</span>
+              </button>
+            </div>
+
+            {/* Footer - Modern */}
+            <div className="mt-8 text-center space-y-2">
+              {appSettings.institution_name && (
+                <p className="text-xs text-gray-600 font-semibold">{appSettings.institution_name}</p>
+              )}
+              {appSettings.institution_address && (
+                <p className="text-xs text-gray-400">{appSettings.institution_address}</p>
+              )}
+              {appSettings.app_footer && (
+                <p className="text-xs text-gray-400">{appSettings.app_footer}</p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -242,10 +245,10 @@ const SurveyLanding = () => {
   // Loading State
   if (isLoading && units.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500 text-sm">Memuat...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-500 text-sm">Memuat formulir...</p>
         </div>
       </div>
     );
@@ -253,12 +256,12 @@ const SurveyLanding = () => {
 
   // Step Indicator
   const renderStepIndicator = () => (
-    <div className="flex items-center justify-center gap-2 py-4 px-5">
+    <div className="flex items-center justify-center gap-2 py-4 mb-4">
       {[0, 1, 2, 3].map(step => (
         <div
           key={step}
           className={`h-2 rounded-full transition-all duration-300 ${
-            step === currentStep ? 'w-8 bg-blue-500' : step < currentStep ? 'w-2 bg-blue-300' : 'w-2 bg-gray-200'
+            step === currentStep ? 'w-8 bg-gradient-to-r from-blue-500 to-indigo-500' : step < currentStep ? 'w-2 bg-blue-300' : 'w-2 bg-gray-200'
           }`}
         />
       ))}
@@ -269,7 +272,7 @@ const SurveyLanding = () => {
   const renderUnitStep = () => (
     <div className="space-y-6 animate-fadeIn">
       <div className="text-center space-y-2">
-        <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg mb-4">
+        <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-blue-500/30 mb-4">
           <span className="material-symbols-outlined text-white text-3xl">location_on</span>
         </div>
         <h2 className="text-xl font-bold text-gray-800">Pilih Unit Layanan</h2>
@@ -277,65 +280,77 @@ const SurveyLanding = () => {
       </div>
 
       {unitFromQR ? (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-5 border border-green-200">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
-              <span className="material-symbols-outlined text-white">verified</span>
-            </div>
-            <div>
-              <p className="text-xs text-green-600 font-medium">Unit Terdeteksi</p>
-              <p className="text-lg font-bold text-gray-800">{unitFromQR.name}</p>
+        <div className="space-y-4">
+          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 p-5">
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-500/30">
+                <span className="material-symbols-outlined text-white text-2xl">verified</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Unit Terverifikasi dari QR Code</span>
+                </div>
+                <h3 className="text-gray-900 font-bold text-lg truncate">
+                  {unitFromQR.name}
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">Unit telah dipilih otomatis</p>
+              </div>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={nextStep}
+            className="w-full py-5 rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white font-bold text-lg shadow-2xl shadow-blue-500/40 hover:shadow-blue-500/50 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
+          >
+            <span>Lanjutkan</span>
+            <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
         </div>
       ) : (
-        <div className="space-y-3 max-h-[50vh] overflow-y-auto">
-          {units.length === 0 ? (
-            <div className="text-center py-8">
-              <span className="material-symbols-outlined text-4xl text-gray-300 mb-2">info</span>
-              <p className="text-gray-500 text-sm">Tidak ada unit layanan tersedia</p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-gray-700">Pilih Unit Layanan *</label>
+            <select
+              value={formData.unit_id}
+              onChange={(e) => handleChange('unit_id', e.target.value)}
+              className="w-full px-4 py-4 bg-white rounded-2xl border-2 border-gray-200 focus:border-blue-500 focus:ring-0 text-gray-800 text-base transition-colors appearance-none cursor-pointer"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 1rem center',
+                backgroundSize: '1.5rem'
+              }}
+            >
+              <option value="">-- Pilih Unit Layanan --</option>
+              {units.length === 0 ? (
+                <option value="" disabled>Tidak ada unit tersedia</option>
+              ) : (
+                units.map(u => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))
+              )}
+            </select>
+            {units.length === 0 && (
               <button
                 type="button"
                 onClick={loadMasterData}
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-xl text-sm"
+                className="w-full mt-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white font-semibold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
               >
-                Muat Ulang
+                <span className="material-symbols-outlined">refresh</span>
+                <span>Muat Ulang Data Unit</span>
               </button>
-            </div>
-          ) : (
-            units.map(u => (
-              <button
-                key={u.id}
-                type="button"
-                onClick={() => { handleChange('unit_id', u.id); nextStep(); }}
-                className={`w-full p-4 rounded-2xl border-2 text-left transition-all active:scale-98 ${
-                  formData.unit_id === u.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-100 bg-white hover:border-gray-200'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                    formData.unit_id === u.id ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-400'
-                  }`}>
-                    <span className="material-symbols-outlined text-xl">apartment</span>
-                  </div>
-                  <span className="font-medium text-gray-700">{u.name}</span>
-                </div>
-              </button>
-            ))
-          )}
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={nextStep}
+            disabled={!formData.unit_id}
+            className="w-full py-5 rounded-2xl bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 text-white font-bold text-lg shadow-2xl shadow-blue-500/40 hover:shadow-blue-500/50 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span>Lanjutkan</span>
+            <span className="material-symbols-outlined text-2xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+          </button>
         </div>
-      )}
-
-      {unitFromQR && (
-        <button
-          type="button"
-          onClick={nextStep}
-          className="w-full py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-2xl shadow-lg active:scale-95 transition-transform"
-        >
-          Lanjutkan
-        </button>
       )}
     </div>
   );
@@ -474,7 +489,33 @@ const SurveyLanding = () => {
         <p className="text-sm text-gray-500">Beri penilaian untuk setiap aspek</p>
       </div>
 
-      <div className="space-y-4 max-h-[55vh] overflow-y-auto pr-1">
+      {/* Rating Legend - Diperbesar dan Diperjelas */}
+      <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-4 border-2 border-amber-200">
+        <p className="text-xs font-bold text-amber-700 text-center mb-3 uppercase tracking-wide">Panduan Penilaian</p>
+        <div className="grid grid-cols-5 gap-2">
+          {ratingLabels.map(rating => (
+            <div key={rating.value} className="flex flex-col items-center gap-2">
+              <div className="w-14 h-14 rounded-xl bg-white shadow-md flex items-center justify-center">
+                <span
+                  className="material-symbols-outlined text-4xl"
+                  style={{
+                    color: rating.color,
+                    fontVariationSettings: "'FILL' 1"
+                  }}
+                >
+                  {rating.icon}
+                </span>
+              </div>
+              <div className="text-center">
+                <p className="text-xs font-bold text-gray-700">{rating.value}</p>
+                <p className="text-[10px] text-gray-500 leading-tight">{rating.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-1">
         {surveyQuestions.map((q, idx) => (
           <div key={q.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
             <div className="flex items-start gap-3 mb-4">
@@ -486,26 +527,35 @@ const SurveyLanding = () => {
                 <p className="text-sm text-gray-700 leading-relaxed">{q.text}</p>
               </div>
             </div>
-            <div className="flex justify-between gap-1">
+            <div className="grid grid-cols-5 gap-2">
               {ratingLabels.map(rating => (
                 <button
                   key={rating.value}
                   type="button"
                   onClick={() => handleChange(q.id, rating.value.toString())}
-                  className={`flex-1 py-3 rounded-xl transition-all active:scale-95 ${
+                  className={`py-3 px-1 rounded-2xl transition-all active:scale-95 flex flex-col items-center gap-2 ${
                     formData[q.id as keyof typeof formData] === rating.value.toString()
-                      ? 'bg-amber-100 shadow-inner'
-                      : 'bg-gray-50'
+                      ? 'shadow-xl border-2 scale-105'
+                      : 'bg-gray-50 border-2 border-gray-200 hover:border-gray-300'
                   }`}
+                  style={{
+                    backgroundColor: formData[q.id as keyof typeof formData] === rating.value.toString() ? rating.bgColor : '#f9fafb',
+                    borderColor: formData[q.id as keyof typeof formData] === rating.value.toString() ? rating.color : undefined
+                  }}
                 >
                   <span
-                    className="material-symbols-outlined text-2xl block mx-auto"
+                    className="material-symbols-outlined text-5xl block"
                     style={{
                       color: formData[q.id as keyof typeof formData] === rating.value.toString() ? rating.color : '#d1d5db',
                       fontVariationSettings: formData[q.id as keyof typeof formData] === rating.value.toString() ? "'FILL' 1" : "'FILL' 0"
                     }}
                   >
                     {rating.icon}
+                  </span>
+                  <span className={`text-[10px] font-bold text-center leading-tight ${
+                    formData[q.id as keyof typeof formData] === rating.value.toString() ? 'text-gray-800' : 'text-gray-500'
+                  }`}>
+                    {rating.label}
                   </span>
                 </button>
               ))}
@@ -615,25 +665,75 @@ const SurveyLanding = () => {
 
   // Main Render
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex flex-col font-['Inter',sans-serif]">
-      {/* Mobile App Style Container */}
-      <div className="flex-grow w-full max-w-lg mx-auto flex flex-col">
-        {/* Progress Indicator */}
-        {renderStepIndicator()}
-
-        {/* Main Content */}
-        <main className="flex-grow px-5 pb-6 overflow-y-auto">
-          <form onSubmit={handleSubmit}>
-            {currentStep === 0 && renderUnitStep()}
-            {currentStep === 1 && renderRespondentStep()}
-            {currentStep === 2 && renderRatingStep()}
-            {currentStep === 3 && renderFinalStep()}
-          </form>
-        </main>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 font-sans">
+      {/* Decorative Background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-blue-200/30 to-indigo-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 -left-40 w-80 h-80 bg-gradient-to-br from-purple-200/30 to-indigo-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 right-20 w-64 h-64 bg-gradient-to-br from-indigo-200/30 to-blue-200/30 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Footer */}
-      {renderFooter()}
+      {/* Header Modern */}
+      <header className="relative z-10 bg-white/80 backdrop-blur-xl border-b border-gray-100/50 sticky top-0">
+        <div className="max-w-lg mx-auto px-6 py-4">
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <span className="material-symbols-outlined text-white text-xl">poll</span>
+            </div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Survei Kepuasan
+            </h1>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="relative z-10 px-4 py-6">
+        <div className="max-w-lg mx-auto">
+          {/* Progress Indicator */}
+          {renderStepIndicator()}
+
+          {/* Form Card - Modern */}
+          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
+            <form onSubmit={handleSubmit} className="p-6">
+              {currentStep === 0 && renderUnitStep()}
+              {currentStep === 1 && renderRespondentStep()}
+              {currentStep === 2 && renderRatingStep()}
+              {currentStep === 3 && renderFinalStep()}
+            </form>
+          </div>
+
+          {/* Footer - Modern */}
+          <div className="mt-8 text-center space-y-2">
+            {appSettings.institution_name && (
+              <p className="text-xs text-gray-600 font-semibold">{appSettings.institution_name}</p>
+            )}
+            {appSettings.institution_address && (
+              <p className="text-xs text-gray-400">{appSettings.institution_address}</p>
+            )}
+            <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
+              {appSettings.contact_phone && (
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">call</span>
+                  {appSettings.contact_phone}
+                </span>
+              )}
+              {appSettings.contact_email && (
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-sm">mail</span>
+                  {appSettings.contact_email}
+                </span>
+              )}
+            </div>
+            {appSettings.app_footer && (
+              <p className="text-xs text-gray-400">{appSettings.app_footer}</p>
+            )}
+            <p className="text-xs text-gray-400 pt-2">
+              Masukan Anda sangat berharga untuk peningkatan layanan kami
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Custom Styles */}
       <style>{`
@@ -643,9 +743,6 @@ const SurveyLanding = () => {
         }
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out;
-        }
-        .safe-area-bottom {
-          padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
         }
         input, select, textarea {
           -webkit-appearance: none;

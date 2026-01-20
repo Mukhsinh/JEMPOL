@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Lacak Tiket Pengaduan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            border-bottom: 3px solid #2563eb;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        .error {
+            background: #fee;
+            border-color: #fcc;
+            color: #c00;
+        }
+        .success {
+            background: #efe;
+            border-color: #cfc;
+            color: #060;
+        }
+        .ticket-info {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 2px solid #2563eb;
+        }
+        .timeline-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: #f1f5f9;
+            border-left: 4px solid #2563eb;
+            border-radius: 5px;
+        }
+        .timeline-item.escalation {
+            border-left-color: #f97316;
+        }
+        .timeline-item.resolved {
+            border-left-color: #10b981;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 5px 5px 5px 0;
+        }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-yellow { background: #fef3c7; color: #92400e; }
+        .badge-orange { background: #fed7aa; color: #9a3412; }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Lacak Tiket Pengaduan</h1>
+        <p>Test endpoint tracking tiket publik (tanpa autentikasi)</p>
+
+        <div class="form-group">
+            <label for="ticketNumber">Nomor Tiket:</label>
+            <input type="text" id="ticketNumber" placeholder="Contoh: TKT-2025-0001" value="TKT-2025-0001">
+        </div>
+
+        <button onclick="trackTicket()" id="trackBtn">Lacak Tiket</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3004';
+
+        async function trackTicket() {
+            const ticketNumber = document.getElementById('ticketNumber').value.trim();
+            const resultDiv = document.getElementById('result');
+            const btn = document.getElementById('trackBtn');
+
+            if (!ticketNumber) {
+                resultDiv.innerHTML = '<div class="result error">❌ Nomor tiket harus diisi!</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Mencari...';
+            resultDiv.innerHTML = '<div class="result">⏳ Melacak tiket...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/public/track/${ticketNumber}`);
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>❌ Tiket Tidak Ditemukan</h3>
+                            <p>${data.error || 'Tiket tidak ditemukan'}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                displayTicketData(data.data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Lacak Tiket';
+            }
+        }
+
+        function displayTicketData(data) {
+            const resultDiv = document.getElementById('result');
+            const ticket = data.ticket;
+            const timeline = data.timeline;
+            const stats = data.stats;
+
+            const statusColors = {
+                'open': 'blue',
+                'in_progress': 'yellow',
+                'escalated': 'orange',
+                'resolved': 'green',
+                'closed': 'red'
+            };
+
+            const statusLabels = {
+                'open': 'Baru',
+                'in_progress': 'Diproses',
+                'escalated': 'Eskalasi',
+                'resolved': 'Selesai',
+                'closed': 'Ditutup'
+            };
+
+            const priorityColors = {
+                'low': 'blue',
+                'medium': 'yellow',
+                'high': 'orange',
+                'critical': 'red'
+            };
+
+            const priorityLabels = {
+                'low': 'Rendah',
+                'medium': 'Sedang',
+                'high': 'Tinggi',
+                'critical': 'Kritis'
+            };
+
+            let html = `
+                <div class="result success">
+                    <h3>✅ Tiket Ditemukan</h3>
+                    
+                    <div class="ticket-info">
+                        <h2>${ticket.ticket_number}</h2>
+                        <span class="badge badge-${statusColors[ticket.status]}">${statusLabels[ticket.status]}</span>
+                        <span class="badge badge-${priorityColors[ticket.priority]}">${priorityLabels[ticket.priority]}</span>
+                        ${stats.isOverSLA ? '<span class="badge badge-red">SLA Terlewat</span>' : ''}
+                        
+                        <h3 style="margin-top: 15px;">${ticket.title}</h3>
+                        <p style="color: #64748b;">${ticket.description}</p>
+                        
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                            <p><strong>Unit:</strong> ${ticket.unit?.name || '-'} ${ticket.unit?.code ? '(' + ticket.unit.code + ')' : ''}</p>
+                            <p><strong>Kategori:</strong> ${ticket.category?.name || '-'}</p>
+                            <p><strong>Dibuat:</strong> ${new Date(ticket.created_at).toLocaleString('id-ID')}</p>
+                            ${ticket.resolved_at ? `<p><strong>Diselesaikan:</strong> ${new Date(ticket.resolved_at).toLocaleString('id-ID')}</p>` : ''}
+                        </div>
+                    </div>
+
+                    <div class="stats">
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.totalResponses}</div>
+                            <div class="stat-label">Respon</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${stats.totalEscalations}</div>
+                            <div class="stat-label">Eskalasi</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color: ${stats.isResolved ? '#10b981' : '#94a3b8'}">${stats.isResolved ? '✓' : '○'}</div>
+                            <div class="stat-label">Status</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="color: ${stats.isOverSLA ? '#ef4444' : '#10b981'}">${stats.isOverSLA ? '!' : '✓'}</div>
+                            <div class="stat-label">SLA</div>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 30px;">📅 Timeline Progres</h3>
+            `;
+
+            if (timeline && timeline.length > 0) {
+                timeline.forEach(event => {
+                    const eventClass = event.type === 'escalation' ? 'escalation' : 
+                                     event.type === 'resolved' ? 'resolved' : '';
+                    html += `
+                        <div class="timeline-item ${eventClass}">
+                            <div style="display: flex; justify-content: space-between; align-items: start;">
+                                <div>
+                                    <strong>${event.title}</strong>
+                                    <p style="margin: 5px 0; color: #475569;">${event.description}</p>
+                                </div>
+                                <div style="text-align: right; font-size: 12px; color: #64748b;">
+                                    ${new Date(event.timestamp).toLocaleDateString('id-ID', { 
+                                        weekday: 'long', 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric' 
+                                    })}<br>
+                                    Pukul ${new Date(event.timestamp).toLocaleTimeString('id-ID')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += '<p style="color: #94a3b8; text-align: center; padding: 20px;">Belum ada aktivitas</p>';
+            }
+
+            html += `
+                    <h3 style="margin-top: 30px;">📋 Raw Response</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+
+            resultDiv.innerHTML = html;
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('ticketNumber').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                trackTicket();
+            }
+        });
+    </script>
+</body>
+</html>
