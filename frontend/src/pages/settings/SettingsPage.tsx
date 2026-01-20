@@ -4,6 +4,7 @@ import RolesPermissions from './RolesPermissions';
 import ResponseTemplates from './ResponseTemplates';
 import { AITrustSettings } from './AITrustSettings';
 import AppSettings from './AppSettings';
+import QRLinkSettings from './QRLinkSettings';
 
 const SettingsPage: React.FC = () => {
     return (
@@ -21,6 +22,7 @@ const SettingsPage: React.FC = () => {
                 <Routes>
                     <Route path="/" element={<Navigate to="/settings/app" replace />} />
                     <Route path="/app" element={<AppSettings />} />
+                    <Route path="/qr-link" element={<QRLinkSettings />} />
                     <Route path="/roles-permissions" element={<RolesPermissions />} />
                     <Route path="/response-templates" element={<ResponseTemplates />} />
                     <Route path="/ai-trust" element={<AITrustSettings />} />

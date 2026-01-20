@@ -323,20 +323,21 @@ export const qrCodeService = {
       // Auto-fill unit jika diaktifkan (default true)
       if (autoFillUnit !== false) {
         if (unitId) params.append('unit_id', unitId);
-        if (unitName) params.append('unit_name', unitName);
+        if (unitName) params.append('unit_name', encodeURIComponent(unitName));
         params.append('auto_fill', 'true');
       }
       
       const queryString = params.toString();
       
       // REDIRECT LANGSUNG KE FORM TANPA LOGIN DAN TANPA SIDEBAR
+      // Pastikan path sesuai dengan route yang ada di App.tsx
       switch (redirectType) {
         case 'internal_ticket':
-          return `${baseUrl}/form/internal?${queryString}`;
+          return `${baseUrl}/form/internal${queryString ? '?' + queryString : ''}`;
         case 'external_ticket':
-          return `${baseUrl}/form/eksternal?${queryString}`;
+          return `${baseUrl}/form/eksternal${queryString ? '?' + queryString : ''}`;
         case 'survey':
-          return `${baseUrl}/form/survey?${queryString}`;
+          return `${baseUrl}/form/survey${queryString ? '?' + queryString : ''}`;
         default:
           return `${baseUrl}/m/${code}`;
       }
@@ -348,6 +349,7 @@ export const qrCodeService = {
 
   // Generate QR code image URL (for display)
   // Mendukung redirect langsung ke form berdasarkan redirect_type
+  // Menggunakan multiple API QR code untuk reliability
   generateQRImageUrl(
     code: string, 
     size: number = 200, 
@@ -357,7 +359,37 @@ export const qrCodeService = {
     autoFillUnit?: boolean
   ): string {
     const url = this.generateQRUrl(code, redirectType, unitId, unitName, autoFillUnit);
-    return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}`;
+    
+    // Gunakan API yang lebih reliable dengan error correction level H (high)
+    // Primary: quickchart.io (lebih stabil dan cepat)
+    // Fallback: api.qrserver.com
+    
+    // Format quickchart: https://quickchart.io/qr?text=URL&size=SIZE&margin=1&ecLevel=H
+    // Format qrserver: https://api.qrserver.com/v1/create-qr-code/?size=SIZExSIZE&data=URL
+    
+    // Gunakan quickchart sebagai primary karena lebih cepat dan reliable
+    return `https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=${size}&margin=1&ecLevel=H`;
+  },
+  
+  // Generate QR code image URL dengan fallback
+  generateQRImageUrlWithFallback(
+    code: string, 
+    size: number = 200, 
+    redirectType?: string, 
+    unitId?: string, 
+    unitName?: string, 
+    autoFillUnit?: boolean,
+    useFallback: boolean = false
+  ): string {
+    const url = this.generateQRUrl(code, redirectType, unitId, unitName, autoFillUnit);
+    
+    if (useFallback) {
+      // Fallback ke qrserver.com
+      return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}&ecc=H`;
+    }
+    
+    // Primary: quickchart.io
+    return `https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=${size}&margin=1&ecLevel=H`;
   },
 };
 

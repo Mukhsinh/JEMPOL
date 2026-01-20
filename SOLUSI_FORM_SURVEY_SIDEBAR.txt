@@ -1,0 +1,59 @@
+========================================
+SOLUSI: FORM SURVEY MENAMPILKAN SIDEBAR
+========================================
+
+MASALAH:
+--------
+Link QR Code ke /form/survey menampilkan halaman dengan sidebar navigasi,
+padahal seharusnya menampilkan form fullscreen tanpa sidebar.
+
+PENYEBAB:
+---------
+1. Browser cache menyimpan versi lama aplikasi
+2. Vite dev server perlu di-restart untuk apply perubahan
+3. Service worker atau cache lain yang masih aktif
+
+SOLUSI:
+-------
+
+LANGKAH 1: Clear Cache Vite
+   cd frontend
+   rmdir /s /q node_modules\.vite
+   rmdir /s /q dist
+
+LANGKAH 2: Restart Frontend Server
+   - Stop server yang sedang berjalan (Ctrl+C)
+   - Jalankan: npm run dev
+
+LANGKAH 3: Clear Browser Cache
+   - Chrome: Ctrl+Shift+Del
+   - Pilih: "Cached images and files"
+   - Atau: Hard refresh dengan Ctrl+F5
+
+LANGKAH 4: Test URL
+   http://localhost:3003/form/survey?qr=TEST123&unit_id=1&unit_name=Test
+
+VERIFIKASI:
+-----------
+✓ Form tampil fullscreen (TIDAK ADA SIDEBAR)
+✓ Header menampilkan nama unit
+✓ Progress indicator terlihat
+✓ Form fields dapat diisi
+✓ Tombol navigasi berfungsi
+
+ROUTE YANG BENAR:
+-----------------
+/form/survey       → DirectSurveyForm (fullscreen, no sidebar)
+/form/internal     → DirectInternalTicketForm (fullscreen, no sidebar)
+/form/eksternal    → DirectExternalTicketForm (fullscreen, no sidebar)
+
+CATATAN:
+--------
+- Route sudah benar di App.tsx
+- Komponen DirectSurveyForm tidak menggunakan MainLayout
+- Tidak ada redirect atau navigate di komponen
+- Masalah hanya di cache browser/vite
+
+QUICK FIX:
+----------
+Jalankan: FIX_FORM_SURVEY_TAMPIL_SIDEBAR.bat

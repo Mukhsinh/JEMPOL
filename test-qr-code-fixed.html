@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Code - Fixed</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #666;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .card h2 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card h2 span {
+            font-size: 28px;
+        }
+        .qr-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 15px 0;
+        }
+        .qr-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            background: white;
+            padding: 10px;
+        }
+        .info {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+        .info strong {
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .info code {
+            background: white;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #333;
+            word-break: break-all;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            margin: 5px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 5px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .footer {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .footer p {
+            color: #666;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ Test QR Code - Sudah Diperbaiki</h1>
+            <p>Verifikasi bahwa QR code tampil dengan benar dan redirect langsung ke form</p>
+            <div style="margin-top: 15px;">
+                <span class="status success">✓ API QR Code: quickchart.io</span>
+                <span class="status info">✓ Direct Link: Aktif</span>
+                <span class="status success">✓ Error Handling: Aktif</span>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- QR Code 1: Form Tiket Internal -->
+            <div class="card">
+                <h2><span>💻</span> Form Tiket Internal</h2>
+                <div class="qr-container">
+                    <img id="qr-internal" src="" alt="QR Code Tiket Internal">
+                    <p style="margin-top: 10px; color: #666; font-size: 14px;">Scan untuk buka form tiket internal</p>
+                </div>
+                <div class="info">
+                    <strong>Redirect Type:</strong>
+                    <code>internal_ticket</code>
+                </div>
+                <div class="info">
+                    <strong>URL Target:</strong>
+                    <code id="url-internal"></code>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="#" id="link-internal" class="btn" target="_blank">🔗 Buka Form</a>
+                    <button onclick="copyToClipboard('url-internal')" class="btn btn-secondary">📋 Salin URL</button>
+                </div>
+            </div>
+
+            <!-- QR Code 2: Form Tiket Eksternal -->
+            <div class="card">
+                <h2><span>📝</span> Form Tiket Eksternal</h2>
+                <div class="qr-container">
+                    <img id="qr-external" src="" alt="QR Code Tiket Eksternal">
+                    <p style="margin-top: 10px; color: #666; font-size: 14px;">Scan untuk buka form pengaduan</p>
+                </div>
+                <div class="info">
+                    <strong>Redirect Type:</strong>
+                    <code>external_ticket</code>
+                </div>
+                <div class="info">
+                    <strong>URL Target:</strong>
+                    <code id="url-external"></code>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="#" id="link-external" class="btn btn-secondary" target="_blank">🔗 Buka Form</a>
+                    <button onclick="copyToClipboard('url-external')" class="btn btn-success">📋 Salin URL</button>
+                </div>
+            </div>
+
+            <!-- QR Code 3: Form Survei -->
+            <div class="card">
+                <h2><span>⭐</span> Form Survei Kepuasan</h2>
+                <div class="qr-container">
+                    <img id="qr-survey" src="" alt="QR Code Survei">
+                    <p style="margin-top: 10px; color: #666; font-size: 14px;">Scan untuk isi survei kepuasan</p>
+                </div>
+                <div class="info">
+                    <strong>Redirect Type:</strong>
+                    <code>survey</code>
+                </div>
+                <div class="info">
+                    <strong>URL Target:</strong>
+                    <code id="url-survey"></code>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <a href="#" id="link-survey" class="btn btn-success" target="_blank">🔗 Buka Form</a>
+                    <button onclick="copyToClipboard('url-survey')" class="btn">📋 Salin URL</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <h3 style="color: #667eea; margin-bottom: 10px;">📋 Checklist Perbaikan</h3>
+            <p>✅ API QR Code diganti ke quickchart.io (lebih reliable)</p>
+            <p>✅ URL encoding untuk unit_name diperbaiki</p>
+            <p>✅ Error handling untuk gambar QR yang gagal dimuat</p>
+            <p>✅ Direct link mengarah ke /form/internal, /form/eksternal, /form/survey</p>
+            <p style="margin-top: 15px; color: #999; font-size: 12px;">
+                Semua QR code di atas langsung mengarah ke form tanpa perlu login dan tanpa sidebar
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Simulasi data QR code
+        const baseUrl = window.location.origin;
+        const testQRCode = 'TEST123ABC';
+        const testUnitId = 'unit-001';
+        const testUnitName = 'Unit Rawat Inap';
+
+        // Generate URLs untuk setiap tipe form
+        const urls = {
+            internal: `${baseUrl}/form/internal?qr=${testQRCode}&unit_id=${testUnitId}&unit_name=${encodeURIComponent(testUnitName)}&auto_fill=true`,
+            external: `${baseUrl}/form/eksternal?qr=${testQRCode}&unit_id=${testUnitId}&unit_name=${encodeURIComponent(testUnitName)}&auto_fill=true`,
+            survey: `${baseUrl}/form/survey?qr=${testQRCode}&unit_id=${testUnitId}&unit_name=${encodeURIComponent(testUnitName)}&auto_fill=true`
+        };
+
+        // Generate QR code images menggunakan quickchart.io
+        function generateQRImage(url, size = 300) {
+            return `https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=${size}&margin=1&ecLevel=H`;
+        }
+
+        // Set QR code images dan URLs
+        document.getElementById('qr-internal').src = generateQRImage(urls.internal);
+        document.getElementById('qr-external').src = generateQRImage(urls.external);
+        document.getElementById('qr-survey').src = generateQRImage(urls.survey);
+
+        document.getElementById('url-internal').textContent = urls.internal;
+        document.getElementById('url-external').textContent = urls.external;
+        document.getElementById('url-survey').textContent = urls.survey;
+
+        document.getElementById('link-internal').href = urls.internal;
+        document.getElementById('link-external').href = urls.external;
+        document.getElementById('link-survey').href = urls.survey;
+
+        // Error handling untuk gambar QR
+        document.querySelectorAll('img[id^="qr-"]').forEach(img => {
+            img.onerror = function() {
+                this.style.display = 'none';
+                const parent = this.parentElement;
+                const fallback = document.createElement('div');
+                fallback.style.cssText = 'padding: 40px; background: #f8d7da; color: #721c24; border-radius: 10px;';
+                fallback.innerHTML = '⚠️ Gagal memuat QR Code<br><small>Coba refresh halaman</small>';
+                parent.appendChild(fallback);
+            };
+        });
+
+        // Copy to clipboard function
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ URL berhasil disalin ke clipboard!\n\n' + text);
+            }).catch(err => {
+                console.error('Gagal menyalin:', err);
+                alert('❌ Gagal menyalin URL');
+            });
+        }
+
+        // Log untuk debugging
+        console.log('🔍 Test QR Code URLs:');
+        console.log('Internal:', urls.internal);
+        console.log('External:', urls.external);
+        console.log('Survey:', urls.survey);
+    </script>
+</body>
+</html>

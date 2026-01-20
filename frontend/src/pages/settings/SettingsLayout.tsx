@@ -64,6 +64,13 @@ const masterDataTabs: TabItem[] = [
     description: 'Konfigurasi Service Level Agreement'
   },
   {
+    id: 'qr-link',
+    name: 'Pengaturan QR Link',
+    icon: 'qr_code_2',
+    path: '/settings/qr-link',
+    description: 'Kelola link QR code untuk setiap unit'
+  },
+  {
     id: 'roles',
     name: 'Peran & Hak Akses',
     icon: 'admin_panel_settings',

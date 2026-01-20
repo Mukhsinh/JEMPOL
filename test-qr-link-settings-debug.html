@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug QR Link Settings</title>
+</head>
+<body>
+    <h1>Debug QR Link Settings</h1>
+    <div id="result"></div>
+
+    <script>
+        const resultDiv = document.getElementById('result');
+        
+        async function testAPI() {
+            try {
+                // Test 1: Check if backend is running
+                resultDiv.innerHTML += '<h2>Test 1: Backend Status</h2>';
+                const backendTest = await fetch('http://localhost:3004/api/health');
+                resultDiv.innerHTML += `<p>Backend: ${backendTest.ok ? '✅ Running' : '❌ Not Running'}</p>`;
+                
+                // Test 2: Get token from localStorage
+                resultDiv.innerHTML += '<h2>Test 2: Auth Token</h2>';
+                const token = localStorage.getItem('token');
+                resultDiv.innerHTML += `<p>Token: ${token ? '✅ Found' : '❌ Not Found'}</p>`;
+                
+                if (!token) {
+                    resultDiv.innerHTML += '<p style="color: red;">⚠️ Anda belum login! Silakan login terlebih dahulu.</p>';
+                    return;
+                }
+                
+                // Test 3: Get QR Codes
+                resultDiv.innerHTML += '<h2>Test 3: Get QR Codes</h2>';
+                const qrResponse = await fetch('http://localhost:3004/api/qr-codes?page=1&limit=100&include_analytics=true', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                resultDiv.innerHTML += `<p>QR Codes API: ${qrResponse.ok ? '✅ Success' : '❌ Failed'}</p>`;
+                
+                if (qrResponse.ok) {
+                    const qrData = await qrResponse.json();
+                    resultDiv.innerHTML += `<pre>${JSON.stringify(qrData, null, 2)}</pre>`;
+                } else {
+                    const errorText = await qrResponse.text();
+                    resultDiv.innerHTML += `<p style="color: red;">Error: ${errorText}</p>`;
+                }
+                
+                // Test 4: Get Units
+                resultDiv.innerHTML += '<h2>Test 4: Get Units</h2>';
+                const unitsResponse = await fetch('http://localhost:3004/api/units', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                resultDiv.innerHTML += `<p>Units API: ${unitsResponse.ok ? '✅ Success' : '❌ Failed'}</p>`;
+                
+                if (unitsResponse.ok) {
+                    const unitsData = await unitsResponse.json();
+                    resultDiv.innerHTML += `<pre>${JSON.stringify(unitsData, null, 2)}</pre>`;
+                } else {
+                    const errorText = await unitsResponse.text();
+                    resultDiv.innerHTML += `<p style="color: red;">Error: ${errorText}</p>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<p style="color: red;">Error: ${error.message}</p>`;
+                console.error('Test error:', error);
+            }
+        }
+        
+        testAPI();
+    </script>
+</body>
+</html>

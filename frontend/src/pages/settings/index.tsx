@@ -5,6 +5,9 @@ import UnitsManagement from './UnitsManagement';
 import UnitTypesManagement from './UnitTypesManagement';
 import ServiceCategoriesManagement from './ServiceCategoriesManagement';
 import AITrustManagement from './AITrustManagement';
+import QRLinkSettings from './QRLinkSettings';
+import QRLinkSettingsDebug from './QRLinkSettingsDebug';
+import QRLinkSettingsSimpleFixed from './QRLinkSettingsSimpleFixed';
 
 // Placeholder components for other tabs
 const TicketTypesManagement = () => (
@@ -103,6 +106,9 @@ const SettingsRoutes: React.FC = () => {
         <Route path="/ticket-statuses" element={<TicketStatusesManagement />} />
         <Route path="/patient-types" element={<PatientTypesManagement />} />
         <Route path="/sla-settings" element={<SLASettingsManagement />} />
+        <Route path="/qr-link" element={<QRLinkSettingsSimpleFixed />} />
+        <Route path="/qr-link-full" element={<QRLinkSettings />} />
+        <Route path="/qr-link-debug" element={<QRLinkSettingsDebug />} />
         <Route path="/roles" element={<RolesManagement />} />
         <Route path="/response-templates" element={<ResponseTemplatesManagement />} />
         <Route path="/ai-trust" element={<AITrustManagement />} />

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Display Tab - QR Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #1e293b;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .test-section {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .test-section h2 {
+            color: #334155;
+            margin-bottom: 16px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .icon {
+            font-size: 24px;
+        }
+        .test-list {
+            list-style: none;
+        }
+        .test-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .test-item.success {
+            border-left-color: #10b981;
+        }
+        .test-item.warning {
+            border-left-color: #f59e0b;
+        }
+        .status {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        .status.success {
+            background: #10b981;
+            color: white;
+        }
+        .status.pending {
+            background: #f59e0b;
+            color: white;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .info-box {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+        .info-box h3 {
+            color: #1e40af;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        .info-box p {
+            color: #1e3a8a;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .code {
+            background: #1e293b;
+            color: #10b981;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 12px 0;
+            overflow-x: auto;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        .feature-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .feature-card .icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .feature-card h3 {
+            color: #1e293b;
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+        .feature-card p {
+            color: #64748b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Test QR Display Tab - QR Management</h1>
+        <p class="subtitle">Verifikasi fitur tabs baru untuk menampilkan QR Code</p>
+
+        <!-- Fitur Baru -->
+        <div class="test-section">
+            <h2><span class="icon">🎯</span> Fitur yang Ditambahkan</h2>
+            <ul class="test-list">
+                <li class="test-item success">
+                    <span class="status success">✓</span>
+                    <div>
+                        <strong>Tab "Tampilan QR Code"</strong>
+                        <p style="color: #64748b; font-size: 14px; margin-top: 4px;">
+                            Tab baru untuk menampilkan QR code dalam ukuran besar dengan informasi lengkap
+                        </p>
+                    </div>
+                </li>
+                <li class="test-item success">
+                    <span class="status success">✓</span>
+                    <div>
+                        <strong>Dropdown Pemilihan QR Code</strong>
+                        <p style="color: #64748b; font-size: 14px; margin-top: 4px;">
+                            Pilih QR code mana yang ingin ditampilkan dari daftar yang aktif
+                        </p>
+                    </div>
+                </li>
+                <li class="test-item success">
+                    <span class="status success">✓</span>
+                    <div>
+                        <strong>Tampilan QR Code Besar</strong>
+                        <p style="color: #64748b; font-size: 14px; margin-top: 4px;">
+                            QR code ditampilkan dalam ukuran 512x512px untuk kemudahan scan
+                        </p>
+                    </div>
+                </li>
+                <li class="test-item success">
+                    <span class="status success">✓</span>
+                    <div>
+                        <strong>Informasi Lengkap</strong>
+                        <p style="color: #64748b; font-size: 14px; margin-top: 4px;">
+                            Menampilkan nama unit, tipe redirect, auto-fill status, dan instruksi penggunaan
+                        </p>
+                    </div>
+                </li>
+                <li class="test-item success">
+                    <span class="status success">✓</span>
+                    <div>
+                        <strong>Aksi Cepat</strong>
+                        <p style="color: #64748b; font-size: 14px; margin-top: 4px;">
+                            Tombol untuk salin link, unduh QR, cetak, dan buka link langsung
+                        </p>
+                    </div>
+                </li>
+                <li class="test-item success">
+                    <span class="status success">✓</span>
+                    <div>
+                        <strong>Link Langsung ke Form</strong>
+                        <p style="color: #64748b; font-size: 14px; margin-top: 4px;">
+                            QR code mengarah langsung ke /form/internal (tanpa login, tanpa sidebar)
+                        </p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Cara Menggunakan -->
+        <div class="test-section">
+            <h2><span class="icon">📋</span> Cara Menggunakan</h2>
+            <ul class="test-list">
+                <li class="test-item">
+                    <span class="status pending">1</span>
+                    <div>Buka halaman <strong>QR Code Management</strong> di menu Tickets</div>
+                </li>
+                <li class="test-item">
+                    <span class="status pending">2</span>
+                    <div>Klik tab <strong>"Tampilan QR Code"</strong> di bagian atas</div>
+                </li>
+                <li class="test-item">
+                    <span class="status pending">3</span>
+                    <div>Pilih QR code yang ingin ditampilkan dari dropdown</div>
+                </li>
+                <li class="test-item">
+                    <span class="status pending">4</span>
+                    <div>QR code akan muncul dalam ukuran besar dengan informasi lengkap</div>
+                </li>
+                <li class="test-item">
+                    <span class="status pending">5</span>
+                    <div>Gunakan tombol aksi untuk salin link, unduh, atau cetak QR code</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Struktur Tab -->
+        <div class="test-section">
+            <h2><span class="icon">🗂️</span> Struktur Tab</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="icon">📋</div>
+                    <h3>Tab: Daftar QR Code</h3>
+                    <p>Menampilkan semua QR code dalam bentuk tabel dengan filter dan pencarian</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">📱</div>
+                    <h3>Tab: Tampilan QR Code</h3>
+                    <p>Menampilkan QR code terpilih dalam ukuran besar untuk scan atau cetak</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- URL Pattern -->
+        <div class="test-section">
+            <h2><span class="icon">🔗</span> URL Pattern QR Code</h2>
+            <p style="color: #64748b; margin-bottom: 12px;">
+                QR code yang dibuat akan mengarah ke URL berikut (tanpa login, tanpa sidebar):
+            </p>
+            <div class="code">
+                # Form Tiket Internal (Direct)<br>
+                http://localhost:3003/form/internal?qr=ABC123&unit_id=xxx&unit_name=Unit%20IGD<br>
+                <br>
+                # Form Tiket Eksternal (Direct)<br>
+                http://localhost:3003/form/eksternal?qr=ABC123&unit_id=xxx&unit_name=Unit%20IGD<br>
+                <br>
+                # Form Survei (Direct)<br>
+                http://localhost:3003/form/survey?qr=ABC123&unit_id=xxx&unit_name=Unit%20IGD<br>
+                <br>
+                # Menu Pilihan (Selection)<br>
+                http://localhost:3003/m/ABC123
+            </div>
+        </div>
+
+        <!-- Tombol Aksi di Tab QR Display -->
+        <div class="test-section">
+            <h2><span class="icon">⚡</span> Tombol Aksi di Tab QR Display</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="icon">📋</div>
+                    <h3>Salin Link</h3>
+                    <p>Menyalin URL langsung ke clipboard untuk dibagikan</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">⬇️</div>
+                    <h3>Unduh QR</h3>
+                    <p>Mengunduh gambar QR code dalam resolusi tinggi (1024x1024)</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🖨️</div>
+                    <h3>Cetak</h3>
+                    <p>Membuka dialog print untuk mencetak QR code</p>
+                </div>
+                <div class="feature-card">
+                    <div class="icon">🔗</div>
+                    <h3>Buka Link</h3>
+                    <p>Membuka URL QR code di tab baru untuk testing</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Penting -->
+        <div class="info-box">
+            <h3>ℹ️ Informasi Penting</h3>
+            <p>
+                <strong>QR Code Langsung ke Form:</strong> Semua QR code yang dibuat akan langsung mengarahkan pengguna ke halaman form input <strong>tanpa perlu login</strong> dan <strong>tanpa sidebar navigasi</strong>. Ini cocok untuk dipasang di lokasi fisik seperti loket, ruang tunggu, atau area publik di rumah sakit.
+            </p>
+            <p style="margin-top: 8px;">
+                <strong>Auto-fill Unit:</strong> Jika fitur auto-fill diaktifkan (default), informasi unit akan otomatis terisi di form sehingga pengguna tidak perlu memilih unit lagi.
+            </p>
+        </div>
+
+        <!-- Tombol Test -->
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="http://localhost:3003/tickets/qr-management" class="btn" target="_blank">
+                <span>🚀</span>
+                Buka QR Management
+            </a>
+        </div>
+    </div>
+</body>
+</html>

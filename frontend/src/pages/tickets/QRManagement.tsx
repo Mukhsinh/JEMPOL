@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { qrCodeService, QRCode, CreateQRCodeData } from '../../services/qrCodeService';
 import unitService from '../../services/unitService';
 
@@ -52,6 +51,8 @@ const QRManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [activeTab, setActiveTab] = useState<'list' | 'qr-display' | 'qr-forms'>('list');
+  const [selectedQRForDisplay, setSelectedQRForDisplay] = useState<QRCodeWithAnalytics | null>(null);
   const [formData, setFormData] = useState<CreateQRCodeDataExtended>({
     unit_id: '',
     name: '',
@@ -229,16 +230,22 @@ const QRManagement: React.FC = () => {
       }
       
       if (qrCode.code) params.append('qr', qrCode.code);
-      const queryString = params.toString() ? `?${params.toString()}` : '';
+      const queryString = params.toString();
       
       // REDIRECT LANGSUNG KE FORM TANPA LOGIN DAN TANPA SIDEBAR
+      // PENTING: Gunakan route /form/:type BUKAN /tickets/create/:type
+      // Route /form/:type = DirectInternalTicketForm (tanpa sidebar, tanpa login)
+      // Route /tickets/create/:type = CreateInternalTicket (dengan sidebar, perlu login)
       switch (redirectType) {
         case 'internal_ticket':
-          return `${baseUrl}/form/internal${queryString}`;
+          // Route: /form/internal - DirectInternalTicketForm (TANPA SIDEBAR)
+          return `${baseUrl}/form/internal${queryString ? '?' + queryString : ''}`;
         case 'external_ticket':
-          return `${baseUrl}/form/eksternal${queryString}`;
+          // Route: /form/eksternal - DirectExternalTicketForm (TANPA SIDEBAR)
+          return `${baseUrl}/form/eksternal${queryString ? '?' + queryString : ''}`;
         case 'survey':
-          return `${baseUrl}/form/survey${queryString}`;
+          // Route: /form/survey - DirectSurveyForm (TANPA SIDEBAR)
+          return `${baseUrl}/form/survey${queryString ? '?' + queryString : ''}`;
         default:
           // Selection menu - tampilkan pilihan form
           return `${baseUrl}/m/${qrCode.code}`;
@@ -327,8 +334,56 @@ const QRManagement: React.FC = () => {
           </button>
         </div>
 
-        {/* Toolbar & Filters */}
-        <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6 flex flex-col lg:flex-row gap-4 justify-between items-center">
+        {/* Tabs Navigation */}
+        <div className="mb-6 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setActiveTab('list')}
+              className={`px-6 py-3 font-semibold text-sm transition-all relative ${
+                activeTab === 'list'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg">list</span>
+                Daftar QR Code
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('qr-display')}
+              className={`px-6 py-3 font-semibold text-sm transition-all relative ${
+                activeTab === 'qr-display'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg">qr_code_2</span>
+                Tampilan QR Code
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('qr-forms')}
+              className={`px-6 py-3 font-semibold text-sm transition-all relative ${
+                activeTab === 'qr-forms'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <span className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg">description</span>
+                QR Code Form
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content: List View */}
+        {activeTab === 'list' && (
+          <>
+            {/* Toolbar & Filters */}
+            <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6 flex flex-col lg:flex-row gap-4 justify-between items-center">
           {/* Search */}
           <div className="relative w-full lg:max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -414,25 +469,35 @@ const QRManagement: React.FC = () => {
 
                 {/* QR Preview */}
                 <div className="col-span-2 md:py-4 flex items-center gap-3">
-                  <div className="size-12 bg-white p-1 rounded border border-slate-200 shrink-0">
+                  <div className="size-12 bg-white p-1 rounded border border-slate-200 shrink-0 relative">
                     <img
                       alt={`QR Code untuk ${qrCode.name}`}
                       className="w-full h-full object-contain opacity-80 group-hover:opacity-100 transition-opacity"
                       src={qrCodeService.generateQRImageUrl(
                         qrCode.code, 
-                        48, 
+                        128, 
                         qrCode.redirect_type, 
                         qrCode.unit_id, 
                         qrCode.units?.name, 
                         qrCode.auto_fill_unit
                       )}
+                      onError={(e) => {
+                        // Fallback jika gambar gagal load
+                        const img = e.target as HTMLImageElement;
+                        if (!img.src.includes('qrserver.com')) {
+                          img.src = `https://api.qrserver.com/v1/create-qr-code/?size=128x128&data=${encodeURIComponent(
+                            qrCodeService.generateQRUrl(qrCode.code, qrCode.redirect_type, qrCode.unit_id, qrCode.units?.name, qrCode.auto_fill_unit)
+                          )}&ecc=H`;
+                        }
+                      }}
+                      loading="lazy"
                     />
                   </div>
                   <div className="flex flex-col">
                     <button
                       onClick={() => window.open(qrCodeService.generateQRImageUrl(
                         qrCode.code, 
-                        400, 
+                        512, 
                         qrCode.redirect_type, 
                         qrCode.unit_id, 
                         qrCode.units?.name, 
@@ -494,18 +559,14 @@ const QRManagement: React.FC = () => {
                     <span className="material-symbols-outlined">settings</span>
                   </button>
                   <button
-                    onClick={() => window.open(qrCodeService.generateQRImageUrl(
-                      qrCode.code, 
-                      400, 
-                      qrCode.redirect_type, 
-                      qrCode.unit_id, 
-                      qrCode.units?.name, 
-                      qrCode.auto_fill_unit
-                    ), '_blank')}
+                    onClick={() => {
+                      setSelectedQRForDisplay(qrCode);
+                      setActiveTab('qr-display');
+                    }}
                     className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                    title="Lihat QR Code"
+                    title="Tampilkan QR Code"
                   >
-                    <span className="material-symbols-outlined">visibility</span>
+                    <span className="material-symbols-outlined">qr_code_2</span>
                   </button>
                   <button
                     onClick={() => toggleQRStatus(qrCode.id, qrCode.is_active)}
@@ -556,6 +617,526 @@ const QRManagement: React.FC = () => {
             </button>
           </div>
         </div>
+          </>
+        )}
+
+        {/* Tab Content: QR Display View */}
+        {activeTab === 'qr-display' && (
+          <div className="space-y-6">
+            {/* QR Code Selection */}
+            <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                Pilih QR Code untuk Ditampilkan
+              </label>
+              <select
+                value={selectedQRForDisplay?.id || ''}
+                onChange={(e) => {
+                  const selected = qrCodes.find(qr => qr.id === e.target.value);
+                  setSelectedQRForDisplay(selected || null);
+                }}
+                className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+              >
+                <option value="">-- Pilih QR Code --</option>
+                {qrCodes.filter(qr => qr.is_active).map((qr) => (
+                  <option key={qr.id} value={qr.id}>
+                    {qr.name} - {qr.units?.name || 'Unit tidak ditemukan'}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* QR Code Display */}
+            {selectedQRForDisplay && (
+              <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 max-w-2xl mx-auto">
+                {/* Header Info */}
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full mb-4">
+                    <span className="material-symbols-outlined">business</span>
+                    <span className="font-semibold">{selectedQRForDisplay.units?.name}</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                    {selectedQRForDisplay.name}
+                  </h2>
+                  {selectedQRForDisplay.description && (
+                    <p className="text-slate-500 dark:text-slate-400">
+                      {selectedQRForDisplay.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* QR Code Image */}
+                <div className="bg-white p-8 rounded-2xl shadow-lg mb-6 flex items-center justify-center">
+                  <img
+                    src={qrCodeService.generateQRImageUrl(
+                      selectedQRForDisplay.code,
+                      512,
+                      selectedQRForDisplay.redirect_type,
+                      selectedQRForDisplay.unit_id,
+                      selectedQRForDisplay.units?.name,
+                      selectedQRForDisplay.auto_fill_unit
+                    )}
+                    alt={`QR Code ${selectedQRForDisplay.name}`}
+                    className="w-full max-w-md"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      if (!img.src.includes('qrserver.com')) {
+                        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(
+                          qrCodeService.generateQRUrl(
+                            selectedQRForDisplay.code,
+                            selectedQRForDisplay.redirect_type,
+                            selectedQRForDisplay.unit_id,
+                            selectedQRForDisplay.units?.name,
+                            selectedQRForDisplay.auto_fill_unit
+                          )
+                        )}&ecc=H`;
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Instructions */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-6 mb-6">
+                  <div className="flex items-start gap-3">
+                    <div className="size-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-white">qr_code_scanner</span>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-slate-900 dark:text-white mb-2">
+                        Cara Menggunakan QR Code
+                      </h3>
+                      <ol className="text-sm text-slate-600 dark:text-slate-300 space-y-1 list-decimal list-inside">
+                        <li>Scan QR Code menggunakan kamera smartphone</li>
+                        <li>Akan langsung diarahkan ke form input</li>
+                        <li>Isi form tanpa perlu login</li>
+                        <li>Kirim tiket dan dapatkan nomor tracking</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Redirect Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Tipe Redirect</p>
+                    <p className="font-semibold text-slate-900 dark:text-white">
+                      {REDIRECT_OPTIONS.find(o => o.value === selectedQRForDisplay.redirect_type)?.label || 'Tampilkan Pilihan'}
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Auto-fill Unit</p>
+                    <p className="font-semibold text-slate-900 dark:text-white">
+                      {selectedQRForDisplay.auto_fill_unit !== false ? 'Aktif' : 'Tidak Aktif'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <button
+                    onClick={() => {
+                      const link = qrCodeService.generateQRUrl(
+                        selectedQRForDisplay.code,
+                        selectedQRForDisplay.redirect_type,
+                        selectedQRForDisplay.unit_id,
+                        selectedQRForDisplay.units?.name,
+                        selectedQRForDisplay.auto_fill_unit
+                      );
+                      navigator.clipboard.writeText(link);
+                      alert('Link berhasil disalin!');
+                    }}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    <span className="material-symbols-outlined">content_copy</span>
+                    <span className="font-medium">Salin Link</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const link = qrCodeService.generateQRImageUrl(
+                        selectedQRForDisplay.code,
+                        1024,
+                        selectedQRForDisplay.redirect_type,
+                        selectedQRForDisplay.unit_id,
+                        selectedQRForDisplay.units?.name,
+                        selectedQRForDisplay.auto_fill_unit
+                      );
+                      window.open(link, '_blank');
+                    }}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  >
+                    <span className="material-symbols-outlined">download</span>
+                    <span className="font-medium">Unduh QR</span>
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    <span className="material-symbols-outlined">print</span>
+                    <span className="font-medium">Cetak</span>
+                  </button>
+                </div>
+
+                {/* Direct Link Display */}
+                <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Link Langsung</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 px-3 py-2 rounded border border-slate-200 dark:border-slate-600 overflow-x-auto">
+                      {qrCodeService.generateQRUrl(
+                        selectedQRForDisplay.code,
+                        selectedQRForDisplay.redirect_type,
+                        selectedQRForDisplay.unit_id,
+                        selectedQRForDisplay.units?.name,
+                        selectedQRForDisplay.auto_fill_unit
+                      )}
+                    </code>
+                    <button
+                      onClick={() => {
+                        const link = qrCodeService.generateQRUrl(
+                          selectedQRForDisplay.code,
+                          selectedQRForDisplay.redirect_type,
+                          selectedQRForDisplay.unit_id,
+                          selectedQRForDisplay.units?.name,
+                          selectedQRForDisplay.auto_fill_unit
+                        );
+                        window.open(link, '_blank');
+                      }}
+                      className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                      title="Buka Link"
+                    >
+                      <span className="material-symbols-outlined">open_in_new</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!selectedQRForDisplay && (
+              <div className="text-center py-12">
+                <div className="size-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="material-symbols-outlined text-4xl text-slate-400">qr_code_2</span>
+                </div>
+                <p className="text-slate-500 dark:text-slate-400">
+                  Pilih QR Code dari dropdown di atas untuk menampilkan
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab Content: QR Forms - Direct Links to Forms */}
+        {activeTab === 'qr-forms' && (
+          <div className="space-y-6">
+            {/* Info Banner */}
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+              <div className="flex gap-4">
+                <div className="size-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-2xl">info</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-2">
+                    QR Code Form Langsung
+                  </h3>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
+                    QR Code di bawah ini mengarahkan langsung ke halaman form <strong>tanpa perlu login</strong> dan <strong>tanpa sidebar navigasi</strong>. 
+                    Cocok untuk dipasang di area publik seperti loket, ruang tunggu, atau tempat pelayanan.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* QR Code Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              
+              {/* QR Code: Form Tiket Internal */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl transition-shadow">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="size-10 bg-white/20 rounded-lg flex items-center justify-center">
+                      <span className="material-symbols-outlined">assignment</span>
+                    </div>
+                    <h3 className="text-lg font-bold">Form Tiket Internal</h3>
+                  </div>
+                  <p className="text-sm text-blue-50">
+                    Untuk keluhan internal rumah sakit
+                  </p>
+                </div>
+                
+                <div className="p-6">
+                  {/* QR Code Image */}
+                  <div className="bg-white p-4 rounded-lg shadow-inner mb-4 flex items-center justify-center">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                        `${window.location.origin}/form/internal`
+                      )}&ecc=H`}
+                      alt="QR Code Form Tiket Internal"
+                      className="w-full h-auto max-w-[200px]"
+                    />
+                  </div>
+
+                  {/* Link Display */}
+                  <div className="mb-4">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Link Langsung:</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-700 px-3 py-2 rounded border border-slate-200 dark:border-slate-600 overflow-x-auto">
+                        {window.location.origin}/form/internal
+                      </code>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/form/internal`);
+                        alert('Link berhasil disalin!');
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-sm"
+                    >
+                      <span className="material-symbols-outlined text-lg">content_copy</span>
+                      <span>Salin</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.open(`https://api.qrserver.com/v1/create-qr-code/?size=1024x1024&data=${encodeURIComponent(
+                          `${window.location.origin}/form/internal`
+                        )}&ecc=H`, '_blank');
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                    >
+                      <span className="material-symbols-outlined text-lg">download</span>
+                      <span>Unduh</span>
+                    </button>
+                  </div>
+
+                  {/* Test Link */}
+                  <a
+                    href={`${window.location.origin}/form/internal`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 flex items-center justify-center gap-2 px-3 py-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors text-sm"
+                  >
+                    <span className="material-symbols-outlined text-lg">open_in_new</span>
+                    <span>Buka Form</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* QR Code: Form Tiket Eksternal */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl transition-shadow">
+                <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 text-white">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="size-10 bg-white/20 rounded-lg flex items-center justify-center">
+                      <span className="material-symbols-outlined">description</span>
+                    </div>
+                    <h3 className="text-lg font-bold">Form Tiket Eksternal</h3>
+                  </div>
+                  <p className="text-sm text-green-50">
+                    Untuk keluhan dari pasien/pengunjung
+                  </p>
+                </div>
+                
+                <div className="p-6">
+                  {/* QR Code Image */}
+                  <div className="bg-white p-4 rounded-lg shadow-inner mb-4 flex items-center justify-center">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                        `${window.location.origin}/form/eksternal`
+                      )}&ecc=H`}
+                      alt="QR Code Form Tiket Eksternal"
+                      className="w-full h-auto max-w-[200px]"
+                    />
+                  </div>
+
+                  {/* Link Display */}
+                  <div className="mb-4">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Link Langsung:</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-700 px-3 py-2 rounded border border-slate-200 dark:border-slate-600 overflow-x-auto">
+                        {window.location.origin}/form/eksternal
+                      </code>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/form/eksternal`);
+                        alert('Link berhasil disalin!');
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-sm"
+                    >
+                      <span className="material-symbols-outlined text-lg">content_copy</span>
+                      <span>Salin</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.open(`https://api.qrserver.com/v1/create-qr-code/?size=1024x1024&data=${encodeURIComponent(
+                          `${window.location.origin}/form/eksternal`
+                        )}&ecc=H`, '_blank');
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
+                    >
+                      <span className="material-symbols-outlined text-lg">download</span>
+                      <span>Unduh</span>
+                    </button>
+                  </div>
+
+                  {/* Test Link */}
+                  <a
+                    href={`${window.location.origin}/form/eksternal`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 flex items-center justify-center gap-2 px-3 py-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors text-sm"
+                  >
+                    <span className="material-symbols-outlined text-lg">open_in_new</span>
+                    <span>Buka Form</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* QR Code: Form Survei */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden hover:shadow-xl transition-shadow">
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 text-white">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="size-10 bg-white/20 rounded-lg flex items-center justify-center">
+                      <span className="material-symbols-outlined">rate_review</span>
+                    </div>
+                    <h3 className="text-lg font-bold">Form Survei Kepuasan</h3>
+                  </div>
+                  <p className="text-sm text-purple-50">
+                    Untuk survei kepuasan pelayanan
+                  </p>
+                </div>
+                
+                <div className="p-6">
+                  {/* QR Code Image */}
+                  <div className="bg-white p-4 rounded-lg shadow-inner mb-4 flex items-center justify-center">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                        `${window.location.origin}/form/survey`
+                      )}&ecc=H`}
+                      alt="QR Code Form Survei"
+                      className="w-full h-auto max-w-[200px]"
+                    />
+                  </div>
+
+                  {/* Link Display */}
+                  <div className="mb-4">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Link Langsung:</p>
+                    <div className="flex items-center gap-2">
+                      <code className="flex-1 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-700 px-3 py-2 rounded border border-slate-200 dark:border-slate-600 overflow-x-auto">
+                        {window.location.origin}/form/survey
+                      </code>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/form/survey`);
+                        alert('Link berhasil disalin!');
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-sm"
+                    >
+                      <span className="material-symbols-outlined text-lg">content_copy</span>
+                      <span>Salin</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        window.open(`https://api.qrserver.com/v1/create-qr-code/?size=1024x1024&data=${encodeURIComponent(
+                          `${window.location.origin}/form/survey`
+                        )}&ecc=H`, '_blank');
+                      }}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm"
+                    >
+                      <span className="material-symbols-outlined text-lg">download</span>
+                      <span>Unduh</span>
+                    </button>
+                  </div>
+
+                  {/* Test Link */}
+                  <a
+                    href={`${window.location.origin}/form/survey`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 flex items-center justify-center gap-2 px-3 py-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors text-sm"
+                  >
+                    <span className="material-symbols-outlined text-lg">open_in_new</span>
+                    <span>Buka Form</span>
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Usage Instructions */}
+            <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">help</span>
+                Cara Menggunakan QR Code
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="font-semibold text-slate-900 dark:text-white mb-2">Untuk Cetak/Pasang:</h4>
+                  <ol className="text-sm text-slate-600 dark:text-slate-300 space-y-2 list-decimal list-inside">
+                    <li>Klik tombol "Unduh" pada QR Code yang diinginkan</li>
+                    <li>Simpan gambar QR Code (ukuran 1024x1024px)</li>
+                    <li>Cetak QR Code dan pasang di lokasi strategis</li>
+                    <li>Pastikan QR Code mudah terlihat dan dapat di-scan</li>
+                  </ol>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-slate-900 dark:text-white mb-2">Untuk Pengguna:</h4>
+                  <ol className="text-sm text-slate-600 dark:text-slate-300 space-y-2 list-decimal list-inside">
+                    <li>Scan QR Code menggunakan kamera smartphone</li>
+                    <li>Akan langsung diarahkan ke halaman form</li>
+                    <li>Isi form tanpa perlu login atau registrasi</li>
+                    <li>Kirim dan dapatkan nomor tracking tiket</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
+            {/* Features Info */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="size-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                    <span className="material-symbols-outlined text-green-600 dark:text-green-400">check_circle</span>
+                  </div>
+                  <h4 className="font-semibold text-slate-900 dark:text-white">Tanpa Login</h4>
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  Pengguna dapat langsung mengisi form tanpa perlu login atau membuat akun
+                </p>
+              </div>
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="size-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                    <span className="material-symbols-outlined text-blue-600 dark:text-blue-400">visibility_off</span>
+                  </div>
+                  <h4 className="font-semibold text-slate-900 dark:text-white">Tanpa Sidebar</h4>
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  Tampilan bersih tanpa menu navigasi, fokus hanya pada form input
+                </p>
+              </div>
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="size-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                    <span className="material-symbols-outlined text-purple-600 dark:text-purple-400">smartphone</span>
+                  </div>
+                  <h4 className="font-semibold text-slate-900 dark:text-white">Mobile Friendly</h4>
+                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  Tampilan responsif dan optimal untuk perangkat mobile
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
 
 

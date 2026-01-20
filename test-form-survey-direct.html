@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Form Survey Direct</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .test-links {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .test-link {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .test-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .info {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #667eea;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 10px;
+            border-left: 4px solid #4caf50;
+        }
+        .error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Form Survey Direct Access</h1>
+        
+        <div class="info">
+            <h3>📋 Informasi Test</h3>
+            <p><strong>Tujuan:</strong> Memverifikasi bahwa form survey dapat diakses langsung tanpa sidebar</p>
+            <p><strong>Expected:</strong> Form survey fullscreen tanpa sidebar navigasi</p>
+            <p><strong>URL Pattern:</strong> /form/survey?qr=xxx&unit_id=xxx&unit_name=xxx</p>
+        </div>
+
+        <h3 style="margin-top: 30px;">🔗 Test Links</h3>
+        <div class="test-links">
+            <a href="http://localhost:3003/form/survey?qr=TEST123&unit_id=1&unit_name=Unit%20Rawat%20Jalan" 
+               class="test-link" target="_blank">
+                📝 Test Form Survey - Unit Rawat Jalan
+            </a>
+            
+            <a href="http://localhost:3003/form/internal?qr=TEST456&unit_id=2&unit_name=Unit%20Rawat%20Inap" 
+               class="test-link" target="_blank">
+                🏥 Test Form Internal - Unit Rawat Inap
+            </a>
+            
+            <a href="http://localhost:3003/form/eksternal?qr=TEST789&unit_id=3&unit_name=Unit%20Gawat%20Darurat" 
+               class="test-link" target="_blank">
+                🚑 Test Form Eksternal - Unit Gawat Darurat
+            </a>
+        </div>
+
+        <div class="status">
+            <h3>✅ Checklist Verifikasi</h3>
+            <ul>
+                <li>Form tampil fullscreen (tidak ada sidebar)</li>
+                <li>Header menampilkan nama unit</li>
+                <li>Progress indicator terlihat</li>
+                <li>Form fields dapat diisi</li>
+                <li>Tombol navigasi berfungsi</li>
+                <li>Submit form berhasil</li>
+            </ul>
+        </div>
+
+        <div class="info" style="margin-top: 20px;">
+            <h3>🔧 Troubleshooting</h3>
+            <p><strong>Jika masih tampil sidebar:</strong></p>
+            <ol>
+                <li>Clear browser cache (Ctrl+Shift+Del)</li>
+                <li>Hard refresh (Ctrl+F5)</li>
+                <li>Restart frontend server</li>
+                <li>Cek console browser untuk error</li>
+            </ol>
+        </div>
+
+        <div class="info" style="margin-top: 20px;">
+            <h3>📱 Test di Mobile</h3>
+            <p>Buka Chrome DevTools (F12) → Toggle Device Toolbar (Ctrl+Shift+M)</p>
+            <p>Pilih device: iPhone 12 Pro atau Samsung Galaxy S20</p>
+        </div>
+    </div>
+
+    <script>
+        // Auto-check if server is running
+        fetch('http://localhost:3003/form/survey?qr=test')
+            .then(response => {
+                console.log('✅ Server is running!');
+                console.log('Status:', response.status);
+            })
+            .catch(error => {
+                console.error('❌ Server not running or error:', error);
+                alert('⚠️ Frontend server tidak berjalan!\nJalankan: cd frontend && npm run dev');
+            });
+    </script>
+</body>
+</html>
