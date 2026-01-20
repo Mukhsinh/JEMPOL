@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Code Redirect - Perbaikan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+        .status {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+        .status-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .status-icon.success { background: #d4edda; }
+        .status-icon.error { background: #f8d7da; }
+        .status-icon.info { background: #d1ecf1; }
+        .status-content {
+            flex: 1;
+        }
+        .status-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .status-desc {
+            font-size: 13px;
+            color: #666;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .test-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .test-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+        }
+        .test-card .icon {
+            font-size: 24px;
+        }
+        .url-display {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #495057;
+            word-break: break-all;
+            margin: 10px 0;
+            border-left: 3px solid #667eea;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
+            margin: 5px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .info-box h4 {
+            color: #1976D2;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .info-box ul {
+            margin-left: 20px;
+            color: #555;
+            font-size: 13px;
+        }
+        .info-box li {
+            margin: 5px 0;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .success-box h4 {
+            color: #155724;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .success-box p {
+            color: #155724;
+            font-size: 13px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Test QR Code Redirect - Perbaikan</h1>
+            <p>Verifikasi perbaikan QR code redirect langsung ke form tanpa sidebar</p>
+        </div>
+
+        <div class="status">
+            <h3 style="margin-bottom: 15px; color: #333;">📋 Status Perbaikan</h3>
+            
+            <div class="status-item">
+                <div class="status-icon success">✅</div>
+                <div class="status-content">
+                    <div class="status-title">Route Sudah Benar</div>
+                    <div class="status-desc">Route /form/internal, /form/eksternal, /form/survey tidak dibungkus MainLayout</div>
+                </div>
+            </div>
+
+            <div class="status-item">
+                <div class="status-icon success">✅</div>
+                <div class="status-content">
+                    <div class="status-title">QR Service URL Generator Sudah Benar</div>
+                    <div class="status-desc">generateQRUrl() menghasilkan URL ke /form/:type dengan parameter yang benar</div>
+                </div>
+            </div>
+
+            <div class="status-item">
+                <div class="status-icon success">✅</div>
+                <div class="status-content">
+                    <div class="status-title">Komponen Form Diperbaiki</div>
+                    <div class="status-desc">Ditambahkan useEffect untuk menyembunyikan sidebar/header/nav secara paksa</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="success-box">
+            <h4>🎯 Perbaikan yang Dilakukan:</h4>
+            <p><strong>1. DirectInternalTicketForm.tsx</strong> - Ditambahkan logic untuk menyembunyikan sidebar</p>
+            <p><strong>2. DirectExternalTicketForm.tsx</strong> - Ditambahkan logic untuk menyembunyikan sidebar</p>
+            <p><strong>3. DirectSurveyForm.tsx</strong> - Ditambahkan logic untuk menyembunyikan sidebar</p>
+        </div>
+
+        <div class="info-box">
+            <h4>💡 Cara Kerja Perbaikan:</h4>
+            <ul>
+                <li>Saat komponen mount, akan mencari elemen sidebar, header, dan nav</li>
+                <li>Jika ditemukan, akan di-hide dengan style.display = 'none'</li>
+                <li>Saat komponen unmount, akan dikembalikan ke kondisi semula</li>
+                <li>Body overflow di-set ke 'hidden' untuk fullscreen experience</li>
+            </ul>
+        </div>
+
+        <h2 style="color: white; margin: 30px 0 20px; text-align: center;">🧪 Test QR Code Redirect</h2>
+
+        <div class="test-grid">
+            <!-- Test 1: Form Tiket Internal -->
+            <div class="test-card">
+                <h3><span class="icon">📝</span> Form Tiket Internal</h3>
+                <div class="url-display">
+                    http://localhost:5173/form/internal?qr=TEST001&unit_id=unit-123&unit_name=Unit%20Rawat%20Inap
+                </div>
+                <div class="info-box">
+                    <h4>✅ Yang Harus Muncul:</h4>
+                    <ul>
+                        <li>Form fullscreen dengan gradient ungu</li>
+                        <li>TANPA sidebar navigasi</li>
+                        <li>TANPA header admin</li>
+                        <li>Header minimal dengan nama unit</li>
+                        <li>Form multi-step untuk input tiket</li>
+                    </ul>
+                </div>
+                <a href="http://localhost:5173/form/internal?qr=TEST001&unit_id=unit-123&unit_name=Unit%20Rawat%20Inap" 
+                   target="_blank" class="btn btn-primary">
+                    🔗 Buka Form Internal
+                </a>
+            </div>
+
+            <!-- Test 2: Form Tiket Eksternal -->
+            <div class="test-card">
+                <h3><span class="icon">📋</span> Form Tiket Eksternal</h3>
+                <div class="url-display">
+                    http://localhost:5173/form/eksternal?qr=TEST002&unit_id=unit-456&unit_name=Loket%20Pendaftaran
+                </div>
+                <div class="info-box">
+                    <h4>✅ Yang Harus Muncul:</h4>
+                    <ul>
+                        <li>Form fullscreen dengan gradient hijau</li>
+                        <li>TANPA sidebar navigasi</li>
+                        <li>TANPA header admin</li>
+                        <li>Header minimal dengan nama unit</li>
+                        <li>Form untuk pengaduan eksternal</li>
+                    </ul>
+                </div>
+                <a href="http://localhost:5173/form/eksternal?qr=TEST002&unit_id=unit-456&unit_name=Loket%20Pendaftaran" 
+                   target="_blank" class="btn btn-success">
+                    🔗 Buka Form Eksternal
+                </a>
+            </div>
+
+            <!-- Test 3: Form Survei -->
+            <div class="test-card">
+                <h3><span class="icon">⭐</span> Form Survei Kepuasan</h3>
+                <div class="url-display">
+                    http://localhost:5173/form/survey?qr=TEST003&unit_id=unit-789&unit_name=Instalasi%20Gawat%20Darurat
+                </div>
+                <div class="info-box">
+                    <h4>✅ Yang Harus Muncul:</h4>
+                    <ul>
+                        <li>Form fullscreen dengan gradient teal</li>
+                        <li>TANPA sidebar navigasi</li>
+                        <li>TANPA header admin</li>
+                        <li>Header minimal dengan nama unit</li>
+                        <li>Form survei kepuasan pelayanan</li>
+                    </ul>
+                </div>
+                <a href="http://localhost:5173/form/survey?qr=TEST003&unit_id=unit-789&unit_name=Instalasi%20Gawat%20Darurat" 
+                   target="_blank" class="btn btn-info">
+                    🔗 Buka Form Survei
+                </a>
+            </div>
+        </div>
+
+        <div class="test-card" style="margin-bottom: 30px;">
+            <h3><span class="icon">🔍</span> Cara Verifikasi</h3>
+            <div class="info-box">
+                <h4>Langkah-langkah Test:</h4>
+                <ul>
+                    <li><strong>1.</strong> Klik salah satu tombol "Buka Form" di atas</li>
+                    <li><strong>2.</strong> Pastikan halaman terbuka di tab baru</li>
+                    <li><strong>3.</strong> Periksa apakah sidebar navigasi TIDAK muncul</li>
+                    <li><strong>4.</strong> Periksa apakah form tampil fullscreen</li>
+                    <li><strong>5.</strong> Periksa apakah nama unit muncul di header minimal</li>
+                    <li><strong>6.</strong> Coba isi form dan submit untuk test fungsionalitas</li>
+                </ul>
+            </div>
+            <div class="success-box">
+                <h4>✅ Kriteria Sukses:</h4>
+                <p>✓ Halaman tampil fullscreen tanpa sidebar</p>
+                <p>✓ Tidak ada menu navigasi admin</p>
+                <p>✓ Form dapat diisi dan disubmit</p>
+                <p>✓ Unit name ter-autofill dari parameter URL</p>
+                <p>✓ Tampilan mobile-friendly dan modern</p>
+            </div>
+        </div>
+
+        <div class="test-card">
+            <h3><span class="icon">🎯</span> Test dari QR Management</h3>
+            <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
+                Untuk test dari halaman QR Management yang sebenarnya:
+            </p>
+            <a href="http://localhost:5173/tickets/qr-management" 
+               target="_blank" class="btn btn-warning">
+                🔗 Buka QR Management
+            </a>
+            <div class="info-box" style="margin-top: 15px;">
+                <h4>Langkah Test dari QR Management:</h4>
+                <ul>
+                    <li>1. Login sebagai admin</li>
+                    <li>2. Buka halaman QR Management</li>
+                    <li>3. Pilih tab "QR Code Form"</li>
+                    <li>4. Klik tombol "Buka Form" pada salah satu QR code</li>
+                    <li>5. Verifikasi form terbuka tanpa sidebar</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🔧 QR Code Redirect Fix Test Page Loaded');
+        console.log('✅ Perbaikan telah diterapkan pada:');
+        console.log('   - DirectInternalTicketForm.tsx');
+        console.log('   - DirectExternalTicketForm.tsx');
+        console.log('   - DirectSurveyForm.tsx');
+        console.log('');
+        console.log('💡 Perbaikan: Menambahkan useEffect untuk menyembunyikan sidebar/header/nav');
+        console.log('');
+        console.log('🧪 Silakan test dengan klik tombol di atas');
+    </script>
+</body>
+</html>

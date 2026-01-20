@@ -22,6 +22,28 @@ const DirectSurveyForm: React.FC = () => {
   const unitName = decodeURIComponent(searchParams.get('unit_name') || searchParams.get('name') || '');
   const qrCode = searchParams.get('qr') || '';
 
+  // Pastikan tidak ada scroll pada body untuk fullscreen experience
+  // Dan sembunyikan sidebar jika ada
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    
+    // Sembunyikan sidebar dan elemen layout lainnya
+    const sidebar = document.querySelector('[class*="sidebar"]');
+    const header = document.querySelector('header');
+    const nav = document.querySelector('nav');
+    
+    if (sidebar) (sidebar as HTMLElement).style.display = 'none';
+    if (header) (header as HTMLElement).style.display = 'none';
+    if (nav) (nav as HTMLElement).style.display = 'none';
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+      if (sidebar) (sidebar as HTMLElement).style.display = '';
+      if (header) (header as HTMLElement).style.display = '';
+      if (nav) (nav as HTMLElement).style.display = '';
+    };
+  }, []);
+
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');

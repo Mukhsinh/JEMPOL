@@ -9,6 +9,13 @@ interface AppSettings {
     contact_email?: string;
 }
 
+interface Unit {
+    id: string;
+    name: string;
+    code: string;
+    is_active?: boolean;
+}
+
 const PublicSurveyForm = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -18,7 +25,7 @@ const PublicSurveyForm = () => {
 
     // State for form data
     const [formData, setFormData] = useState({
-        unit_tujuan: unitNameFromUrl ? decodeURIComponent(unitNameFromUrl) : 'Poli Penyakit Dalam - Gedung A',
+        unit_tujuan: unitNameFromUrl ? decodeURIComponent(unitNameFromUrl) : '',
         unit_id: unitIdFromUrl || '',
         service_type: '',
         full_name: '',
@@ -42,9 +49,12 @@ const PublicSurveyForm = () => {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [error, setError] = useState('');
     const [appSettings, setAppSettings] = useState<AppSettings>({});
+    const [units, setUnits] = useState<Unit[]>([]);
+    const [loadingUnits, setLoadingUnits] = useState(true);
 
     useEffect(() => {
         loadAppSettings();
+        loadUnits();
     }, []);
 
     const loadAppSettings = async () => {
@@ -65,6 +75,35 @@ const PublicSurveyForm = () => {
         }
     };
 
+    const loadUnits = async () => {
+        setLoadingUnits(true);
+        try {
+            const res = await fetch('/api/public/units');
+            if (res.ok) {
+                const r = await res.json();
+                const unitsData = Array.isArray(r) ? r : (r.data || []);
+                const activeUnits = unitsData.filter((u: Unit) => u.is_active !== false);
+                setUnits(activeUnits);
+                
+                // Jika ada unit dari URL, set nama unit
+                if (unitIdFromUrl && activeUnits.length > 0) {
+                    const selectedUnit = activeUnits.find((u: Unit) => u.id === unitIdFromUrl);
+                    if (selectedUnit) {
+                        setFormData(prev => ({
+                            ...prev,
+                            unit_tujuan: selectedUnit.name,
+                            unit_id: selectedUnit.id
+                        }));
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Error loading units:', e);
+        } finally {
+            setLoadingUnits(false);
+        }
+    };
+
     // Update unit jika ada dari URL
     useEffect(() => {
         if (unitNameFromUrl) {
@@ -80,10 +119,20 @@ const PublicSurveyForm = () => {
         const { name, value, type } = e.target;
         const checked = (e.target as HTMLInputElement).checked;
 
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        // Jika yang diubah adalah unit_id, update juga unit_tujuan
+        if (name === 'unit_id') {
+            const selectedUnit = units.find(u => u.id === value);
+            setFormData(prev => ({
+                ...prev,
+                unit_id: value,
+                unit_tujuan: selectedUnit ? selectedUnit.name : ''
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            }));
+        }
     };
 
     const handleRadioChange = (name: string, value: string) => {
@@ -220,19 +269,64 @@ const PublicSurveyForm = () => {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    <section className="bg-white/90 backdrop-blur-xl rounded-3xl border border-white/50 shadow-xl p-6 flex items-start gap-4">
-                        <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl shadow-lg shadow-emerald-500/30 text-white">
-                            <span className="material-symbols-outlined text-3xl">qr_code_scanner</span>
-                        </div>
-                        <div className="flex-1 space-y-1.5">
-                            <label className="block text-xs font-bold uppercase tracking-wider text-emerald-600 mb-1">Unit Tujuan (Otomatis)</label>
-                            <div className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                <span>{formData.unit_tujuan}</span>
-                                <span className="material-symbols-outlined text-emerald-500 text-lg" title="Terverifikasi">verified</span>
+                    <section className="bg-white/90 backdrop-blur-xl rounded-3xl border border-white/50 shadow-xl p-6">
+                        <div className="flex items-start gap-4 mb-4">
+                            <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl shadow-lg shadow-emerald-500/30 text-white">
+                                <span className="material-symbols-outlined text-3xl">location_on</span>
                             </div>
-                            <p className="text-sm text-gray-600">Unit terdeteksi otomatis dari kode QR lokasi.</p>
-                            <input type="hidden" name="unit_tujuan" value={formData.unit_tujuan} />
+                            <div className="flex-1">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-emerald-600 mb-1">Pilih Unit Layanan *</label>
+                                <p className="text-xs text-gray-500 mb-3">Pilih unit yang ingin Anda nilai</p>
+                            </div>
                         </div>
+                        
+                        {formData.unit_id && formData.unit_tujuan ? (
+                            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-4 border-2 border-emerald-200">
+                                <div className="flex items-center gap-3">
+                                    <span className="material-symbols-outlined text-emerald-500 text-2xl">verified</span>
+                                    <div>
+                                        <p className="text-sm font-bold text-emerald-600">Unit Terverifikasi</p>
+                                        <p className="text-lg font-bold text-gray-900">{formData.unit_tujuan}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <div className="relative group">
+                                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">apartment</span>
+                                    <select
+                                        name="unit_id"
+                                        value={formData.unit_id}
+                                        onChange={handleInputChange}
+                                        required
+                                        disabled={loadingUnits}
+                                        className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <option value="">-- Pilih Unit Layanan --</option>
+                                        {loadingUnits ? (
+                                            <option value="" disabled>Memuat data unit...</option>
+                                        ) : units.length === 0 ? (
+                                            <option value="" disabled>Tidak ada unit tersedia</option>
+                                        ) : (
+                                            units.map(unit => (
+                                                <option key={unit.id} value={unit.id}>{unit.name}</option>
+                                            ))
+                                        )}
+                                    </select>
+                                    <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                                </div>
+                                {units.length === 0 && !loadingUnits && (
+                                    <button
+                                        type="button"
+                                        onClick={loadUnits}
+                                        className="w-full mt-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-semibold shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                    >
+                                        <span className="material-symbols-outlined">refresh</span>
+                                        <span>Muat Ulang Data Unit</span>
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </section>
 
                     <section className="bg-white/90 backdrop-blur-xl rounded-3xl border border-white/50 shadow-xl overflow-hidden">

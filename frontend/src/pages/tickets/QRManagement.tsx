@@ -220,36 +220,15 @@ const QRManagement: React.FC = () => {
     // Generate direct link berdasarkan redirect_type - LANGSUNG KE FORM TANPA LOGIN
     const getDirectLink = () => {
       if (!qrCode) return '';
-      const baseUrl = window.location.origin;
-      const params = new URLSearchParams();
       
-      // Auto-fill unit jika diaktifkan (default true)
-      if (qrCode.auto_fill_unit !== false) {
-        if (qrCode.unit_id) params.append('unit_id', qrCode.unit_id);
-        if (qrCode.units?.name) params.append('unit_name', qrCode.units.name);
-      }
-      
-      if (qrCode.code) params.append('qr', qrCode.code);
-      const queryString = params.toString();
-      
-      // REDIRECT LANGSUNG KE FORM TANPA LOGIN DAN TANPA SIDEBAR
-      // PENTING: Gunakan route /form/:type BUKAN /tickets/create/:type
-      // Route /form/:type = DirectInternalTicketForm (tanpa sidebar, tanpa login)
-      // Route /tickets/create/:type = CreateInternalTicket (dengan sidebar, perlu login)
-      switch (redirectType) {
-        case 'internal_ticket':
-          // Route: /form/internal - DirectInternalTicketForm (TANPA SIDEBAR)
-          return `${baseUrl}/form/internal${queryString ? '?' + queryString : ''}`;
-        case 'external_ticket':
-          // Route: /form/eksternal - DirectExternalTicketForm (TANPA SIDEBAR)
-          return `${baseUrl}/form/eksternal${queryString ? '?' + queryString : ''}`;
-        case 'survey':
-          // Route: /form/survey - DirectSurveyForm (TANPA SIDEBAR)
-          return `${baseUrl}/form/survey${queryString ? '?' + queryString : ''}`;
-        default:
-          // Selection menu - tampilkan pilihan form
-          return `${baseUrl}/m/${qrCode.code}`;
-      }
+      // GUNAKAN qrCodeService.generateQRUrl untuk konsistensi
+      return qrCodeService.generateQRUrl(
+        qrCode.code,
+        redirectType,
+        qrCode.unit_id,
+        qrCode.units?.name,
+        qrCode.auto_fill_unit
+      );
     };
     
     const directLink = getDirectLink();
@@ -270,6 +249,7 @@ const QRManagement: React.FC = () => {
             rel="noopener noreferrer"
             onClick={(e) => {
               e.stopPropagation();
+              console.log('🔗 Opening direct link:', directLink);
             }}
             className="text-xs text-primary hover:text-blue-700 dark:hover:text-blue-300 hover:underline flex items-center gap-1 cursor-pointer"
           >
