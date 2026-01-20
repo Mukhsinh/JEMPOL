@@ -166,7 +166,7 @@ const SurveyLanding = () => {
       });
       if (!res.ok) throw new Error('Gagal');
       alert('Survei berhasil dikirim!');
-      navigate('/survey?survey=success');
+      navigate('/form/survey?survey=success');
     } catch (err) {
       alert('Error: ' + (err instanceof Error ? err.message : 'Unknown'));
     }
@@ -216,7 +216,7 @@ const SurveyLanding = () => {
                 Survei Anda telah berhasil dikirim. Masukan Anda sangat berharga untuk peningkatan layanan kami.
               </p>
               <button
-                onClick={() => navigate('/survey')}
+                onClick={() => navigate('/form/survey')}
                 className="w-full py-5 rounded-2xl bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white font-bold text-lg shadow-2xl shadow-green-500/40 hover:shadow-green-500/50 active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
               >
                 <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">refresh</span>

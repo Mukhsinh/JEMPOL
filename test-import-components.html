@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Import Components</title>
+</head>
+<body>
+    <h1>Test Import Components</h1>
+    <div id="result"></div>
+
+    <script type="module">
+        const resultDiv = document.getElementById('result');
+        
+        async function testImports() {
+            const results = [];
+            
+            // Test import DirectInternalTicketForm
+            try {
+                const module1 = await import('/src/pages/public/DirectInternalTicketForm.tsx');
+                results.push('✅ DirectInternalTicketForm: ' + (module1.default ? 'OK' : 'NO DEFAULT EXPORT'));
+            } catch (e) {
+                results.push('❌ DirectInternalTicketForm: ' + e.message);
+            }
+            
+            // Test import DirectExternalTicketForm
+            try {
+                const module2 = await import('/src/pages/public/DirectExternalTicketForm.tsx');
+                results.push('✅ DirectExternalTicketForm: ' + (module2.default ? 'OK' : 'NO DEFAULT EXPORT'));
+            } catch (e) {
+                results.push('❌ DirectExternalTicketForm: ' + e.message);
+            }
+            
+            // Test import DirectSurveyForm
+            try {
+                const module3 = await import('/src/pages/public/DirectSurveyForm.tsx');
+                results.push('✅ DirectSurveyForm: ' + (module3.default ? 'OK' : 'NO DEFAULT EXPORT'));
+            } catch (e) {
+                results.push('❌ DirectSurveyForm: ' + e.message);
+            }
+            
+            resultDiv.innerHTML = '<pre>' + results.join('\n') + '</pre>';
+        }
+        
+        testImports();
+    </script>
+</body>
+</html>

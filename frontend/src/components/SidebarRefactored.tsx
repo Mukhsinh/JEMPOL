@@ -21,18 +21,18 @@ const navigationConfig: NavigationItem[] = [
     icon: 'confirmation_number',
     children: [
       { path: '/tickets', label: 'Semua Tiket', icon: '' },
-      { path: '/tickets/create/internal', label: 'Buat Tiket Internal', icon: '' },
-      { path: '/tickets/tiket-eksternal', label: 'Tiket Eksternal', icon: '' },
+      { path: '/form/internal', label: 'Buat Tiket Internal', icon: '' },
+      { path: '/form/eksternal', label: 'Tiket Eksternal', icon: '' },
       { path: '/tickets/qr-management', label: 'QR Code Management', icon: '' },
       { path: '/tickets/escalation', label: 'Eskalasi', icon: '' }
     ]
   },
   {
-    path: '/survey',
+    path: '/form/survey',
     label: 'Survei Kepuasan',
     icon: 'sentiment_satisfied',
     children: [
-      { path: '/survey', label: 'Survei Kepuasan', icon: '' },
+      { path: '/form/survey', label: 'Survei Kepuasan', icon: '' },
       { path: '/survey/report', label: 'Laporan Survei', icon: '' }
     ]
   },

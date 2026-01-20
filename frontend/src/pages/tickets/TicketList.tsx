@@ -120,7 +120,7 @@ export default function TicketList() {
                         <span className="material-symbols-outlined text-[16px] text-primary">person</span>
                         <span className="font-medium">{user?.name || user?.email || 'User'}</span>
                     </div>
-                    <Link to="/tickets/create/internal" className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm shadow-blue-500/30">
+                    <Link to="/form/internal" className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm shadow-blue-500/30">
                         <span className="material-symbols-outlined text-[20px]">add</span>
                         <span>Buat Tiket Baru</span>
                     </Link>

@@ -168,7 +168,7 @@ const SurveyForm: React.FC = () => {
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Gagal mengirim survei');
-      navigate('/survey?survey=success');
+      navigate('/form/survey?survey=success');
     } catch (err) {
       alert('Error: ' + (err instanceof Error ? err.message : 'Unknown'));
     }

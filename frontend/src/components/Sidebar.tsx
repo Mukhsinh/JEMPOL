@@ -38,7 +38,7 @@ export default function Sidebar() {
     };
 
     const isSurveyActive = () => {
-        return location.pathname.startsWith('/survey');
+        return location.pathname.startsWith('/survey') || location.pathname.startsWith('/form/survey');
     };
 
     const isSettingsActive = () => {
@@ -167,8 +167,8 @@ export default function Sidebar() {
                                 </Link>
                                 
                                 <Link
-                                    to="/tickets/create/internal"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/tickets/create/internal')
+                                    to="/form/internal"
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/form/internal')
                                         ? 'bg-primary text-white shadow-md shadow-blue-500/20'
                                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                                         }`}
@@ -178,8 +178,8 @@ export default function Sidebar() {
                                 </Link>
                                 
                                 <Link
-                                    to="/tickets/tiket-eksternal"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/tickets/tiket-eksternal')
+                                    to="/form/eksternal"
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/form/eksternal')
                                         ? 'bg-primary text-white shadow-md shadow-blue-500/20'
                                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                                         }`}
@@ -235,8 +235,8 @@ export default function Sidebar() {
                         {isSurveyOpen && (
                             <div className="mt-2 ml-6 flex flex-col gap-1">
                                 <Link
-                                    to="/survey"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${location.pathname === '/survey'
+                                    to="/form/survey"
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${location.pathname === '/form/survey'
                                         ? 'bg-primary text-white shadow-md shadow-blue-500/20'
                                         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                                         }`}

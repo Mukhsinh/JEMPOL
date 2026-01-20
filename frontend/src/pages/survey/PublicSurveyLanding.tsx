@@ -62,7 +62,7 @@ const PublicSurveyLanding = () => {
         if (qrCode) {
             params.set('qr', qrCode);
         }
-        navigate(`/survey/public?${params.toString()}`);
+        navigate(`/form/survey?${params.toString()}`);
     };
 
     return (

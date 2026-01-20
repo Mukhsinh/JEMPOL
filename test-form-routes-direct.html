@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Form Routes - KISS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+            border-left: 4px solid #388e3c;
+        }
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .test-section h2 {
+            color: #444;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .test-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .test-item h3 {
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        .test-item p {
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .btn-success {
+            background: #4caf50;
+        }
+        .btn-success:hover {
+            background: #45a049;
+        }
+        .code {
+            background: #f5f5f5;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #d63384;
+            display: inline-block;
+            margin: 5px 0;
+        }
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 30px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Form Routes</h1>
+        <p class="subtitle">Sistem Manajemen Keluhan KISS</p>
+
+        <div class="status info">
+            <strong>ℹ️ Informasi:</strong> Halaman ini untuk menguji route /form/internal, /form/eksternal, dan /form/survey
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Route yang Diuji</h2>
+            
+            <div class="test-item">
+                <h3>1. Form Tiket Internal</h3>
+                <p>Route: <span class="code">/form/internal</span></p>
+                <p>Untuk: Karyawan internal membuat tiket keluhan</p>
+                <a href="http://localhost:5173/form/internal?unit_id=1&unit_name=Unit%20Test" class="btn" target="_blank">
+                    🔗 Buka Form Internal
+                </a>
+            </div>
+
+            <div class="test-item">
+                <h3>2. Form Tiket Eksternal/Pengaduan</h3>
+                <p>Route: <span class="code">/form/eksternal</span></p>
+                <p>Untuk: Masyarakat umum membuat pengaduan</p>
+                <a href="http://localhost:5173/form/eksternal?unit_id=1&unit_name=Unit%20Test" class="btn" target="_blank">
+                    🔗 Buka Form Eksternal
+                </a>
+            </div>
+
+            <div class="test-item">
+                <h3>3. Form Survei Kepuasan</h3>
+                <p>Route: <span class="code">/form/survey</span></p>
+                <p>Untuk: Survei kepuasan layanan</p>
+                <a href="http://localhost:5173/form/survey?unit_id=1&unit_name=Unit%20Test" class="btn" target="_blank">
+                    🔗 Buka Form Survey
+                </a>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="test-section">
+            <h2>✅ Checklist Pengujian</h2>
+            <div class="test-item">
+                <p>✓ Form harus tampil TANPA sidebar</p>
+                <p>✓ Form harus tampil fullscreen</p>
+                <p>✓ Form harus memiliki field input yang lengkap</p>
+                <p>✓ Tombol submit harus berfungsi</p>
+                <p>✓ Tidak ada error di console browser (F12)</p>
+            </div>
+        </div>
+
+        <div class="status success">
+            <strong>✅ Perbaikan Dilakukan:</strong><br>
+            Route /form/internal, /form/eksternal, dan /form/survey telah ditambahkan ke AppRefactored.tsx
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Troubleshooting</h2>
+            <div class="test-item">
+                <p><strong>Jika form masih kosong:</strong></p>
+                <p>1. Pastikan aplikasi frontend berjalan di http://localhost:5173</p>
+                <p>2. Buka Console Browser (F12) untuk melihat error</p>
+                <p>3. Periksa apakah komponen DirectInternalTicketForm, DirectExternalTicketForm, dan DirectSurveyForm ada</p>
+                <p>4. Restart aplikasi frontend jika perlu</p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button onclick="testAllRoutes()" class="btn btn-success">
+                🚀 Test Semua Route Sekaligus
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function testAllRoutes() {
+            const routes = [
+                'http://localhost:5173/form/internal?unit_id=1&unit_name=Unit%20Test',
+                'http://localhost:5173/form/eksternal?unit_id=1&unit_name=Unit%20Test',
+                'http://localhost:5173/form/survey?unit_id=1&unit_name=Unit%20Test'
+            ];
+
+            routes.forEach((url, index) => {
+                setTimeout(() => {
+                    window.open(url, '_blank');
+                }, index * 1000);
+            });
+
+            alert('✅ Membuka 3 tab untuk test semua route...');
+        }
+
+        // Auto-check if server is running
+        window.addEventListener('load', () => {
+            fetch('http://localhost:5173')
+                .then(() => {
+                    console.log('✅ Frontend server is running');
+                })
+                .catch(() => {
+                    const statusDiv = document.querySelector('.status.info');
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = '<strong>⚠️ Peringatan:</strong> Frontend server tidak berjalan di http://localhost:5173. Jalankan aplikasi terlebih dahulu!';
+                });
+        });
+    </script>
+</body>
+</html>

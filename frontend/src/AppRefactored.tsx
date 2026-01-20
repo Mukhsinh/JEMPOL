@@ -22,22 +22,22 @@ import BukuPetunjuk from './pages/BukuPetunjuk';
 const TicketList = lazy(() => import('./pages/tickets/TicketList'));
 const TicketDetail = lazy(() => import('./pages/tickets/TicketDetail'));
 const TicketDetailView = lazy(() => import('./pages/tickets/TicketDetailView'));
-const InternalTicketForm = lazy(() => import('./pages/tickets/InternalTicketForm'));
 const TiketInternal = lazy(() => import('./pages/tickets/TiketInternal'));
-const TiketEksternal = lazy(() => import('./pages/tickets/TiketEksternal'));
 const ExternalTicketForm = lazy(() => import('./pages/tickets/ExternalTicketForm'));
 const QRManagement = lazy(() => import('./pages/tickets/QRManagement'));
 const AIEscalationManagement = lazy(() => import('./pages/tickets/AIEscalationManagement'));
 const EscalationManagement = lazy(() => import('./pages/tickets/EscalationManagement'));
 
 // Survey Management (lazy loaded)
-const SurveyForm = lazy(() => import('./pages/survey/SurveyForm'));
 const SurveyLanding = lazy(() => import('./pages/survey/SurveyLanding'));
 const SurveyReport = lazy(() => import('./pages/survey/SurveyReport'));
 const PublicSurveyForm = lazy(() => import('./pages/survey/PublicSurveyForm'));
 
 // Public Pages
 const TrackTicket = lazy(() => import('./pages/public/TrackTicket'));
+const DirectInternalTicketForm = lazy(() => import('./pages/public/DirectInternalTicketForm'));
+const DirectExternalTicketForm = lazy(() => import('./pages/public/DirectExternalTicketForm'));
+const DirectSurveyForm = lazy(() => import('./pages/public/DirectSurveyForm'));
 
 // User Management
 import UserManagement from './pages/users/UserManagement';
@@ -73,6 +73,18 @@ function AppRefactored() {
           <Route path="/survey/public" element={<Suspense fallback={<LoadingSpinner />}><PublicSurveyForm /></Suspense>} />
           <Route path="/survey/public/:qrCode" element={<Suspense fallback={<LoadingSpinner />}><PublicSurveyForm /></Suspense>} />
           <Route path="/buku-petunjuk" element={<BukuPetunjuk />} />
+          
+          {/* Direct Form Views - Public Access (Tanpa Login, Mobile-First) */}
+          {/* ROUTE UTAMA untuk QR Code - Akses publik tanpa login dan tanpa sidebar */}
+          <Route path="/form/internal" element={<Suspense fallback={<LoadingSpinner />}><DirectInternalTicketForm /></Suspense>} />
+          <Route path="/form/eksternal" element={<Suspense fallback={<LoadingSpinner />}><DirectExternalTicketForm /></Suspense>} />
+          <Route path="/form/survey" element={<Suspense fallback={<LoadingSpinner />}><DirectSurveyForm /></Suspense>} />
+          
+          {/* Direct Form Views - Public Access (Tanpa Login, Mobile-First) */}
+          {/* ROUTE UTAMA - Akses publik tanpa login dan tanpa sidebar */}
+          <Route path="/form/internal" element={<Suspense fallback={<LoadingSpinner />}><DirectInternalTicketForm /></Suspense>} />
+          <Route path="/form/eksternal" element={<Suspense fallback={<LoadingSpinner />}><DirectExternalTicketForm /></Suspense>} />
+          <Route path="/form/survey" element={<Suspense fallback={<LoadingSpinner />}><DirectSurveyForm /></Suspense>} />
 
           {/* Protected Admin Routes */}
           <Route path="/*" element={
@@ -87,19 +99,21 @@ function AppRefactored() {
                   <Route path="/tickets" element={<Suspense fallback={<LoadingSpinner />}><TicketList /></Suspense>} />
                   <Route path="/tickets/:id" element={<Suspense fallback={<LoadingSpinner />}><TicketDetail /></Suspense>} />
                   <Route path="/tickets/view" element={<Suspense fallback={<LoadingSpinner />}><TicketDetailView /></Suspense>} />
-                  <Route path="/tickets/create/internal" element={<Suspense fallback={<LoadingSpinner />}><InternalTicketForm /></Suspense>} />
-                  <Route path="/tickets/internal-form" element={<Suspense fallback={<LoadingSpinner />}><InternalTicketForm /></Suspense>} />
+                  {/* Route lama - redirect ke /form/* */}
+                  <Route path="/tickets/create/internal" element={<Suspense fallback={<LoadingSpinner />}><DirectInternalTicketForm /></Suspense>} />
+                  <Route path="/tickets/internal-form" element={<Suspense fallback={<LoadingSpinner />}><DirectInternalTicketForm /></Suspense>} />
                   <Route path="/tickets/tiket-internal" element={<Suspense fallback={<LoadingSpinner />}><TiketInternal /></Suspense>} />
-                  <Route path="/tickets/tiket-eksternal" element={<Suspense fallback={<LoadingSpinner />}><TiketEksternal /></Suspense>} />
+                  <Route path="/tickets/tiket-eksternal" element={<Suspense fallback={<LoadingSpinner />}><DirectExternalTicketForm /></Suspense>} />
                   <Route path="/tickets/qr-management" element={<Suspense fallback={<LoadingSpinner />}><QRManagement /></Suspense>} />
                   <Route path="/qr-codes" element={<Suspense fallback={<LoadingSpinner />}><QRManagement /></Suspense>} />
                   <Route path="/tickets/ai-escalation" element={<Suspense fallback={<LoadingSpinner />}><AIEscalationManagement /></Suspense>} />
                   <Route path="/tickets/escalation" element={<Suspense fallback={<LoadingSpinner />}><EscalationManagement /></Suspense>} />
 
                   {/* Survey Management */}
-                  <Route path="/survey" element={<Suspense fallback={<LoadingSpinner />}><SurveyLanding /></Suspense>} />
+                  {/* Route lama - redirect ke /form/survey */}
+                  <Route path="/survey" element={<Suspense fallback={<LoadingSpinner />}><DirectSurveyForm /></Suspense>} />
                   <Route path="/survey/admin" element={<Suspense fallback={<LoadingSpinner />}><SurveyLanding /></Suspense>} />
-                  <Route path="/survey/form" element={<Suspense fallback={<LoadingSpinner />}><SurveyForm /></Suspense>} />
+                  <Route path="/survey/form" element={<Suspense fallback={<LoadingSpinner />}><DirectSurveyForm /></Suspense>} />
                   <Route path="/survey/report" element={<Suspense fallback={<LoadingSpinner />}><SurveyReport /></Suspense>} />
 
                   {/* User Management */}

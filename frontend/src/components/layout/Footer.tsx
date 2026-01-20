@@ -121,7 +121,7 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <a href="/survey/public" className="text-sm hover:text-primary-400 transition-colors">
+                <a href="/form/survey" className="text-sm hover:text-primary-400 transition-colors">
                   Isi Survei
                 </a>
               </li>

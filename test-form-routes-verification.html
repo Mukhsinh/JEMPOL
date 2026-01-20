@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Form Routes - Verification</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        .test-section {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .test-link {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 8px 8px 8px 0;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        .test-link:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .route-info {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border-left: 3px solid #667eea;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 10px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 6px;
+            border-left: 3px solid #28a745;
+        }
+        .checklist li:before {
+            content: "✓ ";
+            color: #28a745;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Form Routes - Verification</h1>
+        
+        <div class="status success">
+            <strong>✅ PERBAIKAN SELESAI!</strong><br>
+            Route /form/internal, /form/eksternal, dan /form/survey telah ditambahkan ke AppRefactored.tsx
+        </div>
+
+        <div class="status info">
+            <strong>📋 MASALAH YANG DITEMUKAN:</strong><br>
+            Aplikasi menggunakan <code>AppRefactored.tsx</code> yang tidak memiliki route untuk /form/*<br>
+            Route tersebut hanya ada di <code>App.tsx</code> yang tidak digunakan.
+        </div>
+
+        <div class="status warning">
+            <strong>⚠️ CATATAN PENTING:</strong><br>
+            Pastikan aplikasi frontend sudah berjalan di <code>http://localhost:5173</code><br>
+            Jika belum, jalankan: <code>cd frontend && npm run dev</code>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Test Manual - Klik Link Berikut:</h2>
+            
+            <h3>1. Form Tiket Internal</h3>
+            <div class="route-info">/form/internal?unit_id=1&unit_name=Unit Test</div>
+            <a href="http://localhost:5173/form/internal?unit_id=1&unit_name=Unit%20Test" 
+               class="test-link" target="_blank">
+                🎫 Test Form Internal
+            </a>
+            
+            <h3>2. Form Pengaduan Eksternal</h3>
+            <div class="route-info">/form/eksternal?unit_id=1&unit_name=Unit Test</div>
+            <a href="http://localhost:5173/form/eksternal?unit_id=1&unit_name=Unit%20Test" 
+               class="test-link" target="_blank">
+                📝 Test Form Eksternal
+            </a>
+            
+            <h3>3. Form Survei Kepuasan</h3>
+            <div class="route-info">/form/survey?unit_id=1&unit_name=Unit Test</div>
+            <a href="http://localhost:5173/form/survey?unit_id=1&unit_name=Unit%20Test" 
+               class="test-link" target="_blank">
+                📊 Test Form Survey
+            </a>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Checklist Verifikasi:</h2>
+            <ul class="checklist">
+                <li>Form harus tampil TANPA SIDEBAR (fullscreen)</li>
+                <li>Form harus memiliki field input yang lengkap</li>
+                <li>Form harus responsive (mobile-friendly)</li>
+                <li>Tidak ada error di console browser</li>
+                <li>Parameter unit_id dan unit_name terbaca dengan benar</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Perubahan yang Dilakukan:</h2>
+            <p><strong>File:</strong> <code>frontend/src/AppRefactored.tsx</code></p>
+            <p><strong>Perubahan:</strong> Menambahkan 3 route public baru:</p>
+            <ul class="checklist">
+                <li><code>&lt;Route path="/form/internal" element={...} /&gt;</code></li>
+                <li><code>&lt;Route path="/form/eksternal" element={...} /&gt;</code></li>
+                <li><code>&lt;Route path="/form/survey" element={...} /&gt;</code></li>
+            </ul>
+        </div>
+
+        <div class="status info">
+            <strong>💡 TIPS:</strong><br>
+            Jika form masih kosong setelah perbaikan ini, kemungkinan masalah ada di:<br>
+            1. Komponen form itu sendiri (DirectInternalTicketForm.tsx, dll)<br>
+            2. API backend tidak merespons<br>
+            3. Error JavaScript di console browser<br>
+            <br>
+            Buka Developer Tools (F12) untuk melihat error detail.
+        </div>
+    </div>
+
+    <script>
+        console.log('✅ Test Form Routes - Verification Page Loaded');
+        console.log('📋 Routes yang ditambahkan:');
+        console.log('  - /form/internal');
+        console.log('  - /form/eksternal');
+        console.log('  - /form/survey');
+        console.log('');
+        console.log('🔍 Klik link di atas untuk test setiap route');
+    </script>
+</body>
+</html>

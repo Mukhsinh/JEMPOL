@@ -119,6 +119,7 @@ function App() {
 
           {/* Direct Form Views - Public Access (Tanpa Login, Mobile-First) */}
           {/* QR Code per unit menautkan langsung ke form ini */}
+          {/* ROUTE UTAMA - Akses publik tanpa login dan tanpa sidebar */}
           <Route path="/form/internal" element={<DirectInternalTicketForm />} />
           <Route path="/form/eksternal" element={<DirectExternalTicketForm />} />
           <Route path="/form/survey" element={<DirectSurveyForm />} />
@@ -135,17 +136,19 @@ function App() {
           <Route path="/tickets" element={<ProtectedPage><TicketList /></ProtectedPage>} />
           <Route path="/tickets/:id" element={<ProtectedPage><TicketDetail /></ProtectedPage>} />
           <Route path="/tickets/view" element={<ProtectedPage><TicketDetailView /></ProtectedPage>} />
-          <Route path="/tickets/create/internal" element={<ProtectedPage><InternalTicketForm /></ProtectedPage>} />
-          <Route path="/tickets/internal-form" element={<ProtectedPage><InternalTicketForm /></ProtectedPage>} />
-          <Route path="/tickets/tiket-eksternal" element={<ProtectedPage><TiketEksternal /></ProtectedPage>} />
+          {/* Route lama - redirect ke /form/* untuk backward compatibility */}
+          <Route path="/tickets/create/internal" element={<DirectInternalTicketForm />} />
+          <Route path="/tickets/internal-form" element={<DirectInternalTicketForm />} />
+          <Route path="/tickets/tiket-eksternal" element={<DirectExternalTicketForm />} />
           <Route path="/tickets/qr-management" element={<ProtectedPage><QRManagement /></ProtectedPage>} />
           <Route path="/qr-codes" element={<ProtectedPage><QRManagement /></ProtectedPage>} />
           <Route path="/tickets/escalation" element={<ProtectedPage><EscalationManagement /></ProtectedPage>} />
 
           {/* Survey Management */}
-          <Route path="/survey" element={<ProtectedPage><SurveyLanding /></ProtectedPage>} />
+          {/* Route lama - redirect ke /form/survey untuk backward compatibility */}
+          <Route path="/survey" element={<DirectSurveyForm />} />
           <Route path="/survey/admin" element={<ProtectedPage><SurveyLanding /></ProtectedPage>} />
-          <Route path="/survey/form" element={<ProtectedPage><SurveyForm /></ProtectedPage>} />
+          <Route path="/survey/form" element={<DirectSurveyForm />} />
           <Route path="/survey/report" element={<ProtectedPage><SurveyReport /></ProtectedPage>} />
 
           {/* User Management */}

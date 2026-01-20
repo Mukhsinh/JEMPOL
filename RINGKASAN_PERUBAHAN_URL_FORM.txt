@@ -1,0 +1,101 @@
+========================================
+RINGKASAN PERUBAHAN URL FORM
+========================================
+
+PERUBAHAN URL:
+1. /tickets/create/internal  →  /form/internal
+2. /tickets/tiket-eksternal  →  /form/eksternal  
+3. /survey                   →  /form/survey
+
+========================================
+FILE YANG DIUBAH:
+========================================
+
+1. frontend/src/App.tsx
+   - Menambahkan komentar untuk route baru
+   - Mempertahankan route lama untuk backward compatibility
+   - Route baru menggunakan komponen Direct* yang tanpa sidebar
+
+2. frontend/src/components/Sidebar.tsx
+   - Link "Tiket Internal" → /form/internal
+   - Link "Tiket Eksternal" → /form/eksternal
+   - Link "Survei Kepuasan" → /form/survey
+   - Update fungsi isSurveyActive() untuk mengenali /form/survey
+
+3. frontend/src/components/SidebarRefactored.tsx
+   - Update path di menu navigation
+
+4. frontend/src/components/layout/Footer.tsx
+   - Link "Isi Survei" → /form/survey
+
+5. frontend/src/pages/tickets/TicketList.tsx
+   - Tombol "Buat Tiket Baru" → /form/internal
+
+6. frontend/src/pages/survey/SurveyLanding.tsx
+   - navigate setelah submit → /form/survey?survey=success
+   - Tombol kembali → /form/survey
+
+7. frontend/src/pages/survey/SurveyForm.tsx
+   - navigate setelah submit → /form/survey?survey=success
+
+8. frontend/src/pages/survey/PublicSurveyLanding.tsx
+   - navigate ke form → /form/survey
+
+========================================
+KOMPONEN YANG DIGUNAKAN:
+========================================
+
+URL BARU menggunakan komponen Direct* yang:
+✓ TANPA SIDEBAR
+✓ TANPA LOGIN (Public Access)
+✓ FULLSCREEN FORM
+✓ Mobile-First Design
+
+- /form/internal   → DirectInternalTicketForm
+- /form/eksternal  → DirectExternalTicketForm
+- /form/survey     → DirectSurveyForm
+
+========================================
+FITUR KOMPONEN DIRECT*:
+========================================
+
+Semua komponen Direct* sudah memiliki:
+1. useEffect untuk hide sidebar/header/nav
+2. document.body.style.overflow = 'hidden'
+3. Clean UI tanpa navigasi
+4. Support query params (unit_id, unit_name, qr)
+5. Mobile-responsive
+
+========================================
+BACKWARD COMPATIBILITY:
+========================================
+
+Route LAMA masih berfungsi untuk admin:
+- /tickets/create/internal (dengan sidebar, perlu login)
+- /tickets/tiket-eksternal (dengan sidebar, perlu login)
+- /survey (dengan sidebar, perlu login)
+
+Route BARU untuk public access:
+- /form/internal (tanpa sidebar, tanpa login)
+- /form/eksternal (tanpa sidebar, tanpa login)
+- /form/survey (tanpa sidebar, tanpa login)
+
+========================================
+CARA TEST:
+========================================
+
+1. Jalankan: TEST_URL_BARU_FORM.bat
+2. Atau buka manual:
+   - http://localhost:5173/form/internal
+   - http://localhost:5173/form/eksternal
+   - http://localhost:5173/form/survey
+
+3. Pastikan:
+   ✓ Tidak ada sidebar
+   ✓ Tidak perlu login
+   ✓ Form langsung tampil
+   ✓ Fullscreen/clean UI
+
+========================================
+STATUS: SELESAI ✓
+========================================
