@@ -21,6 +21,9 @@ export interface Ticket {
   submitter_address?: string;
   is_anonymous: boolean;
   source: string;
+  unit_id?: string;
+  escalated_to_unit_id?: string;
+  is_flagged?: boolean;
   units?: {
     id: string;
     name: string;

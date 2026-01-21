@@ -123,12 +123,124 @@ if (!authListenerSetup && typeof window !== 'undefined') {
 export const clearInvalidSession = async () => {
   try {
     await supabase.auth.signOut();
-    localStorage.removeItem('supabase.auth.token');
-    localStorage.removeItem('sb-jxxzbdivafzzwqhagwrf-auth-token');
+    
+    // Clear all possible Supabase storage keys
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('sb-') || key.includes('supabase')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    sessionStorage.clear();
   } catch (e) {
-    // Silent error
+    // Force clear even if signOut fails
+    try {
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.startsWith('sb-') || key.includes('supabase')) {
+          localStorage.removeItem(key);
+        }
+      });
+      sessionStorage.clear();
+    } catch (err) {
+      // Silent error
+    }
   }
 };
+
+// Clear invalid session on page load
+if (typeof window !== 'undefined') {
+  try {
+    const keys = Object.keys(localStorage);
+    const supabaseKeys = keys.filter(key => key.startsWith('sb-') || key.includes('supabase'));
+    
+    supabaseKeys.forEach(key => {
+      try {
+        const data = localStorage.getItem(key);
+        if (data) {
+          const parsed = JSON.parse(data);
+          // Check if refresh token is invalid or expired
+          if (parsed.refresh_token && (
+            typeof parsed.refresh_token !== 'string' ||
+            parsed.refresh_token === 'null' ||
+            parsed.refresh_token === ''
+          )) {
+            console.log('Clearing invalid session on page load');
+            localStorage.removeItem(key);
+          }
+          
+          // Check if access token is expired
+          if (parsed.expires_at) {
+            const expiresAt = new Date(parsed.expires_at * 1000);
+            if (expiresAt < new Date()) {
+              console.log('Clearing expired session on page load');
+              localStorage.removeItem(key);
+            }
+          }
+        }
+      } catch (e) {
+        // Invalid JSON, remove it
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (error) {
+    // Silent error
+  }
+}
+
+// Auto-clear session on 400 error - DISABLED to prevent infinite reload
+// This was causing issues with login flow
+if (typeof window !== 'undefined') {
+  // Only clear on explicit 400 error, not on page load
+  const originalGetSession = supabase.auth.getSession.bind(supabase.auth);
+  supabase.auth.getSession = async function() {
+    try {
+      const result = await originalGetSession();
+      
+      // If error contains 400 or invalid session, clear it
+      if (result.error && (
+        result.error.message.includes('400') || 
+        result.error.message.includes('invalid') ||
+        result.error.message.includes('refresh_token')
+      )) {
+        console.log('Detected invalid session, clearing...');
+        await clearInvalidSession();
+        // Return empty session instead of error
+        return { data: { session: null }, error: null };
+      }
+      
+      return result;
+    } catch (e) {
+      console.error('Error in getSession:', e);
+      return { data: { session: null }, error: null };
+    }
+  };
+}
+
+// Handle 400 errors globally - DISABLED to prevent interference with login
+// The error handling is now done in authService.ts
+// if (typeof window !== 'undefined') {
+//   const originalFetch = window.fetch;
+//   window.fetch = async (...args) => {
+//     try {
+//       const response = await originalFetch(...args);
+//       
+//       // If 400 error from Supabase, clear session
+//       if (response.status === 400 && args[0].toString().includes('supabase.co')) {
+//         const url = args[0].toString();
+//         if (url.includes('/auth/') || url.includes('/rest/')) {
+//           console.log('400 error detected, clearing invalid session...');
+//           await clearInvalidSession();
+//         }
+//       }
+//       
+//       return response;
+//     } catch (error) {
+//       throw error;
+//     }
+//   };
+// }
 
 // Connection checker yang dioptimalkan dengan cache dan timeout singkat
 export const checkConnection = async (): Promise<boolean> => {

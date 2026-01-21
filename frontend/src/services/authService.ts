@@ -84,13 +84,17 @@ class AuthService {
 
       console.log('✅ Auth successful, fetching admin profile...');
 
+      // Tunggu sebentar untuk memastikan session sudah di-set
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Get admin profile from admins table dengan timeout lebih panjang (20 detik)
+      // Gunakan session yang baru saja dibuat untuk query
       const profilePromise = supabase
         .from('admins')
         .select('*')
         .eq('email', cleanEmail)
         .eq('is_active', true)
-        .single();
+        .maybeSingle(); // Gunakan maybeSingle untuk menghindari error jika tidak ada data
 
       const profileTimeoutPromise = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Profile fetch timeout')), 20000);
@@ -101,8 +105,17 @@ class AuthService {
         profileTimeoutPromise
       ]) as any;
 
-      if (profileError || !adminProfile) {
+      if (profileError) {
         console.error('❌ Profile error:', profileError);
+        await supabase.auth.signOut();
+        return {
+          success: false,
+          error: `Gagal mengambil data admin: ${profileError.message}`,
+        };
+      }
+
+      if (!adminProfile) {
+        console.error('❌ Admin profile not found for email:', cleanEmail);
         await supabase.auth.signOut();
         return {
           success: false,

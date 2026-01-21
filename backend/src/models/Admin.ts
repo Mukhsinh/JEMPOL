@@ -83,7 +83,7 @@ export async function verifyAdmin(username: string, password: string): Promise<A
   try {
     const { data: admin, error } = await supabase
       .from('admins')
-      .select('*')
+      .select('id, username, password_hash, full_name, email, role, is_active, last_login, created_at, updated_at')
       .eq('username', username)
       .eq('is_active', true)
       .single();

@@ -10,7 +10,7 @@ async function setupSupabaseAuth() {
     // Get all active admins
     const { data: admins, error } = await supabase
       .from('admins')
-      .select('*')
+      .select('id, username, email, full_name, role, is_active')
       .eq('is_active', true);
 
     if (error) {

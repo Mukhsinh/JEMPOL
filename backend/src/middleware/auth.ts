@@ -76,7 +76,7 @@ export const authenticateToken = async (req: AuthenticatedRequest, res: Response
 
         const { data: profile, error: profileError } = await userClient
           .from('admins')
-          .select('*')
+          .select('id, username, full_name, email, role, is_active, last_login, created_at, updated_at')
           .eq('email', user.email)
           .eq('is_active', true)
           .single();
@@ -92,7 +92,7 @@ export const authenticateToken = async (req: AuthenticatedRequest, res: Response
           if (profileError) {
             const { data: adminProfileRetry, error: adminError } = await supabaseAdmin
               .from('admins')
-              .select('*')
+              .select('id, username, full_name, email, role, is_active, last_login, created_at, updated_at')
               .eq('email', user.email)
               .eq('is_active', true)
               .single();
@@ -118,7 +118,7 @@ export const authenticateToken = async (req: AuthenticatedRequest, res: Response
 
         const { data: profile, error: profileError } = await supabaseAdmin
           .from('admins')
-          .select('*')
+          .select('id, username, full_name, email, role, is_active, last_login, created_at, updated_at')
           .eq('id', decoded.id)
           .eq('is_active', true)
           .single();
@@ -228,7 +228,7 @@ export const optionalAuth = async (req: AuthenticatedRequest, res: Response, nex
 
         const { data: profile, error: profileError } = await supabaseAdmin
           .from('admins')
-          .select('*')
+          .select('id, username, full_name, email, role, is_active, last_login, created_at, updated_at')
           .eq('email', user.email)
           .eq('is_active', true)
           .single();
@@ -249,7 +249,7 @@ export const optionalAuth = async (req: AuthenticatedRequest, res: Response, nex
 
         const { data: profile, error: profileError } = await supabaseAdmin
           .from('admins')
-          .select('*')
+          .select('id, username, full_name, email, role, is_active, last_login, created_at, updated_at')
           .eq('id', decoded.id)
           .eq('is_active', true)
           .single();

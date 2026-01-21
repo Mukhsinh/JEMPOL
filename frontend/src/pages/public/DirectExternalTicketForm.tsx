@@ -9,7 +9,6 @@ interface FormData {
   service_type: string;
   title: string;
   description: string;
-  attachments: File[];
 }
 
 // Direct Form View - Tiket Eksternal/Pengaduan (Public, Tanpa Login, Mobile-First)
@@ -57,8 +56,7 @@ const DirectExternalTicketForm: React.FC = () => {
     reporter_phone: '',
     service_type: '',
     title: '',
-    description: '',
-    attachments: []
+    description: ''
   });
 
   const totalSteps = 3;
@@ -69,16 +67,7 @@ const DirectExternalTicketForm: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const files = Array.from(e.target.files);
-      setFormData(prev => ({ ...prev, attachments: [...prev.attachments, ...files] }));
-    }
-  };
 
-  const removeFile = (index: number) => {
-    setFormData(prev => ({ ...prev, attachments: prev.attachments.filter((_, i) => i !== index) }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,6 +89,8 @@ const DirectExternalTicketForm: React.FC = () => {
         source: 'direct_form'
       };
 
+      console.log('📤 Mengirim tiket eksternal:', submitData);
+
       const response = await fetch('/api/public/external-tickets', {
         method: 'POST',
         headers: {
@@ -107,7 +98,10 @@ const DirectExternalTicketForm: React.FC = () => {
         },
         body: JSON.stringify(submitData)
       });
+      
+      console.log('📥 Response status:', response.status);
       const result = await response.json();
+      console.log('📥 Response data:', result);
 
       if (response.ok && result.success) {
         setTicketNumber(result.ticket_number || 'TKT-' + Date.now());
@@ -116,6 +110,7 @@ const DirectExternalTicketForm: React.FC = () => {
         setError(result.error || 'Gagal mengirim laporan');
       }
     } catch (err: any) {
+      console.error('❌ Submit error:', err);
       setError('Terjadi kesalahan saat mengirim laporan');
     } finally {
       setSubmitting(false);
@@ -132,8 +127,7 @@ const DirectExternalTicketForm: React.FC = () => {
       reporter_phone: '',
       service_type: '',
       title: '',
-      description: '',
-      attachments: []
+      description: ''
     });
   };
 
@@ -385,54 +379,13 @@ const DirectExternalTicketForm: React.FC = () => {
                 </div>
               )}
 
-              {/* Step 3: Attachments & Submit */}
+              {/* Step 3: Review & Submit */}
               {currentStep === 3 && (
                 <div className="space-y-6 animate-slideUp">
                   <div>
-                    <h2 className="text-xl font-bold text-gray-800 mb-2">Lampiran & Kirim</h2>
-                    <p className="text-gray-500 text-sm">Tambahkan foto atau dokumen pendukung</p>
+                    <h2 className="text-xl font-bold text-gray-800 mb-2">Review & Kirim</h2>
+                    <p className="text-gray-500 text-sm">Periksa kembali informasi laporan Anda</p>
                   </div>
-
-                  {/* File Upload */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center relative hover:border-orange-400 transition-colors">
-                    <input 
-                      type="file" 
-                      multiple 
-                      accept=".jpg,.jpeg,.png,.pdf" 
-                      onChange={handleFileUpload}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/30">
-                      <span className="material-symbols-outlined text-white text-3xl">cloud_upload</span>
-                    </div>
-                    <p className="font-semibold text-gray-700 mb-1">Tap untuk unggah</p>
-                    <p className="text-sm text-gray-500">JPG, PNG, PDF (Maks. 5MB)</p>
-                  </div>
-
-                  {formData.attachments.length > 0 && (
-                    <div className="space-y-2">
-                      {formData.attachments.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                              <span className="material-symbols-outlined text-orange-500">attach_file</span>
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-700 truncate max-w-[180px]">{file.name}</p>
-                              <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                            </div>
-                          </div>
-                          <button 
-                            type="button" 
-                            onClick={() => removeFile(index)} 
-                            className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center"
-                          >
-                            <span className="material-symbols-outlined text-red-500 text-lg">close</span>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
 
                   {/* Summary */}
                   <div className="bg-gradient-to-br from-orange-50 to-rose-50 rounded-2xl p-5 space-y-3">
@@ -441,6 +394,12 @@ const DirectExternalTicketForm: React.FC = () => {
                       Ringkasan Laporan
                     </h3>
                     <div className="space-y-2 text-sm">
+                      {formData.reporter_identity_type === 'personal' && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Pelapor</span>
+                          <span className="font-medium text-gray-800">{formData.reporter_name}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-gray-500">Jenis</span>
                         <span className="font-medium text-gray-800">
@@ -458,6 +417,16 @@ const DirectExternalTicketForm: React.FC = () => {
                           <span className="font-medium text-gray-800">{unitName}</span>
                         </div>
                       )}
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+                    <span className="material-symbols-outlined text-blue-500 text-xl">info</span>
+                    <div className="flex-1">
+                      <p className="text-sm text-blue-800 font-medium mb-1">Informasi</p>
+                      <p className="text-xs text-blue-600">
+                        Laporan akan segera diproses oleh tim terkait. Anda akan menerima nomor tiket untuk tracking.
+                      </p>
                     </div>
                   </div>
                 </div>

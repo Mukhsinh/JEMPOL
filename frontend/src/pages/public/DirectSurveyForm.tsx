@@ -76,10 +76,11 @@ const DirectSurveyForm: React.FC = () => {
   ];
 
   const ratingOptions = [
-    { value: '1', label: 'Tidak Baik', emoji: '😞', color: 'from-red-400 to-rose-500' },
-    { value: '2', label: 'Kurang Baik', emoji: '😐', color: 'from-orange-400 to-amber-500' },
-    { value: '3', label: 'Baik', emoji: '🙂', color: 'from-yellow-400 to-amber-500' },
-    { value: '4', label: 'Sangat Baik', emoji: '😊', color: 'from-emerald-400 to-green-500' }
+    { value: '1', label: 'Sangat Tidak Puas', emoji: '😞', color: 'from-red-500 to-red-600', bgColor: 'bg-red-500', desc: 'Sangat buruk' },
+    { value: '2', label: 'Tidak Puas', emoji: '😕', color: 'from-orange-500 to-orange-600', bgColor: 'bg-orange-500', desc: 'Kurang baik' },
+    { value: '3', label: 'Cukup Puas', emoji: '😐', color: 'from-yellow-500 to-yellow-600', bgColor: 'bg-yellow-500', desc: 'Cukup' },
+    { value: '4', label: 'Puas', emoji: '🙂', color: 'from-lime-500 to-lime-600', bgColor: 'bg-lime-500', desc: 'Baik' },
+    { value: '5', label: 'Sangat Puas', emoji: '😊', color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-500', desc: 'Sangat baik' }
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -177,10 +178,10 @@ const DirectSurveyForm: React.FC = () => {
         </div>
       )}
 
-      {/* Form Content */}
+      {/* Form Content - Perbaikan Scroll */}
       <main className="relative z-10 flex-1 bg-white rounded-t-[2.5rem] overflow-hidden shadow-2xl mt-4">
         <form onSubmit={handleSubmit} className="h-full flex flex-col">
-          <div className="flex-1 overflow-y-auto px-6 py-8">
+          <div className="flex-1 overflow-y-auto px-6 py-8 pb-32">
             <div className="max-w-md mx-auto space-y-6">
               
               {/* Progress Indicator */}
@@ -332,13 +333,18 @@ const DirectSurveyForm: React.FC = () => {
                   </div>
 
                   {/* Rating Legend */}
-                  <div className="flex justify-between px-4 py-3 bg-gray-50 rounded-xl">
-                    {ratingOptions.map((opt) => (
-                      <div key={opt.value} className="flex flex-col items-center gap-1">
-                        <span className="text-xl">{opt.emoji}</span>
-                        <span className="text-xs text-gray-500">{opt.value}</span>
-                      </div>
-                    ))}
+                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-4 mb-4">
+                    <p className="text-center text-sm font-semibold text-gray-700 mb-3">Panduan Penilaian</p>
+                    <div className="grid grid-cols-5 gap-2">
+                      {ratingOptions.map((opt) => (
+                        <div key={opt.value} className="flex flex-col items-center gap-1">
+                          <div className={`w-12 h-12 rounded-xl ${opt.bgColor} flex items-center justify-center shadow-md`}>
+                            <span className="text-2xl">{opt.emoji}</span>
+                          </div>
+                          <span className="text-[10px] text-gray-700 text-center leading-tight font-medium">{opt.label}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Questions */}
@@ -352,19 +358,27 @@ const DirectSurveyForm: React.FC = () => {
                             <p className="text-xs text-gray-500">{q.text}</p>
                           </div>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-1.5">
                           {ratingOptions.map((opt) => (
                             <button 
                               key={opt.value} 
                               type="button" 
                               onClick={() => handleRadioChange(q.id, opt.value)}
-                              className={`flex-1 py-3 rounded-xl text-xl transition-all ${
+                              className={`flex-1 py-3 rounded-xl transition-all relative ${
                                 formData[q.id as keyof FormData] === opt.value 
-                                  ? `bg-gradient-to-r ${opt.color} shadow-lg` 
-                                  : 'bg-white border-2 border-gray-200'
+                                  ? `${opt.bgColor} shadow-lg scale-105` 
+                                  : 'bg-white border-2 border-gray-200 hover:border-gray-300'
                               }`}
                             >
-                              {opt.emoji}
+                              <div className="text-2xl mb-1">{opt.emoji}</div>
+                              <div className={`text-[9px] font-medium leading-tight ${
+                                formData[q.id as keyof FormData] === opt.value ? 'text-white' : 'text-gray-500'
+                              }`}>{opt.label}</div>
+                              {formData[q.id as keyof FormData] === opt.value && (
+                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-md">
+                                  <span className="material-symbols-outlined text-green-500 text-sm">check</span>
+                                </div>
+                              )}
                             </button>
                           ))}
                         </div>

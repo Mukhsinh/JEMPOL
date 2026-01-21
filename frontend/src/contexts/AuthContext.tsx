@@ -8,6 +8,7 @@ interface User {
   full_name?: string;
   email?: string;
   role: string;
+  name?: string;
 }
 
 interface AuthContextType {
@@ -204,13 +205,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
+      // Tunggu sebentar untuk memastikan session sudah di-set
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       // Get admin profile dengan timeout yang cukup
       const profilePromise = supabase
         .from('admins')
         .select('id, username, full_name, email, role, is_active')
         .eq('email', cleanEmail)
         .eq('is_active', true)
-        .single();
+        .maybeSingle(); // Gunakan maybeSingle untuk menghindari error jika tidak ada data
 
       const profileTimeout = new Promise((_, reject) => {
         setTimeout(() => reject(new Error('Profile timeout')), 10000); // 10 detik
@@ -218,7 +222,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { data: adminProfile, error: profileError } = await Promise.race([profilePromise, profileTimeout]) as any;
 
-      if (profileError || !adminProfile) {
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        await supabase.auth.signOut();
+        return {
+          success: false,
+          error: `Gagal mengambil data admin: ${profileError.message}`,
+        };
+      }
+
+      if (!adminProfile) {
+        console.error('Admin profile not found for email:', cleanEmail);
         await supabase.auth.signOut();
         return {
           success: false,

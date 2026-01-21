@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login - KISS System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .result h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .result pre {
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .quick-fill {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .quick-fill button {
+            flex: 1;
+            padding: 8px;
+            font-size: 12px;
+            background: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test Login</h1>
+        <p class="subtitle">KISS Complaint Management System</p>
+
+        <div class="quick-fill">
+            <button type="button" onclick="fillAdmin()">Admin Jempol</button>
+            <button type="button" onclick="fillTest()">Test Admin</button>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" value="admin@jempol.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" value="admin123" required>
+            </div>
+
+            <button type="submit" id="loginBtn">Login</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px; color: #666;">Sedang login...</p>
+        </div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        function fillAdmin() {
+            document.getElementById('email').value = 'admin@jempol.com';
+            document.getElementById('password').value = 'admin123';
+        }
+
+        function fillTest() {
+            document.getElementById('email').value = 'test@admin.com';
+            document.getElementById('password').value = 'admin123';
+        }
+
+        function showResult(type, title, message, data = null) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+            
+            let html = `<h3>${title}</h3><p>${message}</p>`;
+            if (data) {
+                html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            }
+            resultDiv.innerHTML = html;
+        }
+
+        function hideResult() {
+            document.getElementById('result').style.display = 'none';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('loginBtn').disabled = show;
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideResult();
+            showLoading(true);
+
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            console.log('🔄 Attempting login for:', email);
+
+            try {
+                // Step 1: Clear any existing session
+                console.log('1️⃣ Clearing existing session...');
+                await supabase.auth.signOut();
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Step 2: Attempt login
+                console.log('2️⃣ Attempting login...');
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (authError) {
+                    console.error('❌ Auth error:', authError);
+                    showResult('error', '❌ Login Gagal', authError.message, authError);
+                    showLoading(false);
+                    return;
+                }
+
+                if (!authData?.user || !authData?.session) {
+                    showResult('error', '❌ Login Gagal', 'Tidak ada data user atau session');
+                    showLoading(false);
+                    return;
+                }
+
+                console.log('✅ Auth successful:', authData.user.email);
+
+                // Step 3: Get admin profile
+                console.log('3️⃣ Fetching admin profile...');
+                const { data: adminProfile, error: profileError } = await supabase
+                    .from('admins')
+                    .select('*')
+                    .eq('email', email)
+                    .eq('is_active', true)
+                    .single();
+
+                if (profileError || !adminProfile) {
+                    console.error('❌ Profile error:', profileError);
+                    showResult('error', '❌ Profile Error', 
+                        'Admin tidak ditemukan atau tidak aktif', 
+                        profileError);
+                    showLoading(false);
+                    return;
+                }
+
+                console.log('✅ Profile fetched:', adminProfile);
+
+                // Success!
+                showResult('success', '✅ Login Berhasil!', 
+                    `Selamat datang, ${adminProfile.full_name || adminProfile.username}!`,
+                    {
+                        user: {
+                            id: authData.user.id,
+                            email: authData.user.email
+                        },
+                        admin: {
+                            username: adminProfile.username,
+                            full_name: adminProfile.full_name,
+                            role: adminProfile.role,
+                            is_active: adminProfile.is_active
+                        },
+                        session: {
+                            access_token: authData.session.access_token.substring(0, 20) + '...',
+                            expires_at: new Date(authData.session.expires_at * 1000).toLocaleString()
+                        }
+                    });
+
+                // Redirect after 2 seconds
+                setTimeout(() => {
+                    window.location.href = 'http://localhost:3002/dashboard';
+                }, 2000);
+
+            } catch (error) {
+                console.error('❌ Unexpected error:', error);
+                showResult('error', '❌ Error', error.message, error);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Auto-fill on load
+        window.addEventListener('load', () => {
+            console.log('🚀 Test Login Page Loaded');
+            console.log('📋 Supabase URL:', supabaseUrl);
+        });
+    </script>
+</body>
+</html>

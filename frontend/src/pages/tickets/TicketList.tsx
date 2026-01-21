@@ -4,6 +4,17 @@ import { useAuth } from '../../contexts/AuthContext';
 import { complaintService, Ticket } from '../../services/complaintService';
 import { EscalationModal, ResponseModal } from '../../components/TicketActionModals';
 
+// Tipe untuk notifikasi
+interface Notification {
+    id: string;
+    ticket_id: string;
+    ticket_number: string;
+    type: 'new_ticket' | 'escalation' | 'response';
+    message: string;
+    created_at: string;
+    is_read: boolean;
+}
+
 export default function TicketList() {
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [loading, setLoading] = useState(true);
@@ -12,6 +23,11 @@ export default function TicketList() {
     const [filterPriority, setFilterPriority] = useState<string>('all');
     const [filterType, setFilterType] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState('');
+    
+    // Notification states
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
     
     // Modal states
     const [escalationModal, setEscalationModal] = useState<{ isOpen: boolean; ticketId: string; ticketNumber: string; unitId?: string }>({
@@ -26,11 +42,52 @@ export default function TicketList() {
     useEffect(() => {
         if (!authLoading && isAuthenticated) {
             fetchTickets();
+            fetchNotifications();
         } else if (!authLoading && !isAuthenticated) {
             setError('Anda harus login terlebih dahulu');
             setLoading(false);
         }
     }, [isAuthenticated, authLoading]);
+
+    // Fetch notifications
+    async function fetchNotifications() {
+        try {
+            // Simulasi fetch notifikasi - nanti bisa diganti dengan API real
+            const mockNotifications: Notification[] = tickets
+                .filter(t => t.status === 'open' || t.status === 'escalated')
+                .slice(0, 5)
+                .map(t => ({
+                    id: `notif-${t.id}`,
+                    ticket_id: t.id,
+                    ticket_number: t.ticket_number || '',
+                    type: t.status === 'escalated' ? 'escalation' : 'new_ticket',
+                    message: t.status === 'escalated' 
+                        ? `Tiket ${t.ticket_number} telah dieskalasi` 
+                        : `Tiket baru ${t.ticket_number} masuk`,
+                    created_at: t.created_at,
+                    is_read: false
+                }));
+            
+            setNotifications(mockNotifications);
+            setUnreadCount(mockNotifications.filter(n => !n.is_read).length);
+        } catch (err) {
+            console.error('Failed to fetch notifications:', err);
+        }
+    }
+
+    // Mark notification as read
+    function markAsRead(notificationId: string) {
+        setNotifications(prev => 
+            prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+    }
+
+    // Mark all as read
+    function markAllAsRead() {
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+        setUnreadCount(0);
+    }
 
     async function fetchTickets() {
         if (!isAuthenticated) {
@@ -59,6 +116,15 @@ export default function TicketList() {
 
     // Filter logic - filter berdasarkan unit user jika bukan admin/superadmin
     const filteredTickets = tickets.filter(ticket => {
+        // Filter berdasarkan unit kerja - hanya admin/superadmin yang bisa lihat semua
+        const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+        const matchesUnit = isAdmin || ticket.unit_id === user?.unit_id;
+        
+        // Filter tiket yang masuk langsung atau eskalasi ke unit ini
+        const isDirectTicket = ticket.unit_id === user?.unit_id;
+        const isEscalatedToUnit = ticket.status === 'escalated' && ticket.escalated_to_unit_id === user?.unit_id;
+        const matchesTicketAccess = isAdmin || isDirectTicket || isEscalatedToUnit;
+        
         const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
         const matchesPriority = filterPriority === 'all' || ticket.priority === filterPriority;
         const matchesType = filterType === 'all' || ticket.type === filterType;
@@ -67,7 +133,7 @@ export default function TicketList() {
             (ticket.ticket_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (ticket.units?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-        return matchesStatus && matchesPriority && matchesType && matchesSearch;
+        return matchesTicketAccess && matchesStatus && matchesPriority && matchesType && matchesSearch;
     });
 
     const getStatusColor = (status: string) => {
@@ -116,11 +182,89 @@ export default function TicketList() {
                     <button onClick={fetchTickets} className="p-2 text-slate-500 hover:text-primary transition-colors bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-lg">
                         <span className="material-symbols-outlined">refresh</span>
                     </button>
+                    
+                    {/* Tombol Notifikasi */}
+                    <div className="relative">
+                        <button 
+                            onClick={() => setShowNotifications(!showNotifications)}
+                            className="relative p-2 text-slate-500 hover:text-primary transition-colors bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-lg"
+                        >
+                            <span className="material-symbols-outlined">notifications</span>
+                            {unreadCount > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </span>
+                            )}
+                        </button>
+                        
+                        {/* Dropdown Notifikasi */}
+                        {showNotifications && (
+                            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 max-h-96 overflow-hidden flex flex-col">
+                                <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                                    <h3 className="font-semibold text-slate-900 dark:text-white">Notifikasi</h3>
+                                    {unreadCount > 0 && (
+                                        <button 
+                                            onClick={markAllAsRead}
+                                            className="text-xs text-primary hover:underline"
+                                        >
+                                            Tandai semua dibaca
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="overflow-y-auto flex-1">
+                                    {notifications.length === 0 ? (
+                                        <div className="px-4 py-8 text-center text-slate-500 text-sm">
+                                            Tidak ada notifikasi
+                                        </div>
+                                    ) : (
+                                        notifications.map(notif => (
+                                            <Link
+                                                key={notif.id}
+                                                to={`/tickets/${notif.ticket_id}`}
+                                                onClick={() => {
+                                                    markAsRead(notif.id);
+                                                    setShowNotifications(false);
+                                                }}
+                                                className={`block px-4 py-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
+                                                    !notif.is_read ? 'bg-blue-50 dark:bg-blue-900/10' : ''
+                                                }`}
+                                            >
+                                                <div className="flex items-start gap-3">
+                                                    <span className={`material-symbols-outlined text-[20px] mt-0.5 ${
+                                                        notif.type === 'escalation' ? 'text-orange-500' : 'text-blue-500'
+                                                    }`}>
+                                                        {notif.type === 'escalation' ? 'trending_up' : 'notifications_active'}
+                                                    </span>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm text-slate-900 dark:text-white font-medium">
+                                                            {notif.message}
+                                                        </p>
+                                                        <p className="text-xs text-slate-500 mt-1">
+                                                            {new Date(notif.created_at).toLocaleString('id-ID', {
+                                                                day: 'numeric',
+                                                                month: 'short',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                        </p>
+                                                    </div>
+                                                    {!notif.is_read && (
+                                                        <span className="w-2 h-2 bg-blue-500 rounded-full mt-2"></span>
+                                                    )}
+                                                </div>
+                                            </Link>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
                     <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">
                         <span className="material-symbols-outlined text-[16px] text-primary">person</span>
                         <span className="font-medium">{user?.name || user?.email || 'User'}</span>
                     </div>
-                    <Link to="/form/internal" className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm shadow-blue-500/30">
+                    <Link to="/form/eksternal" className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm shadow-blue-500/30">
                         <span className="material-symbols-outlined text-[20px]">add</span>
                         <span>Buat Tiket Baru</span>
                     </Link>

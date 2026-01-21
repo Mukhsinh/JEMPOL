@@ -44,7 +44,7 @@ export const authenticateJWT = async (req: AuthenticatedRequest, res: Response, 
     // Get fresh admin data from database
     const { data: adminData, error } = await supabase
       .from('admins')
-      .select('*')
+      .select('id, username, full_name, email, role, is_active, last_login, created_at, updated_at')
       .eq('id', decoded.id)
       .eq('is_active', true)
       .single();

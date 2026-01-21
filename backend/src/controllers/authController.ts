@@ -40,7 +40,7 @@ export const login = async (req: Request, res: Response) => {
     // Get admin profile from admins table
     const { data: adminProfile, error: profileError } = await supabase
       .from('admins')
-      .select('*')
+      .select('id, username, full_name, email, role, is_active, last_login, created_at, updated_at')
       .eq('email', email)
       .eq('is_active', true)
       .single();
@@ -112,7 +112,7 @@ export const verifyToken = async (req: Request, res: Response) => {
     // Get admin profile
     const { data: adminProfile, error: profileError } = await supabase
       .from('admins')
-      .select('*')
+      .select('id, username, full_name, email, role, is_active, last_login, created_at, updated_at')
       .eq('email', user.email)
       .eq('is_active', true)
       .single();

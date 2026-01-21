@@ -28,11 +28,11 @@ const surveyQuestions = [
 ];
 
 const ratingOptions = [
-  { value: 1, emoji: '😞', color: 'from-red-400 to-red-500' },
-  { value: 2, emoji: '😕', color: 'from-orange-400 to-orange-500' },
-  { value: 3, emoji: '😐', color: 'from-yellow-400 to-yellow-500' },
-  { value: 4, emoji: '😊', color: 'from-green-400 to-green-500' },
-  { value: 5, emoji: '😍', color: 'from-emerald-400 to-emerald-500' }
+  { value: 1, emoji: '😞', label: 'Sangat Tidak Puas', color: 'from-red-400 to-red-500', bgColor: 'bg-red-100' },
+  { value: 2, emoji: '😕', label: 'Tidak Puas', color: 'from-orange-400 to-orange-500', bgColor: 'bg-orange-100' },
+  { value: 3, emoji: '😐', label: 'Cukup Puas', color: 'from-yellow-400 to-yellow-500', bgColor: 'bg-yellow-100' },
+  { value: 4, emoji: '😊', label: 'Puas', color: 'from-green-400 to-green-500', bgColor: 'bg-green-100' },
+  { value: 5, emoji: '😍', label: 'Sangat Puas', color: 'from-emerald-400 to-emerald-500', bgColor: 'bg-emerald-100' }
 ];
 
 const SurveyForm: React.FC = () => {
@@ -133,19 +133,31 @@ const SurveyForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validasi minimal
     if (!formData.phone) {
       alert('Mohon isi nomor HP');
       return;
     }
+
+    // Validasi unit
+    if (!formData.unit_id && !unitFromQR) {
+      alert('Mohon pilih unit tujuan');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const data = {
-        service_type: formData.service_type,
+        unit_id: formData.unit_id || unitFromQR,
+        service_type: formData.service_type || 'rawat_jalan',
         reporter_name: formData.is_anonymous ? null : formData.full_name,
         reporter_phone: formData.phone,
         reporter_email: formData.is_anonymous ? null : formData.email,
-        age_range: formData.age,
-        gender: formData.gender,
+        is_anonymous: formData.is_anonymous,
+        age_range: formData.age || null,
+        gender: formData.gender || null,
+        // Skor 8 pertanyaan
         q1_score: formData.q1 ? parseInt(formData.q1) : null,
         q2_score: formData.q2 ? parseInt(formData.q2) : null,
         q3_score: formData.q3 ? parseInt(formData.q3) : null,
@@ -154,25 +166,57 @@ const SurveyForm: React.FC = () => {
         q6_score: formData.q6 ? parseInt(formData.q6) : null,
         q7_score: formData.q7 ? parseInt(formData.q7) : null,
         q8_score: formData.q8 ? parseInt(formData.q8) : null,
-        overall_satisfaction: formData.overall_satisfaction,
-        comments: formData.suggestions,
-        is_anonymous: formData.is_anonymous,
-        qr_token: qrToken,
-        unit_id: formData.unit_id || unitFromQR,
-        phone: formData.phone
+        overall_satisfaction: formData.overall_satisfaction || null,
+        comments: formData.suggestions || null,
+        qr_token: qrToken || null,
+        phone: formData.phone,
+        source: 'public_survey'
       };
+
+      console.log('📤 Mengirim data survey:', data);
+
       const res = await fetch('/api/public/surveys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
+
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Gagal mengirim survei');
-      navigate('/form/survey?survey=success');
+      console.log('📥 Response dari server:', result);
+
+      if (!res.ok) {
+        throw new Error(result.error || 'Gagal mengirim survei');
+      }
+
+      if (result.success) {
+        alert('✅ Survei berhasil dikirim! Terima kasih atas partisipasi Anda.');
+        // Reset form
+        setFormData({
+          service_type: '',
+          full_name: '',
+          phone: '',
+          email: '',
+          is_anonymous: false,
+          age: '',
+          gender: '',
+          q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: '',
+          overall_satisfaction: '',
+          suggestions: '',
+          unit_id: unitFromQR || ''
+        });
+        // Redirect ke halaman sukses atau reload
+        setTimeout(() => {
+          window.location.href = '/form/survey?success=true';
+        }, 1500);
+      } else {
+        throw new Error(result.error || 'Gagal mengirim survei');
+      }
     } catch (err) {
-      alert('Error: ' + (err instanceof Error ? err.message : 'Unknown'));
+      console.error('❌ Error submit survey:', err);
+      alert('Error: ' + (err instanceof Error ? err.message : 'Terjadi kesalahan saat mengirim survei'));
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleChange = (f: string, v: string | boolean) => {
@@ -319,7 +363,7 @@ const SurveyForm: React.FC = () => {
                     </span>
                     <p className="text-sm text-gray-700">{q.text}</p>
                   </div>
-                  <div className="flex justify-between gap-1 pl-9">
+                  <div className="flex justify-between gap-2 pl-9">
                     {ratingOptions.map(rating => (
                       <label key={rating.value} className="cursor-pointer flex-1">
                         <input
@@ -330,9 +374,24 @@ const SurveyForm: React.FC = () => {
                           checked={formData[q.id as keyof typeof formData] === rating.value.toString()}
                           onChange={e => handleChange(q.id, e.target.value)}
                         />
-                        <div className={`flex flex-col items-center p-2 rounded-xl transition-all peer-checked:scale-110 peer-checked:bg-gradient-to-br ${rating.color} peer-checked:shadow-lg`}>
-                          <span className={`text-2xl transition-all ${formData[q.id as keyof typeof formData] === rating.value.toString() ? 'grayscale-0' : 'grayscale opacity-40'}`}>
+                        <div className={`flex flex-col items-center p-2 rounded-xl border-2 transition-all ${
+                          formData[q.id as keyof typeof formData] === rating.value.toString() 
+                            ? `border-transparent ${rating.bgColor} scale-105 shadow-md` 
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}>
+                          <span className={`text-3xl mb-1 transition-all ${
+                            formData[q.id as keyof typeof formData] === rating.value.toString() 
+                              ? 'grayscale-0' 
+                              : 'grayscale opacity-50'
+                          }`}>
                             {rating.emoji}
+                          </span>
+                          <span className={`text-[9px] font-semibold text-center leading-tight ${
+                            formData[q.id as keyof typeof formData] === rating.value.toString()
+                              ? 'text-gray-800'
+                              : 'text-gray-400'
+                          }`}>
+                            {rating.label}
                           </span>
                         </div>
                       </label>

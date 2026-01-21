@@ -11,7 +11,6 @@ interface FormData {
   priority: string;
   title: string;
   description: string;
-  attachments: File[];
 }
 
 // Direct Form View - Tiket Internal (Public, Tanpa Login, Mobile-First)
@@ -69,8 +68,7 @@ const DirectInternalTicketForm: React.FC = () => {
     category: '',
     priority: 'medium',
     title: '',
-    description: '',
-    attachments: []
+    description: ''
   });
 
   useEffect(() => {
@@ -103,15 +101,7 @@ const DirectInternalTicketForm: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFormData(prev => ({ ...prev, attachments: [...prev.attachments, ...Array.from(e.target.files!)] }));
-    }
-  };
 
-  const removeFile = (index: number) => {
-    setFormData(prev => ({ ...prev, attachments: prev.attachments.filter((_, i) => i !== index) }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,7 +109,7 @@ const DirectInternalTicketForm: React.FC = () => {
     setError('');
 
     try {
-      console.log('Submitting ticket:', {
+      console.log('📤 Mengirim tiket internal:', {
         ...formData,
         qr_code: qrCode,
         unit_id: unitId,
@@ -130,25 +120,33 @@ const DirectInternalTicketForm: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
+          reporter_name: formData.reporter_name,
+          reporter_email: formData.reporter_email,
+          reporter_phone: formData.reporter_phone,
+          reporter_department: formData.reporter_department,
+          reporter_position: formData.reporter_position,
+          category: formData.category,
+          priority: formData.priority,
+          title: formData.title,
+          description: formData.description,
           qr_code: qrCode,
           unit_id: unitId,
           source: 'direct_form'
         })
       });
       
-      console.log('Response status:', response.status);
+      console.log('📥 Response status:', response.status);
       const result = await response.json();
-      console.log('Response data:', result);
+      console.log('📥 Response data:', result);
 
-      if (response.ok) {
+      if (response.ok && result.success) {
         setTicketNumber(result.ticket_number || 'INT-' + Date.now());
         setSubmitted(true);
       } else {
         setError(result.error || 'Gagal mengirim tiket');
       }
     } catch (err: any) {
-      console.error('Submit error:', err);
+      console.error('❌ Submit error:', err);
       setError('Terjadi kesalahan saat mengirim tiket: ' + err.message);
     } finally {
       setSubmitting(false);
@@ -167,8 +165,7 @@ const DirectInternalTicketForm: React.FC = () => {
       category: '',
       priority: 'medium',
       title: '',
-      description: '',
-      attachments: []
+      description: ''
     });
   };
 
@@ -239,7 +236,7 @@ const DirectInternalTicketForm: React.FC = () => {
       {/* Form Content */}
       <main className="relative z-10 flex-1 bg-white rounded-t-[2.5rem] overflow-hidden shadow-2xl flex flex-col">
         <form onSubmit={handleSubmit} className="h-full flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-8">
+          <div className="flex-1 overflow-y-auto px-6 py-8 pb-24">
             <div className="max-w-md mx-auto space-y-6">
               
               {/* Progress Indicator */}
@@ -408,54 +405,22 @@ const DirectInternalTicketForm: React.FC = () => {
                 </div>
               )}
 
-              {/* Step 3: Attachments & Submit */}
+              {/* Step 3: Review & Submit */}
               {currentStep === 3 && (
                 <div className="space-y-6 animate-slideUp">
                   <div>
-                    <h2 className="text-xl font-bold text-gray-800 mb-2">Lampiran & Kirim</h2>
-                    <p className="text-gray-500 text-sm">Tambahkan foto atau dokumen pendukung</p>
+                    <h2 className="text-xl font-bold text-gray-800 mb-2">Review & Kirim</h2>
+                    <p className="text-gray-500 text-sm">Periksa kembali informasi tiket Anda</p>
                   </div>
 
-                  {/* File Upload */}
-                  <div className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center relative hover:border-purple-400 transition-colors">
-                    <input 
-                      type="file" 
-                      multiple 
-                      accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" 
-                      onChange={handleFileUpload}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/30">
-                      <span className="material-symbols-outlined text-white text-3xl">cloud_upload</span>
+                  {/* File Upload - DISABLED */}
+                  <div className="border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center bg-gray-50 opacity-60">
+                    <div className="w-16 h-16 bg-gray-300 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <span className="material-symbols-outlined text-gray-500 text-3xl">cloud_upload</span>
                     </div>
-                    <p className="font-semibold text-gray-700 mb-1">Tap untuk unggah</p>
-                    <p className="text-sm text-gray-500">JPG, PNG, PDF, DOC (Maks. 5MB)</p>
+                    <p className="font-semibold text-gray-500 mb-1">Fitur Lampiran Dinonaktifkan</p>
+                    <p className="text-sm text-gray-400">Sementara tidak dapat mengunggah file</p>
                   </div>
-
-                  {formData.attachments.length > 0 && (
-                    <div className="space-y-2">
-                      {formData.attachments.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                              <span className="material-symbols-outlined text-purple-500">attach_file</span>
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-700 truncate max-w-[180px]">{file.name}</p>
-                              <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                            </div>
-                          </div>
-                          <button 
-                            type="button" 
-                            onClick={() => removeFile(index)} 
-                            className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center"
-                          >
-                            <span className="material-symbols-outlined text-red-500 text-lg">close</span>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
 
                   {/* Summary */}
                   <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-5 space-y-3">
