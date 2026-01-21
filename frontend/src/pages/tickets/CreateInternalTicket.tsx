@@ -41,9 +41,9 @@ const CreateInternalTicket = () => {
     const fetchMasterData = async () => {
         setIsLoading(true);
         try {
-            // Fetch units
+            // Fetch units - gunakan Supabase langsung untuk memastikan data dimuat
             try {
-                const unitsResponse: any = await unitService.getUnits();
+                const unitsResponse: any = await unitService.getUnits({ status: 'active' });
                 let unitsArray: Unit[] = [];
                 if (Array.isArray(unitsResponse)) {
                     unitsArray = unitsResponse;
@@ -57,7 +57,11 @@ const CreateInternalTicket = () => {
                         unitsArray = possibleArrays[0] as Unit[];
                     }
                 }
-                setUnits(Array.isArray(unitsArray) ? unitsArray : []);
+                
+                // Filter hanya unit yang aktif
+                const activeUnits = unitsArray.filter(u => u.is_active !== false);
+                setUnits(activeUnits);
+                console.log('✅ Units loaded:', activeUnits.length);
             } catch (unitError) {
                 console.error('Error fetching units:', unitError);
                 setUnits([]);
@@ -79,7 +83,11 @@ const CreateInternalTicket = () => {
                         categoriesArray = possibleArrays[0] as ServiceCategory[];
                     }
                 }
-                setCategories(Array.isArray(categoriesArray) ? categoriesArray : []);
+                
+                // Filter hanya kategori yang aktif
+                const activeCategories = categoriesArray.filter(c => c.is_active !== false);
+                setCategories(activeCategories);
+                console.log('✅ Categories loaded:', activeCategories.length);
             } catch (catError) {
                 console.error('Error fetching categories:', catError);
                 setCategories([]);
@@ -101,7 +109,11 @@ const CreateInternalTicket = () => {
                         ticketTypesArray = possibleArrays[0] as TicketType[];
                     }
                 }
-                setTicketTypes(Array.isArray(ticketTypesArray) ? ticketTypesArray : []);
+                
+                // Filter hanya tipe yang aktif
+                const activeTypes = ticketTypesArray.filter(t => t.is_active !== false);
+                setTicketTypes(activeTypes);
+                console.log('✅ Ticket types loaded:', activeTypes.length);
             } catch (typeError) {
                 console.error('Error fetching ticket types:', typeError);
                 setTicketTypes([]);
@@ -117,6 +129,7 @@ const CreateInternalTicket = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
+        // Validasi field yang diperlukan
         if (!title || !categoryId || !priority || !unitId || !type || !description) {
             setError('Harap isi semua field yang diperlukan.');
             return;
@@ -126,26 +139,46 @@ const CreateInternalTicket = () => {
         setError(null);
 
         try {
-            const ticketData = {
-                type,
+            console.log('📝 Submitting internal ticket with data:', {
+                reporter_name: 'Staff Internal',
+                reporter_email: 'staff@internal.com',
                 category_id: categoryId,
+                priority,
+                title,
+                description,
+                unit_id: unitId
+            });
+
+            const ticketData = {
+                reporter_name: 'Staff Internal',
+                reporter_email: 'staff@internal.com',
+                reporter_phone: '',
+                reporter_department: '',
+                reporter_position: '',
+                category_id: categoryId, // Kirim category_id langsung
+                priority,
                 title,
                 description,
                 unit_id: unitId,
-                priority,
+                source: 'web'
             };
 
-            const response = await complaintService.createTicket(ticketData);
+            const response = await complaintService.createInternalTicket(ticketData);
+            
+            console.log('📬 Create internal ticket response:', response);
             
             if (response.success) {
-                alert(`Tiket berhasil dibuat!`);
+                alert(`Tiket internal berhasil dibuat dengan nomor: ${response.ticket_number || response.data?.ticket_number || 'N/A'}`);
                 navigate('/tickets');
             } else {
-                setError(response.error || 'Gagal membuat tiket');
+                const errorMsg = response.error || 'Gagal membuat tiket internal';
+                console.error('❌ Create internal ticket failed:', errorMsg);
+                setError(errorMsg);
             }
         } catch (err: any) {
-            console.error('Error creating ticket:', err);
-            setError(err.message || 'Terjadi kesalahan saat membuat tiket');
+            console.error('❌ Error creating internal ticket:', err);
+            const errorMsg = err.response?.data?.error || err.message || 'Terjadi kesalahan saat membuat tiket internal';
+            setError(errorMsg);
         } finally {
             setIsSubmitting(false);
         }

@@ -11,6 +11,13 @@ interface FormData {
   priority: string;
   title: string;
   description: string;
+  unit_id: string;
+}
+
+interface Unit {
+  id: string;
+  name: string;
+  code: string;
 }
 
 // Direct Form View - Tiket Internal (Public, Tanpa Login, Mobile-First)
@@ -58,6 +65,8 @@ const DirectInternalTicketForm: React.FC = () => {
   const [ticketNumber, setTicketNumber] = useState('');
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [loadingUnits, setLoadingUnits] = useState(true);
   
   const [formData, setFormData] = useState<FormData>({
     reporter_name: '',
@@ -68,14 +77,47 @@ const DirectInternalTicketForm: React.FC = () => {
     category: '',
     priority: 'medium',
     title: '',
-    description: ''
+    description: '',
+    unit_id: unitId || ''
   });
 
+  // Load units from master data
   useEffect(() => {
+    const fetchUnits = async () => {
+      try {
+        setLoadingUnits(true);
+        const response = await fetch('/api/public/units');
+        if (response.ok) {
+          const result = await response.json();
+          // API mengembalikan { success: true, data: [...] }
+          const unitsArray = result?.data && Array.isArray(result.data) 
+            ? result.data 
+            : (Array.isArray(result) ? result : []);
+          setUnits(unitsArray);
+          console.log('✅ Units loaded:', unitsArray);
+        } else {
+          console.error('❌ Failed to load units');
+          setUnits([]); // Set empty array jika gagal
+        }
+      } catch (err) {
+        console.error('❌ Error loading units:', err);
+        setUnits([]); // Set empty array jika error
+      } finally {
+        setLoadingUnits(false);
+      }
+    };
+    
+    fetchUnits();
+  }, []);
+
+  useEffect(() => {
+    if (unitId && !formData.unit_id) {
+      setFormData(prev => ({ ...prev, unit_id: unitId }));
+    }
     if (unitName && !formData.reporter_department) {
       setFormData(prev => ({ ...prev, reporter_department: unitName }));
     }
-  }, [unitName]);
+  }, [unitId, unitName]);
 
   const totalSteps = 3;
   const progress = (currentStep / totalSteps) * 100;
@@ -96,9 +138,17 @@ const DirectInternalTicketForm: React.FC = () => {
     { value: 'critical', label: 'Kritis', color: 'bg-red-500', desc: 'Sangat mendesak' }
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Update reporter_department when unit_id changes
+    if (name === 'unit_id' && Array.isArray(units)) {
+      const selectedUnit = units.find(u => u.id === value);
+      if (selectedUnit) {
+        setFormData(prev => ({ ...prev, reporter_department: selectedUnit.name }));
+      }
+    }
   };
 
 
@@ -109,30 +159,27 @@ const DirectInternalTicketForm: React.FC = () => {
     setError('');
 
     try {
-      console.log('📤 Mengirim tiket internal:', {
-        ...formData,
+      const payload = {
+        reporter_name: formData.reporter_name,
+        reporter_email: formData.reporter_email,
+        reporter_phone: formData.reporter_phone,
+        reporter_department: formData.reporter_department,
+        reporter_position: formData.reporter_position,
+        category: formData.category,
+        priority: formData.priority,
+        title: formData.title,
+        description: formData.description,
         qr_code: qrCode,
-        unit_id: unitId,
-        source: 'direct_form'
-      });
+        unit_id: formData.unit_id || unitId,
+        source: qrCode ? 'qr_code' : 'web'  // PERBAIKAN: gunakan 'qr_code' jika dari QR, atau 'web' jika langsung
+      };
+
+      console.log('📤 Mengirim tiket internal:', payload);
 
       const response = await fetch('/api/public/internal-tickets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reporter_name: formData.reporter_name,
-          reporter_email: formData.reporter_email,
-          reporter_phone: formData.reporter_phone,
-          reporter_department: formData.reporter_department,
-          reporter_position: formData.reporter_position,
-          category: formData.category,
-          priority: formData.priority,
-          title: formData.title,
-          description: formData.description,
-          qr_code: qrCode,
-          unit_id: unitId,
-          source: 'direct_form'
-        })
+        body: JSON.stringify(payload)
       });
       
       console.log('📥 Response status:', response.status);
@@ -165,7 +212,8 @@ const DirectInternalTicketForm: React.FC = () => {
       category: '',
       priority: 'medium',
       title: '',
-      description: ''
+      description: '',
+      unit_id: unitId || ''
     });
   };
 
@@ -298,15 +346,28 @@ const DirectInternalTicketForm: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Unit/Departemen *</label>
-                    <input 
-                      type="text" 
-                      name="reporter_department" 
-                      value={formData.reporter_department} 
-                      onChange={handleInputChange} 
-                      required
-                      className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-0 text-gray-800 text-lg transition-colors"
-                      placeholder="Contoh: Unit Rawat Inap"
-                    />
+                    {loadingUnits ? (
+                      <div className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 bg-gray-50 flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-gray-500">Memuat data unit...</span>
+                      </div>
+                    ) : (
+                      <select
+                        name="unit_id"
+                        value={formData.unit_id}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-0 text-gray-800 text-lg transition-colors appearance-none bg-white"
+                        style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5rem' }}
+                      >
+                        <option value="">Pilih Unit/Departemen</option>
+                        {Array.isArray(units) && units.map((unit) => (
+                          <option key={unit.id} value={unit.id}>
+                            {unit.name} ({unit.code})
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   <div>
@@ -413,13 +474,13 @@ const DirectInternalTicketForm: React.FC = () => {
                     <p className="text-gray-500 text-sm">Periksa kembali informasi tiket Anda</p>
                   </div>
 
-                  {/* File Upload - DISABLED */}
-                  <div className="border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center bg-gray-50 opacity-60">
-                    <div className="w-16 h-16 bg-gray-300 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <span className="material-symbols-outlined text-gray-500 text-3xl">cloud_upload</span>
+                  {/* File Upload - DISABLED (Sesuai permintaan) */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-2xl p-6 text-center bg-gray-100">
+                    <div className="w-14 h-14 bg-gray-400 rounded-xl flex items-center justify-center mx-auto mb-3 opacity-50">
+                      <span className="material-symbols-outlined text-white text-2xl">block</span>
                     </div>
-                    <p className="font-semibold text-gray-500 mb-1">Fitur Lampiran Dinonaktifkan</p>
-                    <p className="text-sm text-gray-400">Sementara tidak dapat mengunggah file</p>
+                    <p className="font-semibold text-gray-600 mb-1 text-sm">Lampiran Tidak Tersedia</p>
+                    <p className="text-xs text-gray-500">Fitur upload file dinonaktifkan untuk form ini</p>
                   </div>
 
                   {/* Summary */}
@@ -447,12 +508,12 @@ const DirectInternalTicketForm: React.FC = () => {
                         <span className="text-gray-500">Judul</span>
                         <span className="font-medium text-gray-800 truncate max-w-[180px]">{formData.title}</span>
                       </div>
-                      {unitName && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Unit Tujuan</span>
-                          <span className="font-medium text-gray-800">{unitName}</span>
-                        </div>
-                      )}
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Unit Tujuan</span>
+                        <span className="font-medium text-gray-800">
+                          {(Array.isArray(units) ? units.find(u => u.id === formData.unit_id)?.name : null) || formData.reporter_department || '-'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -478,7 +539,7 @@ const DirectInternalTicketForm: React.FC = () => {
                   type="button" 
                   onClick={() => setCurrentStep(prev => prev + 1)}
                   disabled={
-                    (currentStep === 1 && (!formData.reporter_name || !formData.reporter_email || !formData.reporter_department)) ||
+                    (currentStep === 1 && (!formData.reporter_name || !formData.reporter_email || !formData.unit_id)) ||
                     (currentStep === 2 && (!formData.category || !formData.title || !formData.description))
                   }
                   className="flex-1 py-4 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-purple-500/30 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"

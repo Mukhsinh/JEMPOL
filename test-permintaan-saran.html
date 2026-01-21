@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Permintaan dan Saran</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Permintaan dan Saran</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Permintaan (Request)</h2>
+        <button onclick="testRequest()">Test Permintaan</button>
+        <div id="request-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Saran (Suggestion)</h2>
+        <button onclick="testSuggestion()">Test Saran</button>
+        <div id="suggestion-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Pengaduan (Complaint) - Kontrol</h2>
+        <button onclick="testComplaint()">Test Pengaduan</button>
+        <div id="complaint-result"></div>
+    </div>
+
+    <script>
+        async function testRequest() {
+            const resultDiv = document.getElementById('request-result');
+            resultDiv.innerHTML = '<p>⏳ Mengirim permintaan...</p>';
+
+            try {
+                const response = await fetch('http://localhost:3004/api/public/external-tickets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reporter_identity_type: 'personal',
+                        reporter_name: 'Test User Permintaan',
+                        reporter_email: 'test@example.com',
+                        reporter_phone: '081234567890',
+                        service_type: 'request',
+                        title: 'Test Permintaan Informasi',
+                        description: 'Ini adalah test untuk permintaan informasi',
+                        unit_id: '2d9dc859-d6a3-4d0d-93b6-9b416b774fc2',
+                        source: 'web'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <h3>✅ BERHASIL!</h3>
+                            <p><strong>Nomor Tiket:</strong> ${result.ticket_number}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>❌ GAGAL!</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ ERROR!</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testSuggestion() {
+            const resultDiv = document.getElementById('suggestion-result');
+            resultDiv.innerHTML = '<p>⏳ Mengirim saran...</p>';
+
+            try {
+                const response = await fetch('http://localhost:3004/api/public/external-tickets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reporter_identity_type: 'personal',
+                        reporter_name: 'Test User Saran',
+                        reporter_email: 'test@example.com',
+                        reporter_phone: '081234567890',
+                        service_type: 'suggestion',
+                        title: 'Test Saran dan Masukan',
+                        description: 'Ini adalah test untuk saran dan masukan',
+                        unit_id: '2d9dc859-d6a3-4d0d-93b6-9b416b774fc2',
+                        source: 'web'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <h3>✅ BERHASIL!</h3>
+                            <p><strong>Nomor Tiket:</strong> ${result.ticket_number}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>❌ GAGAL!</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ ERROR!</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testComplaint() {
+            const resultDiv = document.getElementById('complaint-result');
+            resultDiv.innerHTML = '<p>⏳ Mengirim pengaduan...</p>';
+
+            try {
+                const response = await fetch('http://localhost:3004/api/public/external-tickets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reporter_identity_type: 'personal',
+                        reporter_name: 'Test User Pengaduan',
+                        reporter_email: 'test@example.com',
+                        reporter_phone: '081234567890',
+                        service_type: 'complaint',
+                        title: 'Test Pengaduan',
+                        description: 'Ini adalah test untuk pengaduan (kontrol)',
+                        unit_id: '2d9dc859-d6a3-4d0d-93b6-9b416b774fc2',
+                        source: 'web'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <h3>✅ BERHASIL!</h3>
+                            <p><strong>Nomor Tiket:</strong> ${result.ticket_number}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>❌ GAGAL!</h3>
+                            <p><strong>Error:</strong> ${result.error}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>❌ ERROR!</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

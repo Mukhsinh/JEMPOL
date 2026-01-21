@@ -9,6 +9,7 @@ interface FormData {
   service_type: string;
   title: string;
   description: string;
+  unit_id: string; // Tambahkan unit_id ke form data
 }
 
 // Direct Form View - Tiket Eksternal/Pengaduan (Public, Tanpa Login, Mobile-First)
@@ -48,6 +49,8 @@ const DirectExternalTicketForm: React.FC = () => {
   const [ticketNumber, setTicketNumber] = useState('');
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
+  const [units, setUnits] = useState<any[]>([]);
+  const [loadingUnits, setLoadingUnits] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     reporter_identity_type: 'personal',
@@ -56,13 +59,48 @@ const DirectExternalTicketForm: React.FC = () => {
     reporter_phone: '',
     service_type: '',
     title: '',
-    description: ''
+    description: '',
+    unit_id: unitId || '' // Gunakan unit_id dari URL jika ada
   });
+
+  // Load units jika unit_id tidak ada di URL
+  React.useEffect(() => {
+    const loadUnits = async () => {
+      if (!unitId) {
+        console.log('⚠️ Unit ID tidak ada di URL, loading units...');
+        setLoadingUnits(true);
+        try {
+          const response = await fetch('/api/public/units');
+          const result = await response.json();
+          if (result.success && result.data) {
+            setUnits(result.data);
+            console.log('✅ Loaded units:', result.data.length);
+          } else {
+            console.error('❌ Failed to load units:', result);
+            setError('Gagal memuat daftar unit');
+          }
+        } catch (err) {
+          console.error('❌ Error loading units:', err);
+          setError('Gagal memuat daftar unit');
+        } finally {
+          setLoadingUnits(false);
+        }
+      } else {
+        console.log('✅ Unit ID dari URL:', unitId);
+        console.log('✅ Unit Name:', unitName);
+        console.log('✅ QR Code:', qrCode || 'tidak ada');
+        // Set unit_id ke form data
+        setFormData(prev => ({ ...prev, unit_id: unitId }));
+      }
+    };
+    
+    loadUnits();
+  }, [unitId, unitName, qrCode]);
 
   const totalSteps = 3;
   const progress = (currentStep / totalSteps) * 100;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -75,18 +113,33 @@ const DirectExternalTicketForm: React.FC = () => {
     setError('');
 
     try {
+      // Validasi unit_id - gunakan dari form data
+      const finalUnitId = formData.unit_id || unitId;
+      if (!finalUnitId) {
+        setError('Unit harus dipilih');
+        setSubmitting(false);
+        return;
+      }
+
+      // Validasi field wajib untuk personal identity
+      if (formData.reporter_identity_type === 'personal' && !formData.reporter_name) {
+        setError('Nama wajib diisi untuk identitas pribadi');
+        setSubmitting(false);
+        return;
+      }
+
       // Kirim sebagai JSON
       const submitData = {
         reporter_identity_type: formData.reporter_identity_type,
-        reporter_name: formData.reporter_name,
-        reporter_email: formData.reporter_email,
-        reporter_phone: formData.reporter_phone,
+        reporter_name: formData.reporter_identity_type === 'personal' ? formData.reporter_name : null,
+        reporter_email: formData.reporter_identity_type === 'personal' ? formData.reporter_email : null,
+        reporter_phone: formData.reporter_identity_type === 'personal' ? formData.reporter_phone : null,
         service_type: formData.service_type,
         title: formData.title,
         description: formData.description,
-        qr_code: qrCode,
-        unit_id: unitId,
-        source: 'direct_form'
+        qr_code: qrCode || null,
+        unit_id: finalUnitId,
+        source: qrCode ? 'qr_code' : 'web'
       };
 
       console.log('📤 Mengirim tiket eksternal:', submitData);
@@ -107,11 +160,14 @@ const DirectExternalTicketForm: React.FC = () => {
         setTicketNumber(result.ticket_number || 'TKT-' + Date.now());
         setSubmitted(true);
       } else {
-        setError(result.error || 'Gagal mengirim laporan');
+        const errorMsg = result.error || result.message || 'Gagal mengirim laporan';
+        const errorDetails = result.details ? ` (${result.details})` : '';
+        setError(errorMsg + errorDetails);
+        console.error('❌ Server error:', result);
       }
     } catch (err: any) {
       console.error('❌ Submit error:', err);
-      setError('Terjadi kesalahan saat mengirim laporan');
+      setError('Terjadi kesalahan saat mengirim laporan: ' + err.message);
     } finally {
       setSubmitting(false);
     }
@@ -127,7 +183,8 @@ const DirectExternalTicketForm: React.FC = () => {
       reporter_phone: '',
       service_type: '',
       title: '',
-      description: ''
+      description: '',
+      unit_id: unitId || ''
     });
   };
 
@@ -219,6 +276,34 @@ const DirectExternalTicketForm: React.FC = () => {
                     <h2 className="text-xl font-bold text-gray-800 mb-2">Identitas Pelapor</h2>
                     <p className="text-gray-500 text-sm">Pilih cara Anda ingin melapor</p>
                   </div>
+
+                  {/* Unit Selection - Tampilkan jika tidak ada unit_id dari URL */}
+                  {!unitId && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Pilih Unit *</label>
+                      {loadingUnits ? (
+                        <div className="flex items-center justify-center py-4">
+                          <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                          <span className="ml-2 text-gray-500">Memuat unit...</span>
+                        </div>
+                      ) : (
+                        <select
+                          name="unit_id"
+                          value={formData.unit_id}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-0 text-gray-800 text-lg transition-colors"
+                        >
+                          <option value="">-- Pilih Unit --</option>
+                          {units.map((unit) => (
+                            <option key={unit.id} value={unit.id}>
+                              {unit.name}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  )}
 
                   {/* Identity Toggle */}
                   <div className="grid grid-cols-2 gap-3">
@@ -452,7 +537,10 @@ const DirectExternalTicketForm: React.FC = () => {
                   type="button" 
                   onClick={() => setCurrentStep(prev => prev + 1)}
                   disabled={
-                    (currentStep === 1 && formData.reporter_identity_type === 'personal' && !formData.reporter_name) ||
+                    (currentStep === 1 && (
+                      (!unitId && !formData.unit_id) ||
+                      (formData.reporter_identity_type === 'personal' && !formData.reporter_name)
+                    )) ||
                     (currentStep === 2 && (!formData.service_type || !formData.title || !formData.description))
                   }
                   className="flex-1 py-4 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-orange-500/30 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"

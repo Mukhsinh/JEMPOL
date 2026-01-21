@@ -145,6 +145,28 @@ const PublicSurveyForm = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        
+        // Validasi unit
+        if (!formData.unit_id) {
+            setError('Silakan pilih unit layanan terlebih dahulu');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        
+        // Validasi service type
+        if (!formData.service_type) {
+            setError('Silakan pilih jenis layanan terlebih dahulu');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        
+        // Validasi phone
+        if (!formData.phone) {
+            setError('Nomor HP wajib diisi');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        
         setIsLoading(true);
 
         try {
@@ -159,19 +181,29 @@ const PublicSurveyForm = () => {
                 })
             });
 
-            const result = await response.json();
+            // Cek apakah response adalah JSON
+            const contentType = response.headers.get('content-type');
+            let result;
+            
+            if (contentType && contentType.includes('application/json')) {
+                result = await response.json();
+            } else {
+                const text = await response.text();
+                console.error('Response bukan JSON:', text);
+                throw new Error('Server mengembalikan response yang tidak valid. Silakan coba lagi.');
+            }
 
             if (!response.ok) {
-                throw new Error(result.error || 'Gagal mengirim survei');
+                throw new Error(result.error || result.message || 'Gagal mengirim survei');
             }
 
             setIsSubmitted(true);
-            window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
 
         } catch (error: any) {
             console.error('Error submitting survey:', error);
             setError(error.message || 'Terjadi kesalahan saat mengirim survei');
-            window.scrollTo(0, 0);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } finally {
             setIsLoading(false);
         }
@@ -236,7 +268,7 @@ const PublicSurveyForm = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 flex flex-col font-['Inter',sans-serif]">
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 font-['Inter',sans-serif]">
             {/* Decorative Background */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-emerald-200/30 to-teal-200/30 rounded-full blur-3xl"></div>
@@ -245,7 +277,7 @@ const PublicSurveyForm = () => {
             </div>
 
             {/* Simple Mobile Header - Modern */}
-            <header className="relative z-10 bg-white/80 backdrop-blur-xl border-b border-gray-100/50 sticky top-0">
+            <header className="relative z-10 bg-white/80 backdrop-blur-xl border-b border-gray-100/50 flex-shrink-0 sticky top-0">
                 <div className="max-w-lg mx-auto px-6 py-4">
                     <div className="flex items-center justify-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
@@ -258,7 +290,7 @@ const PublicSurveyForm = () => {
                 </div>
             </header>
 
-            <main className="relative z-10 flex-grow w-full max-w-lg mx-auto px-5 py-6">
+            <main className="relative z-10 w-full max-w-lg mx-auto px-5 py-6">
                 {error && (
                     <div className="mb-6 bg-rose-50/90 backdrop-blur-xl border-2 border-rose-200 rounded-2xl p-5 flex items-center gap-4 shadow-lg">
                         <div className="w-10 h-10 rounded-xl bg-rose-500 flex items-center justify-center flex-shrink-0">
@@ -701,7 +733,7 @@ const PublicSurveyForm = () => {
                 </form>
             </main>
 
-            <footer className="relative z-10 bg-white/80 backdrop-blur-xl border-t border-gray-100/50 mt-auto py-6 px-4">
+            <footer className="relative z-10 bg-white/80 backdrop-blur-xl border-t border-gray-100/50 py-6 px-4">
                 <div className="max-w-lg mx-auto text-center space-y-2">
                     {appSettings.institution_name && (
                         <p className="text-sm font-bold text-gray-800">{appSettings.institution_name}</p>

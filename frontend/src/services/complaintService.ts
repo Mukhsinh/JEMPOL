@@ -205,13 +205,67 @@ class ComplaintService {
   // Create new ticket
   async createTicket(data: CreateTicketData) {
     try {
+      // Cek apakah ada token autentikasi
+      const token = localStorage.getItem('token');
+      
+      // Jika tidak ada token, gunakan endpoint public untuk tiket internal
+      if (!token) {
+        console.log('📝 No auth token, using public endpoint for internal ticket');
+        const response = await api.post('/public/internal-tickets', {
+          reporter_name: data.submitter_name || 'Anonymous',
+          reporter_email: data.submitter_email || '',
+          reporter_phone: data.submitter_phone || '',
+          reporter_department: '',
+          reporter_position: '',
+          category: data.category_id,
+          priority: data.priority || 'medium',
+          title: data.title,
+          description: data.description,
+          unit_id: data.unit_id,
+          source: 'web'
+        });
+        return response.data;
+      }
+      
+      // Jika ada token, gunakan endpoint authenticated
       const response = await api.post('/complaints/tickets', data);
       return response.data;
     } catch (error: any) {
       console.error('Error in createTicket:', error);
       return {
         success: false,
-        error: error.message || 'Gagal membuat tiket',
+        error: error.response?.data?.error || error.message || 'Gagal membuat tiket',
+        data: null
+      };
+    }
+  }
+
+  // Create internal ticket (untuk staff)
+  async createInternalTicket(data: {
+    reporter_name: string;
+    reporter_email: string;
+    reporter_phone?: string;
+    reporter_department?: string;
+    reporter_position?: string;
+    category?: string;
+    category_id?: string;
+    priority: string;
+    title: string;
+    description: string;
+    unit_id: string;
+    source?: string;
+  }) {
+    try {
+      console.log('📤 Sending internal ticket to /public/internal-tickets:', data);
+      const response = await api.post('/public/internal-tickets', data);
+      console.log('✅ Internal ticket response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error in createInternalTicket:', error);
+      console.error('❌ Error response:', error.response?.data);
+      return {
+        success: false,
+        error: error.response?.data?.error || error.message || 'Gagal membuat tiket internal',
         data: null
       };
     }

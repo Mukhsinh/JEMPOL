@@ -170,7 +170,7 @@ const SurveyForm: React.FC = () => {
         comments: formData.suggestions || null,
         qr_token: qrToken || null,
         phone: formData.phone,
-        source: 'public_survey'
+        source: qrToken ? 'qr_code' : 'web'
       };
 
       console.log('📤 Mengirim data survey:', data);
@@ -235,8 +235,8 @@ const SurveyForm: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col">
-      <main className="flex-grow max-w-lg mx-auto w-full px-4 py-6 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <main className="max-w-lg mx-auto w-full px-4 py-6 pb-24">
         {/* Unit Selection */}
         <div className="bg-white rounded-2xl shadow-lg p-5 mb-4">
           <div className="flex items-center gap-3">
@@ -428,7 +428,7 @@ const SurveyForm: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-100 py-4 px-4 mt-auto">
+      <footer className="bg-white border-t border-gray-100 py-4 px-4">
         <div className="max-w-lg mx-auto text-center">
           {appSettings.logo_url && (
             <img src={appSettings.logo_url} alt="Logo" className="h-8 mx-auto mb-2 object-contain" />

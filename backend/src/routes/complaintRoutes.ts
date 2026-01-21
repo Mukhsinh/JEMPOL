@@ -446,8 +446,31 @@ router.post('/tickets', authenticateSupabase, async (req: AuthenticatedRequest, 
       submitter_email,
       submitter_phone,
       submitter_address,
-      is_anonymous = false
+      is_anonymous = false,
+      source = 'web'
     } = req.body;
+
+    console.log('📝 Creating ticket with data:', {
+      type,
+      category_id,
+      title,
+      unit_id,
+      priority,
+      source,
+      created_by: req.user!.id
+    });
+
+    // Validasi field yang diperlukan
+    if (!type || !title || !description || !unit_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Field type, title, description, dan unit_id harus diisi'
+      });
+    }
+
+    // Validasi source - harus salah satu dari: web, qr_code, mobile, email, phone
+    const validSources = ['web', 'qr_code', 'mobile', 'email', 'phone'];
+    const finalSource = validSources.includes(source) ? source : 'web';
 
     // Generate ticket number
     const ticketNumber = await generateTicketNumber();
@@ -459,7 +482,6 @@ router.post('/tickets', authenticateSupabase, async (req: AuthenticatedRequest, 
     const ticketData: any = {
       ticket_number: ticketNumber,
       type,
-      category_id,
       title,
       description,
       unit_id,
@@ -467,8 +489,13 @@ router.post('/tickets', authenticateSupabase, async (req: AuthenticatedRequest, 
       status: 'open',
       sla_deadline: slaDeadline.toISOString(),
       created_by: req.user!.id,
-      source: 'web'
+      source: finalSource
     };
+
+    // Add category_id jika ada
+    if (category_id) {
+      ticketData.category_id = category_id;
+    }
 
     // Add submitter info if provided
     if (submitter_name) ticketData.submitter_name = submitter_name;
@@ -477,30 +504,37 @@ router.post('/tickets', authenticateSupabase, async (req: AuthenticatedRequest, 
     if (submitter_address) ticketData.submitter_address = submitter_address;
     if (is_anonymous !== undefined) ticketData.is_anonymous = is_anonymous;
 
+    console.log('💾 Inserting ticket to database:', ticketData);
+
     const { data: ticket, error } = await supabaseAdmin
       .from('tickets')
       .insert(ticketData)
-      .select()
+      .select(`
+        *,
+        units:unit_id(name, code)
+      `)
       .single();
 
     if (error) {
-      console.error('Error creating ticket:', error);
+      console.error('❌ Error creating ticket:', error);
       return res.status(500).json({
         success: false,
-        error: 'Gagal membuat tiket'
+        error: 'Gagal membuat tiket: ' + error.message
       });
     }
+
+    console.log('✅ Ticket created successfully:', ticket.ticket_number);
 
     res.status(201).json({
       success: true,
       data: ticket,
       message: 'Tiket berhasil dibuat'
     });
-  } catch (error) {
-    console.error('Error in create ticket:', error);
+  } catch (error: any) {
+    console.error('❌ Error in create ticket:', error);
     res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan server'
+      error: 'Terjadi kesalahan server: ' + error.message
     });
   }
 });
@@ -555,7 +589,28 @@ router.post('/tickets/:id/responses', authenticateSupabase, async (req: Authenti
       response_type
     };
 
-    const { data: response, error } = await supabaseAdmin
+    // Gunakan user-scoped client untuk respect RLS policy
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const userClient = createClient(
+      process.env.SUPABASE_URL || '',
+      process.env.SUPABASE_ANON_KEY || '',
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
+      }
+    );
+
+    const { data: response, error } = await userClient
       .from('ticket_responses')
       .insert(responseData)
       .select()
@@ -563,9 +618,11 @@ router.post('/tickets/:id/responses', authenticateSupabase, async (req: Authenti
 
     if (error) {
       console.error('Error adding response:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       return res.status(500).json({
         success: false,
-        error: 'Gagal menambahkan respon'
+        error: 'Gagal menambahkan respon',
+        details: error.message
       });
     }
 

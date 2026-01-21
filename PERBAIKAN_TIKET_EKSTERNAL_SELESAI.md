@@ -1,203 +1,129 @@
-# ✅ PERBAIKAN HALAMAN TIKET EKSTERNAL SELESAI
+# ✅ Perbaikan Tiket Eksternal Selesai
 
-## 📋 Ringkasan Perbaikan
+## 🎯 Masalah yang Diperbaiki
 
-Telah berhasil melakukan perbaikan pada halaman `/tickets/tiket-eksternal` sesuai dengan permintaan:
+Error "Unit ID tidak ditemukan" saat membuat tiket eksternal melalui form.
 
-### 1. ❌ Penghapusan Tulisan "Terlampir"
-- **Status**: ✅ SELESAI
-- **Detail**: Menghapus semua referensi kata "terlampir" dari halaman
-- **File**: `frontend/src/pages/tickets/TiketEksternal.tsx`
-- **Perubahan**: Label "Lampiran Bukti (Opsional)" tanpa kata "terlampir"
+## 🔧 Perbaikan yang Dilakukan
 
-### 2. 🔗 Integrasi dengan Tabel QR Codes
-- **Status**: ✅ SELESAI
-- **Detail**: Halaman sekarang terintegrasi sempurna dengan tabel `qr_codes`
-- **Fitur**:
-  - Menampilkan informasi unit berdasarkan QR code yang dipindai
-  - Mengambil data unit dari relasi `qr_codes.units`
-  - Menampilkan nama QR code dan unit yang terverifikasi
-  - Update usage count dan analytics saat tiket dibuat
-  - Fallback ke unit default jika QR code tidak ditemukan
+### 1. **RLS Policy External Tickets** ✅
+- **Masalah**: Row Level Security (RLS) memblokir insert tiket dari public
+- **Solusi**: Membuat policy baru yang mengizinkan:
+  - `INSERT` untuk `anon`, `authenticated`, dan `service_role`
+  - `SELECT` untuk semua role
+  - `UPDATE` untuk `authenticated` dan `service_role`
+  - `DELETE` hanya untuk `service_role`
 
-### 3. 📊 Integrasi Form dengan Master Data
-- **Status**: ✅ SELESAI
-- **Detail**: Form jenis layanan dan kategori terintegrasi dengan tabel master data
-- **Integrasi**:
-  - **Jenis Layanan**: Menggunakan data dari tabel `ticket_types`
-  - **Kategori**: Menggunakan data dari tabel `service_categories`
-  - Filter hanya data yang aktif (`is_active = true`)
-  - Loading state saat mengambil data master
+### 2. **Validasi Unit ID** ✅
+- Semua QR code sudah memiliki `unit_id` yang valid
+- Total 11 QR codes untuk external ticket
+- Semua unit terintegrasi dengan benar
 
-## 🔧 Perubahan Teknis Detail
+### 3. **Test dan Verifikasi** ✅
+- Test insert tiket: **BERHASIL**
+- Test dengan QR code: **BERHASIL**
+- Test direct URL: **BERHASIL**
+- Verifikasi database: **BERHASIL**
 
-### Frontend (`TiketEksternal.tsx`)
-```typescript
-// Tambahan import untuk integrasi
-import { useParams } from 'react-router-dom';
-import { qrCodeService } from '../../services/qrCodeService';
-import { masterDataService } from '../../services/masterDataService';
-import { externalTicketService } from '../../services/externalTicketService';
+## 📊 Hasil Test
 
-// State management untuk data master
-const [qrData, setQrData] = useState<QRCode | null>(null);
-const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>([]);
-const [ticketTypes, setTicketTypes] = useState<TicketType[]>([]);
-
-// Loading data master saat komponen dimuat
-const loadInitialData = async () => {
-  // Load QR code data jika ada parameter
-  if (qrCode) {
-    const qrResponse = await qrCodeService.getByCode(qrCode);
-    setQrData(qrResponse);
-  }
-  
-  // Load master data
-  const [categoriesResponse, typesResponse] = await Promise.all([
-    masterDataService.getServiceCategories(),
-    masterDataService.getTicketTypes()
-  ]);
-};
+```
+✅ Units endpoint: OK
+✅ QR codes: OK (11 QR codes aktif)
+✅ Submit tiket: OK
+✅ Verifikasi database: OK
 ```
 
-### Backend Integration
-- **Controller**: `externalTicketController.ts` sudah mendukung integrasi QR codes
-- **Routes**: `/api/external-tickets` sudah terdaftar di server
-- **Database**: Relasi dengan tabel `qr_codes`, `units`, `service_categories`
+### Test Tiket yang Berhasil Dibuat:
+- **Ticket Number**: EXT-20260121-9000
+- **Unit**: Bagian Administrasi
+- **Status**: open
+- **Priority**: medium
 
-### Database Schema Integration
-```sql
--- Tabel external_tickets terintegrasi dengan:
-qr_code_id -> qr_codes.id (optional)
-unit_id -> units.id (required)
-category -> service_categories.id (optional)
-service_type -> ticket_types.code (required)
-```
+## 🧪 Cara Test
 
-## 🎯 Fitur Baru yang Ditambahkan
-
-### 1. QR Code Integration
-- **URL Pattern**: `/tiket-eksternal/:qrCode`
-- **Functionality**: 
-  - Scan QR code → Load unit info
-  - Display verified unit information
-  - Auto-fill unit_id in form
-  - Track QR code usage analytics
-
-### 2. Master Data Integration
-- **Service Categories**: Dynamic loading dari database
-- **Ticket Types**: Dynamic loading dari database
-- **Validation**: Hanya data aktif yang ditampilkan
-- **Error Handling**: Graceful fallback jika data tidak tersedia
-
-### 3. Enhanced UI/UX
-- **Loading States**: Spinner saat memuat data
-- **Error Handling**: User-friendly error messages
-- **Responsive Design**: Mobile-friendly layout
-- **File Upload**: Preview dan remove functionality
-- **Form Validation**: Client-side validation
-
-## 🧪 Testing
-
-### Test File: `test-tiket-eksternal-integration.html`
-Dibuat file test komprehensif untuk memverifikasi:
-
-1. **QR Code Integration Test**
-   - Load QR codes dari database
-   - Test scanning functionality
-   - Verify unit information display
-
-2. **Master Data Integration Test**
-   - Load service categories
-   - Load ticket types
-   - Verify active data filtering
-
-3. **Ticket Creation Test**
-   - Test form submission
-   - Verify data integration
-   - Check response handling
-
-4. **UI Improvements Test**
-   - Verify removal of "terlampir" text
-   - Check responsive design
-   - Validate user experience
-
-### Test Commands
+### Opsi 1: Menggunakan Batch File
 ```bash
-# Buka test file
-start http://localhost:3000/test-tiket-eksternal-integration.html
-
-# Test API endpoints
-curl http://localhost:3001/api/qr-codes
-curl http://localhost:3001/api/master-data/service-categories
-curl http://localhost:3001/api/master-data/ticket-types
+TEST_BUAT_TIKET_EKSTERNAL.bat
 ```
 
-## 📱 URL Patterns
+### Opsi 2: Manual Test
+1. **Test Page**: http://localhost:3002/test-external-ticket-form-unit-id.html
+2. **QR Scan**: http://localhost:3002/qr/QR-PENGADUAN
+3. **Direct Form**: http://localhost:3002/form/eksternal?unit_id=550e8400-e29b-41d4-a716-446655440007&unit_name=Sub%20Bagian%20Pengaduan&qr=QR-PENGADUAN
 
-### QR Code Access
-```
-/tiket-eksternal/:qrCode
-```
-Contoh: `/tiket-eksternal/ABC123DEF`
-
-### Direct Access
-```
-/tiket-eksternal
-```
-Menggunakan unit default
-
-## 🔄 Data Flow
-
-### 1. QR Code Scan Flow
-```
-QR Code → qrCodeService.getByCode() → Load Unit Info → Pre-fill Form
+### Opsi 3: Test via Script
+```bash
+node test-dan-perbaiki-tiket-eksternal.js
 ```
 
-### 2. Master Data Flow
+## 📋 QR Codes yang Tersedia
+
+| QR Code | Unit | URL |
+|---------|------|-----|
+| QR-PENGADUAN | Sub Bagian Pengaduan | /qr/QR-PENGADUAN |
+| QR-ADM | Bagian Administrasi | /qr/QR-ADM |
+| QR-IT | Bagian IT dan Inovasi | /qr/QR-IT |
+| QR-INFO | Sub Bagian Informasi | /qr/QR-INFO |
+| QR-YANPUB | Bagian Pelayanan Publik | /qr/QR-YANPUB |
+| QR-DIR-xxx | Direktur Utama | /qr/QR-DIR-1767181022.756989 |
+| QR-KEU-xxx | Bagian Keuangan | /qr/QR-KEU-1767181022.756989 |
+| QR-U-001-xxx | RS Umum Admin | /qr/QR-U-001-1767181022.756989 |
+| QR-U-002-xxx | IGD (Unit Gawat Darurat) | /qr/QR-U-002-1767181022.756989 |
+| QR-TEST001-xxx | Test Unit | /qr/QR-TEST001-1767181022.756989 |
+| QRE6786191 | Bagian Administrasi | /qr/QRE6786191 |
+
+## ✅ Checklist Verifikasi
+
+- [x] Form terbuka tanpa sidebar (fullscreen)
+- [x] Nama unit tampil di header
+- [x] Tidak ada error "Unit ID tidak ditemukan"
+- [x] Form bisa diisi dan submit
+- [x] Setelah submit, dapat nomor tiket
+- [x] Tiket tersimpan di database dengan unit_id yang benar
+- [x] RLS policy mengizinkan insert dari public
+- [x] Backend API berfungsi dengan baik
+- [x] Frontend terintegrasi sempurna dengan backend
+
+## 🎉 Status
+
+**SELESAI DAN BERHASIL** ✅
+
+Sistem pembuatan tiket eksternal sudah berfungsi dengan sempurna. Tidak ada error lagi saat membuat tiket melalui:
+- QR Code scan
+- Direct URL
+- Form manual
+
+## 📝 Catatan Teknis
+
+### Migration yang Diterapkan:
+```sql
+-- Migration: fix_external_tickets_rls_policy
+-- Membuat RLS policy yang mengizinkan public insert
 ```
-Page Load → masterDataService.getServiceCategories() → Populate Dropdown
-Page Load → masterDataService.getTicketTypes() → Populate Dropdown
-```
 
-### 3. Ticket Creation Flow
-```
-Form Submit → externalTicketService.createTicket() → Update QR Analytics → Success Response
-```
+### File yang Dibuat:
+1. `fix-qr-unit-id-issue.js` - Verifikasi QR codes
+2. `test-dan-perbaiki-tiket-eksternal.js` - Test lengkap
+3. `fix-external-tickets-rls.js` - Fix RLS policy
+4. `test-external-ticket-form-unit-id.html` - Test page
+5. `TEST_BUAT_TIKET_EKSTERNAL.bat` - Quick test
 
-## ✅ Checklist Perbaikan
+### Tidak Ada Perubahan Pada:
+- Auth system (tetap sama)
+- Struktur database lain
+- Kode yang sudah bekerja dengan baik
+- Frontend routing
 
-- [x] Hapus tulisan "terlampir" dari halaman
-- [x] Integrasi dengan tabel QR codes
-- [x] Tampilkan informasi unit berdasarkan QR code
-- [x] Integrasi form jenis layanan dengan master data
-- [x] Integrasi form kategori dengan master data
-- [x] Loading states dan error handling
-- [x] Responsive design
-- [x] File upload functionality
-- [x] Form validation
-- [x] Test file untuk verifikasi
-- [x] Dokumentasi lengkap
+## 🚀 Langkah Selanjutnya
 
-## 🚀 Deployment Ready
-
-Semua perbaikan telah selesai dan siap untuk deployment:
-
-1. **Frontend**: Halaman TiketEksternal.tsx telah diperbaiki
-2. **Backend**: Controller dan routes sudah mendukung integrasi
-3. **Database**: Schema sudah sesuai dengan kebutuhan
-4. **Testing**: Test file tersedia untuk verifikasi
-5. **Documentation**: Dokumentasi lengkap tersedia
-
-## 📞 Support
-
-Jika ada pertanyaan atau masalah dengan implementasi ini, silakan merujuk ke:
-- Test file: `test-tiket-eksternal-integration.html`
-- Dokumentasi API di controller files
-- Database schema di migration files
+Sistem sudah siap digunakan. Silakan test dengan:
+1. Scan QR code dari smartphone
+2. Isi form tiket eksternal
+3. Submit dan dapatkan nomor tiket
+4. Verifikasi tiket masuk ke dashboard admin
 
 ---
 
-**Status**: ✅ SELESAI SEMPURNA
-**Tanggal**: 31 Desember 2024
-**Versi**: 1.0.0
+**Tanggal**: 21 Januari 2026
+**Status**: ✅ SELESAI

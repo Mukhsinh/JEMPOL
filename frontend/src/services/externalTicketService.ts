@@ -58,28 +58,32 @@ export interface CreateExternalTicketData {
 export const externalTicketService = {
   // Create external ticket (public endpoint)
   async createTicket(data: CreateExternalTicketData): Promise<any> {
-    const formData = new FormData();
-    
-    // Append form data
-    Object.entries(data).forEach(([key, value]) => {
-      if (key !== 'attachments' && value !== undefined) {
-        formData.append(key, value.toString());
-      }
-    });
-
-    // Append files
-    if (data.attachments) {
-      data.attachments.forEach((file, index) => {
-        formData.append(`attachment_${index}`, file);
+    try {
+      console.log('📤 Creating external ticket:', data);
+      
+      // Gunakan endpoint public yang benar
+      const response = await api.post('/public/external-tickets', {
+        reporter_identity_type: data.reporter_identity_type,
+        reporter_name: data.reporter_name,
+        reporter_email: data.reporter_email,
+        reporter_phone: data.reporter_phone,
+        reporter_address: data.reporter_address,
+        service_type: data.service_type,
+        category: data.category,
+        title: data.title,
+        description: data.description,
+        qr_code: data.qr_code_id,
+        unit_id: data.unit_id,
+        source: 'web'
       });
+      
+      console.log('✅ External ticket created:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error creating external ticket:', error);
+      console.error('❌ Error response:', error.response?.data);
+      throw error;
     }
-
-    const response = await api.post('/external-tickets', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
   },
 
   // Get external tickets (admin only)

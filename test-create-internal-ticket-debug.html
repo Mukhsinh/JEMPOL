@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Create Internal Ticket - Debug</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .log-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .log-entry {
+            padding: 8px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .log-info { background: #e3f2fd; color: #1976d2; }
+        .log-success { background: #e8f5e9; color: #388e3c; }
+        .log-error { background: #ffebee; color: #d32f2f; }
+        .log-warning { background: #fff3e0; color: #f57c00; }
+        .required { color: #d32f2f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎫 Test Create Internal Ticket</h1>
+        <p class="subtitle">Debug mode - Lihat log detail di bawah</p>
+
+        <form id="ticketForm">
+            <div class="form-group">
+                <label>Nama Pelapor <span class="required">*</span></label>
+                <input type="text" id="reporter_name" value="Test User" required>
+            </div>
+
+            <div class="form-group">
+                <label>Email Pelapor <span class="required">*</span></label>
+                <input type="email" id="reporter_email" value="test@example.com" required>
+            </div>
+
+            <div class="form-group">
+                <label>Telepon</label>
+                <input type="tel" id="reporter_phone" value="08123456789">
+            </div>
+
+            <div class="form-group">
+                <label>Departemen</label>
+                <input type="text" id="reporter_department" value="IT">
+            </div>
+
+            <div class="form-group">
+                <label>Jabatan</label>
+                <input type="text" id="reporter_position" value="Staff">
+            </div>
+
+            <div class="form-group">
+                <label>Unit <span class="required">*</span></label>
+                <select id="unit_id" required>
+                    <option value="">Pilih unit...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Kategori <span class="required">*</span></label>
+                <select id="category_id" required>
+                    <option value="">Pilih kategori...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Prioritas <span class="required">*</span></label>
+                <select id="priority" required>
+                    <option value="low">Rendah</option>
+                    <option value="medium" selected>Sedang</option>
+                    <option value="high">Tinggi</option>
+                    <option value="critical">Kritis</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Judul <span class="required">*</span></label>
+                <input type="text" id="title" value="Test Tiket Internal" required>
+            </div>
+
+            <div class="form-group">
+                <label>Deskripsi <span class="required">*</span></label>
+                <textarea id="description" required>Ini adalah test tiket internal untuk debugging.</textarea>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">
+                Kirim Tiket
+            </button>
+        </form>
+
+        <div class="log-container">
+            <div class="log-title">📋 Debug Log:</div>
+            <div id="logOutput"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3002/api';
+        const logOutput = document.getElementById('logOutput');
+
+        function addLog(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logOutput.appendChild(entry);
+            logOutput.scrollTop = logOutput.scrollHeight;
+            console.log(`[${type.toUpperCase()}]`, message);
+        }
+
+        // Load units
+        async function loadUnits() {
+            try {
+                addLog('Loading units...', 'info');
+                const response = await fetch(`${API_BASE}/public/units`);
+                const data = await response.json();
+                
+                addLog(`Units response: ${JSON.stringify(data)}`, 'info');
+                
+                const units = data.data || data || [];
+                const select = document.getElementById('unit_id');
+                
+                units.forEach(unit => {
+                    const option = document.createElement('option');
+                    option.value = unit.id;
+                    option.textContent = unit.name;
+                    select.appendChild(option);
+                });
+                
+                addLog(`✅ Loaded ${units.length} units`, 'success');
+            } catch (error) {
+                addLog(`❌ Error loading units: ${error.message}`, 'error');
+            }
+        }
+
+        // Load categories
+        async function loadCategories() {
+            try {
+                addLog('Loading categories...', 'info');
+                const response = await fetch(`${API_BASE}/public/categories`);
+                const data = await response.json();
+                
+                addLog(`Categories response: ${JSON.stringify(data)}`, 'info');
+                
+                const categories = data.data || data || [];
+                const select = document.getElementById('category_id');
+                
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    select.appendChild(option);
+                });
+                
+                addLog(`✅ Loaded ${categories.length} categories`, 'success');
+            } catch (error) {
+                addLog(`❌ Error loading categories: ${error.message}`, 'error');
+            }
+        }
+
+        // Submit form
+        document.getElementById('ticketForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Mengirim...';
+            
+            const formData = {
+                reporter_name: document.getElementById('reporter_name').value,
+                reporter_email: document.getElementById('reporter_email').value,
+                reporter_phone: document.getElementById('reporter_phone').value,
+                reporter_department: document.getElementById('reporter_department').value,
+                reporter_position: document.getElementById('reporter_position').value,
+                unit_id: document.getElementById('unit_id').value,
+                category_id: document.getElementById('category_id').value,
+                priority: document.getElementById('priority').value,
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                source: 'web'
+            };
+            
+            addLog('📤 Sending data to /api/public/internal-tickets', 'info');
+            addLog(`Data: ${JSON.stringify(formData, null, 2)}`, 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/public/internal-tickets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                addLog(`Response status: ${response.status} ${response.statusText}`, 'info');
+                
+                const result = await response.json();
+                addLog(`Response data: ${JSON.stringify(result, null, 2)}`, 'info');
+                
+                if (response.ok && result.success) {
+                    addLog(`✅ SUCCESS! Ticket created: ${result.ticket_number}`, 'success');
+                    alert(`Tiket berhasil dibuat!\nNomor: ${result.ticket_number}`);
+                    
+                    // Reset form
+                    document.getElementById('ticketForm').reset();
+                } else {
+                    addLog(`❌ ERROR: ${result.error || 'Unknown error'}`, 'error');
+                    if (result.details) {
+                        addLog(`Details: ${result.details}`, 'error');
+                    }
+                    alert(`Gagal membuat tiket:\n${result.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                addLog(`❌ EXCEPTION: ${error.message}`, 'error');
+                addLog(`Stack: ${error.stack}`, 'error');
+                alert(`Error: ${error.message}`);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Kirim Tiket';
+            }
+        });
+
+        // Initialize
+        addLog('🚀 Initializing test page...', 'info');
+        loadUnits();
+        loadCategories();
+    </script>
+</body>
+</html>

@@ -78,7 +78,7 @@ const StandaloneInternalTicketForm: React.FC = () => {
         body: JSON.stringify({
           ...formData,
           unit_id: unitId,
-          source: 'standalone_form'
+          source: 'web'
         })
       });
       const result = await response.json();

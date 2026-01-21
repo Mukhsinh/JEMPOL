@@ -129,7 +129,7 @@ const ExternalTicketForm: React.FC = () => {
         source: qrCode ? 'qr_code' : 'web'
       };
 
-      const response = await fetch('/api/external-tickets', {
+      const response = await fetch('/api/public/external-tickets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

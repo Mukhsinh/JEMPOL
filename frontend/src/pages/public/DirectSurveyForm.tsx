@@ -102,8 +102,15 @@ const DirectSurveyForm: React.FC = () => {
       const response = await fetch('/api/public/survey/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, qr_code: qrCode, unit_id: unitId, unit_name: unitName, source: 'direct_form' })
+        body: JSON.stringify({ ...formData, qr_code: qrCode, unit_id: unitId, unit_name: unitName, source: qrCode ? 'qr_code' : 'web' })
       });
+      
+      // Cek apakah response adalah JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server mengembalikan response yang tidak valid');
+      }
+      
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Gagal mengirim survei');
       setSubmitted(true);

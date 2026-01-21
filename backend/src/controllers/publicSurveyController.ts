@@ -3,6 +3,8 @@ import supabase from '../config/supabase.js';
 
 export const submitPublicSurvey = async (req: Request, res: Response) => {
     try {
+        console.log('📥 Received survey submission:', req.body);
+        
         const {
             // Data dari berbagai format form
             unit_id,
@@ -37,6 +39,14 @@ export const submitPublicSurvey = async (req: Request, res: Response) => {
             return res.status(400).json({
                 success: false,
                 error: 'Nomor HP wajib diisi'
+            });
+        }
+        
+        // Validasi unit
+        if (!unit_id && !unit_tujuan) {
+            return res.status(400).json({
+                success: false,
+                error: 'Unit layanan wajib dipilih'
             });
         }
 
@@ -88,42 +98,49 @@ export const submitPublicSurvey = async (req: Request, res: Response) => {
             .single();
 
         if (surveyError) {
-            console.error('Error inserting survey:', surveyError);
+            console.error('❌ Error inserting survey:', surveyError);
             return res.status(500).json({
                 success: false,
                 error: 'Gagal menyimpan survei: ' + surveyError.message
             });
         }
 
+        console.log('✅ Survey saved successfully:', survey.id);
+
         // Update QR code usage if applicable
         const qrCodeValue = qr_code || qr_token;
         if (qrCodeValue) {
-            const { data: currentQR } = await supabase
-                .from('qr_codes')
-                .select('usage_count')
-                .or(`code.eq.${qrCodeValue},token.eq.${qrCodeValue}`)
-                .single();
-
-            if (currentQR) {
-                await supabase
+            try {
+                const { data: currentQR } = await supabase
                     .from('qr_codes')
-                    .update({
-                        usage_count: (currentQR.usage_count || 0) + 1,
-                        updated_at: new Date().toISOString()
-                    })
-                    .or(`code.eq.${qrCodeValue},token.eq.${qrCodeValue}`);
+                    .select('usage_count')
+                    .or(`code.eq.${qrCodeValue},token.eq.${qrCodeValue}`)
+                    .single();
+
+                if (currentQR) {
+                    await supabase
+                        .from('qr_codes')
+                        .update({
+                            usage_count: (currentQR.usage_count || 0) + 1,
+                            updated_at: new Date().toISOString()
+                        })
+                        .or(`code.eq.${qrCodeValue},token.eq.${qrCodeValue}`);
+                }
+            } catch (qrError) {
+                console.warn('⚠️ Failed to update QR code usage:', qrError);
+                // Don't fail the whole request if QR update fails
             }
         }
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message: 'Survei berhasil dikirim',
             data: survey
         });
 
     } catch (error: any) {
-        console.error('Error submitting public survey:', error);
-        res.status(500).json({
+        console.error('❌ Error submitting public survey:', error);
+        return res.status(500).json({
             success: false,
             error: 'Terjadi kesalahan server: ' + error.message
         });

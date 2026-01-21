@@ -298,16 +298,24 @@ router.get('/units', async (req: Request, res: Response) => {
       console.error('Error fetching public units:', error);
       return res.status(500).json({
         success: false,
-        error: 'Gagal mengambil data unit'
+        error: 'Gagal mengambil data unit',
+        data: []
       });
     }
 
-    res.json(units);
+    console.log('✅ Fetched units:', units?.length || 0);
+
+    // Return dengan format yang konsisten
+    res.json({
+      success: true,
+      data: units || []
+    });
   } catch (error) {
     console.error('Error in get public units:', error);
     res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan server'
+      error: 'Terjadi kesalahan server',
+      data: []
     });
   }
 });
@@ -607,6 +615,7 @@ router.get('/sla-settings', async (req: Request, res: Response) => {
 });
 
 // Submit external ticket from public form (QR code scan)
+// PERBAIKAN: Menggunakan tabel 'tickets' seperti internal ticket yang berhasil
 router.post('/external-tickets', async (req: Request, res: Response) => {
   try {
     const {
@@ -615,59 +624,181 @@ router.post('/external-tickets', async (req: Request, res: Response) => {
       reporter_email,
       reporter_phone,
       reporter_address,
+      age_range,
       service_type,
       category,
       title,
       description,
       qr_code,
       unit_id,
-      source = 'qr_code'
+      source = 'web'
     } = req.body;
 
-    // Generate ticket number
-    const ticketNumber = await generateTicketNumber();
+    console.log('📥 Received external ticket request:', {
+      reporter_identity_type,
+      reporter_name,
+      unit_id,
+      service_type,
+      category,
+      title,
+      source
+    });
 
-    // Calculate SLA deadline (default 24 hours)
+    // Validasi unit_id - HARUS ADA
+    if (!unit_id) {
+      console.error('❌ Unit ID tidak ada');
+      return res.status(400).json({
+        success: false,
+        error: 'Unit ID harus diisi'
+      });
+    }
+
+    // Validasi field wajib
+    if (!title || !description) {
+      console.error('❌ Field wajib tidak lengkap');
+      return res.status(400).json({
+        success: false,
+        error: 'Judul dan deskripsi harus diisi'
+      });
+    }
+
+    // Validasi service_type - harus salah satu dari: complaint, request, suggestion, survey
+    const validServiceTypes = ['complaint', 'request', 'suggestion', 'survey'];
+    if (!service_type || !validServiceTypes.includes(service_type)) {
+      console.error('❌ Service type tidak valid:', service_type);
+      console.error('❌ Valid types:', validServiceTypes);
+      return res.status(400).json({
+        success: false,
+        error: 'Jenis layanan harus diisi (complaint, request, suggestion, atau survey)',
+        received: service_type,
+        valid_types: validServiceTypes
+      });
+    }
+
+    // Validasi source - harus salah satu dari: web, qr_code, mobile, email, phone
+    const validSources = ['web', 'qr_code', 'mobile', 'email', 'phone'];
+    const finalSource = validSources.includes(source) ? source : 'web';
+    console.log('✅ Using source:', finalSource);
+
+    // Verifikasi unit_id exists dan aktif
+    const { data: unitData, error: unitCheckError } = await supabase
+      .from('units')
+      .select('id, name')
+      .eq('id', unit_id)
+      .eq('is_active', true)
+      .single();
+
+    if (unitCheckError || !unitData) {
+      console.error('❌ Unit tidak valid atau tidak aktif:', unit_id);
+      console.error('❌ Unit check error:', unitCheckError);
+      return res.status(400).json({
+        success: false,
+        error: 'Unit tidak valid atau tidak aktif',
+        unit_id: unit_id,
+        details: unitCheckError?.message
+      });
+    }
+
+    console.log('✅ Unit verified:', unitData.name);
+
+    // Generate ticket number - SAMA SEPERTI INTERNAL TICKET
+    const ticketNumber = await generateTicketNumber();
+    console.log('✅ Generated ticket number:', ticketNumber);
+
+    // Calculate SLA deadline based on service type
     const slaDeadline = new Date();
-    slaDeadline.setHours(slaDeadline.getHours() + 24);
+    if (service_type === 'complaint') {
+      slaDeadline.setHours(slaDeadline.getHours() + 24); // 24 jam untuk complaint
+    } else if (service_type === 'request') {
+      slaDeadline.setHours(slaDeadline.getHours() + 48); // 48 jam untuk request
+    } else {
+      slaDeadline.setHours(slaDeadline.getHours() + 72); // 72 jam untuk suggestion/survey
+    }
 
     const isAnonymous = reporter_identity_type === 'anonymous';
 
+    // PERBAIKAN: Mapping service_type dari form ke type yang valid di database
+    // Form mengirim: complaint, request, suggestion, survey
+    // Database hanya menerima: information, complaint, suggestion, satisfaction
+    const serviceTypeMapping: { [key: string]: string } = {
+      'complaint': 'complaint',      // Pengaduan -> complaint
+      'request': 'information',      // Permintaan -> information
+      'suggestion': 'suggestion',    // Saran -> suggestion
+      'survey': 'satisfaction'       // Survei -> satisfaction
+    };
+    
+    const mappedType = serviceTypeMapping[service_type] || 'complaint';
+    console.log(`✅ Mapped service_type '${service_type}' to type '${mappedType}'`);
+
+    // Determine priority based on service type
+    let priority = 'medium';
+    if (service_type === 'complaint') {
+      priority = 'high';
+    } else if (service_type === 'request') {
+      priority = 'medium';
+    } else {
+      priority = 'low';
+    }
+
+    // Find QR code ID if qr_code token provided
+    let qr_code_id = null;
+    if (qr_code) {
+      try {
+        const { data: qrData } = await supabase
+          .from('qr_codes')
+          .select('id')
+          .eq('token', qr_code)
+          .eq('is_active', true)
+          .single();
+        
+        if (qrData) {
+          qr_code_id = qrData.id;
+          console.log('✅ Found QR code ID:', qr_code_id);
+        }
+      } catch (error) {
+        console.log('⚠️ Error finding QR code:', error);
+      }
+    }
+
+    // PERBAIKAN: Gunakan tabel 'tickets' seperti internal ticket yang berhasil
+    // Bukan 'external_tickets' yang mungkin memiliki constraint berbeda
+    // PENTING: Gunakan mappedType yang sudah disesuaikan dengan constraint database
     const ticketData: any = {
       ticket_number: ticketNumber,
-      type: service_type || 'complaint',
-      title,
-      description,
-      unit_id: unit_id || null,
-      priority: 'medium',
+      type: mappedType, // PERBAIKAN: Gunakan mappedType yang valid (information, complaint, suggestion, satisfaction)
+      title: title,
+      description: description,
+      unit_id: unit_id,
+      qr_code_id: qr_code_id,
+      priority: priority,
       status: 'open',
       sla_deadline: slaDeadline.toISOString(),
-      source: source,
+      source: finalSource,
       is_anonymous: isAnonymous,
+      submitter_name: isAnonymous ? null : reporter_name,
+      submitter_email: isAnonymous ? null : reporter_email,
+      submitter_phone: isAnonymous ? null : reporter_phone,
+      submitter_address: isAnonymous ? null : reporter_address,
       ip_address: req.ip,
       user_agent: req.get('User-Agent')
     };
 
-    // Add submitter info if not anonymous
-    if (!isAnonymous) {
-      if (reporter_name) ticketData.submitter_name = reporter_name;
-      if (reporter_email) ticketData.submitter_email = reporter_email;
-      if (reporter_phone) ticketData.submitter_phone = reporter_phone;
-      if (reporter_address) ticketData.submitter_address = reporter_address;
+    // Tambahkan category jika ada
+    if (category) {
+      ticketData.category_id = category;
     }
 
-    // Find category ID if category name provided
-    if (category) {
-      const { data: categoryData } = await supabase
-        .from('service_categories')
-        .select('id')
-        .eq('name', category)
-        .single();
-      
-      if (categoryData) {
-        ticketData.category_id = categoryData.id;
-      }
-    }
+    console.log('📤 Inserting ticket data:', {
+      ticket_number: ticketData.ticket_number,
+      type: ticketData.type,
+      service_type_original: service_type,
+      unit_id: ticketData.unit_id,
+      priority: ticketData.priority,
+      status: ticketData.status,
+      source: ticketData.source,
+      is_anonymous: ticketData.is_anonymous,
+      category_id: ticketData.category_id || 'null'
+    });
 
     const { data: ticket, error } = await supabase
       .from('tickets')
@@ -679,11 +810,56 @@ router.post('/external-tickets', async (req: Request, res: Response) => {
       .single();
 
     if (error) {
-      console.error('Error creating external ticket:', error);
+      console.error('❌ Error creating external ticket:', error);
+      console.error('❌ Error code:', error.code);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error details:', error.details);
+      console.error('❌ Error hint:', error.hint);
+      console.error('❌ Ticket data yang dikirim:', JSON.stringify(ticketData, null, 2));
+      
+      // Berikan pesan error yang lebih spesifik
+      let errorMessage = 'Gagal membuat tiket';
+      if (error.code === '23503') {
+        errorMessage = 'Data referensi tidak valid (unit_id atau category_id tidak ditemukan)';
+      } else if (error.code === '23505') {
+        errorMessage = 'Nomor tiket sudah ada, silakan coba lagi';
+      } else if (error.code === '23514') {
+        errorMessage = `Tipe tiket tidak valid. Diterima: ${ticketData.type}. Harus salah satu dari: information, complaint, suggestion, satisfaction`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       return res.status(500).json({
         success: false,
-        error: 'Gagal membuat tiket'
+        error: errorMessage,
+        details: error.details || error.hint || null,
+        error_code: error.code
       });
+    }
+
+    console.log('✅ External ticket created successfully:', ticket.ticket_number);
+
+    // Update QR code usage count if applicable
+    if (qr_code_id) {
+      try {
+        const { data: currentQR } = await supabase
+          .from('qr_codes')
+          .select('usage_count')
+          .eq('id', qr_code_id)
+          .single();
+        
+        await supabase
+          .from('qr_codes')
+          .update({ 
+            usage_count: (currentQR?.usage_count || 0) + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', qr_code_id);
+
+        console.log('✅ Updated QR code usage count');
+      } catch (error) {
+        console.log('⚠️ Error updating QR code usage:', error);
+      }
     }
 
     res.status(201).json({
@@ -692,11 +868,12 @@ router.post('/external-tickets', async (req: Request, res: Response) => {
       data: ticket,
       message: 'Tiket berhasil dibuat. Nomor tiket Anda: ' + ticket.ticket_number
     });
-  } catch (error) {
-    console.error('Error in create external ticket:', error);
+  } catch (error: any) {
+    console.error('❌ Error in create external ticket:', error);
+    console.error('❌ Stack trace:', error.stack);
     res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan server'
+      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error')
     });
   }
 });
@@ -711,16 +888,52 @@ router.post('/internal-tickets', async (req: Request, res: Response) => {
       reporter_department,
       reporter_position,
       category,
+      category_id,
       priority,
       title,
       description,
       qr_code,
       unit_id,
-      source = 'qr_code'
+      source = 'web'
     } = req.body;
+
+    console.log('📥 Received internal ticket request:', {
+      reporter_name,
+      reporter_email,
+      unit_id,
+      category,
+      category_id,
+      priority,
+      title,
+      source
+    });
+
+    // Validasi unit_id - HARUS ADA
+    if (!unit_id) {
+      console.error('❌ Unit ID tidak ada');
+      return res.status(400).json({
+        success: false,
+        error: 'Unit ID harus diisi'
+      });
+    }
+
+    // Validasi field wajib lainnya
+    if (!reporter_name || !reporter_email || !title || !description) {
+      console.error('❌ Field wajib tidak lengkap');
+      return res.status(400).json({
+        success: false,
+        error: 'Nama, email, judul, dan deskripsi harus diisi'
+      });
+    }
+
+    // Validasi source - harus salah satu dari: web, qr_code, mobile, email, phone
+    const validSources = ['web', 'qr_code', 'mobile', 'email', 'phone'];
+    const finalSource = validSources.includes(source) ? source : 'web';
+    console.log('✅ Using source:', finalSource);
 
     // Generate ticket number
     const ticketNumber = await generateTicketNumber();
+    console.log('✅ Generated ticket number:', ticketNumber);
 
     // Calculate SLA deadline based on priority
     const slaDeadline = new Date();
@@ -744,36 +957,144 @@ router.post('/internal-tickets', async (req: Request, res: Response) => {
     // Gabungkan info department dan position ke dalam description
     const fullDescription = `${description}\n\n--- Info Pelapor ---\nDepartemen: ${reporter_department || '-'}\nJabatan: ${reporter_position || '-'}`;
 
+    // Handle category - prioritas category_id, fallback ke category
+    let finalCategoryId = category_id || null;
+    
+    // Jika category_id sudah ada dan valid UUID, gunakan langsung
+    if (finalCategoryId) {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(finalCategoryId);
+      if (isUUID) {
+        console.log('✅ Using category_id directly:', finalCategoryId);
+      } else {
+        // Jika bukan UUID, coba cari berdasarkan nama/code
+        try {
+          const { data: categoryData } = await supabase
+            .from('service_categories')
+            .select('id')
+            .or(`name.ilike.%${finalCategoryId}%,code.ilike.%${finalCategoryId}%`)
+            .eq('is_active', true)
+            .limit(1);
+          
+          if (categoryData && categoryData.length > 0) {
+            finalCategoryId = categoryData[0].id;
+            console.log('✅ Found category ID from name/code:', finalCategoryId);
+          } else {
+            console.log('⚠️ Category not found, will use null');
+            finalCategoryId = null;
+          }
+        } catch (error) {
+          console.log('⚠️ Error finding category:', error);
+          finalCategoryId = null;
+        }
+      }
+    } else if (category) {
+      // Fallback ke category jika category_id tidak ada
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category);
+      
+      if (isUUID) {
+        finalCategoryId = category;
+        console.log('✅ Using category as ID:', finalCategoryId);
+      } else {
+        const categoryMap: { [key: string]: string } = {
+          'it_support': 'IT Support',
+          'facility': 'Fasilitas',
+          'equipment': 'Peralatan',
+          'hr': 'SDM',
+          'admin': 'Administrasi',
+          'other': 'Lainnya'
+        };
+        
+        const categoryName = categoryMap[category] || category;
+        console.log('🔍 Looking for category:', categoryName);
+        
+        try {
+          const { data: categoryData } = await supabase
+            .from('service_categories')
+            .select('id')
+            .or(`name.ilike.%${categoryName}%,code.ilike.%${category}%`)
+            .eq('is_active', true)
+            .limit(1);
+          
+          if (categoryData && categoryData.length > 0) {
+            finalCategoryId = categoryData[0].id;
+            console.log('✅ Found category ID:', finalCategoryId);
+          } else {
+            console.log('⚠️ Category not found, will use null');
+          }
+        } catch (error) {
+          console.log('⚠️ Error finding category:', error);
+        }
+      }
+    }
+
+    // Verifikasi unit_id exists dan aktif
+    const { data: unitData, error: unitCheckError } = await supabase
+      .from('units')
+      .select('id, name')
+      .eq('id', unit_id)
+      .eq('is_active', true)
+      .single();
+
+    if (unitCheckError || !unitData) {
+      console.error('❌ Unit tidak valid atau tidak aktif:', unit_id);
+      return res.status(400).json({
+        success: false,
+        error: 'Unit tidak valid atau tidak aktif'
+      });
+    }
+
+    console.log('✅ Unit verified:', unitData.name);
+
+    // Verifikasi category_id jika ada
+    if (finalCategoryId) {
+      const { data: categoryData, error: categoryCheckError } = await supabase
+        .from('service_categories')
+        .select('id, name')
+        .eq('id', finalCategoryId)
+        .eq('is_active', true)
+        .single();
+
+      if (categoryCheckError || !categoryData) {
+        console.error('❌ Category tidak valid atau tidak aktif:', finalCategoryId);
+        console.log('⚠️ Will proceed without category');
+        finalCategoryId = null;
+      } else {
+        console.log('✅ Category verified:', categoryData.name);
+      }
+    }
+
     const ticketData: any = {
       ticket_number: ticketNumber,
-      type: 'complaint', // Gunakan 'complaint' karena ini tiket internal staff
+      type: 'complaint',
       title,
       description: fullDescription,
-      unit_id: unit_id || null,
+      unit_id: unit_id,
       priority: priority || 'medium',
       status: 'open',
       sla_deadline: slaDeadline.toISOString(),
-      source: source,
+      source: finalSource,
       is_anonymous: false,
       submitter_name: reporter_name,
       submitter_email: reporter_email,
-      submitter_phone: reporter_phone,
+      submitter_phone: reporter_phone || null,
       ip_address: req.ip,
       user_agent: req.get('User-Agent')
     };
 
-    // Find category ID if category name provided
-    if (category) {
-      const { data: categoryData } = await supabase
-        .from('service_categories')
-        .select('id')
-        .eq('code', category)
-        .single();
-      
-      if (categoryData) {
-        ticketData.category_id = categoryData.id;
-      }
+    // Tambahkan category_id hanya jika valid
+    if (finalCategoryId) {
+      ticketData.category_id = finalCategoryId;
     }
+
+    console.log('📤 Inserting ticket data:', {
+      ticket_number: ticketData.ticket_number,
+      type: ticketData.type,
+      unit_id: ticketData.unit_id,
+      category_id: ticketData.category_id || 'null',
+      priority: ticketData.priority,
+      status: ticketData.status,
+      source: ticketData.source
+    });
 
     const { data: ticket, error } = await supabase
       .from('tickets')
@@ -785,12 +1106,31 @@ router.post('/internal-tickets', async (req: Request, res: Response) => {
       .single();
 
     if (error) {
-      console.error('Error creating internal ticket:', error);
+      console.error('❌ Error creating internal ticket:', error);
+      console.error('❌ Error code:', error.code);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error details:', error.details);
+      console.error('❌ Error hint:', error.hint);
+      console.error('❌ Ticket data yang dikirim:', JSON.stringify(ticketData, null, 2));
+      
+      // Berikan pesan error yang lebih spesifik
+      let errorMessage = 'Gagal membuat tiket internal';
+      if (error.code === '23503') {
+        errorMessage = 'Data referensi tidak valid (unit_id atau category_id tidak ditemukan)';
+      } else if (error.code === '23505') {
+        errorMessage = 'Nomor tiket sudah ada, silakan coba lagi';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       return res.status(500).json({
         success: false,
-        error: 'Gagal membuat tiket internal'
+        error: errorMessage,
+        details: error.details || error.hint || null
       });
     }
+
+    console.log('✅ Ticket created successfully:', ticket.ticket_number);
 
     res.status(201).json({
       success: true,
@@ -798,11 +1138,12 @@ router.post('/internal-tickets', async (req: Request, res: Response) => {
       data: ticket,
       message: 'Tiket internal berhasil dibuat. Nomor tiket Anda: ' + ticket.ticket_number
     });
-  } catch (error) {
-    console.error('Error in create internal ticket:', error);
+  } catch (error: any) {
+    console.error('❌ Error in create internal ticket:', error);
+    console.error('❌ Stack trace:', error.stack);
     res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan server'
+      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error')
     });
   }
 });

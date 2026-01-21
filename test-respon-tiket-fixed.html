@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Respon Tiket - Fixed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #3498db;
+        }
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .form-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button.secondary {
+            background: #95a5a6;
+        }
+        button.secondary:hover {
+            background: #7f8c8d;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎫 Test Respon Tiket - Fixed</h1>
+        
+        <div class="info">
+            <strong>✅ Perbaikan Foreign Key Constraint</strong><br>
+            Foreign key <code>ticket_responses.responder_id</code> sekarang mereferensikan tabel <code>admins</code> bukan <code>users</code>.<br>
+            Error "violates foreign key constraint" seharusnya sudah tidak muncul lagi.
+        </div>
+
+        <div class="form-group">
+            <label>Token Admin (dari localStorage)</label>
+            <input type="text" id="token" placeholder="Token akan diambil otomatis dari localStorage">
+            <small>Token: <span id="tokenStatus">Checking...</span></small>
+        </div>
+
+        <div class="form-group">
+            <label>ID Tiket</label>
+            <input type="text" id="ticketId" placeholder="Masukkan ID tiket" required>
+            <small>Contoh: 19817939-559d-4d8b-8fa1-0180c4ed754b</small>
+        </div>
+
+        <div class="form-group">
+            <label>Pesan Respon *</label>
+            <textarea id="message" placeholder="Masukkan pesan respon..." required></textarea>
+        </div>
+
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="isInternal">
+            <label for="isInternal" style="margin: 0;">Catatan Internal (tidak terlihat oleh pelapor)</label>
+        </div>
+
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="markResolved">
+            <label for="markResolved" style="margin: 0;">Tandai Tiket Sebagai Selesai</label>
+        </div>
+
+        <button onclick="testRespond()">📤 Kirim Respon</button>
+        <button class="secondary" onclick="getTicketInfo()">ℹ️ Info Tiket</button>
+        <button class="secondary" onclick="clearForm()">🔄 Reset Form</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Cek token saat halaman dimuat
+        window.onload = function() {
+            const token = localStorage.getItem('token');
+            const tokenInput = document.getElementById('token');
+            const tokenStatus = document.getElementById('tokenStatus');
+            
+            if (token) {
+                tokenInput.value = token;
+                tokenStatus.textContent = '✅ Token ditemukan';
+                tokenStatus.style.color = 'green';
+            } else {
+                tokenStatus.textContent = '❌ Token tidak ditemukan. Silakan login terlebih dahulu.';
+                tokenStatus.style.color = 'red';
+            }
+        };
+
+        async function testRespond() {
+            const token = document.getElementById('token').value;
+            const ticketId = document.getElementById('ticketId').value.trim();
+            const message = document.getElementById('message').value.trim();
+            const isInternal = document.getElementById('isInternal').checked;
+            const markResolved = document.getElementById('markResolved').checked;
+            const resultDiv = document.getElementById('result');
+
+            if (!token) {
+                showResult('❌ Token tidak ditemukan. Silakan login terlebih dahulu.', 'error');
+                return;
+            }
+
+            if (!ticketId) {
+                showResult('❌ ID Tiket wajib diisi', 'error');
+                return;
+            }
+
+            if (!message) {
+                showResult('❌ Pesan respon wajib diisi', 'error');
+                return;
+            }
+
+            // Show loading
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'info';
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Mengirim respon...</p></div>';
+
+            try {
+                const response = await fetch(`http://localhost:3004/api/ticket-actions/tickets/${ticketId}/respond`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        is_internal: isInternal,
+                        mark_resolved: markResolved
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showResult(`
+                        <strong>✅ Respon Berhasil Dikirim!</strong><br><br>
+                        <strong>Response ID:</strong> ${data.data.id}<br>
+                        <strong>Ticket ID:</strong> ${data.data.ticket_id}<br>
+                        <strong>Message:</strong> ${data.data.message}<br>
+                        <strong>Internal:</strong> ${data.data.is_internal ? 'Ya' : 'Tidak'}<br>
+                        <strong>Type:</strong> ${data.data.response_type}<br>
+                        <strong>Status:</strong> ${markResolved ? 'Tiket Diselesaikan' : 'Respon Ditambahkan'}<br><br>
+                        <em>${data.message}</em>
+                    `, 'success');
+                    
+                    // Clear form
+                    document.getElementById('message').value = '';
+                    document.getElementById('isInternal').checked = false;
+                    document.getElementById('markResolved').checked = false;
+                } else {
+                    showResult(`
+                        <strong>❌ Gagal Mengirim Respon</strong><br><br>
+                        <strong>Status:</strong> ${response.status}<br>
+                        <strong>Error:</strong> ${data.error || 'Unknown error'}<br>
+                        <strong>Code:</strong> ${data.code || 'N/A'}
+                    `, 'error');
+                }
+            } catch (error) {
+                showResult(`
+                    <strong>❌ Error Koneksi</strong><br><br>
+                    ${error.message}<br><br>
+                    Pastikan backend berjalan di http://localhost:3004
+                `, 'error');
+            }
+        }
+
+        async function getTicketInfo() {
+            const token = document.getElementById('token').value;
+            const ticketId = document.getElementById('ticketId').value.trim();
+            const resultDiv = document.getElementById('result');
+
+            if (!token || !ticketId) {
+                showResult('❌ Token dan ID Tiket wajib diisi', 'error');
+                return;
+            }
+
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'info';
+            resultDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Mengambil info tiket...</p></div>';
+
+            try {
+                const response = await fetch(`http://localhost:3004/api/complaints/${ticketId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const ticket = data.data;
+                    showResult(`
+                        <strong>ℹ️ Info Tiket</strong><br><br>
+                        <strong>Nomor:</strong> ${ticket.ticket_number}<br>
+                        <strong>Judul:</strong> ${ticket.title}<br>
+                        <strong>Status:</strong> ${ticket.status}<br>
+                        <strong>Prioritas:</strong> ${ticket.priority}<br>
+                        <strong>Dibuat:</strong> ${new Date(ticket.created_at).toLocaleString('id-ID')}<br>
+                        <strong>Unit:</strong> ${ticket.units?.name || 'N/A'}
+                    `, 'info');
+                } else {
+                    showResult(`❌ Gagal mengambil info tiket: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('ticketId').value = '';
+            document.getElementById('message').value = '';
+            document.getElementById('isInternal').checked = false;
+            document.getElementById('markResolved').checked = false;
+            document.getElementById('result').style.display = 'none';
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.className = type;
+            resultDiv.innerHTML = message;
+        }
+    </script>
+</body>
+</html>
