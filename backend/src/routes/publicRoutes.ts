@@ -288,6 +288,11 @@ router.get('/categories', async (req: Request, res: Response) => {
 // Get units for public forms
 router.get('/units', async (req: Request, res: Response) => {
   try {
+    // Set response header untuk memastikan JSON response
+    res.setHeader('Content-Type', 'application/json');
+    
+    console.log('🔄 GET /api/public/units dipanggil');
+    
     const { data: units, error } = await supabase
       .from('units')
       .select('id, name, code, description')
@@ -295,7 +300,7 @@ router.get('/units', async (req: Request, res: Response) => {
       .order('name');
 
     if (error) {
-      console.error('Error fetching public units:', error);
+      console.error('❌ Error fetching public units:', error);
       return res.status(500).json({
         success: false,
         error: 'Gagal mengambil data unit',
@@ -306,15 +311,15 @@ router.get('/units', async (req: Request, res: Response) => {
     console.log('✅ Fetched units:', units?.length || 0);
 
     // Return dengan format yang konsisten
-    res.json({
+    return res.status(200).json({
       success: true,
       data: units || []
     });
-  } catch (error) {
-    console.error('Error in get public units:', error);
-    res.status(500).json({
+  } catch (error: any) {
+    console.error('❌ Error in get public units:', error);
+    return res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan server',
+      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
       data: []
     });
   }

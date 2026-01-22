@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Jlamprang Units Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .unit-list {
+            margin-top: 20px;
+        }
+        .unit-item {
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+            border-left: 3px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Jlamprang Units API Fix</h1>
+    
+    <div class="info status">
+        <strong>Test Endpoint:</strong> GET /api/public/units<br>
+        <strong>Expected:</strong> JSON response dengan format { success: true, data: [...] }<br>
+        <strong>Issue:</strong> Sebelumnya mengembalikan HTML bukan JSON
+    </div>
+
+    <button onclick="testUnitsAPI()">🔄 Test API Units</button>
+
+    <div id="result"></div>
+
+    <script>
+        async function testUnitsAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="info status">⏳ Memuat data units...</div>';
+
+            try {
+                console.log('🔄 Fetching units from /api/public/units...');
+                
+                const response = await fetch('/api/public/units', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Response headers:', response.headers.get('content-type'));
+                
+                // Cek apakah response adalah JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('❌ Non-JSON response:', text.substring(0, 200));
+                    
+                    resultDiv.innerHTML = `
+                        <div class="error status">
+                            <strong>❌ ERROR: Server mengembalikan HTML bukan JSON</strong><br>
+                            Content-Type: ${contentType || 'tidak ada'}<br>
+                            Response preview:
+                            <pre>${text.substring(0, 500)}</pre>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('📥 Response data:', result);
+                
+                // Validasi format response
+                if (!result.success) {
+                    throw new Error('Response tidak memiliki success: true');
+                }
+                
+                if (!Array.isArray(result.data)) {
+                    throw new Error('Response data bukan array');
+                }
+                
+                // Tampilkan hasil sukses
+                let html = `
+                    <div class="success status">
+                        <strong>✅ SUCCESS: API mengembalikan JSON yang benar!</strong><br>
+                        Total units: ${result.data.length}<br>
+                        Format: { success: true, data: [...] }
+                    </div>
+                    
+                    <div class="unit-list">
+                        <h3>📋 Daftar Units (${result.data.length}):</h3>
+                `;
+                
+                result.data.forEach((unit, index) => {
+                    html += `
+                        <div class="unit-item">
+                            <strong>${index + 1}. ${unit.name}</strong> (${unit.code})<br>
+                            <small>ID: ${unit.id}</small><br>
+                            ${unit.description ? `<small>${unit.description}</small>` : ''}
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                
+                html += `
+                    <div class="info status" style="margin-top: 20px;">
+                        <strong>📊 Response JSON:</strong>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (err) {
+                console.error('❌ Error loading units:', err);
+                resultDiv.innerHTML = `
+                    <div class="error status">
+                        <strong>❌ ERROR:</strong> ${err.message}<br>
+                        <pre>${err.stack || ''}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-run test on page load
+        window.addEventListener('load', () => {
+            console.log('🚀 Page loaded, running test...');
+            testUnitsAPI();
+        });
+    </script>
+</body>
+</html>

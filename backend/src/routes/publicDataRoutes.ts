@@ -18,8 +18,45 @@ router.get('/patient-types', masterDataController.getPatientTypes);
 router.get('/roles', masterDataController.getRoles);
 router.get('/sla-settings', masterDataController.getSLASettings);
 
-// Units public endpoints
-router.get('/units', unitController.getUnits.bind(unitController));
+// Units public endpoints - simplified untuk form publik
+router.get('/units', async (req, res) => {
+  try {
+    // Set response header untuk memastikan JSON response
+    res.setHeader('Content-Type', 'application/json');
+    
+    console.log('🔄 GET /api/public/units dipanggil (publicDataRoutes)');
+    
+    const { data: units, error } = await supabase
+      .from('units')
+      .select('id, name, code, description')
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      console.error('❌ Error fetching public units:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal mengambil data unit',
+        data: []
+      });
+    }
+
+    console.log('✅ Fetched units:', units?.length || 0);
+
+    // Return dengan format yang konsisten
+    return res.status(200).json({
+      success: true,
+      data: units || []
+    });
+  } catch (error: any) {
+    console.error('❌ Error in get public units:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
+      data: []
+    });
+  }
+});
 
 // QR codes public endpoints (read-only)
 router.get('/qr-codes', async (req, res) => {
