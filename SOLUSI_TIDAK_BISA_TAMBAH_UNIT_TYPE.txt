@@ -1,0 +1,62 @@
+========================================
+SOLUSI: TIDAK BISA TAMBAH DATA UNIT TYPE
+========================================
+
+MASALAH:
+- Error 500 (Internal Server Error) saat klik tombol "Simpan"
+- Data tidak tersimpan ke database
+- Console menunjukkan error POST ke /rest/v1/unit_types dengan status 401
+
+PENYEBAB:
+Request dari frontend mencoba langsung ke Supabase tanpa melalui backend API,
+sehingga tidak ada authorization token yang valid.
+
+SOLUSI:
+
+1. PASTIKAN BACKEND BERJALAN
+   - Buka terminal di folder backend
+   - Jalankan: npm run dev
+   - Backend harus berjalan di http://localhost:3001
+
+2. PASTIKAN FRONTEND BERJALAN
+   - Buka terminal di folder frontend
+   - Jalankan: npm run dev
+   - Frontend harus berjalan di http://localhost:3002
+
+3. PASTIKAN SUDAH LOGIN
+   - Login sebagai admin di http://localhost:3002
+   - Email: admin@jempol.com
+   - Password: admin123
+
+4. CEK KONEKSI
+   - Jalankan: CEK_UNIT_TYPES_CONNECTION.bat
+   - Pastikan semua cek menunjukkan ✅
+
+5. CARA CEPAT
+   - Jalankan: FIX_UNIT_TYPES_CREATE.bat
+   - Script akan otomatis start backend & frontend
+   - Kemudian buka halaman Unit Types
+
+CATATAN:
+- Backend HARUS berjalan untuk operasi Create/Update/Delete
+- Jika backend tidak berjalan, request akan gagal dengan error 401
+- Error handling sudah diperbaiki untuk menampilkan pesan yang jelas
+
+TESTING:
+Setelah backend & frontend berjalan:
+1. Buka http://localhost:3002/master-data/unit-types
+2. Klik "Tambah Tipe Baru"
+3. Isi form:
+   - Nama Tipe: Layanan keperawatan
+   - Kode: PRWT
+   - Deskripsi: layanan keperawatan
+   - Icon: corporate_fare
+   - Warna: (pilih warna)
+   - Status Aktif: ✓
+4. Klik "Simpan"
+5. Data harus tersimpan dan muncul di tabel
+
+Jika masih error, cek:
+- Console browser (F12) untuk error frontend
+- Console backend untuk error API
+- Pastikan tidak ada firewall yang memblokir port 3001

@@ -468,7 +468,6 @@ class SupabaseService {
       const { data, error } = await supabase
         .from('patient_types')
         .select('*')
-        .eq('is_active', true)
         .order('name');
 
       if (error) throw error;

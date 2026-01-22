@@ -8,6 +8,8 @@ const UnitTypes = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [showModal, setShowModal] = useState(false);
     const [editingType, setEditingType] = useState<UnitType | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         code: '',
@@ -35,16 +37,37 @@ const UnitTypes = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
+        setSubmitting(true);
+        
         try {
+            console.log('📤 Submitting unit type:', formData);
+            
             if (editingType) {
                 await masterDataService.updateUnitType(editingType.id, formData);
+                console.log('✅ Unit type updated successfully');
             } else {
                 await masterDataService.createUnitType(formData);
+                console.log('✅ Unit type created successfully');
             }
+            
             await fetchUnitTypes();
             handleCloseModal();
-        } catch (error) {
-            console.error('Error saving unit type:', error);
+        } catch (error: any) {
+            console.error('❌ Error saving unit type:', error);
+            
+            // Tampilkan error yang lebih informatif
+            if (error.response?.data?.error) {
+                setError(error.response.data.error);
+            } else if (error.response?.data?.details) {
+                setError(error.response.data.details);
+            } else if (error.message) {
+                setError(error.message);
+            } else {
+                setError('Gagal menyimpan data. Silakan coba lagi.');
+            }
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -75,6 +98,8 @@ const UnitTypes = () => {
     const handleCloseModal = () => {
         setShowModal(false);
         setEditingType(null);
+        setError(null);
+        setSubmitting(false);
         setFormData({
             name: '',
             code: '',
@@ -202,16 +227,18 @@ const UnitTypes = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div className="flex items-center justify-end gap-2">
                                                 <button 
                                                     onClick={() => handleEdit(type)}
-                                                    className="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                                                    className="p-1.5 text-primary hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                                                    title="Edit"
                                                 >
                                                     <span className="material-symbols-outlined text-[18px]">edit</span>
                                                 </button>
                                                 <button 
                                                     onClick={() => handleDelete(type.id)}
-                                                    className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                    className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                                                    title="Hapus"
                                                 >
                                                     <span className="material-symbols-outlined text-[18px]">delete</span>
                                                 </button>
@@ -247,6 +274,25 @@ const UnitTypes = () => {
                         </div>
                         
                         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+                            {/* Error Alert */}
+                            {error && (
+                                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start gap-3">
+                                    <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-xl">error</span>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-red-800 dark:text-red-300">
+                                            {error}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setError(null)}
+                                        className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
+                                    >
+                                        <span className="material-symbols-outlined text-lg">close</span>
+                                    </button>
+                                </div>
+                            )}
+                            
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     Nama Tipe *
@@ -328,15 +374,24 @@ const UnitTypes = () => {
                                 <button
                                     type="button"
                                     onClick={handleCloseModal}
-                                    className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                                    disabled={submitting}
+                                    className="flex-1 px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Batal
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                    disabled={submitting}
+                                    className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
-                                    {editingType ? 'Update' : 'Simpan'}
+                                    {submitting ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            <span>Menyimpan...</span>
+                                        </>
+                                    ) : (
+                                        <span>{editingType ? 'Update' : 'Simpan'}</span>
+                                    )}
                                 </button>
                             </div>
                         </form>

@@ -231,17 +231,17 @@ const TicketStatuses: React.FC = () => {
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 onClick={() => handleEdit(status)}
-                                                className="text-primary hover:text-blue-600 p-1"
+                                                className="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                                                 title="Edit"
                                             >
-                                                <span className="material-symbols-outlined text-sm">edit</span>
+                                                <span className="material-symbols-outlined text-[18px]">edit</span>
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(status.id)}
-                                                className="text-red-600 hover:text-red-700 p-1"
+                                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                                                 title="Hapus"
                                             >
-                                                <span className="material-symbols-outlined text-sm">delete</span>
+                                                <span className="material-symbols-outlined text-[18px]">delete</span>
                                             </button>
                                         </div>
                                     </td>

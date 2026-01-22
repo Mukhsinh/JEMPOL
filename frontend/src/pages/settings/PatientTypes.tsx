@@ -38,18 +38,25 @@ const PatientTypes: React.FC = () => {
         e.preventDefault();
         try {
             if (editingType) {
+                console.log('🔄 Updating patient type:', editingType.id, formData);
                 await masterDataService.updatePatientType(editingType.id, formData);
+                console.log('✅ Update berhasil');
             } else {
+                console.log('➕ Creating patient type:', formData);
                 await masterDataService.createPatientType(formData);
+                console.log('✅ Create berhasil');
             }
             await fetchPatientTypes();
             handleCloseModal();
-        } catch (error) {
-            console.error('Error saving patient type:', error);
+            alert(editingType ? 'Data berhasil diperbarui!' : 'Data berhasil ditambahkan!');
+        } catch (error: any) {
+            console.error('❌ Error saving patient type:', error);
+            alert(`Gagal menyimpan data: ${error.message || 'Unknown error'}`);
         }
     };
 
     const handleEdit = (type: PatientType) => {
+        console.log('✏️ Editing patient type:', type);
         setEditingType(type);
         setFormData({
             name: type.name,
@@ -65,10 +72,24 @@ const PatientTypes: React.FC = () => {
     const handleDelete = async (id: string) => {
         if (window.confirm('Apakah Anda yakin ingin menghapus jenis pasien ini?')) {
             try {
+                console.log('🗑️ Deleting patient type:', id);
                 await masterDataService.deletePatientType(id);
+                console.log('✅ Delete berhasil');
                 await fetchPatientTypes();
-            } catch (error) {
-                console.error('Error deleting patient type:', error);
+                alert('Data berhasil dihapus!');
+            } catch (error: any) {
+                console.error('❌ Error deleting patient type:', error);
+                
+                // Tampilkan pesan error yang lebih informatif
+                let errorMessage = 'Gagal menghapus data';
+                
+                if (error.response?.data?.error) {
+                    errorMessage = error.response.data.error;
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                alert(errorMessage);
             }
         }
     };
@@ -227,17 +248,17 @@ const PatientTypes: React.FC = () => {
                                         <div className="flex items-center justify-end gap-2">
                                             <button
                                                 onClick={() => handleEdit(type)}
-                                                className="text-primary hover:text-blue-600 p-1"
+                                                className="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                                                 title="Edit"
                                             >
-                                                <span className="material-symbols-outlined text-sm">edit</span>
+                                                <span className="material-symbols-outlined text-[18px]">edit</span>
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(type.id)}
-                                                className="text-red-600 hover:text-red-700 p-1"
+                                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                                                 title="Hapus"
                                             >
-                                                <span className="material-symbols-outlined text-sm">delete</span>
+                                                <span className="material-symbols-outlined text-[18px]">delete</span>
                                             </button>
                                         </div>
                                     </td>

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Edit & Hapus Patient Types</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #4CAF50;
+            color: white;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 2px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-edit {
+            background: #2196F3;
+            color: white;
+        }
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+        .btn-refresh {
+            background: #4CAF50;
+            color: white;
+        }
+        .btn-edit:hover { background: #0b7dda; }
+        .btn-delete:hover { background: #da190b; }
+        .btn-refresh:hover { background: #45a049; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            margin: 50px auto;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 8px;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Edit & Hapus Patient Types</h1>
+        
+        <div id="status"></div>
+        
+        <button class="btn-refresh" onclick="loadPatientTypes()">🔄 Refresh Data</button>
+        
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Kode</th>
+                    <th>Prioritas</th>
+                    <th>SLA (jam)</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr><td colspan="6">Loading...</td></tr>
+            </tbody>
+        </table>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <!-- Modal Edit -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Jenis Pasien</h2>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                
+                <div class="form-group">
+                    <label>Nama:</label>
+                    <input type="text" id="editName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Kode:</label>
+                    <input type="text" id="editCode" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Deskripsi:</label>
+                    <textarea id="editDescription" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Level Prioritas:</label>
+                    <select id="editPriority">
+                        <option value="1">1 - Sangat Rendah</option>
+                        <option value="2">2 - Rendah</option>
+                        <option value="3">3 - Normal</option>
+                        <option value="4">4 - Tinggi</option>
+                        <option value="5">5 - Sangat Tinggi</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>SLA Default (jam):</label>
+                    <input type="number" id="editSLA" min="1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="editActive">
+                        Aktif
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn-edit">💾 Simpan Perubahan</button>
+                <button type="button" class="btn-delete" onclick="closeModal()">❌ Batal</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Konfigurasi Supabase
+        const SUPABASE_URL = 'https://boshadt3030.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvc2hhZHQzMDMwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzU3MjU2NzcsImV4cCI6MjA1MTMwMTY3N30.Aq_rCXyoN-Aq0Aq0Aq0Aq0Aq0Aq0Aq0Aq0Aq0Aq0Aq0';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'blue';
+            logDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = '';
+            }, 5000);
+        }
+
+        async function loadPatientTypes() {
+            log('🔍 Loading patient types...');
+            try {
+                const { data, error } = await supabase
+                    .from('patient_types')
+                    .select('*')
+                    .order('name');
+
+                if (error) throw error;
+
+                log(`✅ Loaded ${data.length} patient types`, 'success');
+                displayData(data);
+                showStatus(`Berhasil memuat ${data.length} data`, 'success');
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function displayData(data) {
+            const tbody = document.getElementById('tableBody');
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">Tidak ada data</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>${item.code}</td>
+                    <td>${item.priority_level}</td>
+                    <td>${item.default_sla_hours}</td>
+                    <td>${item.is_active ? '✅ Aktif' : '❌ Tidak Aktif'}</td>
+                    <td>
+                        <button class="btn-edit" onclick="editItem('${item.id}')">✏️ Edit</button>
+                        <button class="btn-delete" onclick="deleteItem('${item.id}', '${item.name}')">🗑️ Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function editItem(id) {
+            log(`✏️ Opening edit form for ID: ${id}`);
+            try {
+                const { data, error } = await supabase
+                    .from('patient_types')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) throw error;
+
+                // Populate form
+                document.getElementById('editId').value = data.id;
+                document.getElementById('editName').value = data.name;
+                document.getElementById('editCode').value = data.code;
+                document.getElementById('editDescription').value = data.description || '';
+                document.getElementById('editPriority').value = data.priority_level;
+                document.getElementById('editSLA').value = data.default_sla_hours;
+                document.getElementById('editActive').checked = data.is_active;
+
+                // Show modal
+                document.getElementById('editModal').style.display = 'block';
+                log('✅ Form opened', 'success');
+            } catch (error) {
+                log(`❌ Error loading data: ${error.message}`, 'error');
+                showStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+            log('Modal ditutup');
+        }
+
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('editId').value;
+            const updateData = {
+                name: document.getElementById('editName').value,
+                code: document.getElementById('editCode').value,
+                description: document.getElementById('editDescription').value,
+                priority_level: parseInt(document.getElementById('editPriority').value),
+                default_sla_hours: parseInt(document.getElementById('editSLA').value),
+                is_active: document.getElementById('editActive').checked,
+                updated_at: new Date().toISOString()
+            };
+
+            log(`💾 Updating patient type ID: ${id}`);
+            log(`Data: ${JSON.stringify(updateData)}`);
+
+            try {
+                const { data, error } = await supabase
+                    .from('patient_types')
+                    .update(updateData)
+                    .eq('id', id)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                log('✅ Update berhasil!', 'success');
+                showStatus('Data berhasil diperbarui!', 'success');
+                closeModal();
+                loadPatientTypes();
+            } catch (error) {
+                log(`❌ Update gagal: ${error.message}`, 'error');
+                showStatus(`Update gagal: ${error.message}`, 'error');
+            }
+        });
+
+        async function deleteItem(id, name) {
+            if (!confirm(`Apakah Anda yakin ingin menghapus "${name}"?`)) {
+                log('❌ Penghapusan dibatalkan');
+                return;
+            }
+
+            log(`🗑️ Deleting patient type ID: ${id}`);
+
+            try {
+                const { error } = await supabase
+                    .from('patient_types')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                log('✅ Delete berhasil!', 'success');
+                showStatus('Data berhasil dihapus!', 'success');
+                loadPatientTypes();
+            } catch (error) {
+                log(`❌ Delete gagal: ${error.message}`, 'error');
+                showStatus(`Delete gagal: ${error.message}`, 'error');
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // Load data on page load
+        loadPatientTypes();
+    </script>
+</body>
+</html>

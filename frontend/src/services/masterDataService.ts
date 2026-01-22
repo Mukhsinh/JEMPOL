@@ -216,8 +216,15 @@ export const getUnitTypes = async (): Promise<UnitType[]> => {
 };
 
 export const createUnitType = async (unitType: Omit<UnitType, 'id' | 'created_at' | 'updated_at'>): Promise<UnitType> => {
-  const response = await api.post('/master-data/unit-types', unitType);
-  return response.data;
+  try {
+    console.log('📤 Creating unit type via API:', unitType);
+    const response = await api.post('/master-data/unit-types', unitType);
+    console.log('✅ API create success:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ API create failed:', error.message);
+    throw new Error(error.response?.data?.error || 'Gagal menambahkan tipe unit. Pastikan backend berjalan.');
+  }
 };
 
 export const updateUnitType = async (id: string, unitType: Partial<UnitType>): Promise<UnitType> => {
@@ -390,7 +397,6 @@ export const getPatientTypes = async (): Promise<PatientType[]> => {
       const { data, error } = await supabase
         .from('patient_types')
         .select('*')
-        .eq('is_active', true)
         .order('name');
       
       if (error) throw error;
@@ -416,17 +422,73 @@ export const getPatientTypes = async (): Promise<PatientType[]> => {
 };
 
 export const createPatientType = async (patientType: Omit<PatientType, 'id' | 'created_at' | 'updated_at'>): Promise<PatientType> => {
-  const response = await api.post('/master-data/patient-types', patientType);
-  return response.data;
+  try {
+    console.log('📤 Creating patient type via API:', patientType);
+    const response = await api.post('/master-data/patient-types', patientType);
+    console.log('✅ API create success:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.warn('⚠️ API create failed, trying Supabase direct...', error.message);
+    // Fallback ke Supabase langsung
+    const { data, error: supaError } = await supabase
+      .from('patient_types')
+      .insert(patientType)
+      .select()
+      .single();
+    
+    if (supaError) {
+      console.error('❌ Supabase create failed:', supaError);
+      throw supaError;
+    }
+    console.log('✅ Supabase create success:', data);
+    return data;
+  }
 };
 
 export const updatePatientType = async (id: string, patientType: Partial<PatientType>): Promise<PatientType> => {
-  const response = await api.put(`/master-data/patient-types/${id}`, patientType);
-  return response.data;
+  try {
+    console.log('📤 Updating patient type via API:', id, patientType);
+    const response = await api.put(`/master-data/patient-types/${id}`, patientType);
+    console.log('✅ API update success:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.warn('⚠️ API update failed, trying Supabase direct...', error.message);
+    // Fallback ke Supabase langsung
+    const { data, error: supaError } = await supabase
+      .from('patient_types')
+      .update({ ...patientType, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (supaError) {
+      console.error('❌ Supabase update failed:', supaError);
+      throw new Error(`Gagal update patient type: ${supaError.message}`);
+    }
+    console.log('✅ Supabase update success:', data);
+    return data;
+  }
 };
 
 export const deletePatientType = async (id: string): Promise<void> => {
-  await api.delete(`/master-data/patient-types/${id}`);
+  try {
+    console.log('🗑️ Deleting patient type via API:', id);
+    await api.delete(`/master-data/patient-types/${id}`);
+    console.log('✅ API delete success');
+  } catch (error: any) {
+    console.warn('⚠️ API delete failed, trying Supabase direct...', error.message);
+    // Fallback ke Supabase langsung
+    const { error: supaError } = await supabase
+      .from('patient_types')
+      .delete()
+      .eq('id', id);
+    
+    if (supaError) {
+      console.error('❌ Supabase delete failed:', supaError);
+      throw new Error(`Gagal hapus patient type: ${supaError.message}`);
+    }
+    console.log('✅ Supabase delete success');
+  }
 };
 
 // Roles

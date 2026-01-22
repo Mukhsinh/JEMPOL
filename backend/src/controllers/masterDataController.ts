@@ -21,17 +21,57 @@ export const getUnitTypes = async (req: Request, res: Response) => {
 
 export const createUnitType = async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('unit_types')
-      .insert(req.body)
-      .select()
-      .single();
+    console.log('🔍 Creating unit type with data:', req.body);
 
-    if (error) throw error;
-    res.status(201).json(data);
-  } catch (error) {
-    console.error('Error creating unit type:', error);
-    res.status(500).json({ error: 'Failed to create unit type' });
+    // Validasi data yang dikirim
+    const { name, code, description, icon, color, is_active } = req.body;
+
+    if (!name || !code) {
+      console.error('❌ Validation failed: name or code missing');
+      return res.status(400).json({ 
+        error: 'Nama dan Kode wajib diisi' 
+      });
+    }
+
+    // Gunakan RPC function untuk bypass RLS
+    const { data, error } = await supabaseAdmin.rpc('create_unit_type', {
+      p_name: name,
+      p_code: code,
+      p_description: description || null,
+      p_icon: icon || 'corporate_fare',
+      p_color: color || '#6B7280',
+      p_is_active: is_active !== undefined ? is_active : true
+    });
+
+    if (error) {
+      console.error('❌ RPC error:', error);
+      
+      // Handle specific error messages
+      if (error.message && error.message.includes('sudah digunakan')) {
+        return res.status(400).json({ 
+          error: 'Kode unit type sudah digunakan' 
+        });
+      }
+      
+      return res.status(500).json({ 
+        error: 'Gagal menambahkan tipe unit',
+        details: error.message,
+        hint: error.hint || 'Pastikan semua field terisi dengan benar'
+      });
+    }
+
+    // RPC returns array, get first item
+    const result = Array.isArray(data) ? data[0] : data;
+    
+    console.log('✅ Unit type created successfully:', result);
+    res.status(201).json(result);
+  } catch (error: any) {
+    console.error('❌ Error creating unit type:', error);
+    res.status(500).json({ 
+      error: 'Gagal menambahkan tipe unit',
+      details: error.message || 'Unknown error',
+      hint: 'Pastikan semua field terisi dengan benar'
+    });
   }
 };
 
@@ -344,7 +384,6 @@ export const getPatientTypes = async (req: Request, res: Response) => {
     const { data, error } = await supabaseAdmin
       .from('patient_types')
       .select('*')
-      .eq('is_active', true)
       .order('name');
 
     if (error) {
@@ -384,24 +423,97 @@ export const createPatientType = async (req: Request, res: Response) => {
 export const updatePatientType = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    
+    // Validasi data yang dikirim
+    const updateData = {
+      ...req.body,
+      updated_at: new Date().toISOString()
+    };
+
+    // Pastikan priority_level dalam range yang benar
+    if (updateData.priority_level && (updateData.priority_level < 1 || updateData.priority_level > 5)) {
+      return res.status(400).json({ 
+        error: 'Level prioritas harus antara 1 sampai 5' 
+      });
+    }
+
+    // Pastikan default_sla_hours positif
+    if (updateData.default_sla_hours && updateData.default_sla_hours < 1) {
+      return res.status(400).json({ 
+        error: 'SLA default harus minimal 1 jam' 
+      });
+    }
+
     const { data, error } = await supabaseAdmin
       .from('patient_types')
-      .update({ ...req.body, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
 
     if (error) throw error;
+    
+    console.log('✅ Patient type updated successfully:', id);
     res.json(data);
-  } catch (error) {
-    console.error('Error updating patient type:', error);
-    res.status(500).json({ error: 'Failed to update patient type' });
+  } catch (error: any) {
+    console.error('❌ Error updating patient type:', error);
+    res.status(500).json({ 
+      error: 'Gagal memperbarui data jenis pasien',
+      details: error.message 
+    });
   }
 };
 
 export const deletePatientType = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    
+    // Cek apakah patient type digunakan di tabel lain
+    const { data: slaUsage, error: slaError } = await supabaseAdmin
+      .from('sla_settings')
+      .select('id')
+      .eq('patient_type_id', id)
+      .limit(1);
+
+    if (slaError) throw slaError;
+
+    if (slaUsage && slaUsage.length > 0) {
+      return res.status(400).json({ 
+        error: 'Gagal menghapus data. Jenis pasien ini masih digunakan di Pengaturan SLA. Hapus atau ubah pengaturan SLA terkait terlebih dahulu.' 
+      });
+    }
+
+    // Cek apakah digunakan di tickets
+    const { data: ticketUsage, error: ticketError } = await supabaseAdmin
+      .from('tickets')
+      .select('id')
+      .eq('patient_type_id', id)
+      .limit(1);
+
+    if (ticketError) throw ticketError;
+
+    if (ticketUsage && ticketUsage.length > 0) {
+      return res.status(400).json({ 
+        error: 'Gagal menghapus data. Jenis pasien ini masih digunakan di tiket. Tidak dapat menghapus data yang sudah digunakan.' 
+      });
+    }
+
+    // Cek apakah digunakan di external_tickets
+    const { data: externalUsage, error: externalError } = await supabaseAdmin
+      .from('external_tickets')
+      .select('id')
+      .eq('patient_type_id', id)
+      .limit(1);
+
+    if (externalError) throw externalError;
+
+    if (externalUsage && externalUsage.length > 0) {
+      return res.status(400).json({ 
+        error: 'Gagal menghapus data. Jenis pasien ini masih digunakan di tiket eksternal. Tidak dapat menghapus data yang sudah digunakan.' 
+      });
+    }
+
+    // Jika tidak digunakan, hapus data
     const { error } = await supabaseAdmin
       .from('patient_types')
       .delete()
@@ -409,9 +521,12 @@ export const deletePatientType = async (req: Request, res: Response) => {
 
     if (error) throw error;
     res.status(204).send();
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting patient type:', error);
-    res.status(500).json({ error: 'Failed to delete patient type' });
+    res.status(500).json({ 
+      error: 'Gagal menghapus data jenis pasien',
+      details: error.message 
+    });
   }
 };
 

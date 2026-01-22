@@ -357,16 +357,16 @@ const UnitsManagementDirect = ({ embedded = false }: UnitsManagementProps) => {
                     {getStatusBadge(unit.is_active)}
                 </td>
                 <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-1">
                         <button 
-                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                            className="p-1.5 text-primary hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                             title="Edit"
                             onClick={() => handleEditUnit(unit)}
                         >
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                         </button>
                         <button 
-                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                            className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                             title="Hapus"
                             onClick={() => handleDeleteUnit(unit.id)}
                         >

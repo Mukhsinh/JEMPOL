@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Create Unit Type</title>
+</head>
+<body>
+    <h1>Test Create Unit Type</h1>
+    <button onclick="testCreate()">Test Create</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testCreate() {
+            const token = localStorage.getItem('supabase_token');
+            const result = document.getElementById('result');
+            
+            result.textContent = 'Testing...\nToken: ' + (token ? 'Found' : 'Not found');
+            
+            try {
+                const response = await fetch('http://localhost:3001/api/master-data/unit-types', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: 'Test Unit Type',
+                        code: 'TEST123',
+                        description: 'Test description',
+                        icon: 'corporate_fare',
+                        color: '#3B82F6',
+                        is_active: true
+                    })
+                });
+                
+                const data = await response.json();
+                result.textContent += '\n\nStatus: ' + response.status;
+                result.textContent += '\n\nResponse: ' + JSON.stringify(data, null, 2);
+            } catch (error) {
+                result.textContent += '\n\nError: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
