@@ -1,6 +1,13 @@
 import { Router } from 'express';
 import unitController from '../controllers/unitController.js';
 import { authenticateSupabase, optionalSupabaseAuth } from '../middleware/supabaseAuthMiddleware.js';
+import multer from 'multer';
+
+// Configure multer for file upload
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+});
 
 const router = Router();
 
@@ -11,6 +18,9 @@ router.get('/', optionalSupabaseAuth, unitController.getUnits.bind(unitControlle
 router.post('/', authenticateSupabase, unitController.createUnit.bind(unitController));
 router.put('/:id', authenticateSupabase, unitController.updateUnit.bind(unitController));
 router.delete('/:id', authenticateSupabase, unitController.deleteUnit.bind(unitController));
+
+// Import endpoint
+router.post('/import', authenticateSupabase, upload.single('file'), unitController.importUnits.bind(unitController));
 
 // Master data endpoints - use optionalSupabaseAuth for read operations
 router.get('/unit-types', optionalSupabaseAuth, unitController.getUnitTypes.bind(unitController));

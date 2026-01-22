@@ -4,7 +4,8 @@ import {
     getPublicUnits,
     getPublicServiceCategories,
     getSurveyStats,
-    getSurveyResponses
+    getSurveyResponses,
+    getIKMByUnit
 } from '../controllers/publicSurveyController.js';
 
 const router = Router();
@@ -14,5 +15,10 @@ router.post('/survey/submit', submitPublicSurvey);
 router.post('/surveys', submitPublicSurvey); // Alias untuk SurveyForm.tsx
 router.get('/surveys/stats', getSurveyStats);
 router.get('/surveys/responses', getSurveyResponses);
+router.get('/surveys/ikm-by-unit', getIKMByUnit);
+
+// Public data endpoints
+router.get('/units', getPublicUnits);
+router.get('/service-categories', getPublicServiceCategories);
 
 export default router;

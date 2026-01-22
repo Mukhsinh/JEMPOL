@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Filter Unit dan Grafik Komparasi IKM</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f6f7f8;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 { color: #1e293b; font-size: 24px; margin-bottom: 8px; }
+        .subtitle { color: #64748b; font-size: 14px; }
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .filter-group { display: flex; flex-direction: column; }
+        label { 
+            font-size: 12px; 
+            font-weight: 600; 
+            color: #475569; 
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        select, button {
+            height: 44px;
+            padding: 0 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #f8fafc;
+        }
+        select:focus { outline: none; border-color: #137fec; }
+        button {
+            background: #137fec;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover { background: #0c5fc7; }
+        .results {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .result-section {
+            margin-bottom: 32px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .result-section:last-child { border-bottom: none; }
+        h2 { 
+            color: #1e293b; 
+            font-size: 18px; 
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .badge {
+            background: #f1f5f9;
+            color: #64748b;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        .bar-label {
+            min-width: 180px;
+            font-size: 14px;
+            color: #475569;
+            font-weight: 500;
+        }
+        .bar-container {
+            flex: 1;
+            height: 32px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+        .bar-fill {
+            height: 100%;
+            background: #137fec;
+            border-radius: 6px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+        }
+        .bar-fill.highest { background: #10b981; }
+        .bar-fill.lowest { background: #f97316; }
+        .bar-value {
+            color: white;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .bar-info {
+            min-width: 120px;
+            text-align: right;
+            font-size: 14px;
+            color: #1e293b;
+            font-weight: 600;
+        }
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status.success { background: #dcfce7; color: #16a34a; }
+        .status.error { background: #fee2e2; color: #dc2626; }
+        .status.warning { background: #fef3c7; color: #d97706; }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #137fec;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Test Filter Unit dan Grafik Komparasi IKM</h1>
+            <p class="subtitle">Pengujian fungsi filter unit dan grafik komparasi per unit/jenis layanan</p>
+        </div>
+
+        <div class="filters">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Unit Kerja</label>
+                    <select id="unitFilter">
+                        <option value="all">Semua Unit</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Jenis Layanan</label>
+                    <select id="serviceTypeFilter">
+                        <option value="all">Semua</option>
+                        <option value="rawat_jalan">Rawat Jalan</option>
+                        <option value="rawat_inap">Rawat Inap</option>
+                        <option value="darurat">IGD</option>
+                        <option value="lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button onclick="testFilter()">🔍 Test Filter</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Klik tombol "Test Filter" untuk memulai pengujian</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        // Load units on page load
+        async function loadUnits() {
+            try {
+                const response = await fetch(`${API_URL}/units`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const select = document.getElementById('unitFilter');
+                    data.data.forEach(unit => {
+                        const option = document.createElement('option');
+                        option.value = unit.id;
+                        option.textContent = unit.name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading units:', error);
+            }
+        }
+
+        async function testFilter() {
+            const unitId = document.getElementById('unitFilter').value;
+            const serviceType = document.getElementById('serviceTypeFilter').value;
+            const resultsDiv = document.getElementById('results');
+
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Memuat data...</p></div>';
+
+            try {
+                // Get date range (last 30 days)
+                const endDate = new Date().toISOString().split('T')[0];
+                const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+                // Fetch IKM by unit with filters
+                const params = new URLSearchParams({
+                    start_date: startDate,
+                    end_date: endDate
+                });
+
+                if (unitId !== 'all') params.append('unit_id', unitId);
+                if (serviceType !== 'all') params.append('service_type', serviceType);
+
+                const response = await fetch(`${API_URL}/public/surveys/ikm-by-unit?${params}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Gagal mengambil data');
+                }
+
+                displayResults(data.data, unitId, serviceType);
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="result-section">
+                        <div class="status error">❌ Error: ${error.message}</div>
+                    </div>
+                `;
+            }
+        }
+
+        function displayResults(ikmData, unitId, serviceType) {
+            const resultsDiv = document.getElementById('results');
+            
+            // Determine chart title
+            const chartTitle = unitId !== 'all' 
+                ? 'Komparasi IKM Per Jenis Layanan' 
+                : 'Komparasi IKM Per Unit Kerja';
+
+            const filterInfo = [];
+            if (unitId !== 'all') {
+                const unitName = document.getElementById('unitFilter').selectedOptions[0].text;
+                filterInfo.push(`Unit: ${unitName}`);
+            }
+            if (serviceType !== 'all') {
+                const serviceLabels = {
+                    'rawat_jalan': 'Rawat Jalan',
+                    'rawat_inap': 'Rawat Inap',
+                    'darurat': 'IGD',
+                    'lainnya': 'Lainnya'
+                };
+                filterInfo.push(`Jenis Layanan: ${serviceLabels[serviceType]}`);
+            }
+
+            let html = `
+                <div class="result-section">
+                    <div class="status success">✅ Data berhasil dimuat</div>
+                </div>
+
+                <div class="result-section">
+                    <h2>
+                        ${chartTitle}
+                        <span class="badge">${ikmData.length} ${unitId !== 'all' ? 'Jenis Layanan' : 'Unit'}</span>
+                    </h2>
+                    ${filterInfo.length > 0 ? `<p style="color: #64748b; font-size: 13px; margin-bottom: 16px;">${filterInfo.join(' • ')}</p>` : ''}
+            `;
+
+            if (ikmData.length === 0) {
+                html += '<p style="color: #64748b; text-align: center; padding: 40px;">Tidak ada data untuk filter yang dipilih</p>';
+            } else {
+                const maxIKM = Math.max(...ikmData.map(d => d.ikm_score));
+                const minIKM = Math.min(...ikmData.map(d => d.ikm_score));
+
+                ikmData.forEach((item, index) => {
+                    const isHighest = item.ikm_score === maxIKM && ikmData.length > 1;
+                    const isLowest = item.ikm_score === minIKM && ikmData.length > 1;
+                    const barClass = isHighest ? 'highest' : isLowest ? 'lowest' : '';
+
+                    html += `
+                        <div class="chart-bar">
+                            <div class="bar-label">${index + 1}. ${item.unit_name}</div>
+                            <div class="bar-container">
+                                <div class="bar-fill ${barClass}" style="width: ${item.ikm_score}%">
+                                    <span class="bar-value">${item.ikm_score.toFixed(1)}</span>
+                                </div>
+                            </div>
+                            <div class="bar-info">
+                                ${item.ikm_score.toFixed(1)} (${item.total_responses} respon)
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            html += `
+                </div>
+
+                <div class="result-section">
+                    <h2>📊 Raw Data (JSON)</h2>
+                    <pre>${JSON.stringify(ikmData, null, 2)}</pre>
+                </div>
+            `;
+
+            resultsDiv.innerHTML = html;
+        }
+
+        // Load units when page loads
+        loadUnits();
+    </script>
+</body>
+</html>

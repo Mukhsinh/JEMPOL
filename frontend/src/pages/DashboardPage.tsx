@@ -14,6 +14,10 @@ type Ticket = Database['public']['Tables']['tickets']['Row'] & {
 
 interface Stats {
     totalTickets: number;
+    totalComplaints: number;
+    totalSuggestions: number;
+    totalRequests: number;
+    totalSurveys: number;
     slaBreachRate: number;
     avgResolutionTime: string;
     csatScore: number;
@@ -25,11 +29,6 @@ interface StatusDistribution {
     escalated: number;
     resolved: number;
     closed: number;
-}
-
-interface UnitTicketCount {
-    unit_name: string;
-    count: number;
 }
 
 interface FilterState {
@@ -46,6 +45,10 @@ export default function DashboardPage() {
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [stats, setStats] = useState<Stats>({
         totalTickets: 0,
+        totalComplaints: 0,
+        totalSuggestions: 0,
+        totalRequests: 0,
+        totalSurveys: 0,
         slaBreachRate: 0,
         avgResolutionTime: '0 jam',
         csatScore: 0
@@ -62,7 +65,6 @@ export default function DashboardPage() {
         resolved: 0,
         closed: 0
     });
-    const [unitTicketCounts, setUnitTicketCounts] = useState<UnitTicketCount[]>([]);
     
     // Filter states
     const [filters, setFilters] = useState<FilterState>({
@@ -206,7 +208,10 @@ export default function DashboardPage() {
             const externalTickets = (externalResult.data as any[] || []).map((t) => ({
                 id: t.id,
                 ticket_number: t.ticket_number,
-                type: t.service_type,
+                type: t.service_type === 'complaint' ? 'complaint' : 
+                      t.service_type === 'request' ? 'information' : 
+                      t.service_type === 'suggestion' ? 'suggestion' : 
+                      t.service_type === 'survey' ? 'satisfaction' : 'complaint',
                 category_id: null,
                 title: t.title,
                 description: t.description,
@@ -234,7 +239,12 @@ export default function DashboardPage() {
                 created_at: t.created_at,
                 updated_at: t.updated_at,
                 unit: t.unit,
-                category: { name: t.category || '-' },
+                category: { 
+                    name: t.service_type === 'complaint' ? 'Pengaduan' : 
+                          t.service_type === 'request' ? 'Permintaan Informasi' : 
+                          t.service_type === 'suggestion' ? 'Saran' : 
+                          t.service_type === 'survey' ? 'Survey' : 'Pengaduan'
+                },
                 source_type: 'external'
             })) as Ticket[];
 
@@ -247,8 +257,15 @@ export default function DashboardPage() {
 
             setTickets(allTickets);
 
-            // Calculate stats
+            // Calculate stats by type
             const total = allTickets.length;
+            
+            // Hitung berdasarkan tipe tiket
+            const complaints = allTickets.filter((t) => t.type === 'complaint').length;
+            const suggestions = allTickets.filter((t) => t.type === 'suggestion').length;
+            const requests = allTickets.filter((t) => t.type === 'information').length;
+            const surveys = allTickets.filter((t) => t.type === 'satisfaction').length;
+            
             const breached = allTickets.filter((t) => {
                 if (!t.sla_deadline) return false;
                 const deadline = new Date(t.sla_deadline).getTime();
@@ -275,6 +292,10 @@ export default function DashboardPage() {
 
             setStats({
                 totalTickets: total,
+                totalComplaints: complaints,
+                totalSuggestions: suggestions,
+                totalRequests: requests,
+                totalSurveys: surveys,
                 slaBreachRate: breachRate,
                 avgResolutionTime: resolvedTickets.length > 0 ? `${avgTime.toFixed(1)} jam` : '0 jam',
                 csatScore: 4.8 // Mock for now, nanti ambil dari tabel survei kepuasan
@@ -289,18 +310,6 @@ export default function DashboardPage() {
                 closed: allTickets.filter(t => t.status === 'closed').length
             };
             setStatusDistribution(statusCounts);
-
-            // Calculate tickets per unit from real data
-            const unitCounts: { [key: string]: number } = {};
-            allTickets.forEach(ticket => {
-                const unitName = (ticket.unit as any)?.name || 'Tidak Diketahui';
-                unitCounts[unitName] = (unitCounts[unitName] || 0) + 1;
-            });
-            const unitTicketArray = Object.entries(unitCounts).map(([unit_name, count]) => ({
-                unit_name,
-                count
-            })).sort((a, b) => b.count - a.count);
-            setUnitTicketCounts(unitTicketArray);
 
             // Fetch CSAT score from satisfaction_surveys
             const { data: csatData } = await supabase
@@ -653,228 +662,452 @@ export default function DashboardPage() {
 
                     {/* KPI Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {/* Total Tickets */}
+                        {/* Total Pengaduan */}
+                        <div className="bg-white dark:bg-surface-dark p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-4">
+                            <div className="flex justify-between items-start">
+                                <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                    <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-2xl">report_problem</span>
+                                </div>
+                                {stats.totalComplaints > 0 && (
+                                    <span className="flex items-center text-red-600 dark:text-red-400 text-sm font-medium bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-full">
+                                        <span className="material-symbols-outlined text-[16px] mr-1">warning</span> Pengaduan
+                                    </span>
+                                )}
+                            </div>
+                            <div>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Pengaduan</p>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.totalComplaints}</h3>
+                            </div>
+                        </div>
+                        {/* Total Saran */}
+                        <div className="bg-white dark:bg-surface-dark p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-4">
+                            <div className="flex justify-between items-start">
+                                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                    <span className="material-symbols-outlined text-purple-600 dark:text-purple-400 text-2xl">lightbulb</span>
+                                </div>
+                                {stats.totalSuggestions > 0 && (
+                                    <span className="flex items-center text-purple-600 dark:text-purple-400 text-sm font-medium bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 rounded-full">
+                                        <span className="material-symbols-outlined text-[16px] mr-1">tips_and_updates</span> Saran
+                                    </span>
+                                )}
+                            </div>
+                            <div>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Saran</p>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.totalSuggestions}</h3>
+                            </div>
+                        </div>
+                        {/* Total Permintaan Informasi */}
                         <div className="bg-white dark:bg-surface-dark p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-4">
                             <div className="flex justify-between items-start">
                                 <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                    <span className="material-symbols-outlined text-primary text-2xl">confirmation_number</span>
+                                    <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-2xl">info</span>
                                 </div>
-                                {stats.totalTickets > 0 && (
+                                {stats.totalRequests > 0 && (
                                     <span className="flex items-center text-blue-600 dark:text-blue-400 text-sm font-medium bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">
-                                        <span className="material-symbols-outlined text-[16px] mr-1">check_circle</span> Aktif
+                                        <span className="material-symbols-outlined text-[16px] mr-1">help</span> Informasi
                                     </span>
                                 )}
                             </div>
                             <div>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Tiket</p>
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.totalTickets}</h3>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Permintaan Informasi</p>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.totalRequests}</h3>
                             </div>
                         </div>
-                        {/* Tiket Terbuka */}
-                        <div className="bg-white dark:bg-surface-dark p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-4">
-                            <div className="flex justify-between items-start">
-                                <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                                    <span className="material-symbols-outlined text-yellow-600 dark:text-yellow-400 text-2xl">pending</span>
-                                </div>
-                                {statusDistribution.open > 0 && (
-                                    <span className="flex items-center text-yellow-600 dark:text-yellow-400 text-sm font-medium bg-yellow-50 dark:bg-yellow-900/20 px-2 py-0.5 rounded-full">
-                                        <span className="material-symbols-outlined text-[16px] mr-1">schedule</span> Menunggu
-                                    </span>
-                                )}
-                            </div>
-                            <div>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Tiket Terbuka</p>
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{statusDistribution.open}</h3>
-                            </div>
-                        </div>
-                        {/* Diproses */}
-                        <div className="bg-white dark:bg-surface-dark p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-4">
-                            <div className="flex justify-between items-start">
-                                <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                                    <span className="material-symbols-outlined text-orange-600 dark:text-orange-400 text-2xl">sync</span>
-                                </div>
-                                {statusDistribution.in_progress > 0 && (
-                                    <span className="flex items-center text-orange-600 dark:text-orange-400 text-sm font-medium bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-full">
-                                        <span className="material-symbols-outlined text-[16px] mr-1">autorenew</span> Proses
-                                    </span>
-                                )}
-                            </div>
-                            <div>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Diproses</p>
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{statusDistribution.in_progress}</h3>
-                            </div>
-                        </div>
-                        {/* Selesai */}
+                        {/* Total Survey */}
                         <div className="bg-white dark:bg-surface-dark p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-between gap-4">
                             <div className="flex justify-between items-start">
                                 <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-                                    <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-2xl">task_alt</span>
+                                    <span className="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-2xl">poll</span>
                                 </div>
-                                {statusDistribution.resolved > 0 && (
+                                {stats.totalSurveys > 0 && (
                                     <span className="flex items-center text-emerald-600 dark:text-emerald-400 text-sm font-medium bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">
-                                        <span className="material-symbols-outlined text-[16px] mr-1">done_all</span> Tuntas
+                                        <span className="material-symbols-outlined text-[16px] mr-1">check_circle</span> Survey
                                     </span>
                                 )}
                             </div>
                             <div>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Selesai</p>
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{statusDistribution.resolved + statusDistribution.closed}</h3>
+                                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Survey</p>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{stats.totalSurveys}</h3>
                             </div>
                         </div>
                     </div>
 
-                    {/* Charts Section */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Ticket Categories Chart */}
-                        <div className="lg:col-span-2 bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
-                            <div className="flex justify-between items-center mb-6">
-                                <div>
-                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Tiket berdasarkan Unit</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">Volume di seluruh departemen</p>
-                                </div>
-                                <button className="text-primary text-sm font-medium hover:underline">Lihat Laporan</button>
+                    {/* Charts Section - Grafik Tren Komplain Per Kategori */}
+                    <div className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Tren Komplain Per Kategori</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Distribusi berdasarkan kategori layanan</p>
                             </div>
-                            {/* Real Data Bar Chart */}
-                            <div className="h-64 flex flex-col justify-end">
-                                {unitTicketCounts.length === 0 || unitTicketCounts.every(u => u.count === 0) ? (
-                                    <div className="w-full h-full flex items-center justify-center text-slate-500 dark:text-slate-400">
-                                        Tidak ada data tiket
-                                    </div>
-                                ) : (
+                            <button className="text-primary text-sm font-medium hover:underline">Lihat Detail</button>
+                        </div>
+                        <div className="h-80 flex flex-col justify-end border-l-2 border-b-2 border-slate-200 dark:border-slate-700 rounded-bl-lg p-4">
+                            {(() => {
+                                // Hitung tiket per kategori
+                                const categoryCounts: { [key: string]: number } = {};
+                                tickets.forEach(ticket => {
+                                    const categoryName = (ticket.category as any)?.name || 'Tidak Dikategorikan';
+                                    categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
+                                });
+                                
+                                const categoryArray = Object.entries(categoryCounts)
+                                    .map(([category_name, count]) => ({ category_name, count }))
+                                    .sort((a, b) => b.count - a.count)
+                                    .slice(0, 6);
+                                
+                                if (categoryArray.length === 0) {
+                                    return (
+                                        <div className="w-full h-full flex items-center justify-center text-slate-500 dark:text-slate-400">
+                                            Tidak ada data komplain
+                                        </div>
+                                    );
+                                }
+                                
+                                const maxCount = Math.max(...categoryArray.map(c => c.count), 1);
+                                const colors = [
+                                    { bg: 'bg-gradient-to-t from-blue-600 via-blue-500 to-blue-400', hover: 'hover:from-blue-700 hover:via-blue-600 hover:to-blue-500', text: 'text-blue-600' },
+                                    { bg: 'bg-gradient-to-t from-emerald-600 via-emerald-500 to-emerald-400', hover: 'hover:from-emerald-700 hover:via-emerald-600 hover:to-emerald-500', text: 'text-emerald-600' },
+                                    { bg: 'bg-gradient-to-t from-purple-600 via-purple-500 to-purple-400', hover: 'hover:from-purple-700 hover:via-purple-600 hover:to-purple-500', text: 'text-purple-600' },
+                                    { bg: 'bg-gradient-to-t from-orange-600 via-orange-500 to-orange-400', hover: 'hover:from-orange-700 hover:via-orange-600 hover:to-orange-500', text: 'text-orange-600' },
+                                    { bg: 'bg-gradient-to-t from-pink-600 via-pink-500 to-pink-400', hover: 'hover:from-pink-700 hover:via-pink-600 hover:to-pink-500', text: 'text-pink-600' },
+                                    { bg: 'bg-gradient-to-t from-cyan-600 via-cyan-500 to-cyan-400', hover: 'hover:from-cyan-700 hover:via-cyan-600 hover:to-cyan-500', text: 'text-cyan-600' }
+                                ];
+                                
+                                return (
                                     <div className="flex items-end justify-around h-full gap-3 px-2">
-                                        {unitTicketCounts.filter(u => u.count > 0).slice(0, 6).map((unit, index) => {
-                                            const maxCount = Math.max(...unitTicketCounts.map(u => u.count), 1);
-                                            // Hitung tinggi proporsional berdasarkan volume riil
-                                            // Tinggi minimum 20px untuk unit dengan 0 tiket, maksimal 200px
-                                            const chartHeight = 200; // tinggi maksimal dalam pixel
-                                            const minBarHeight = 30; // tinggi minimum bar
-                                            const heightPixels = unit.count > 0 
-                                                ? Math.max(minBarHeight, (unit.count / maxCount) * chartHeight)
-                                                : minBarHeight;
-                                            const barColors = [
-                                                'bg-blue-500 hover:bg-blue-600',
-                                                'bg-emerald-500 hover:bg-emerald-600',
-                                                'bg-purple-500 hover:bg-purple-600',
-                                                'bg-orange-500 hover:bg-orange-600',
-                                                'bg-pink-500 hover:bg-pink-600',
-                                                'bg-cyan-500 hover:bg-cyan-600'
-                                            ];
+                                        {categoryArray.map((category, index) => {
+                                            const chartHeight = 280;
+                                            const minBarHeight = 40;
+                                            const heightPixels = Math.max(minBarHeight, (category.count / maxCount) * chartHeight);
+                                            const colorScheme = colors[index % colors.length];
+                                            const percentage = ((category.count / tickets.length) * 100).toFixed(1);
+                                            
                                             return (
-                                                <div key={index} className="flex flex-col items-center gap-2 flex-1 max-w-[100px]" style={{ height: '100%', justifyContent: 'flex-end' }}>
-                                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                                        {unit.count}
-                                                    </span>
+                                                <div key={index} className="flex flex-col items-center gap-3 flex-1 max-w-[120px] group">
+                                                    <div className="bg-white dark:bg-slate-800 px-3 py-2 rounded-lg shadow-md border-2 border-slate-200 dark:border-slate-700 group-hover:scale-110 transition-transform">
+                                                        <span className={`text-xl font-black ${colorScheme.text}`}>{category.count}</span>
+                                                    </div>
                                                     <div 
-                                                        className={`w-full rounded-t-lg ${barColors[index % barColors.length]} transition-all duration-500 cursor-pointer shadow-md`}
-                                                        style={{ 
-                                                            height: `${heightPixels}px`
-                                                        }}
-                                                        title={`${unit.unit_name}: ${unit.count} tiket`}
-                                                    />
-                                                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center truncate w-full" title={unit.unit_name}>
-                                                        {unit.unit_name.length > 10 ? unit.unit_name.substring(0, 10) + '...' : unit.unit_name}
+                                                        className={`w-full ${colorScheme.bg} ${colorScheme.hover} rounded-t-xl transition-all duration-500 cursor-pointer shadow-lg relative group-hover:scale-105`}
+                                                        style={{ height: `${heightPixels}px` }}
+                                                        title={`${category.category_name}: ${category.count} tiket (${percentage}%)`}
+                                                    >
+                                                        <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-xl"></div>
+                                                        <div className="absolute top-2 left-1/2 -translate-x-1/2 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity bg-black/30 px-2 py-1 rounded">
+                                                            {percentage}%
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 text-center w-full bg-slate-50 dark:bg-slate-800 px-2 py-1 rounded-full shadow-sm" title={category.category_name}>
+                                                        {category.category_name.length > 10 ? category.category_name.substring(0, 10) + '...' : category.category_name}
                                                     </span>
                                                 </div>
                                             );
                                         })}
                                     </div>
-                                )}
-                            </div>
+                                );
+                            })()}
                         </div>
-                        {/* Status Distribution Panel */}
-                        <div className="lg:col-span-1 bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 flex flex-col">
+                        <div className="mt-4 flex flex-wrap gap-3 justify-center">
+                            {(() => {
+                                const categoryCounts: { [key: string]: number } = {};
+                                tickets.forEach(ticket => {
+                                    const categoryName = (ticket.category as any)?.name || 'Tidak Dikategorikan';
+                                    categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
+                                });
+                                
+                                const categoryArray = Object.entries(categoryCounts)
+                                    .map(([category_name, count]) => ({ category_name, count }))
+                                    .sort((a, b) => b.count - a.count)
+                                    .slice(0, 6);
+                                
+                                const colors = [
+                                    'bg-blue-500',
+                                    'bg-emerald-500',
+                                    'bg-purple-500',
+                                    'bg-orange-500',
+                                    'bg-pink-500',
+                                    'bg-cyan-500'
+                                ];
+                                
+                                return categoryArray.map((category, index) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                        <div className={`w-3 h-3 rounded-full ${colors[index % colors.length]}`}></div>
+                                        <span className="text-xs text-slate-600 dark:text-slate-400">{category.category_name}</span>
+                                    </div>
+                                ));
+                            })()}
+                        </div>
+                    </div>
+
+                    {/* Charts Section - 3 Grafik Terpisah */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Grafik Pengaduan */}
+                        <div className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
                             <div className="flex justify-between items-center mb-6">
                                 <div>
-                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Distribusi Status</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">Beban kerja saat ini</p>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Grafik Pengaduan</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">Berdasarkan unit</p>
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-5 flex-1 justify-center">
+                            <div className="h-64 flex flex-col justify-end">
                                 {(() => {
-                                    const totalStatus = statusDistribution.open + statusDistribution.in_progress + statusDistribution.escalated + statusDistribution.resolved + statusDistribution.closed;
-                                    // Hitung persentase dengan skala yang lebih baik untuk visualisasi
-                                    const getBarWidth = (count: number) => {
-                                        if (totalStatus === 0) return 0;
-                                        // Minimal 5% jika ada data, maksimal 100%
-                                        const percent = (count / totalStatus) * 100;
-                                        return count > 0 ? Math.max(percent, 5) : 0;
-                                    };
+                                    const complaintTickets = tickets.filter(t => t.type === 'complaint');
+                                    const unitCounts: { [key: string]: number } = {};
+                                    complaintTickets.forEach(ticket => {
+                                        const unitName = (ticket.unit as any)?.name || 'Tidak Diketahui';
+                                        unitCounts[unitName] = (unitCounts[unitName] || 0) + 1;
+                                    });
+                                    const unitArray = Object.entries(unitCounts).map(([unit_name, count]) => ({
+                                        unit_name,
+                                        count
+                                    })).sort((a, b) => b.count - a.count).slice(0, 5);
+                                    
+                                    if (unitArray.length === 0) {
+                                        return (
+                                            <div className="w-full h-full flex items-center justify-center text-slate-500 dark:text-slate-400">
+                                                Tidak ada data pengaduan
+                                            </div>
+                                        );
+                                    }
+                                    
+                                    const maxCount = Math.max(...unitArray.map(u => u.count), 1);
                                     return (
-                                        <>
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Terbuka
-                                                    </span>
-                                                    <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.open}</span>
-                                                </div>
-                                                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-blue-500 rounded-full transition-all duration-500" 
-                                                        style={{ width: `${getBarWidth(statusDistribution.open)}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span> Diproses
-                                                    </span>
-                                                    <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.in_progress}</span>
-                                                </div>
-                                                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-yellow-500 rounded-full transition-all duration-500" 
-                                                        style={{ width: `${getBarWidth(statusDistribution.in_progress)}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                                        <span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span> Eskalasi
-                                                    </span>
-                                                    <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.escalated}</span>
-                                                </div>
-                                                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-orange-500 rounded-full transition-all duration-500" 
-                                                        style={{ width: `${getBarWidth(statusDistribution.escalated)}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Selesai
-                                                    </span>
-                                                    <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.resolved}</span>
-                                                </div>
-                                                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
-                                                        style={{ width: `${getBarWidth(statusDistribution.resolved)}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex justify-between text-sm">
-                                                    <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                                        <span className="w-2.5 h-2.5 rounded-full bg-slate-500"></span> Ditutup
-                                                    </span>
-                                                    <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.closed}</span>
-                                                </div>
-                                                <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className="h-full bg-slate-500 rounded-full transition-all duration-500" 
-                                                        style={{ width: `${getBarWidth(statusDistribution.closed)}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                        </>
+                                        <div className="flex items-end justify-around h-full gap-2 px-2">
+                                            {unitArray.map((unit, index) => {
+                                                const chartHeight = 200;
+                                                const minBarHeight = 30;
+                                                const heightPixels = Math.max(minBarHeight, (unit.count / maxCount) * chartHeight);
+                                                return (
+                                                    <div key={index} className="flex flex-col items-center gap-2 flex-1" style={{ height: '100%', justifyContent: 'flex-end' }}>
+                                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                            {unit.count}
+                                                        </span>
+                                                        <div 
+                                                            className="w-full rounded-t-lg bg-red-500 hover:bg-red-600 transition-all duration-500 cursor-pointer shadow-md"
+                                                            style={{ height: `${heightPixels}px` }}
+                                                            title={`${unit.unit_name}: ${unit.count} pengaduan`}
+                                                        />
+                                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center truncate w-full" title={unit.unit_name}>
+                                                            {unit.unit_name.length > 8 ? unit.unit_name.substring(0, 8) + '...' : unit.unit_name}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     );
                                 })()}
                             </div>
+                        </div>
+
+                        {/* Grafik Permintaan Informasi */}
+                        <div className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Grafik Permintaan Informasi</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">Berdasarkan unit</p>
+                                </div>
+                            </div>
+                            <div className="h-64 flex flex-col justify-end">
+                                {(() => {
+                                    const requestTickets = tickets.filter(t => t.type === 'information');
+                                    const unitCounts: { [key: string]: number } = {};
+                                    requestTickets.forEach(ticket => {
+                                        const unitName = (ticket.unit as any)?.name || 'Tidak Diketahui';
+                                        unitCounts[unitName] = (unitCounts[unitName] || 0) + 1;
+                                    });
+                                    const unitArray = Object.entries(unitCounts).map(([unit_name, count]) => ({
+                                        unit_name,
+                                        count
+                                    })).sort((a, b) => b.count - a.count).slice(0, 5);
+                                    
+                                    if (unitArray.length === 0) {
+                                        return (
+                                            <div className="w-full h-full flex items-center justify-center text-slate-500 dark:text-slate-400">
+                                                Tidak ada data permintaan informasi
+                                            </div>
+                                        );
+                                    }
+                                    
+                                    const maxCount = Math.max(...unitArray.map(u => u.count), 1);
+                                    return (
+                                        <div className="flex items-end justify-around h-full gap-2 px-2">
+                                            {unitArray.map((unit, index) => {
+                                                const chartHeight = 200;
+                                                const minBarHeight = 30;
+                                                const heightPixels = Math.max(minBarHeight, (unit.count / maxCount) * chartHeight);
+                                                return (
+                                                    <div key={index} className="flex flex-col items-center gap-2 flex-1" style={{ height: '100%', justifyContent: 'flex-end' }}>
+                                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                            {unit.count}
+                                                        </span>
+                                                        <div 
+                                                            className="w-full rounded-t-lg bg-blue-500 hover:bg-blue-600 transition-all duration-500 cursor-pointer shadow-md"
+                                                            style={{ height: `${heightPixels}px` }}
+                                                            title={`${unit.unit_name}: ${unit.count} permintaan`}
+                                                        />
+                                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center truncate w-full" title={unit.unit_name}>
+                                                            {unit.unit_name.length > 8 ? unit.unit_name.substring(0, 8) + '...' : unit.unit_name}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        </div>
+
+                        {/* Grafik Saran */}
+                        <div className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Grafik Saran</h3>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">Berdasarkan unit</p>
+                                </div>
+                            </div>
+                            <div className="h-64 flex flex-col justify-end">
+                                {(() => {
+                                    const suggestionTickets = tickets.filter(t => t.type === 'suggestion');
+                                    const unitCounts: { [key: string]: number } = {};
+                                    suggestionTickets.forEach(ticket => {
+                                        const unitName = (ticket.unit as any)?.name || 'Tidak Diketahui';
+                                        unitCounts[unitName] = (unitCounts[unitName] || 0) + 1;
+                                    });
+                                    const unitArray = Object.entries(unitCounts).map(([unit_name, count]) => ({
+                                        unit_name,
+                                        count
+                                    })).sort((a, b) => b.count - a.count).slice(0, 5);
+                                    
+                                    if (unitArray.length === 0) {
+                                        return (
+                                            <div className="w-full h-full flex items-center justify-center text-slate-500 dark:text-slate-400">
+                                                Tidak ada data saran
+                                            </div>
+                                        );
+                                    }
+                                    
+                                    const maxCount = Math.max(...unitArray.map(u => u.count), 1);
+                                    return (
+                                        <div className="flex items-end justify-around h-full gap-2 px-2">
+                                            {unitArray.map((unit, index) => {
+                                                const chartHeight = 200;
+                                                const minBarHeight = 30;
+                                                const heightPixels = Math.max(minBarHeight, (unit.count / maxCount) * chartHeight);
+                                                return (
+                                                    <div key={index} className="flex flex-col items-center gap-2 flex-1" style={{ height: '100%', justifyContent: 'flex-end' }}>
+                                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                                            {unit.count}
+                                                        </span>
+                                                        <div 
+                                                            className="w-full rounded-t-lg bg-purple-500 hover:bg-purple-600 transition-all duration-500 cursor-pointer shadow-md"
+                                                            style={{ height: `${heightPixels}px` }}
+                                                            title={`${unit.unit_name}: ${unit.count} saran`}
+                                                        />
+                                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center truncate w-full" title={unit.unit_name}>
+                                                            {unit.unit_name.length > 8 ? unit.unit_name.substring(0, 8) + '...' : unit.unit_name}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Status Distribution Panel - Full Width */}
+                    <div className="bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Distribusi Status</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Beban kerja saat ini</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            {(() => {
+                                const totalStatus = statusDistribution.open + statusDistribution.in_progress + statusDistribution.escalated + statusDistribution.resolved + statusDistribution.closed;
+                                const getBarWidth = (count: number) => {
+                                    if (totalStatus === 0) return 0;
+                                    // Hitung persentase sebenarnya tanpa minimum artificial
+                                    const percent = (count / totalStatus) * 100;
+                                    return percent;
+                                };
+                                return (
+                                    <>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Terbuka
+                                                </span>
+                                                <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.open}</span>
+                                            </div>
+                                            <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full bg-blue-500 rounded-full transition-all duration-500" 
+                                                    style={{ width: `${getBarWidth(statusDistribution.open)}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span> Diproses
+                                                </span>
+                                                <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.in_progress}</span>
+                                            </div>
+                                            <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full bg-yellow-500 rounded-full transition-all duration-500" 
+                                                    style={{ width: `${getBarWidth(statusDistribution.in_progress)}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                                    <span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span> Eskalasi
+                                                </span>
+                                                <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.escalated}</span>
+                                            </div>
+                                            <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full bg-orange-500 rounded-full transition-all duration-500" 
+                                                    style={{ width: `${getBarWidth(statusDistribution.escalated)}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Selesai
+                                                </span>
+                                                <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.resolved}</span>
+                                            </div>
+                                            <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+                                                    style={{ width: `${getBarWidth(statusDistribution.resolved)}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <div className="flex justify-between text-sm">
+                                                <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                                    <span className="w-2.5 h-2.5 rounded-full bg-slate-500"></span> Ditutup
+                                                </span>
+                                                <span className="font-bold text-slate-900 dark:text-white">{statusDistribution.closed}</span>
+                                            </div>
+                                            <div className="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full bg-slate-500 rounded-full transition-all duration-500" 
+                                                    style={{ width: `${getBarWidth(statusDistribution.closed)}%` }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
                         </div>
                     </div>
 
@@ -909,6 +1142,7 @@ export default function DashboardPage() {
                                     <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                                         <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">ID Tiket</th>
                                         <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Judul</th>
+                                        <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kategori</th>
                                         <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Unit</th>
                                         <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Tanggal</th>
                                         <th className="px-6 py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
@@ -919,17 +1153,18 @@ export default function DashboardPage() {
                                 <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan={7} className="px-6 py-4 text-center text-slate-500">Memuat data...</td>
+                                            <td colSpan={8} className="px-6 py-4 text-center text-slate-500">Memuat data...</td>
                                         </tr>
                                     ) : tickets.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="px-6 py-4 text-center text-slate-500">Tidak ada tiket yang ditemukan.</td>
+                                            <td colSpan={8} className="px-6 py-4 text-center text-slate-500">Tidak ada tiket yang ditemukan.</td>
                                         </tr>
                                     ) : (
                                         tickets.map((ticket) => (
                                             <tr key={ticket.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">{ticket.ticket_number}</td>
                                                 <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">{ticket.title}</td>
+                                                <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{(ticket.category as any)?.name || '-'}</td>
                                                 <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{(ticket.unit as any)?.name || '-'}</td>
                                                 <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{ticket.created_at ? new Date(ticket.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
                                                 <td className="px-6 py-4">

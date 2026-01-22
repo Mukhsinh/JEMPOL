@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../utils/supabaseClient';
+import AppFooter from '../../components/AppFooter';
 
 interface Unit {
   id: string;
@@ -428,16 +429,7 @@ const SurveyForm: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-100 py-4 px-4">
-        <div className="max-w-lg mx-auto text-center">
-          {appSettings.logo_url && (
-            <img src={appSettings.logo_url} alt="Logo" className="h-8 mx-auto mb-2 object-contain" />
-          )}
-          <p className="text-xs text-gray-500">
-            {appSettings.app_footer || `© ${new Date().getFullYear()} ${appSettings.institution_name}`}
-          </p>
-        </div>
-      </footer>
+      <AppFooter variant="compact" />
     </div>
   );
 };

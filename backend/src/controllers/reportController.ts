@@ -45,8 +45,8 @@ export const getReportData = async (req: Request, res: Response) => {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
     }
 
-    // Build base query
-    let query = supabase
+    // Build query untuk tickets (internal)
+    let ticketsQuery = supabase
       .from('tickets')
       .select(`
         *,
@@ -56,28 +56,85 @@ export const getReportData = async (req: Request, res: Response) => {
       `)
       .gte('created_at', startDate.toISOString());
 
-    // Apply filters
+    // Apply filters untuk tickets
     if (unitId) {
-      query = query.eq('unit_id', unitId);
+      ticketsQuery = ticketsQuery.eq('unit_id', unitId);
     }
     if (categoryId) {
-      query = query.eq('category_id', categoryId);
+      ticketsQuery = ticketsQuery.eq('category_id', categoryId);
     }
     if (status) {
-      query = query.eq('status', status);
+      ticketsQuery = ticketsQuery.eq('status', status);
     }
     if (priority) {
-      query = query.eq('priority', priority);
+      ticketsQuery = ticketsQuery.eq('priority', priority);
     }
 
-    const { data: tickets, error } = await query;
+    // Build query untuk external_tickets dengan join yang benar
+    let externalTicketsQuery = supabase
+      .from('external_tickets')
+      .select(`
+        *,
+        units!external_tickets_unit_id_fkey(name),
+        service_categories!external_tickets_service_category_id_fkey(name),
+        patient_types!external_tickets_patient_type_id_fkey(name)
+      `)
+      .gte('created_at', startDate.toISOString());
 
-    if (error) {
-      throw error;
+    // Apply filters untuk external_tickets
+    if (unitId) {
+      externalTicketsQuery = externalTicketsQuery.eq('unit_id', unitId);
+    }
+    if (categoryId) {
+      externalTicketsQuery = externalTicketsQuery.eq('service_category_id', categoryId);
+    }
+    if (status) {
+      externalTicketsQuery = externalTicketsQuery.eq('status', status);
+    }
+    if (priority) {
+      externalTicketsQuery = externalTicketsQuery.eq('priority', priority);
     }
 
-    // Calculate KPIs
-    const totalComplaints = tickets?.length || 0;
+    const [ticketsResult, externalTicketsResult] = await Promise.all([
+      ticketsQuery,
+      externalTicketsQuery
+    ]);
+
+    if (ticketsResult.error) {
+      throw ticketsResult.error;
+    }
+    if (externalTicketsResult.error) {
+      throw externalTicketsResult.error;
+    }
+
+    // Gabungkan dan normalize data dari kedua tabel
+    const internalTickets = (ticketsResult.data || []).map((t: any) => ({
+      ...t,
+      patient_type_name: '-',
+      category_name: t.service_categories?.name || 'N/A',
+      unit_name: t.units?.name || 'N/A',
+      ticket_source: 'internal',
+      type: t.type || 'complaint'
+    }));
+
+    const externalTickets = (externalTicketsResult.data || []).map((et: any) => ({
+      ...et,
+      patient_type_name: et.patient_types?.name || '-',
+      category_name: et.service_categories?.name || 'N/A',
+      unit_name: et.units?.name || 'N/A',
+      ticket_source: 'external',
+      type: et.service_type || 'complaint',
+      category_id: et.service_category_id,
+      ticket_responses: []
+    }));
+
+    const tickets = [...internalTickets, ...externalTickets];
+
+    // Calculate KPIs by type
+    const totalComplaints = tickets?.filter(t => t.type === 'complaint').length || 0;
+    const totalSuggestions = tickets?.filter(t => t.type === 'suggestion').length || 0;
+    const totalRequests = tickets?.filter(t => t.type === 'information').length || 0;
+    const totalSurveys = tickets?.filter(t => t.type === 'satisfaction').length || 0;
     const resolvedComplaints = tickets?.filter(t => t.status === 'resolved' || t.status === 'closed').length || 0;
 
     // Calculate average response time
@@ -95,6 +152,12 @@ export const getReportData = async (req: Request, res: Response) => {
     // Calculate trends (last 30 days)
     const trendData = await calculateTrends(startDate, unitId, categoryId);
 
+    // Calculate category trends
+    const categoryTrends = await calculateCategoryTrends(startDate, unitId);
+
+    // Calculate patient type trends
+    const patientTypeTrends = await calculatePatientTypeTrends(startDate, unitId);
+
     // Calculate risk analysis
     const riskAnalysis = await calculateRiskAnalysis(startDate);
 
@@ -104,8 +167,9 @@ export const getReportData = async (req: Request, res: Response) => {
       id: ticket.id,
       ticketNumber: ticket.ticket_number,
       date: new Date(ticket.created_at).toLocaleDateString('id-ID'),
-      unitName: ticket.units?.name || 'N/A',
-      categoryName: ticket.service_categories?.name || 'N/A',
+      unitName: ticket.unit_name || ticket.units?.name || 'N/A',
+      categoryName: ticket.category_name || ticket.service_categories?.name || 'N/A',
+      patientTypeName: ticket.patient_type_name || '-',
       status: ticket.status,
       responseTime: ticket.first_response_at
         ? Math.round((new Date(ticket.first_response_at).getTime() - new Date(ticket.created_at).getTime()) / (1000 * 60))
@@ -116,10 +180,16 @@ export const getReportData = async (req: Request, res: Response) => {
     // Calculate changes (mock data for now - would need historical comparison)
     const kpi = {
       totalComplaints,
+      totalSuggestions,
+      totalRequests,
+      totalSurveys,
       resolvedComplaints,
       averageResponseTime,
-      projectedNextWeek: Math.round(totalComplaints * 1.15), // Simple projection
+      projectedNextWeek: Math.round((totalComplaints + totalSuggestions + totalRequests + totalSurveys) * 1.15), // Simple projection
       totalComplaintsChange: 12, // Mock percentage change
+      totalSuggestionsChange: 8,
+      totalRequestsChange: 5,
+      totalSurveysChange: 3,
       resolvedComplaintsChange: 5,
       averageResponseTimeChange: -2
     };
@@ -127,9 +197,11 @@ export const getReportData = async (req: Request, res: Response) => {
     res.json({
       kpi,
       trends: trendData,
+      categoryTrends,
+      patientTypeTrends,
       riskAnalysis,
       detailedReports,
-      totalReports: totalComplaints
+      totalReports: (totalComplaints + totalSuggestions + totalRequests + totalSurveys)
     });
 
   } catch (error) {
@@ -173,6 +245,140 @@ const calculateTrends = async (startDate: Date, unitId?: string, categoryId?: st
     return weeks;
   } catch (error) {
     console.error('Error calculating trends:', error);
+    return [];
+  }
+};
+
+const calculateCategoryTrends = async (startDate: Date, unitId?: string) => {
+  try {
+    console.log('📊 Calculating category trends from', startDate.toISOString());
+
+    // Query tickets internal dengan kategori
+    let ticketsQuery = supabase
+      .from('tickets')
+      .select(`
+        id,
+        category_id,
+        service_categories!inner(id, name)
+      `)
+      .gte('created_at', startDate.toISOString());
+
+    if (unitId) {
+      ticketsQuery = ticketsQuery.eq('unit_id', unitId);
+    }
+
+    // Query external tickets dengan kategori
+    let externalTicketsQuery = supabase
+      .from('external_tickets')
+      .select(`
+        id,
+        service_category_id,
+        service_categories!external_tickets_service_category_id_fkey(id, name)
+      `)
+      .gte('created_at', startDate.toISOString());
+
+    if (unitId) {
+      externalTicketsQuery = externalTicketsQuery.eq('unit_id', unitId);
+    }
+
+    const [ticketsResult, externalTicketsResult] = await Promise.all([
+      ticketsQuery,
+      externalTicketsQuery
+    ]);
+
+    if (ticketsResult.error) {
+      console.error('❌ Error fetching tickets for category trends:', ticketsResult.error);
+      return [];
+    }
+    if (externalTicketsResult.error) {
+      console.error('❌ Error fetching external tickets for category trends:', externalTicketsResult.error);
+      return [];
+    }
+
+    // Gabungkan data
+    const allTickets = [
+      ...(ticketsResult.data || []).map((t: any) => ({
+        categoryName: t.service_categories?.name || 'Tidak Berkategori'
+      })),
+      ...(externalTicketsResult.data || []).map((et: any) => ({
+        categoryName: et.service_categories?.name || 'Tidak Berkategori'
+      }))
+    ];
+
+    // Hitung per kategori
+    const categoryCount: { [key: string]: number } = {};
+    allTickets.forEach(ticket => {
+      const catName = ticket.categoryName;
+      categoryCount[catName] = (categoryCount[catName] || 0) + 1;
+    });
+
+    const totalTickets = allTickets.length;
+
+    // Convert ke array dan sort
+    const categoryTrends = Object.entries(categoryCount)
+      .map(([categoryName, count]) => ({
+        categoryName,
+        count,
+        percentage: totalTickets > 0 ? Math.round((count / totalTickets) * 100) : 0
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // Ambil top 10 kategori
+
+    console.log('📊 Category trends calculated:', categoryTrends);
+    return categoryTrends;
+  } catch (error) {
+    console.error('❌ Error calculating category trends:', error);
+    return [];
+  }
+};
+
+const calculatePatientTypeTrends = async (startDate: Date, unitId?: string) => {
+  try {
+    console.log('📊 Calculating patient type trends from', startDate.toISOString());
+
+    // Query external tickets dengan patient types
+    let externalTicketsQuery = supabase
+      .from('external_tickets')
+      .select(`
+        id,
+        patient_type_id,
+        patient_types!external_tickets_patient_type_id_fkey(id, name)
+      `)
+      .gte('created_at', startDate.toISOString());
+
+    if (unitId) {
+      externalTicketsQuery = externalTicketsQuery.eq('unit_id', unitId);
+    }
+
+    const { data: externalTickets, error } = await externalTicketsQuery;
+
+    if (error) {
+      console.error('❌ Error fetching external tickets for patient type trends:', error);
+      return [];
+    }
+
+    // Hitung per jenis pasien
+    const patientTypeCount: { [key: string]: number } = {};
+    (externalTickets || []).forEach((ticket: any) => {
+      const typeName = ticket.patient_types?.name || 'Tidak Diketahui';
+      patientTypeCount[typeName] = (patientTypeCount[typeName] || 0) + 1;
+    });
+
+    const totalTickets = externalTickets?.length || 0;
+
+    // Convert ke array dan sort
+    const patientTypeTrends = Object.entries(patientTypeCount)
+      .map(([patientTypeName, count]) => ({
+        patientTypeName,
+        count,
+        percentage: totalTickets > 0 ? Math.round((count / totalTickets) * 100) : 0
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    console.log('📊 Patient type trends calculated:', patientTypeTrends);
+    return patientTypeTrends;
+  } catch (error) {
+    console.error('❌ Error calculating patient type trends:', error);
     return [];
   }
 };
@@ -256,8 +462,8 @@ const getReportDataForExport = async (
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
   }
 
-  // Build base query
-  let query = supabase
+  // Build query untuk tickets (internal)
+  let ticketsQuery = supabase
     .from('tickets')
     .select(`
       *,
@@ -267,25 +473,80 @@ const getReportDataForExport = async (
     `)
     .gte('created_at', startDate.toISOString());
 
-  // Apply filters
+  // Apply filters untuk tickets
   if (unitId) {
-    query = query.eq('unit_id', unitId);
+    ticketsQuery = ticketsQuery.eq('unit_id', unitId);
   }
   if (categoryId) {
-    query = query.eq('category_id', categoryId);
+    ticketsQuery = ticketsQuery.eq('category_id', categoryId);
   }
   if (status) {
-    query = query.eq('status', status);
+    ticketsQuery = ticketsQuery.eq('status', status);
   }
   if (priority) {
-    query = query.eq('priority', priority);
+    ticketsQuery = ticketsQuery.eq('priority', priority);
   }
 
-  const { data: tickets, error } = await query;
+  // Build query untuk external_tickets dengan join yang benar
+  let externalTicketsQuery = supabase
+    .from('external_tickets')
+    .select(`
+      *,
+      units!external_tickets_unit_id_fkey(name),
+      service_categories!external_tickets_service_category_id_fkey(name),
+      patient_types!external_tickets_patient_type_id_fkey(name)
+    `)
+    .gte('created_at', startDate.toISOString());
 
-  if (error) {
-    throw error;
+  // Apply filters untuk external_tickets
+  if (unitId) {
+    externalTicketsQuery = externalTicketsQuery.eq('unit_id', unitId);
   }
+  if (categoryId) {
+    externalTicketsQuery = externalTicketsQuery.eq('service_category_id', categoryId);
+  }
+  if (status) {
+    externalTicketsQuery = externalTicketsQuery.eq('status', status);
+  }
+  if (priority) {
+    externalTicketsQuery = externalTicketsQuery.eq('priority', priority);
+  }
+
+  const [ticketsResult, externalTicketsResult] = await Promise.all([
+    ticketsQuery,
+    externalTicketsQuery
+  ]);
+
+  if (ticketsResult.error) {
+    throw ticketsResult.error;
+  }
+  if (externalTicketsResult.error) {
+    throw externalTicketsResult.error;
+  }
+
+  // Gabungkan dan normalize data dari kedua tabel
+  const internalTickets = (ticketsResult.data || []).map((t: any) => ({
+    ...t,
+    patient_type_name: '-',
+    category_name: t.service_categories?.name || 'N/A',
+    unit_name: t.units?.name || 'N/A',
+    ticket_source: 'internal',
+    type: t.type || 'complaint',
+    ticket_responses: t.ticket_responses || []
+  }));
+
+  const externalTickets = (externalTicketsResult.data || []).map((et: any) => ({
+    ...et,
+    patient_type_name: et.patient_types?.name || '-',
+    category_name: et.service_categories?.name || 'N/A',
+    unit_name: et.units?.name || 'N/A',
+    ticket_source: 'external',
+    type: et.service_type || 'complaint',
+    category_id: et.service_category_id,
+    ticket_responses: []
+  }));
+
+  const tickets = [...internalTickets, ...externalTickets];
 
   // Calculate KPIs
   const totalComplaints = tickets?.length || 0;
@@ -314,8 +575,9 @@ const getReportDataForExport = async (
     id: ticket.id,
     ticketNumber: ticket.ticket_number,
     date: new Date(ticket.created_at).toLocaleDateString('id-ID'),
-    unitName: ticket.units?.name || 'N/A',
-    categoryName: ticket.service_categories?.name || 'N/A',
+    unitName: ticket.unit_name || ticket.units?.name || 'N/A',
+    categoryName: ticket.category_name || ticket.service_categories?.name || 'N/A',
+    patientTypeName: ticket.patient_type_name || '-',
     status: ticket.status,
     responseTime: ticket.first_response_at
       ? Math.round((new Date(ticket.first_response_at).getTime() - new Date(ticket.created_at).getTime()) / (1000 * 60))
@@ -411,15 +673,16 @@ export const exportToPDF = async (req: Request, res: Response) => {
     // Table headers
     const tableTop = doc.y;
     const tableLeft = 50;
-    const colWidths = [80, 120, 80, 80, 60, 80];
+    const colWidths = [80, 120, 80, 80, 80, 60, 80];
 
     doc.fontSize(10);
     doc.text('No. Tiket', tableLeft, tableTop);
     doc.text('Tanggal', tableLeft + colWidths[0], tableTop);
     doc.text('Unit', tableLeft + colWidths[0] + colWidths[1], tableTop);
     doc.text('Kategori', tableLeft + colWidths[0] + colWidths[1] + colWidths[2], tableTop);
-    doc.text('Status', tableLeft + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], tableTop);
-    doc.text('Respons (mnt)', tableLeft + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4], tableTop);
+    doc.text('Jenis Pasien', tableLeft + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], tableTop);
+    doc.text('Status', tableLeft + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4], tableTop);
+    doc.text('Respons (mnt)', tableLeft + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4] + colWidths[5], tableTop);
 
     // Draw line under headers
     doc.moveTo(tableLeft, tableTop + 15)
@@ -438,8 +701,9 @@ export const exportToPDF = async (req: Request, res: Response) => {
       doc.text(report.date || '-', tableLeft + colWidths[0], currentY);
       doc.text(report.unitName || '-', tableLeft + colWidths[0] + colWidths[1], currentY);
       doc.text(report.categoryName || '-', tableLeft + colWidths[0] + colWidths[1] + colWidths[2], currentY);
-      doc.text(report.status || '-', tableLeft + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], currentY);
-      doc.text(report.responseTime ? `${report.responseTime}` : '-', tableLeft + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4], currentY);
+      doc.text(report.patientTypeName || '-', tableLeft + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3], currentY);
+      doc.text(report.status || '-', tableLeft + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4], currentY);
+      doc.text(report.responseTime ? `${report.responseTime}` : '-', tableLeft + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4] + colWidths[5], currentY);
 
       currentY += 20;
     });
@@ -498,6 +762,7 @@ export const exportToExcel = async (req: Request, res: Response) => {
       'Tanggal',
       'Unit',
       'Kategori',
+      'Jenis Pasien',
       'Status',
       'Waktu Respons (menit)',
       'Judul'
@@ -510,6 +775,7 @@ export const exportToExcel = async (req: Request, res: Response) => {
         report.date || '-',
         report.unitName || '-',
         report.categoryName || '-',
+        report.patientTypeName || '-',
         report.status || '-',
         report.responseTime || '-',
         report.title || '-'
@@ -521,6 +787,7 @@ export const exportToExcel = async (req: Request, res: Response) => {
     detailSheet.columns = [
       { width: 15 },
       { width: 12 },
+      { width: 20 },
       { width: 20 },
       { width: 20 },
       { width: 12 },

@@ -1,0 +1,11 @@
+full_name,email,employee_id,phone,unit_id,role,password
+John Doe,john@example.com,EMP001,081234567890,,staff,password123
+Jane Smith,jane@example.com,EMP002,081234567891,,supervisor,password456
+# Catatan:
+# - full_name: Nama lengkap pengguna (wajib)
+# - email: Email pengguna (wajib, harus unik)
+# - employee_id: NIP/ID karyawan (opsional)
+# - phone: Nomor telepon (opsional)
+# - unit_id: ID unit kerja (opsional, kosongkan jika tidak ada)
+# - role: Peran pengguna (staff/supervisor/manager/director/admin)
+# - password: Password untuk login (opsional)

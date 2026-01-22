@@ -22,9 +22,22 @@ export const submitPublicSurvey = async (req: Request, res: Response) => {
             age,
             age_range,
             gender,
-            // Skor pertanyaan (format q1-q8 atau q1_score-q8_score)
+            education,
+            job,
+            patient_type,
+            // Skor pertanyaan (format q1-q8 atau q1_score-q8_score) - legacy
             q1, q2, q3, q4, q5, q6, q7, q8,
             q1_score, q2_score, q3_score, q4_score, q5_score, q6_score, q7_score, q8_score,
+            // Skor indikator baru (9 unsur x 3 indikator)
+            u1_ind1, u1_ind2, u1_ind3,
+            u2_ind1, u2_ind2, u2_ind3,
+            u3_ind1, u3_ind2, u3_ind3,
+            u4_ind1, u4_ind2, u4_ind3,
+            u5_ind1, u5_ind2, u5_ind3,
+            u6_ind1, u6_ind2, u6_ind3,
+            u7_ind1, u7_ind2, u7_ind3,
+            u8_ind1, u8_ind2, u8_ind3,
+            u9_ind1, u9_ind2, u9_ind3,
             overall_satisfaction,
             comments,
             suggestions,
@@ -69,8 +82,11 @@ export const submitPublicSurvey = async (req: Request, res: Response) => {
             service_type: service_type || null,
             age_range: age || age_range || null,
             gender: gender || null,
+            education: education || null,
+            job: job || null,
+            patient_type: patient_type || null,
             is_anonymous: is_anonymous || false,
-            // Skor 8 pertanyaan survey
+            // Skor 8 pertanyaan survey (legacy - untuk backward compatibility)
             q1_score: q1 || q1_score ? parseInt(q1 || q1_score) : null,
             q2_score: q2 || q2_score ? parseInt(q2 || q2_score) : null,
             q3_score: q3 || q3_score ? parseInt(q3 || q3_score) : null,
@@ -79,6 +95,34 @@ export const submitPublicSurvey = async (req: Request, res: Response) => {
             q6_score: q6 || q6_score ? parseInt(q6 || q6_score) : null,
             q7_score: q7 || q7_score ? parseInt(q7 || q7_score) : null,
             q8_score: q8 || q8_score ? parseInt(q8 || q8_score) : null,
+            // Skor indikator baru (9 unsur x 3 indikator)
+            u1_ind1_score: u1_ind1 ? parseInt(u1_ind1) : null,
+            u1_ind2_score: u1_ind2 ? parseInt(u1_ind2) : null,
+            u1_ind3_score: u1_ind3 ? parseInt(u1_ind3) : null,
+            u2_ind1_score: u2_ind1 ? parseInt(u2_ind1) : null,
+            u2_ind2_score: u2_ind2 ? parseInt(u2_ind2) : null,
+            u2_ind3_score: u2_ind3 ? parseInt(u2_ind3) : null,
+            u3_ind1_score: u3_ind1 ? parseInt(u3_ind1) : null,
+            u3_ind2_score: u3_ind2 ? parseInt(u3_ind2) : null,
+            u3_ind3_score: u3_ind3 ? parseInt(u3_ind3) : null,
+            u4_ind1_score: u4_ind1 ? parseInt(u4_ind1) : null,
+            u4_ind2_score: u4_ind2 ? parseInt(u4_ind2) : null,
+            u4_ind3_score: u4_ind3 ? parseInt(u4_ind3) : null,
+            u5_ind1_score: u5_ind1 ? parseInt(u5_ind1) : null,
+            u5_ind2_score: u5_ind2 ? parseInt(u5_ind2) : null,
+            u5_ind3_score: u5_ind3 ? parseInt(u5_ind3) : null,
+            u6_ind1_score: u6_ind1 ? parseInt(u6_ind1) : null,
+            u6_ind2_score: u6_ind2 ? parseInt(u6_ind2) : null,
+            u6_ind3_score: u6_ind3 ? parseInt(u6_ind3) : null,
+            u7_ind1_score: u7_ind1 ? parseInt(u7_ind1) : null,
+            u7_ind2_score: u7_ind2 ? parseInt(u7_ind2) : null,
+            u7_ind3_score: u7_ind3 ? parseInt(u7_ind3) : null,
+            u8_ind1_score: u8_ind1 ? parseInt(u8_ind1) : null,
+            u8_ind2_score: u8_ind2 ? parseInt(u8_ind2) : null,
+            u8_ind3_score: u8_ind3 ? parseInt(u8_ind3) : null,
+            u9_ind1_score: u9_ind1 ? parseInt(u9_ind1) : null,
+            u9_ind2_score: u9_ind2 ? parseInt(u9_ind2) : null,
+            u9_ind3_score: u9_ind3 ? parseInt(u9_ind3) : null,
             // Skor agregat (untuk kompatibilitas)
             overall_score: overall_satisfaction ? parseInt(overall_satisfaction) : avgScore,
             response_time_score: q3 || q3_score ? parseInt(q3 || q3_score) : null,
@@ -209,7 +253,7 @@ export const getPublicServiceCategories = async (req: Request, res: Response) =>
 
 export const getSurveyStats = async (req: Request, res: Response) => {
     try {
-        const { start_date, end_date } = req.query;
+        const { start_date, end_date, unit_id, service_type } = req.query;
         
         // Get survey statistics from public_surveys table
         let query = supabase
@@ -224,6 +268,16 @@ export const getSurveyStats = async (req: Request, res: Response) => {
             const endDateObj = new Date(end_date as string);
             endDateObj.setHours(23, 59, 59, 999);
             query = query.lte('created_at', endDateObj.toISOString());
+        }
+        
+        // Apply unit filter
+        if (unit_id && unit_id !== 'all') {
+            query = query.eq('unit_id', unit_id);
+        }
+        
+        // Apply service type filter
+        if (service_type && service_type !== 'all') {
+            query = query.eq('service_type', service_type);
         }
         
         const { data: surveys, error } = await query;
@@ -441,6 +495,147 @@ export const getSurveyResponses = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.error('Error fetching survey responses:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Terjadi kesalahan server'
+        });
+    }
+};
+
+// Get IKM comparison by unit
+export const getIKMByUnit = async (req: Request, res: Response) => {
+    try {
+        const { start_date, end_date, unit_id, service_type } = req.query;
+
+        console.log('📊 Fetching IKM by unit with filters:', { start_date, end_date, unit_id, service_type });
+
+        let query = supabase
+            .from('public_surveys')
+            .select(`
+                unit_id,
+                service_type,
+                q1_score, q2_score, q3_score, q4_score,
+                q5_score, q6_score, q7_score, q8_score,
+                units:unit_id (id, name, code)
+            `);
+
+        // Apply date filters
+        if (start_date) {
+            query = query.gte('created_at', start_date);
+        }
+        if (end_date) {
+            const endDateObj = new Date(end_date as string);
+            endDateObj.setHours(23, 59, 59, 999);
+            query = query.lte('created_at', endDateObj.toISOString());
+        }
+        
+        // Apply unit filter
+        if (unit_id && unit_id !== 'all') {
+            query = query.eq('unit_id', unit_id);
+        }
+        
+        // Apply service type filter
+        if (service_type && service_type !== 'all') {
+            query = query.eq('service_type', service_type);
+        }
+
+        const { data: surveys, error } = await query;
+
+        if (error) {
+            console.error('❌ Error fetching IKM by unit:', error);
+            return res.status(500).json({
+                success: false,
+                error: 'Gagal mengambil data IKM per unit'
+            });
+        }
+
+        console.log(`📊 Found ${surveys?.length || 0} surveys`);
+
+        // Tentukan apakah grouping berdasarkan unit atau service_type
+        const groupByServiceType = unit_id && unit_id !== 'all';
+        
+        // Group by unit atau service_type dan calculate IKM
+        const dataMap = new Map<string, { name: string; scores: number[]; count: number }>();
+
+        surveys?.forEach(survey => {
+            // Skip surveys dengan unit_id null jika tidak grouping by service type
+            if (!groupByServiceType && !survey.unit_id) {
+                console.log('⚠️ Skipping survey with null unit_id');
+                return;
+            }
+
+            let groupKey: string;
+            let groupName: string;
+            
+            if (groupByServiceType) {
+                // Jika filter unit dipilih, group by service_type
+                groupKey = survey.service_type || 'lainnya';
+                const serviceTypeLabels: Record<string, string> = {
+                    'rawat_jalan': 'Rawat Jalan',
+                    'rawat_inap': 'Rawat Inap',
+                    'darurat': 'IGD',
+                    'lainnya': 'Lainnya'
+                };
+                groupName = serviceTypeLabels[groupKey] || groupKey;
+            } else {
+                // Jika semua unit, group by unit
+                groupKey = survey.unit_id;
+                const unitData = Array.isArray(survey.units) ? survey.units[0] : survey.units;
+                groupName = unitData?.name || 'Tidak Diketahui';
+            }
+
+            if (!dataMap.has(groupKey)) {
+                dataMap.set(groupKey, { name: groupName, scores: [], count: 0 });
+            }
+
+            const group = dataMap.get(groupKey)!;
+            
+            // Collect all valid scores (harus > 0 dan tidak null)
+            const scores = [
+                survey.q1_score, survey.q2_score, survey.q3_score, survey.q4_score,
+                survey.q5_score, survey.q6_score, survey.q7_score, survey.q8_score
+            ].filter(s => s != null && s > 0);
+
+            // Hanya hitung jika ada minimal 1 score yang valid
+            if (scores.length > 0) {
+                const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+                group.scores.push(avgScore);
+                group.count++;
+            } else {
+                console.log('⚠️ Survey has no valid scores:', survey.unit_id, survey.service_type);
+            }
+        });
+
+        console.log(`📊 Grouped into ${dataMap.size} groups`);
+
+        // Calculate IKM for each group and format response
+        const unitIKM = Array.from(dataMap.entries())
+            .map(([groupId, data]) => {
+                const avgScore = data.scores.length > 0
+                    ? data.scores.reduce((a, b) => a + b, 0) / data.scores.length
+                    : 0;
+                const ikmScore = (avgScore / 5) * 100;
+
+                return {
+                    unit_id: groupId,
+                    unit_name: data.name,
+                    total_responses: data.count,
+                    average_score: parseFloat(avgScore.toFixed(2)),
+                    ikm_score: parseFloat(ikmScore.toFixed(1))
+                };
+            })
+            .filter(unit => unit.total_responses > 0) // Hanya tampilkan yang ada responsenya
+            .sort((a, b) => b.ikm_score - a.ikm_score);
+
+        console.log(`✅ Returning ${unitIKM.length} unit IKM data`);
+
+        res.json({
+            success: true,
+            data: unitIKM
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching IKM by unit:', error);
         res.status(500).json({
             success: false,
             error: 'Terjadi kesalahan server'

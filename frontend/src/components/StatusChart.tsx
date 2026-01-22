@@ -114,7 +114,10 @@ const StatusChart: React.FC<StatusChartProps> = ({ metrics }) => {
                 <div className="h-64 flex flex-col justify-end">
                     <div className="flex items-end justify-around h-full gap-3 px-2">
                         {chartData.map((item, index) => {
+                            // Hitung tinggi batang secara proporsional berdasarkan nilai maksimum
+                            // Minimal 10% agar batang tetap terlihat meskipun nilainya kecil
                             const heightPercent = maxCount > 0 ? Math.max((item.count / maxCount) * 100, 10) : 10;
+                            
                             const barColors = [
                                 'bg-blue-500 hover:bg-blue-600',
                                 'bg-emerald-500 hover:bg-emerald-600',
@@ -129,13 +132,17 @@ const StatusChart: React.FC<StatusChartProps> = ({ metrics }) => {
                                         {item.count}
                                     </span>
                                     <div 
-                                        className={`w-full rounded-t-md ${barColors[index % barColors.length]} transition-all duration-500 cursor-pointer relative`}
-                                        style={{ height: `${heightPercent}%`, minHeight: '20px' }}
+                                        className={`w-full rounded-t-md ${barColors[index % barColors.length]} transition-all duration-500 cursor-pointer relative min-h-[20px]`}
+                                        style={{ 
+                                            height: `${heightPercent}%`
+                                        }}
                                         title={`${item.name}: ${item.count} tiket`}
                                     >
-                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                                            {item.count} Tiket
-                                        </div>
+                                        {item.count > 0 && (
+                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                                {item.count} Tiket
+                                            </div>
+                                        )}
                                     </div>
                                     <span className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center truncate w-full" title={item.name}>
                                         {item.name.length > 8 ? item.name.substring(0, 8) + '...' : item.name}

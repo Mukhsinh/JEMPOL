@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import reportService from '../../services/reportService';
 import api from '../../services/api';
 import AppFooter from '../../components/AppFooter';
 
@@ -45,6 +44,20 @@ interface SurveyResponse {
   average_rating: number;
 }
 
+interface UnitIKM {
+  unit_id: string;
+  unit_name: string;
+  total_responses: number;
+  average_score: number;
+  ikm_score: number;
+}
+
+interface Unit {
+  id: string;
+  name: string;
+  code: string;
+}
+
 const surveyQuestions = [
   { code: 'U1', title: 'Persyaratan', key: 'q1_score' },
   { code: 'U2', title: 'Prosedur', key: 'q2_score' },
@@ -59,6 +72,8 @@ const surveyQuestions = [
 const SurveyReport: React.FC = () => {
   const [stats, setStats] = useState<SurveyStats | null>(null);
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
+  const [unitIKM, setUnitIKM] = useState<UnitIKM[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,16 +84,38 @@ const SurveyReport: React.FC = () => {
   });
 
   useEffect(() => { 
+    fetchUnits();
+  }, []);
+
+  useEffect(() => { 
     fetchSurveyData(); 
-  }, [dateRange]);
+  }, [dateRange, filters.unit, filters.service_type]);
+
+  const fetchUnits = async () => {
+    try {
+      const res = await api.get('/units');
+      if (res.data?.success) {
+        setUnits(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching units:', err);
+    }
+  };
 
   const fetchSurveyData = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Fetch stats - endpoint sudah include /api di base URL
-      const statsRes = await api.get('/public/surveys/stats');
+      // Fetch stats
+      const statsRes = await api.get('/public/surveys/stats', {
+        params: {
+          start_date: dateRange.start,
+          end_date: dateRange.end,
+          unit_id: filters.unit !== 'all' ? filters.unit : undefined,
+          service_type: filters.service_type !== 'all' ? filters.service_type : undefined
+        }
+      });
       if (statsRes.data?.success) {
         setStats(statsRes.data.data);
       }
@@ -95,6 +132,19 @@ const SurveyReport: React.FC = () => {
       if (responsesRes.data?.success) {
         setResponses(responsesRes.data.data || []);
       }
+
+      // Fetch IKM by unit
+      const ikmRes = await api.get('/public/surveys/ikm-by-unit', {
+        params: {
+          start_date: dateRange.start,
+          end_date: dateRange.end,
+          unit_id: filters.unit !== 'all' ? filters.unit : undefined,
+          service_type: filters.service_type !== 'all' ? filters.service_type : undefined
+        }
+      });
+      if (ikmRes.data?.success) {
+        setUnitIKM(ikmRes.data.data || []);
+      }
     } catch (err: any) {
       console.error('Error fetching survey data:', err);
       setError(err.message || 'Gagal mengambil data survei');
@@ -105,9 +155,15 @@ const SurveyReport: React.FC = () => {
 
   const handleExportReport = async (format: 'pdf' | 'print') => {
     try {
-      if (format === 'print') window.print();
-      else await reportService.exportSurveyReport(dateRange.start, dateRange.end);
-    } catch (err: any) { setError(err.message); }
+      if (format === 'print') {
+        window.print();
+      } else {
+        // TODO: Implement PDF export
+        alert('Fitur export PDF akan segera tersedia');
+      }
+    } catch (err: any) { 
+      setError(err.message); 
+    }
   };
 
   const handleApplyFilter = () => {
@@ -209,6 +265,15 @@ const SurveyReport: React.FC = () => {
             </select>
           </label>
           <label className="flex flex-col flex-1 min-w-[200px]">
+            <span className="text-slate-700 text-xs font-semibold uppercase mb-2">Unit Kerja</span>
+            <select className="h-11 px-4 bg-slate-50 border border-slate-200 rounded-lg text-sm" value={filters.unit} onChange={(e) => setFilters({...filters, unit: e.target.value})}>
+              <option value="all">Semua Unit</option>
+              {units.map(unit => (
+                <option key={unit.id} value={unit.id}>{unit.name}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col flex-1 min-w-[200px]">
             <span className="text-slate-700 text-xs font-semibold uppercase mb-2">Jenis Layanan</span>
             <select className="h-11 px-4 bg-slate-50 border border-slate-200 rounded-lg text-sm" value={filters.service_type} onChange={(e) => setFilters({...filters, service_type: e.target.value})}>
               <option value="all">Semua</option>
@@ -272,7 +337,6 @@ const SurveyReport: React.FC = () => {
           <h3 className="text-lg font-bold text-slate-900 mb-6">Skor Per Unsur Pelayanan</h3>
           <div className="flex flex-col gap-4">
             {surveyQuestions.map((q) => {
-              // Map question key to stats field
               const statsKey = `average_${q.key.replace('_score', '')}` as keyof SurveyStats;
               const score = stats?.[statsKey] as number || 0;
               const pct = (Number(score) / 5) * 100;
@@ -305,6 +369,94 @@ const SurveyReport: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* IKM Comparison by Unit - NEW FEATURE */}
+      {unitIKM.length > 0 && (
+        <div className="bg-white p-6 rounded-xl border border-slate-200">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">
+                {filters.unit !== 'all' 
+                  ? 'Komparasi IKM Per Jenis Layanan' 
+                  : 'Komparasi IKM Per Unit Kerja'}
+              </h3>
+              {filters.unit !== 'all' && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Unit: {units.find(u => u.id === filters.unit)?.name || 'Unit Terpilih'}
+                </p>
+              )}
+              {filters.service_type !== 'all' && filters.unit === 'all' && (
+                <p className="text-xs text-slate-500 mt-1">
+                  Filter Jenis Layanan: {getServiceTypeLabel(filters.service_type)}
+                </p>
+              )}
+            </div>
+            <span className="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+              {unitIKM.length} {filters.unit !== 'all' ? 'Jenis Layanan' : 'Unit'}
+            </span>
+          </div>
+          <div className="flex flex-col gap-3">
+            {unitIKM.map((unit, index) => {
+              const maxIKM = Math.max(...unitIKM.map(u => u.ikm_score));
+              const minIKM = Math.min(...unitIKM.map(u => u.ikm_score));
+              const isHighest = unit.ikm_score === maxIKM && unitIKM.length > 1;
+              const isLowest = unit.ikm_score === minIKM && unitIKM.length > 1;
+              
+              return (
+                <div key={unit.unit_id} className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 w-48">
+                    <span className="text-xs font-bold text-slate-400 w-6">{index + 1}</span>
+                    <span className="text-sm text-slate-700 truncate flex-1" title={unit.unit_name}>{unit.unit_name}</span>
+                  </div>
+                  <div className="flex-1 h-10 bg-slate-100 rounded-lg overflow-hidden relative">
+                    <div 
+                      className={`h-full rounded-lg transition-all duration-700 ${
+                        isHighest ? 'bg-emerald-500' : isLowest ? 'bg-orange-500' : 'bg-[#137fec]'
+                      }`}
+                      style={{ width: `${unit.ikm_score}%` }}
+                    ></div>
+                    <div className="absolute inset-0 flex items-center px-3">
+                      <span className="text-xs font-bold text-white drop-shadow">
+                        {unit.ikm_score > 0 ? unit.ikm_score.toFixed(1) : '0'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 w-32">
+                    <span className="text-sm font-bold text-slate-900">{unit.ikm_score.toFixed(1)}</span>
+                    <span className="text-xs text-slate-500">({unit.total_responses} respon)</span>
+                  </div>
+                  {isHighest && (
+                    <span className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">
+                      <span className="material-symbols-outlined text-sm">trending_up</span>Tertinggi
+                    </span>
+                  )}
+                  {isLowest && (
+                    <span className="flex items-center gap-1 text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                      <span className="material-symbols-outlined text-sm">trending_down</span>Terendah
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-6 pt-4 border-t border-slate-200">
+            <div className="flex items-center gap-6 text-xs text-slate-500">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-emerald-500 rounded"></div>
+                <span>Tertinggi</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-[#137fec] rounded"></div>
+                <span>Normal</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-orange-500 rounded"></div>
+                <span>Terendah</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Feedback Table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">

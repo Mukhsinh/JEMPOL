@@ -95,6 +95,8 @@ export const createExternalTicket = async (req: Request, res: Response) => {
       reporter_address,
       age_range,
       service_type,
+      service_category_id,
+      patient_type_id,
       category,
       title,
       description
@@ -144,6 +146,8 @@ export const createExternalTicket = async (req: Request, res: Response) => {
         reporter_address: reporter_identity_type === 'personal' ? reporter_address : null,
         age_range: reporter_identity_type === 'personal' ? age_range : null,
         service_type,
+        service_category_id: service_category_id || null,
+        patient_type_id: patient_type_id || null,
         category,
         title,
         description,

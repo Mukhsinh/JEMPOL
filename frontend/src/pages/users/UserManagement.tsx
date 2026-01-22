@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import userService, { User, Unit, CreateUserData, UpdateUserData } from '../../services/userService';
 
 interface UserWithUnit extends User {
@@ -36,6 +36,8 @@ const UserManagement = () => {
         role: 'staff',
         password: ''
     });
+    const [isImporting, setIsImporting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const itemsPerPage = 10;
 
     useEffect(() => {
@@ -45,13 +47,11 @@ const UserManagement = () => {
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            // Fetch both users and units
             const [usersData, unitsData] = await Promise.all([
                 userService.getUsers(),
                 userService.getUnits()
             ]);
 
-            // Map users to include proper unit type
             const usersWithUnits: UserWithUnit[] = usersData.map(user => ({
                 ...user,
                 units: user.units ? {
@@ -68,6 +68,105 @@ const UserManagement = () => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // Fungsi unduh template CSV
+    const handleDownloadTemplate = () => {
+        const headers = ['full_name', 'email', 'employee_id', 'phone', 'unit_id', 'role', 'password'];
+        const exampleRow = ['John Doe', 'john@example.com', 'EMP001', '081234567890', '', 'staff', 'password123'];
+        
+        const csvContent = [
+            headers.join(','),
+            exampleRow.join(','),
+            '# Catatan:',
+            '# - full_name: Nama lengkap pengguna (wajib)',
+            '# - email: Email pengguna (wajib, harus unik)',
+            '# - employee_id: NIP/ID karyawan (opsional)',
+            '# - phone: Nomor telepon (opsional)',
+            '# - unit_id: ID unit kerja (opsional, kosongkan jika tidak ada)',
+            '# - role: Peran pengguna (staff/supervisor/manager/director/admin)',
+            '# - password: Password untuk login (opsional)'
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'template_pengguna.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // Fungsi import data dari CSV
+    const handleImportData = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsImporting(true);
+        const reader = new FileReader();
+
+        reader.onload = async (e) => {
+            try {
+                const text = e.target?.result as string;
+                const lines = text.split('\n').filter(line => line.trim() && !line.startsWith('#'));
+                
+                if (lines.length < 2) {
+                    alert('File CSV kosong atau tidak valid.');
+                    setIsImporting(false);
+                    return;
+                }
+
+                const headers = lines[0].split(',').map(h => h.trim());
+                const dataLines = lines.slice(1);
+
+                let successCount = 0;
+                let errorCount = 0;
+                const errors: string[] = [];
+
+                for (let i = 0; i < dataLines.length; i++) {
+                    const values = dataLines[i].split(',').map(v => v.trim());
+                    const userData: any = {};
+
+                    headers.forEach((header, index) => {
+                        userData[header] = values[index] || undefined;
+                    });
+
+                    try {
+                        const createData: CreateUserData = {
+                            full_name: userData.full_name,
+                            email: userData.email,
+                            employee_id: userData.employee_id || undefined,
+                            phone: userData.phone || undefined,
+                            unit_id: userData.unit_id || undefined,
+                            role: userData.role || 'staff',
+                            password: userData.password || undefined,
+                            create_admin_account: !!userData.password
+                        };
+
+                        await userService.createUser(createData);
+                        successCount++;
+                    } catch (error) {
+                        errorCount++;
+                        errors.push(`Baris ${i + 2}: ${(error as Error).message}`);
+                    }
+                }
+
+                alert(`Import selesai!\nBerhasil: ${successCount}\nGagal: ${errorCount}${errors.length > 0 ? '\n\nError:\n' + errors.slice(0, 5).join('\n') : ''}`);
+                fetchData();
+            } catch (error) {
+                console.error('Error importing data:', error);
+                alert('Gagal mengimpor data: ' + (error as Error).message);
+            } finally {
+                setIsImporting(false);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            }
+        };
+
+        reader.readAsText(file);
     };
 
     const handleAddUser = async () => {
@@ -183,67 +282,17 @@ const UserManagement = () => {
 
     return (
         <div className="flex flex-col h-full min-w-0 bg-background-light dark:bg-background-dark">
-            {/* Top Navbar */}
-            <header className="bg-surface-light dark:bg-surface-dark flex items-center justify-between whitespace-nowrap border-b border-border-color dark:border-slate-800 px-6 py-3 h-16 shrink-0 z-10 rounded-t-xl">
-                <div className="flex items-center gap-4 text-text-main lg:hidden">
-                    <button className="text-text-secondary hover:text-primary">
-                        <span className="material-symbols-outlined">menu</span>
-                    </button>
-                    <h2 className="text-text-main dark:text-white text-lg font-bold leading-tight">Portal Admin</h2>
-                </div>
-                <div className="hidden lg:block"></div>
-                <div className="flex flex-1 justify-end gap-6 items-center">
-                    <div className="flex gap-2">
-                        <button className="relative flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-text-main dark:text-white transition-colors">
-                            <span className="material-symbols-outlined text-text-secondary dark:text-slate-400">notifications</span>
-                            <span className="absolute top-2 right-2 size-2 bg-red-500 rounded-full border-2 border-surface-light dark:border-surface-dark"></span>
-                        </button>
-                        <button className="flex size-10 cursor-pointer items-center justify-center overflow-hidden rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-text-main dark:text-white transition-colors">
-                            <span className="material-symbols-outlined text-text-secondary dark:text-slate-400">chat</span>
-                        </button>
-                    </div>
-                    <div className="flex items-center gap-3 pl-6 border-l border-border-color dark:border-slate-800">
-                        <div className="flex flex-col items-end hidden md:flex">
-                            <span className="text-sm font-bold text-text-main dark:text-white">Super Admin</span>
-                            <span className="text-xs text-text-secondary dark:text-slate-400">Administrator</span>
-                        </div>
-                        <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border-2 border-white dark:border-slate-700 shadow-sm cursor-pointer bg-primary flex items-center justify-center">
-                            <span className="text-white font-bold">SA</span>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
             {/* Scrollable Content Area */}
             <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-6 lg:px-10 py-8">
                 <div className="max-w-[1200px] mx-auto flex flex-col gap-6">
-                    {/* Breadcrumbs */}
-                    <nav className="flex text-sm font-medium text-text-secondary dark:text-slate-400">
-                        <a className="hover:text-primary transition-colors" href="/">Beranda</a>
-                        <span className="mx-2">/</span>
-                        <a className="hover:text-primary transition-colors" href="/settings">Pengaturan</a>
-                        <span className="mx-2">/</span>
-                        <span className="text-text-main dark:text-white">Manajemen Pengguna</span>
-                    </nav>
-
-                    {/* Page Heading & Actions */}
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                        <div className="flex flex-col gap-1">
-                            <h1 className="text-text-main dark:text-white text-3xl font-black tracking-tight">Manajemen Pengguna</h1>
-                            <p className="text-text-secondary dark:text-slate-400 text-base font-normal max-w-2xl">Kelola akses, peran, dan unit kerja pengguna dalam sistem penanganan keluhan.</p>
-                        </div>
-                        <button
-                            onClick={() => setShowAddModal(true)}
-                            className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-lg shadow-sm shadow-blue-200 dark:shadow-none transition-all font-bold text-sm whitespace-nowrap w-fit"
-                        >
-                            <span className="material-symbols-outlined text-[20px]">add</span>
-                            Tambah Pengguna
-                        </button>
+                    {/* Page Heading */}
+                    <div className="flex flex-col gap-1">
+                        <h1 className="text-text-main dark:text-white text-3xl font-black tracking-tight">Manajemen Pengguna</h1>
+                        <p className="text-text-secondary dark:text-slate-400 text-base font-normal max-w-2xl">Kelola akses, peran, dan unit kerja pengguna dalam sistem penanganan keluhan.</p>
                     </div>
 
                     {/* Filters & Search Toolbar */}
                     <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-border-color dark:border-slate-800 shadow-sm flex flex-col lg:flex-row gap-4">
-                        {/* Search Input */}
                         <div className="relative flex-1 min-w-[240px]">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <span className="material-symbols-outlined text-text-secondary dark:text-slate-400">search</span>
@@ -256,7 +305,6 @@ const UserManagement = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        {/* Filters Group */}
                         <div className="flex flex-col sm:flex-row gap-3">
                             <div className="relative min-w-[140px]">
                                 <select
@@ -319,6 +367,39 @@ const UserManagement = () => {
                         </div>
                     </div>
 
+                    {/* Action Buttons - Sejajar di atas tabel */}
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <button
+                            onClick={handleDownloadTemplate}
+                            className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition-all font-bold text-sm whitespace-nowrap"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">download</span>
+                            Unduh Template
+                        </button>
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isImporting}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition-all font-bold text-sm whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">upload</span>
+                            {isImporting ? 'Mengimpor...' : 'Import Data'}
+                        </button>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".csv"
+                            onChange={handleImportData}
+                            className="hidden"
+                        />
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-lg shadow-sm shadow-blue-200 dark:shadow-none transition-all font-bold text-sm whitespace-nowrap"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">add</span>
+                            Tambah Pengguna
+                        </button>
+                    </div>
+
                     {/* Data Table */}
                     <div className="bg-surface-light dark:bg-surface-dark rounded-xl border border-border-color dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
                         <div className="overflow-x-auto">
@@ -371,11 +452,12 @@ const UserManagement = () => {
                                                     </div>
                                                 </td>
                                                 <td className="p-4">
-                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${user.role === 'admin' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' :
-                                                            user.role === 'manager' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' :
-                                                                user.role === 'supervisor' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' :
-                                                                    'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600'
-                                                        }`}>
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
+                                                        user.role === 'admin' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800' :
+                                                        user.role === 'manager' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800' :
+                                                        user.role === 'supervisor' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' :
+                                                        'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600'
+                                                    }`}>
                                                         {user.role}
                                                     </span>
                                                 </td>
@@ -385,10 +467,11 @@ const UserManagement = () => {
                                                 <td className="p-4">
                                                     <div className="flex items-center gap-2">
                                                         <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${user.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-                                                        <span className={`font-medium text-xs px-2 py-0.5 rounded-md border ${user.is_active
+                                                        <span className={`font-medium text-xs px-2 py-0.5 rounded-md border ${
+                                                            user.is_active
                                                             ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 border-emerald-100 dark:border-emerald-800'
                                                             : 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600'
-                                                            }`}>
+                                                        }`}>
                                                             {user.is_active ? 'Aktif' : 'Nonaktif'}
                                                         </span>
                                                     </div>
@@ -441,10 +524,11 @@ const UserManagement = () => {
                                     <button
                                         key={page}
                                         onClick={() => setCurrentPage(page)}
-                                        className={`size-9 flex items-center justify-center rounded-lg font-medium text-sm transition-colors ${currentPage === page
+                                        className={`size-9 flex items-center justify-center rounded-lg font-medium text-sm transition-colors ${
+                                            currentPage === page
                                             ? 'bg-primary text-white shadow-sm shadow-blue-200 dark:shadow-none'
                                             : 'border border-transparent text-text-secondary dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-text-main dark:hover:text-white'
-                                            }`}
+                                        }`}
                                     >
                                         {page}
                                     </button>

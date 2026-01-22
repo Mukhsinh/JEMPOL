@@ -312,6 +312,25 @@ class UnitService {
     const response = await api.put('/units/ai-trust-settings', settings);
     return response.data;
   }
+
+  // Import units from file
+  async importUnits(file: File): Promise<{ success: boolean; imported: number; message?: string }> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await api.post('/units/import', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Import units error:', error);
+      throw new Error(error.response?.data?.message || 'Gagal import data');
+    }
+  }
 }
 
 export default new UnitService();

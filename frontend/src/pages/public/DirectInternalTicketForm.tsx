@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import AppFooter from '../../components/AppFooter';
 
 interface FormData {
   reporter_name: string;
@@ -18,6 +19,15 @@ interface Unit {
   id: string;
   name: string;
   code: string;
+}
+
+interface AppSettings {
+  institution_name?: string;
+  institution_address?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  website?: string;
+  app_footer?: string;
 }
 
 // Direct Form View - Tiket Internal (Public, Tanpa Login, Mobile-First)
@@ -67,6 +77,7 @@ const DirectInternalTicketForm: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [units, setUnits] = useState<Unit[]>([]);
   const [loadingUnits, setLoadingUnits] = useState(true);
+  const [appSettings, setAppSettings] = useState<AppSettings>({});
   
   const [formData, setFormData] = useState<FormData>({
     reporter_name: '',
@@ -108,6 +119,26 @@ const DirectInternalTicketForm: React.FC = () => {
     };
     
     fetchUnits();
+  }, []);
+
+  // Load app settings untuk footer
+  useEffect(() => {
+    const fetchAppSettings = async () => {
+      try {
+        const response = await fetch('/api/public/app-settings');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setAppSettings(result.data);
+            console.log('✅ App settings loaded:', result.data);
+          }
+        }
+      } catch (err) {
+        console.error('❌ Error loading app settings:', err);
+      }
+    };
+    
+    fetchAppSettings();
   }, []);
 
   useEffect(() => {
@@ -521,6 +552,40 @@ const DirectInternalTicketForm: React.FC = () => {
             </div>
           </div>
 
+          {/* Footer - Data dari Pengaturan Aplikasi */}
+          {(appSettings.institution_name || appSettings.app_footer) && (
+            <div className="px-6 py-4 bg-gradient-to-r from-violet-50 to-purple-50 border-t border-violet-100">
+              <div className="max-w-md mx-auto text-center space-y-2">
+                {appSettings.institution_name && (
+                  <p className="font-bold text-violet-800 text-sm">{appSettings.institution_name}</p>
+                )}
+                {appSettings.institution_address && (
+                  <p className="text-xs text-gray-600">{appSettings.institution_address}</p>
+                )}
+                <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
+                  {appSettings.contact_phone && (
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">phone</span>
+                      {appSettings.contact_phone}
+                    </span>
+                  )}
+                  {appSettings.contact_email && (
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">email</span>
+                      {appSettings.contact_email}
+                    </span>
+                  )}
+                </div>
+                {appSettings.website && (
+                  <p className="text-xs text-violet-600">{appSettings.website}</p>
+                )}
+                {appSettings.app_footer && (
+                  <p className="text-xs text-gray-500 mt-2">{appSettings.app_footer}</p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Bottom Navigation */}
           <div className="px-6 py-4 bg-white border-t border-gray-100 safe-area-bottom">
             <div className="max-w-md mx-auto flex gap-3">
@@ -570,6 +635,11 @@ const DirectInternalTicketForm: React.FC = () => {
           </div>
         </form>
       </main>
+
+      {/* App Footer */}
+      <div className="relative z-10 bg-white">
+        <AppFooter variant="compact" />
+      </div>
 
       <style>{`
         @keyframes slideUp {

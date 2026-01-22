@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { complaintService } from '../../services/complaintService';
 import { masterDataService, TicketType, ServiceCategory } from '../../services/masterDataService';
 import unitService, { Unit } from '../../services/unitService';
+import AppFooter from '../../components/AppFooter';
 
 const CreateInternalTicket = () => {
     const navigate = useNavigate();
@@ -451,6 +452,9 @@ const CreateInternalTicket = () => {
                     </div>
                 </div>
             </div>
+
+            {/* App Footer */}
+            <AppFooter variant="compact" className="mt-8" />
         </div>
     );
 };

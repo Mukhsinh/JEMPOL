@@ -349,6 +349,175 @@ export class UnitController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  async importUnits(req: Request, res: Response) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: 'File tidak ditemukan' });
+      }
+
+      const fileExt = req.file.originalname.substring(req.file.originalname.lastIndexOf('.')).toLowerCase();
+      let rows: any[] = [];
+
+      if (fileExt === '.csv') {
+        // Parse CSV
+        const Papa = require('papaparse');
+        const fileContent = req.file.buffer.toString('utf-8');
+        
+        const parseResult = Papa.parse(fileContent, {
+          header: true,
+          skipEmptyLines: true,
+          transformHeader: (header: string) => header.trim()
+        });
+
+        if (parseResult.errors.length > 0) {
+          return res.status(400).json({ 
+            success: false, 
+            message: 'Format file tidak valid',
+            errors: parseResult.errors 
+          });
+        }
+
+        rows = parseResult.data;
+      } else if (fileExt === '.xlsx' || fileExt === '.xls') {
+        // Parse Excel
+        const ExcelJS = require('exceljs');
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(req.file.buffer);
+        
+        const worksheet = workbook.worksheets[0];
+        if (!worksheet) {
+          return res.status(400).json({ success: false, message: 'File Excel kosong' });
+        }
+
+        const headers: string[] = [];
+        worksheet.getRow(1).eachCell((cell: any) => {
+          headers.push(cell.value?.toString().trim() || '');
+        });
+
+        worksheet.eachRow((row: any, rowNumber: number) => {
+          if (rowNumber === 1) return; // Skip header
+          
+          const rowData: any = {};
+          row.eachCell((cell: any, colNumber: number) => {
+            const header = headers[colNumber - 1];
+            if (header) {
+              rowData[header] = cell.value?.toString().trim() || '';
+            }
+          });
+          
+          if (Object.keys(rowData).length > 0) {
+            rows.push(rowData);
+          }
+        });
+      } else {
+        return res.status(400).json({ success: false, message: 'Format file tidak didukung. Gunakan CSV atau Excel' });
+      }
+
+      let imported = 0;
+      const errors: string[] = [];
+
+      // Get unit types mapping
+      const { data: unitTypes } = await supabase
+        .from('unit_types')
+        .select('id, code');
+      
+      const unitTypeMap = new Map(unitTypes?.map(ut => [ut.code, ut.id]) || []);
+
+      // Get existing units for parent mapping
+      const { data: existingUnits } = await supabase
+        .from('units')
+        .select('id, code');
+      
+      const unitMap = new Map(existingUnits?.map(u => [u.code, u.id]) || []);
+
+      for (let i = 0; i < rows.length; i++) {
+        const row: any = rows[i];
+        
+        try {
+          // Validate required fields
+          if (!row['Nama Unit'] || !row['Kode']) {
+            errors.push(`Baris ${i + 2}: Nama Unit dan Kode wajib diisi`);
+            continue;
+          }
+
+          // Check if unit already exists
+          const { data: existingUnit } = await supabase
+            .from('units')
+            .select('id')
+            .eq('code', row['Kode'])
+            .single();
+
+          const unitData: any = {
+            name: row['Nama Unit'],
+            code: row['Kode'],
+            description: row['Deskripsi'] || null,
+            contact_email: row['Email Kontak'] || null,
+            contact_phone: row['Telepon Kontak'] || null,
+            sla_hours: parseInt(row['SLA (Jam)']) || 24,
+            is_active: row['Status (Aktif/Tidak Aktif)']?.toLowerCase() === 'aktif'
+          };
+
+          // Map unit type
+          if (row['Tipe Unit (Kode)']) {
+            const unitTypeId = unitTypeMap.get(row['Tipe Unit (Kode)']);
+            if (unitTypeId) {
+              unitData.unit_type_id = unitTypeId;
+            }
+          }
+
+          // Map parent unit
+          if (row['Unit Induk (Kode)']) {
+            const parentUnitId = unitMap.get(row['Unit Induk (Kode)']);
+            if (parentUnitId) {
+              unitData.parent_unit_id = parentUnitId;
+            }
+          }
+
+          if (existingUnit) {
+            // Update existing unit
+            const { error } = await supabase
+              .from('units')
+              .update({
+                ...unitData,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingUnit.id);
+
+            if (error) throw error;
+          } else {
+            // Insert new unit
+            const { data: newUnit, error } = await supabase
+              .from('units')
+              .insert(unitData)
+              .select('id, code')
+              .single();
+
+            if (error) throw error;
+            
+            // Add to map for parent reference
+            if (newUnit) {
+              unitMap.set(newUnit.code, newUnit.id);
+            }
+          }
+
+          imported++;
+        } catch (error: any) {
+          errors.push(`Baris ${i + 2}: ${error.message}`);
+        }
+      }
+
+      res.json({
+        success: true,
+        imported,
+        total: rows.length,
+        errors: errors.length > 0 ? errors : undefined
+      });
+    } catch (error) {
+      console.error('Error importing units:', error);
+      res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+  }
 }
 
 export default new UnitController();

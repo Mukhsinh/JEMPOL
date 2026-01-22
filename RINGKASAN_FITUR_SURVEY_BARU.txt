@@ -1,0 +1,13 @@
+﻿=== RINGKASAN PERBAIKAN ===
+
+FITUR YANG DITAMBAHKAN:
+1. Filter Unit Kerja - dropdown untuk filter data per unit
+2. Grafik Komparasi IKM - bar chart horizontal per unit
+
+FILE YANG DIUBAH:
+✓ backend/src/controllers/publicSurveyController.ts
+✓ backend/src/routes/publicSurveyRoutes.ts
+✓ frontend/src/pages/survey/SurveyReport.tsx
+
+CARA MENJALANKAN:
+Klik: JALANKAN_DAN_TEST_SURVEY_REPORT_BARU.bat

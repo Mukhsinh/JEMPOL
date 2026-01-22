@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppFooter from '../../components/AppFooter';
+import { getServiceCategories, getPatientTypes } from '../../services/masterDataService';
 
 interface Unit {
   id: string;
@@ -24,6 +25,9 @@ const ExternalTicketForm: React.FC = () => {
   const [qrData, setQrData] = useState<QRCode | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [serviceCategories, setServiceCategories] = useState<any[]>([]);
+  const [patientTypes, setPatientTypes] = useState<any[]>([]);
+  const [loadingMasterData, setLoadingMasterData] = useState(false);
   
   const [formData, setFormData] = useState({
     reporter_identity_type: 'personal',
@@ -32,6 +36,8 @@ const ExternalTicketForm: React.FC = () => {
     reporter_phone: '',
     reporter_address: '',
     service_type: '',
+    service_category_id: '',
+    patient_type_id: '',
     category: '',
     title: '',
     description: '',
@@ -61,6 +67,28 @@ const ExternalTicketForm: React.FC = () => {
       setLoading(false);
     }
   }, [qrCode]);
+
+  // Load master data
+  useEffect(() => {
+    const loadMasterData = async () => {
+      setLoadingMasterData(true);
+      try {
+        const [categories, patientTypesData] = await Promise.all([
+          getServiceCategories(),
+          getPatientTypes()
+        ]);
+        
+        setServiceCategories(categories);
+        setPatientTypes(patientTypesData);
+      } catch (err) {
+        console.error('Error loading master data:', err);
+      } finally {
+        setLoadingMasterData(false);
+      }
+    };
+    
+    loadMasterData();
+  }, []);
 
   const fetchQRCodeData = async () => {
     try {
@@ -121,6 +149,8 @@ const ExternalTicketForm: React.FC = () => {
         reporter_phone: formData.reporter_phone,
         reporter_address: formData.reporter_address,
         service_type: formData.service_type,
+        service_category_id: formData.service_category_id || null,
+        patient_type_id: formData.patient_type_id || null,
         category: formData.category,
         title: formData.title,
         description: formData.description,
@@ -149,6 +179,8 @@ const ExternalTicketForm: React.FC = () => {
           reporter_phone: '',
           reporter_address: '',
           service_type: '',
+          service_category_id: '',
+          patient_type_id: '',
           category: '',
           title: '',
           description: '',
@@ -382,26 +414,73 @@ const ExternalTicketForm: React.FC = () => {
 
               {/* Category */}
               <div className="flex flex-col gap-2 md:col-span-1">
-                <label className="text-slate-900 dark:text-white text-sm font-semibold" htmlFor="category">
-                  Kategori
+                <label className="text-slate-900 dark:text-white text-sm font-semibold" htmlFor="service_category_id">
+                  Kategori Layanan *
                 </label>
                 <div className="relative">
-                  <select 
-                    className="w-full appearance-none rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3 pr-10 text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors" 
-                    id="category"
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                  >
-                    <option disabled value="">Pilih kategori...</option>
-                    <option value="service">Pelayanan Medis</option>
-                    <option value="facility">Fasilitas & Sarana</option>
-                    <option value="staff">Perilaku Petugas</option>
-                    <option value="admin">Administrasi</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                    <span className="material-symbols-outlined">expand_more</span>
-                  </div>
+                  {loadingMasterData ? (
+                    <div className="flex items-center justify-center py-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                      <span className="ml-2 text-sm text-slate-500">Memuat...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <select 
+                        className="w-full appearance-none rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3 pr-10 text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors" 
+                        id="service_category_id"
+                        name="service_category_id"
+                        value={formData.service_category_id}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Pilih kategori...</option>
+                        {serviceCategories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                        <span className="material-symbols-outlined">expand_more</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Patient Type */}
+              <div className="flex flex-col gap-2 md:col-span-1">
+                <label className="text-slate-900 dark:text-white text-sm font-semibold" htmlFor="patient_type_id">
+                  Jenis Pasien *
+                </label>
+                <div className="relative">
+                  {loadingMasterData ? (
+                    <div className="flex items-center justify-center py-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                      <span className="ml-2 text-sm text-slate-500">Memuat...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <select 
+                        className="w-full appearance-none rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-4 py-3 pr-10 text-slate-900 dark:text-white focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors" 
+                        id="patient_type_id"
+                        name="patient_type_id"
+                        value={formData.patient_type_id}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Pilih jenis pasien...</option>
+                        {patientTypes.map((type) => (
+                          <option key={type.id} value={type.id}>
+                            {type.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                        <span className="material-symbols-outlined">expand_more</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

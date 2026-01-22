@@ -8,6 +8,18 @@ export interface TrendData {
   resolved: number;
 }
 
+export interface CategoryTrendData {
+  categoryName: string;
+  count: number;
+  percentage: number;
+}
+
+export interface PatientTypeTrendData {
+  patientTypeName: string;
+  count: number;
+  percentage: number;
+}
+
 export interface RiskAnalysis {
   unitName: string;
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
@@ -20,6 +32,7 @@ export interface DetailedReport {
   date: string;
   unitName: string;
   categoryName: string;
+  patientTypeName: string;
   status: string;
   responseTime: number | null;
   title: string;
@@ -61,6 +74,12 @@ export interface ServiceCategory {
 export interface KPIData {
   totalComplaints: number;
   totalComplaintsChange: number;
+  totalSuggestions: number;
+  totalSuggestionsChange: number;
+  totalRequests: number;
+  totalRequestsChange: number;
+  totalSurveys: number;
+  totalSurveysChange: number;
   resolvedComplaints: number;
   resolvedComplaintsChange: number;
   averageResponseTime: number;
@@ -71,6 +90,8 @@ export interface KPIData {
 export interface FullReportData {
   kpi: KPIData;
   trends: TrendData[];
+  categoryTrends: CategoryTrendData[];
+  patientTypeTrends?: PatientTypeTrendData[];
   riskAnalysis: RiskAnalysis[];
   detailedReports: DetailedReport[];
   totalReports: number;
@@ -89,6 +110,8 @@ interface TicketRecord {
   category_id: string | null;
   units: { id: string; name: string; code: string } | null;
   service_categories: { id: string; name: string; code: string } | null;
+  patient_types: { id: string; name: string; code: string } | null;
+  type: string;
 }
 
 class ReportService {
@@ -165,6 +188,131 @@ class ReportService {
     }
   }
 
+  private async calculatePatientTypeTrends(startDate: Date, unitId?: string): Promise<PatientTypeTrendData[]> {
+    try {
+      console.log('📊 Calculating patient type trends from', startDate.toISOString());
+
+      // Query external tickets dengan patient types
+      let externalTicketsQuery = supabase.from('external_tickets')
+        .select(`
+          id,
+          patient_type_id,
+          patient_types (id, name)
+        `)
+        .gte('created_at', startDate.toISOString());
+
+      if (unitId) externalTicketsQuery = externalTicketsQuery.eq('unit_id', unitId);
+
+      const { data: externalTickets, error } = await externalTicketsQuery;
+
+      if (error) {
+        console.error('❌ Error fetching external tickets for patient type trends:', error);
+        return [];
+      }
+
+      // Hitung per jenis pasien
+      const patientTypeCount: { [key: string]: number } = {};
+      (externalTickets || []).forEach((ticket: any) => {
+        const typeName = ticket.patient_types?.name || 'Tidak Diketahui';
+        patientTypeCount[typeName] = (patientTypeCount[typeName] || 0) + 1;
+      });
+
+      const totalTickets = externalTickets?.length || 0;
+
+      // Convert ke array dan sort
+      const patientTypeTrends: PatientTypeTrendData[] = Object.entries(patientTypeCount)
+        .map(([patientTypeName, count]) => ({
+          patientTypeName,
+          count,
+          percentage: totalTickets > 0 ? Math.round((count / totalTickets) * 100) : 0
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      console.log('📊 Patient type trends calculated:', patientTypeTrends);
+      return patientTypeTrends;
+    } catch (error) {
+      console.error('❌ Error calculating patient type trends:', error);
+      return [];
+    }
+  }
+
+  private async calculateCategoryTrends(startDate: Date, unitId?: string): Promise<CategoryTrendData[]> {
+    try {
+      console.log('📊 Calculating category trends from', startDate.toISOString());
+
+      // Query tickets internal dengan kategori
+      let ticketsQuery = supabase.from('tickets')
+        .select(`
+          id,
+          category_id,
+          service_categories (id, name)
+        `)
+        .gte('created_at', startDate.toISOString());
+
+      if (unitId) ticketsQuery = ticketsQuery.eq('unit_id', unitId);
+
+      // Query external tickets dengan kategori
+      let externalTicketsQuery = supabase.from('external_tickets')
+        .select(`
+          id,
+          service_category_id,
+          service_categories (id, name)
+        `)
+        .gte('created_at', startDate.toISOString());
+
+      if (unitId) externalTicketsQuery = externalTicketsQuery.eq('unit_id', unitId);
+
+      const [ticketsResult, externalTicketsResult] = await Promise.all([
+        ticketsQuery,
+        externalTicketsQuery
+      ]);
+
+      if (ticketsResult.error) {
+        console.error('❌ Error fetching tickets for category trends:', ticketsResult.error);
+        return [];
+      }
+      if (externalTicketsResult.error) {
+        console.error('❌ Error fetching external tickets for category trends:', externalTicketsResult.error);
+        return [];
+      }
+
+      // Gabungkan data
+      const allTickets = [
+        ...(ticketsResult.data || []).map((t: any) => ({
+          categoryName: t.service_categories?.name || 'Tidak Berkategori'
+        })),
+        ...(externalTicketsResult.data || []).map((et: any) => ({
+          categoryName: et.service_categories?.name || 'Tidak Berkategori'
+        }))
+      ];
+
+      // Hitung per kategori
+      const categoryCount: { [key: string]: number } = {};
+      allTickets.forEach(ticket => {
+        const catName = ticket.categoryName;
+        categoryCount[catName] = (categoryCount[catName] || 0) + 1;
+      });
+
+      const totalTickets = allTickets.length;
+
+      // Convert ke array dan sort
+      const categoryTrends: CategoryTrendData[] = Object.entries(categoryCount)
+        .map(([categoryName, count]) => ({
+          categoryName,
+          count,
+          percentage: totalTickets > 0 ? Math.round((count / totalTickets) * 100) : 0
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10); // Ambil top 10 kategori
+
+      console.log('📊 Category trends calculated:', categoryTrends);
+      return categoryTrends;
+    } catch (error) {
+      console.error('❌ Error calculating category trends:', error);
+      return [];
+    }
+  }
+
   private async calculateRiskAnalysis(startDate: Date): Promise<RiskAnalysis[]> {
     try {
       const { data: units } = await supabase.from('units').select('id, name').eq('is_active', true);
@@ -208,32 +356,57 @@ class ReportService {
       const startDate = this.getStartDate(params?.dateRange);
       console.log('📊 Report: Fetching data from', startDate.toISOString());
       
-      // Query tickets dengan select semua field dan relasi
-      let query = supabase.from('tickets')
+      // Query tickets internal dengan select semua field dan relasi
+      let ticketsQuery = supabase.from('tickets')
         .select(`
           *,
           units (id, name, code),
-          service_categories (id, name, code)
+          service_categories (id, name, code),
+          patient_types (id, name, code)
         `)
         .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false });
 
-      if (params?.unitId) query = query.eq('unit_id', params.unitId);
-      if (params?.categoryId) query = query.eq('category_id', params.categoryId);
-      if (params?.status) query = query.eq('status', params.status);
-      if (params?.priority) query = query.eq('priority', params.priority);
+      if (params?.unitId) ticketsQuery = ticketsQuery.eq('unit_id', params.unitId);
+      if (params?.categoryId) ticketsQuery = ticketsQuery.eq('category_id', params.categoryId);
+      if (params?.status) ticketsQuery = ticketsQuery.eq('status', params.status);
+      if (params?.priority) ticketsQuery = ticketsQuery.eq('priority', params.priority);
 
-      const { data: tickets, error } = await query;
+      // Query external tickets dengan patient_types
+      let externalTicketsQuery = supabase.from('external_tickets')
+        .select(`
+          *,
+          units (id, name, code),
+          service_categories (id, name, code),
+          patient_types (id, name, code)
+        `)
+        .gte('created_at', startDate.toISOString())
+        .order('created_at', { ascending: false });
+
+      if (params?.unitId) externalTicketsQuery = externalTicketsQuery.eq('unit_id', params.unitId);
+      if (params?.categoryId) externalTicketsQuery = externalTicketsQuery.eq('service_category_id', params.categoryId);
+      if (params?.status) externalTicketsQuery = externalTicketsQuery.eq('status', params.status);
+      if (params?.priority) externalTicketsQuery = externalTicketsQuery.eq('priority', params.priority);
+
+      const [ticketsResult, externalTicketsResult] = await Promise.all([
+        ticketsQuery,
+        externalTicketsQuery
+      ]);
       
-      if (error) {
-        console.error('❌ Error fetching tickets:', error);
-        throw error;
+      if (ticketsResult.error) {
+        console.error('❌ Error fetching tickets:', ticketsResult.error);
+        throw ticketsResult.error;
+      }
+      if (externalTicketsResult.error) {
+        console.error('❌ Error fetching external tickets:', externalTicketsResult.error);
+        throw externalTicketsResult.error;
       }
 
-      console.log('✅ Fetched tickets:', tickets?.length || 0);
+      console.log('✅ Fetched internal tickets:', ticketsResult.data?.length || 0);
+      console.log('✅ Fetched external tickets:', externalTicketsResult.data?.length || 0);
 
-      // Map data dengan handling untuk nested relations
-      const allTickets = (tickets || []).map((t: any) => ({
+      // Normalize internal tickets
+      const internalTickets = (ticketsResult.data || []).map((t: any) => ({
         id: t.id,
         ticket_number: t.ticket_number,
         title: t.title,
@@ -245,9 +418,36 @@ class ReportService {
         unit_id: t.unit_id,
         category_id: t.category_id,
         units: t.units,
-        service_categories: t.service_categories
-      })) as TicketRecord[];
+        service_categories: t.service_categories,
+        patient_types: t.patient_types,
+        type: t.type || 'complaint'
+      }));
 
+      // Normalize external tickets
+      const externalTickets = (externalTicketsResult.data || []).map((et: any) => ({
+        id: et.id,
+        ticket_number: et.ticket_number,
+        title: et.title,
+        status: et.status,
+        priority: et.priority,
+        created_at: et.created_at,
+        first_response_at: et.first_response_at,
+        sla_deadline: et.sla_deadline,
+        unit_id: et.unit_id,
+        category_id: et.service_category_id,
+        units: et.units,
+        service_categories: et.service_categories,
+        patient_types: et.patient_types,
+        type: et.service_type || 'complaint'
+      }));
+
+      // Gabungkan semua tickets
+      const allTickets = [...internalTickets, ...externalTickets] as TicketRecord[];
+
+      const totalComplaints = allTickets.filter(t => t.type === 'complaint').length;
+      const totalSuggestions = allTickets.filter(t => t.type === 'suggestion').length;
+      const totalRequests = allTickets.filter(t => t.type === 'information').length;
+      const totalSurveys = allTickets.filter(t => t.type === 'satisfaction').length;
       const total = allTickets.length;
       const resolvedCount = allTickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
 
@@ -262,39 +462,65 @@ class ReportService {
       // Hitung perubahan dibanding periode sebelumnya
       const periodLength = new Date().getTime() - startDate.getTime();
       const previousStartDate = new Date(startDate.getTime() - periodLength);
-      const { data: previousTickets } = await supabase
-        .from('tickets')
-        .select('id, status')
-        .gte('created_at', previousStartDate.toISOString())
-        .lt('created_at', startDate.toISOString());
+      
+      const [prevTicketsResult, prevExternalResult] = await Promise.all([
+        supabase.from('tickets')
+          .select('id, status, type')
+          .gte('created_at', previousStartDate.toISOString())
+          .lt('created_at', startDate.toISOString()),
+        supabase.from('external_tickets')
+          .select('id, status, service_type')
+          .gte('created_at', previousStartDate.toISOString())
+          .lt('created_at', startDate.toISOString())
+      ]);
 
-      const previousTotal = previousTickets?.length || 0;
-      const previousResolved = previousTickets?.filter((t: any) => t.status === 'resolved' || t.status === 'closed').length || 0;
+      const previousTickets = [
+        ...(prevTicketsResult.data || []).map((t: any) => ({ ...t, type: t.type })),
+        ...(prevExternalResult.data || []).map((et: any) => ({ ...et, type: et.service_type }))
+      ];
 
-      const totalComplaintsChange = previousTotal > 0 ? Math.round(((total - previousTotal) / previousTotal) * 100) : (total > 0 ? 100 : 0);
+      const previousResolved = previousTickets.filter((t: any) => t.status === 'resolved' || t.status === 'closed').length;
+      const previousComplaints = previousTickets.filter((t: any) => t.type === 'complaint').length;
+      const previousSuggestions = previousTickets.filter((t: any) => t.type === 'suggestion').length;
+      const previousRequests = previousTickets.filter((t: any) => t.type === 'information').length;
+      const previousSurveys = previousTickets.filter((t: any) => t.type === 'satisfaction').length;
+
+      const totalComplaintsChange = previousComplaints > 0 ? Math.round(((totalComplaints - previousComplaints) / previousComplaints) * 100) : (totalComplaints > 0 ? 100 : 0);
+      const totalSuggestionsChange = previousSuggestions > 0 ? Math.round(((totalSuggestions - previousSuggestions) / previousSuggestions) * 100) : (totalSuggestions > 0 ? 100 : 0);
+      const totalRequestsChange = previousRequests > 0 ? Math.round(((totalRequests - previousRequests) / previousRequests) * 100) : (totalRequests > 0 ? 100 : 0);
+      const totalSurveysChange = previousSurveys > 0 ? Math.round(((totalSurveys - previousSurveys) / previousSurveys) * 100) : (totalSurveys > 0 ? 100 : 0);
       const resolvedComplaintsChange = previousResolved > 0 ? Math.round(((resolvedCount - previousResolved) / previousResolved) * 100) : (resolvedCount > 0 ? 100 : 0);
 
       const kpi: KPIData = {
-        totalComplaints: total,
+        totalComplaints,
+        totalSuggestions,
+        totalRequests,
+        totalSurveys,
         resolvedComplaints: resolvedCount,
         averageResponseTime,
         projectedNextWeek: Math.max(Math.round(total * 1.1), 8),
         totalComplaintsChange,
+        totalSuggestionsChange,
+        totalRequestsChange,
+        totalSurveysChange,
         resolvedComplaintsChange,
         averageResponseTimeChange: -2
       };
 
       const trends = await this.calculateTrends(params?.unitId, params?.categoryId);
+      const categoryTrends = await this.calculateCategoryTrends(startDate, params?.unitId);
+      const patientTypeTrends = await this.calculatePatientTypeTrends(startDate, params?.unitId);
       const riskAnalysis = await this.calculateRiskAnalysis(startDate);
 
       const page = params?.page || 1;
       const limit = params?.limit || 10;
       const offset = (page - 1) * limit;
       
-      // Map detailed reports dengan null-safe access
-      const detailedReports: DetailedReport[] = allTickets.slice(offset, offset + limit).map((ticket: TicketRecord) => {
+      // Map detailed reports dengan patient_type_name
+      const detailedReports: DetailedReport[] = allTickets.slice(offset, offset + limit).map((ticket: any) => {
         const unitName = ticket.units?.name || 'N/A';
-        const categoryName = ticket.service_categories?.name || 'N/A';
+        const categoryName = ticket.service_categories?.name || 'Tidak Berkategori';
+        const patientTypeName = ticket.patient_types?.name || '-';
         
         return {
           id: ticket.id,
@@ -302,6 +528,7 @@ class ReportService {
           date: new Date(ticket.created_at).toLocaleDateString('id-ID'),
           unitName,
           categoryName,
+          patientTypeName,
           status: ticket.status,
           responseTime: ticket.first_response_at
             ? Math.round((new Date(ticket.first_response_at).getTime() - new Date(ticket.created_at).getTime()) / (1000 * 60))
@@ -312,12 +539,28 @@ class ReportService {
 
       console.log('📋 Detailed reports:', detailedReports.length, 'Total:', total);
 
-      return { kpi, trends, riskAnalysis, detailedReports, totalReports: total };
+      return { kpi, trends, categoryTrends, patientTypeTrends, riskAnalysis, detailedReports, totalReports: total };
     } catch (error) {
       console.error('❌ Error fetching report data:', error);
       return {
-        kpi: { totalComplaints: 0, resolvedComplaints: 0, averageResponseTime: 0, projectedNextWeek: 0, totalComplaintsChange: 0, resolvedComplaintsChange: 0, averageResponseTimeChange: 0 },
+        kpi: { 
+          totalComplaints: 0, 
+          totalSuggestions: 0,
+          totalRequests: 0,
+          totalSurveys: 0,
+          resolvedComplaints: 0, 
+          averageResponseTime: 0, 
+          projectedNextWeek: 0, 
+          totalComplaintsChange: 0,
+          totalSuggestionsChange: 0,
+          totalRequestsChange: 0,
+          totalSurveysChange: 0,
+          resolvedComplaintsChange: 0, 
+          averageResponseTimeChange: 0 
+        },
         trends: [],
+        categoryTrends: [],
+        patientTypeTrends: [],
         riskAnalysis: [],
         detailedReports: [],
         totalReports: 0

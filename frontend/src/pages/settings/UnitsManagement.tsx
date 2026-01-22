@@ -8,6 +8,7 @@ const UnitsManagement = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [importing, setImporting] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -99,6 +100,116 @@ const UnitsManagement = () => {
         }
     };
 
+    const handleDownloadTemplate = () => {
+        // Create template data
+        const template = [
+            {
+                'Nama Unit': 'Contoh Unit',
+                'Kode': 'CONT',
+                'Deskripsi': 'Deskripsi unit',
+                'Tipe Unit (Kode)': 'ADM',
+                'Unit Induk (Kode)': '',
+                'Email Kontak': 'unit@example.com',
+                'Telepon Kontak': '021-12345678',
+                'SLA (Jam)': '24',
+                'Status (Aktif/Tidak Aktif)': 'Aktif'
+            }
+        ];
+
+        // Convert to CSV
+        const headers = Object.keys(template[0]);
+        const csvContent = [
+            headers.join(','),
+            template.map(row => headers.map(header => `"${row[header as keyof typeof row]}"`).join(',')).join('\n')
+        ].join('\n');
+
+        // Download
+        const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'template_unit_kerja.csv';
+        link.click();
+    };
+
+    const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        const validTypes = ['.csv', '.xlsx', '.xls'];
+        const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+        if (!validTypes.includes(fileExt)) {
+            alert('Format file tidak valid. Gunakan file CSV, XLS, atau XLSX');
+            event.target.value = '';
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Ukuran file terlalu besar. Maksimal 5MB');
+            event.target.value = '';
+            return;
+        }
+
+        setImporting(true);
+        try {
+            const result = await unitService.importUnits(file);
+            
+            if (result.success) {
+                const message = result.errors && result.errors.length > 0
+                    ? `Berhasil import ${result.imported} dari ${result.total} unit kerja.\n\nPeringatan:\n${result.errors.slice(0, 5).join('\n')}${result.errors.length > 5 ? '\n...' : ''}`
+                    : `Berhasil import ${result.imported} unit kerja!`;
+                
+                alert(message);
+                fetchData(); // Refresh data
+            } else {
+                alert(`Import gagal: ${result.message || 'Terjadi kesalahan'}`);
+            }
+        } catch (error: any) {
+            console.error('Import error:', error);
+            alert(`Import gagal: ${error.message || 'Terjadi kesalahan'}`);
+        } finally {
+            setImporting(false);
+            // Reset input
+            event.target.value = '';
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            const csvContent = convertToCSV(units);
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `unit_kerja_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Gagal export data');
+        }
+    };
+
+    const convertToCSV = (data: Unit[]) => {
+        const headers = ['Nama Unit', 'Kode', 'Deskripsi', 'Tipe Unit', 'Unit Induk', 'Email Kontak', 'Telepon Kontak', 'SLA (Jam)', 'Status'];
+        
+        const rows = data.map(unit => [
+            unit.name,
+            unit.code,
+            unit.description || '',
+            unit.unit_type?.name || '',
+            unit.parent_unit?.name || '',
+            unit.contact_email || '',
+            unit.contact_phone || '',
+            unit.sla_hours.toString(),
+            unit.is_active ? 'Aktif' : 'Tidak Aktif'
+        ]);
+
+        return [
+            headers.join(','),
+            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
+    };
+
     const renderUnitRow = (unit: Unit) => {
         const isChild = !!unit.parent_unit_id;
         
@@ -145,6 +256,21 @@ const UnitsManagement = () => {
 
     return (
         <div className="space-y-6">
+            {/* Import Loading Overlay */}
+            {importing && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-2xl max-w-sm w-full mx-4">
+                        <div className="flex items-center gap-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                            <div>
+                                <h3 className="font-semibold text-slate-900 dark:text-white">Mengimport Data</h3>
+                                <p className="text-sm text-slate-500">Mohon tunggu...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                 <div>
@@ -156,7 +282,27 @@ const UnitsManagement = () => {
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="inline-flex items-center justify-center gap-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium px-4 py-2 rounded-lg transition-colors text-sm shadow-sm">
+                    <button 
+                        onClick={handleDownloadTemplate}
+                        className="inline-flex items-center justify-center gap-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium px-4 py-2 rounded-lg transition-colors text-sm shadow-sm"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">description</span>
+                        Template Data
+                    </button>
+                    <label className="inline-flex items-center justify-center gap-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium px-4 py-2 rounded-lg transition-colors text-sm shadow-sm cursor-pointer">
+                        <span className="material-symbols-outlined text-[18px]">upload_file</span>
+                        Import
+                        <input 
+                            type="file" 
+                            accept=".xlsx,.xls,.csv" 
+                            onChange={handleImportFile}
+                            className="hidden"
+                        />
+                    </label>
+                    <button 
+                        onClick={handleExport}
+                        className="inline-flex items-center justify-center gap-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium px-4 py-2 rounded-lg transition-colors text-sm shadow-sm"
+                    >
                         <span className="material-symbols-outlined text-[18px]">file_download</span>
                         Ekspor
                     </button>

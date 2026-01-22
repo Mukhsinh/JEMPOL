@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import AppFooter from '../../components/AppFooter';
+import { getServiceCategories, getPatientTypes } from '../../services/masterDataService';
 
 interface FormData {
   reporter_identity_type: 'personal' | 'anonymous';
@@ -9,6 +10,8 @@ interface FormData {
   reporter_phone: string;
   reporter_address: string;
   service_type: string;
+  service_category_id: string;
+  patient_type_id: string;
   category: string;
   title: string;
   description: string;
@@ -31,6 +34,9 @@ const PublicExternalTicket: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [ticketNumber, setTicketNumber] = useState('');
   const [error, setError] = useState('');
+  const [serviceCategories, setServiceCategories] = useState<any[]>([]);
+  const [patientTypes, setPatientTypes] = useState<any[]>([]);
+  const [loadingMasterData, setLoadingMasterData] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
     reporter_identity_type: 'personal',
@@ -39,6 +45,8 @@ const PublicExternalTicket: React.FC = () => {
     reporter_phone: '',
     reporter_address: '',
     service_type: '',
+    service_category_id: '',
+    patient_type_id: '',
     category: '',
     title: '',
     description: '',
@@ -47,6 +55,28 @@ const PublicExternalTicket: React.FC = () => {
 
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [characterCount, setCharacterCount] = useState(0);
+
+  // Load master data
+  useEffect(() => {
+    const loadMasterData = async () => {
+      setLoadingMasterData(true);
+      try {
+        const [categories, patientTypesData] = await Promise.all([
+          getServiceCategories(),
+          getPatientTypes()
+        ]);
+        
+        setServiceCategories(categories);
+        setPatientTypes(patientTypesData);
+      } catch (err) {
+        console.error('Error loading master data:', err);
+      } finally {
+        setLoadingMasterData(false);
+      }
+    };
+    
+    loadMasterData();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -97,6 +127,8 @@ const PublicExternalTicket: React.FC = () => {
         reporter_phone: formData.reporter_phone,
         reporter_address: formData.reporter_address,
         service_type: formData.service_type,
+        service_category_id: formData.service_category_id || null,
+        patient_type_id: formData.patient_type_id || null,
         category: formData.category,
         title: formData.title,
         description: formData.description,
@@ -159,6 +191,8 @@ const PublicExternalTicket: React.FC = () => {
                   reporter_phone: '',
                   reporter_address: '',
                   service_type: '',
+                  service_category_id: '',
+                  patient_type_id: '',
                   category: '',
                   title: '',
                   description: '',
@@ -380,20 +414,58 @@ const PublicExternalTicket: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Kategori
+                    Kategori Layanan <span className="text-red-500">*</span>
                   </label>
-                  <select 
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  >
-                    <option value="">Pilih kategori...</option>
-                    <option value="service">Pelayanan Medis</option>
-                    <option value="facility">Fasilitas & Sarana</option>
-                    <option value="staff">Perilaku Petugas</option>
-                    <option value="admin">Administrasi</option>
-                  </select>
+                  {loadingMasterData ? (
+                    <div className="flex items-center justify-center py-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                      <span className="ml-2 text-sm text-slate-500">Memuat...</span>
+                    </div>
+                  ) : (
+                    <select 
+                      name="service_category_id"
+                      value={formData.service_category_id}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    >
+                      <option value="">Pilih kategori...</option>
+                      {serviceCategories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Jenis Pasien <span className="text-red-500">*</span>
+                  </label>
+                  {loadingMasterData ? (
+                    <div className="flex items-center justify-center py-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                      <span className="ml-2 text-sm text-slate-500">Memuat...</span>
+                    </div>
+                  ) : (
+                    <select 
+                      name="patient_type_id"
+                      value={formData.patient_type_id}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    >
+                      <option value="">Pilih jenis pasien...</option>
+                      {patientTypes.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
 

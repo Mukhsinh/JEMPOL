@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface FormData {
@@ -8,9 +8,30 @@ interface FormData {
   phone: string;
   age: string;
   gender: string;
-  q1: string; q2: string; q3: string; q4: string; q5: string; q6: string; q7: string; q8: string;
+  education: string;
+  job: string;
+  patient_type: string;
+  // 9 Unsur x 3 Indikator = 27 field
+  u1_ind1: string; u1_ind2: string; u1_ind3: string;
+  u2_ind1: string; u2_ind2: string; u2_ind3: string;
+  u3_ind1: string; u3_ind2: string; u3_ind3: string;
+  u4_ind1: string; u4_ind2: string; u4_ind3: string;
+  u5_ind1: string; u5_ind2: string; u5_ind3: string;
+  u6_ind1: string; u6_ind2: string; u6_ind3: string;
+  u7_ind1: string; u7_ind2: string; u7_ind3: string;
+  u8_ind1: string; u8_ind2: string; u8_ind3: string;
+  u9_ind1: string; u9_ind2: string; u9_ind3: string;
   overall_satisfaction: string;
   suggestions: string;
+}
+
+interface AppSettings {
+  institution_name?: string;
+  institution_address?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  website?: string;
+  app_footer?: string;
 }
 
 // Direct Form View - Survei Kepuasan (Public, Tanpa Login, Mobile-First)
@@ -44,10 +65,31 @@ const DirectSurveyForm: React.FC = () => {
     };
   }, []);
 
+  // Load app settings untuk footer
+  useEffect(() => {
+    const fetchAppSettings = async () => {
+      try {
+        const response = await fetch('/api/public/app-settings');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setAppSettings(result.data);
+            console.log('✅ App settings loaded:', result.data);
+          }
+        }
+      } catch (err) {
+        console.error('❌ Error loading app settings:', err);
+      }
+    };
+    
+    fetchAppSettings();
+  }, []);
+
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
+  const [appSettings, setAppSettings] = useState<AppSettings>({});
   
   const [formData, setFormData] = useState<FormData>({
     service_type: '',
@@ -56,7 +98,18 @@ const DirectSurveyForm: React.FC = () => {
     phone: '',
     age: '',
     gender: '',
-    q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: '',
+    education: '',
+    job: '',
+    patient_type: '',
+    u1_ind1: '', u1_ind2: '', u1_ind3: '',
+    u2_ind1: '', u2_ind2: '', u2_ind3: '',
+    u3_ind1: '', u3_ind2: '', u3_ind3: '',
+    u4_ind1: '', u4_ind2: '', u4_ind3: '',
+    u5_ind1: '', u5_ind2: '', u5_ind3: '',
+    u6_ind1: '', u6_ind2: '', u6_ind3: '',
+    u7_ind1: '', u7_ind2: '', u7_ind3: '',
+    u8_ind1: '', u8_ind2: '', u8_ind3: '',
+    u9_ind1: '', u9_ind2: '', u9_ind3: '',
     overall_satisfaction: '',
     suggestions: ''
   });
@@ -65,14 +118,105 @@ const DirectSurveyForm: React.FC = () => {
   const progress = (currentStep / totalSteps) * 100;
 
   const questions = [
-    { id: 'q1', code: 'U1', title: 'Persyaratan', text: 'Kesesuaian persyaratan pelayanan', icon: '📋' },
-    { id: 'q2', code: 'U2', title: 'Prosedur', text: 'Kemudahan prosedur pelayanan', icon: '📝' },
-    { id: 'q3', code: 'U3', title: 'Waktu', text: 'Kecepatan waktu pelayanan', icon: '⏱️' },
-    { id: 'q4', code: 'U4', title: 'Biaya', text: 'Kewajaran biaya/tarif', icon: '💰' },
-    { id: 'q5', code: 'U5', title: 'Produk', text: 'Kesesuaian produk pelayanan', icon: '📦' },
-    { id: 'q6', code: 'U6', title: 'Kompetensi', text: 'Kemampuan petugas', icon: '👨‍⚕️' },
-    { id: 'q7', code: 'U7', title: 'Perilaku', text: 'Kesopanan & keramahan', icon: '😊' },
-    { id: 'q8', code: 'U8', title: 'Pengaduan', text: 'Kualitas penanganan pengaduan', icon: '📞' }
+    { 
+      id: 'u1', 
+      code: 'U1', 
+      title: 'Persyaratan', 
+      icon: '📋',
+      indicators: [
+        { id: 'u1_ind1', text: 'Persyaratan pelayanan yang diinformasikan jelas dan mudah dipahami' },
+        { id: 'u1_ind2', text: 'Persyaratan pelayanan mudah dipenuhi oleh pengguna layanan' },
+        { id: 'u1_ind3', text: 'Persyaratan pelayanan sesuai dengan jenis layanan yang diberikan' }
+      ]
+    },
+    { 
+      id: 'u2', 
+      code: 'U2', 
+      title: 'Prosedur', 
+      icon: '📝',
+      indicators: [
+        { id: 'u2_ind1', text: 'Prosedur atau alur pelayanan diinformasikan dengan jelas' },
+        { id: 'u2_ind2', text: 'Prosedur pelayanan mudah diikuti oleh pengguna layanan' },
+        { id: 'u2_ind3', text: 'Pelaksanaan pelayanan sesuai dengan prosedur yang telah ditetapkan' }
+      ]
+    },
+    { 
+      id: 'u3', 
+      code: 'U3', 
+      title: 'Waktu Pelayanan', 
+      icon: '⏱️',
+      indicators: [
+        { id: 'u3_ind1', text: 'Informasi mengenai jangka waktu pelayanan disampaikan dengan jelas' },
+        { id: 'u3_ind2', text: 'Pelayanan diselesaikan sesuai dengan standar waktu pelayanan' },
+        { id: 'u3_ind3', text: 'Tidak terdapat keterlambatan pelayanan tanpa alasan yang jelas' }
+      ]
+    },
+    { 
+      id: 'u4', 
+      code: 'U4', 
+      title: 'Biaya/Tarif', 
+      icon: '💰',
+      indicators: [
+        { id: 'u4_ind1', text: 'Informasi biaya atau tarif pelayanan disampaikan secara jelas' },
+        { id: 'u4_ind2', text: 'Biaya yang dibayarkan sesuai dengan ketentuan yang berlaku' },
+        { id: 'u4_ind3', text: 'Tidak terdapat pungutan di luar biaya/tarif resmi' }
+      ]
+    },
+    { 
+      id: 'u5', 
+      code: 'U5', 
+      title: 'Produk Layanan', 
+      icon: '📦',
+      indicators: [
+        { id: 'u5_ind1', text: 'Hasil pelayanan yang diterima sesuai dengan ketentuan yang ditetapkan' },
+        { id: 'u5_ind2', text: 'Produk pelayanan diterima secara lengkap dan benar' },
+        { id: 'u5_ind3', text: 'Kualitas produk pelayanan sesuai standar pelayanan' }
+      ]
+    },
+    { 
+      id: 'u6', 
+      code: 'U6', 
+      title: 'Kompetensi Pelaksana', 
+      icon: '👨‍⚕️',
+      indicators: [
+        { id: 'u6_ind1', text: 'Petugas memiliki pengetahuan yang memadai dalam memberikan pelayanan' },
+        { id: 'u6_ind2', text: 'Petugas memiliki keterampilan yang baik dalam melayani pengguna' },
+        { id: 'u6_ind3', text: 'Petugas mampu memberikan pelayanan secara profesional' }
+      ]
+    },
+    { 
+      id: 'u7', 
+      code: 'U7', 
+      title: 'Perilaku Pelaksana', 
+      icon: '😊',
+      indicators: [
+        { id: 'u7_ind1', text: 'Petugas bersikap sopan dan ramah dalam memberikan pelayanan' },
+        { id: 'u7_ind2', text: 'Petugas memberikan pelayanan dengan sikap membantu' },
+        { id: 'u7_ind3', text: 'Petugas melayani tanpa membedakan latar belakang pengguna' }
+      ]
+    },
+    { 
+      id: 'u8', 
+      code: 'U8', 
+      title: 'Sarana dan Prasarana', 
+      icon: '🏥',
+      indicators: [
+        { id: 'u8_ind1', text: 'Sarana dan prasarana pelayanan tersedia dengan memadai' },
+        { id: 'u8_ind2', text: 'Sarana dan prasarana pelayanan dalam kondisi baik dan layak digunakan' },
+        { id: 'u8_ind3', text: 'Lingkungan pelayanan bersih, nyaman, dan aman' }
+      ]
+    },
+    { 
+      id: 'u9', 
+      code: 'U9', 
+      title: 'Penanganan Pengaduan', 
+      icon: '📞',
+      indicators: [
+        { id: 'u9_ind1', text: 'Tersedia sarana pengaduan yang mudah diakses pengguna layanan' },
+        { id: 'u9_ind2', text: 'Pengaduan ditindaklanjuti dengan cepat dan jelas' },
+        { id: 'u9_ind3', text: 'Pengguna mendapatkan informasi hasil penanganan pengaduan' }
+      ]
+    }
   ];
 
   const ratingOptions = [
@@ -126,7 +270,17 @@ const DirectSurveyForm: React.FC = () => {
     setCurrentStep(1);
     setFormData({
       service_type: '', full_name: '', is_anonymous: false, phone: '', age: '', gender: '',
-      q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: '', overall_satisfaction: '', suggestions: ''
+      education: '', job: '', patient_type: '',
+      u1_ind1: '', u1_ind2: '', u1_ind3: '',
+      u2_ind1: '', u2_ind2: '', u2_ind3: '',
+      u3_ind1: '', u3_ind2: '', u3_ind3: '',
+      u4_ind1: '', u4_ind2: '', u4_ind3: '',
+      u5_ind1: '', u5_ind2: '', u5_ind3: '',
+      u6_ind1: '', u6_ind2: '', u6_ind3: '',
+      u7_ind1: '', u7_ind2: '', u7_ind3: '',
+      u8_ind1: '', u8_ind2: '', u8_ind3: '',
+      u9_ind1: '', u9_ind2: '', u9_ind3: '',
+      overall_satisfaction: '', suggestions: ''
     });
   };
 
@@ -186,9 +340,9 @@ const DirectSurveyForm: React.FC = () => {
       )}
 
       {/* Form Content - Perbaikan Scroll */}
-      <main className="relative z-10 flex-1 bg-white rounded-t-[2.5rem] overflow-hidden shadow-2xl mt-4">
+      <main className="relative z-10 flex-1 bg-white rounded-t-[2.5rem] overflow-hidden shadow-2xl mt-4 flex flex-col">
         <form onSubmit={handleSubmit} className="h-full flex flex-col">
-          <div className="flex-1 overflow-y-auto px-6 py-8 pb-32">
+          <div className="flex-1 overflow-y-auto px-6 py-8 pb-32" style={{ maxHeight: 'calc(100vh - 280px)' }}>
             <div className="max-w-md mx-auto space-y-6">
               
               {/* Progress Indicator */}
@@ -328,65 +482,158 @@ const DirectSurveyForm: React.FC = () => {
                       ))}
                     </div>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Pendidikan</label>
+                    <div className="relative">
+                      <select
+                        name="education"
+                        value={formData.education}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-base transition-colors appearance-none bg-white"
+                      >
+                        <option value="">Pilih Pendidikan</option>
+                        <option value="SD">SD</option>
+                        <option value="SMP">SMP</option>
+                        <option value="SMA/SMK">SMA/SMK</option>
+                        <option value="D3">D3</option>
+                        <option value="S1">S1</option>
+                        <option value="S2">S2</option>
+                        <option value="S3">S3</option>
+                      </select>
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">▼</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Pekerjaan</label>
+                    <div className="relative">
+                      <select
+                        name="job"
+                        value={formData.job}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-base transition-colors appearance-none bg-white"
+                      >
+                        <option value="">Pilih Pekerjaan</option>
+                        <option value="PNS">PNS</option>
+                        <option value="TNI/Polri">TNI/Polri</option>
+                        <option value="Pegawai Swasta">Pegawai Swasta</option>
+                        <option value="Wiraswasta">Wiraswasta</option>
+                        <option value="Petani">Petani</option>
+                        <option value="Nelayan">Nelayan</option>
+                        <option value="Pelajar/Mahasiswa">Pelajar/Mahasiswa</option>
+                        <option value="Ibu Rumah Tangga">Ibu Rumah Tangga</option>
+                        <option value="Pensiunan">Pensiunan</option>
+                        <option value="Lainnya">Lainnya</option>
+                      </select>
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">▼</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Jenis Pasien</label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { value: 'BPJS', label: 'BPJS', icon: '🏥', color: 'blue' },
+                        { value: 'Umum', label: 'Umum', icon: '💳', color: 'green' },
+                        { value: 'Asuransi', label: 'Asuransi', icon: '🛡️', color: 'purple' }
+                      ].map((opt) => (
+                        <button 
+                          key={opt.value} 
+                          type="button" 
+                          onClick={() => handleRadioChange('patient_type', opt.value)}
+                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${
+                            formData.patient_type === opt.value 
+                              ? 'border-emerald-500 bg-emerald-50 shadow-lg' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <span className="text-3xl">{opt.icon}</span>
+                          <span className={`font-semibold text-sm ${
+                            formData.patient_type === opt.value ? 'text-emerald-600' : 'text-gray-600'
+                          }`}>{opt.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* Step 3: Survey Questions */}
+              {/* Step 3: Survey Questions - 9 Unsur dengan Indikator */}
               {currentStep === 3 && (
                 <div className="space-y-6 animate-slideUp">
                   <div>
                     <h2 className="text-xl font-bold text-gray-800 mb-2">Penilaian Layanan</h2>
-                    <p className="text-gray-500 text-sm">Berikan penilaian untuk setiap aspek</p>
+                    <p className="text-gray-500 text-sm">Berikan penilaian untuk setiap indikator</p>
                   </div>
 
                   {/* Rating Legend */}
-                  <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-4 mb-4">
-                    <p className="text-center text-sm font-semibold text-gray-700 mb-3">Panduan Penilaian</p>
+                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-5 mb-4 sticky top-0 z-10 border-2 border-amber-200 shadow-lg">
+                    <p className="text-center text-sm font-extrabold text-amber-800 mb-4 uppercase tracking-wider">Panduan Penilaian</p>
                     <div className="grid grid-cols-5 gap-2">
                       {ratingOptions.map((opt) => (
-                        <div key={opt.value} className="flex flex-col items-center gap-1">
-                          <div className={`w-12 h-12 rounded-xl ${opt.bgColor} flex items-center justify-center shadow-md`}>
-                            <span className="text-2xl">{opt.emoji}</span>
+                        <div key={opt.value} className="flex flex-col items-center gap-1.5">
+                          <div className={`w-14 h-14 rounded-2xl ${opt.bgColor} flex items-center justify-center shadow-lg border-2 border-white`}>
+                            <span className="text-3xl">{opt.emoji}</span>
                           </div>
-                          <span className="text-[10px] text-gray-700 text-center leading-tight font-medium">{opt.label}</span>
+                          <div className="text-center">
+                            <p className="text-sm font-extrabold text-gray-800 mb-0.5">{opt.value}</p>
+                            <p className="text-[10px] font-semibold text-gray-700 leading-tight">{opt.label}</p>
+                          </div>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  {/* Questions */}
+                  {/* Questions - 9 Unsur */}
                   <div className="space-y-4">
                     {questions.map((q) => (
-                      <div key={q.id} className="bg-gray-50 rounded-2xl p-4">
-                        <div className="flex items-start gap-3 mb-3">
-                          <span className="text-2xl">{q.icon}</span>
+                      <div key={q.id} className="bg-white rounded-2xl p-4 border-2 border-gray-100 shadow-sm">
+                        <div className="flex items-start gap-3 mb-4 pb-3 border-b border-gray-100">
+                          <span className="text-3xl">{q.icon}</span>
                           <div className="flex-1">
-                            <h4 className="font-bold text-gray-800 text-sm">{q.title}</h4>
-                            <p className="text-xs text-gray-500">{q.text}</p>
+                            <h4 className="font-bold text-gray-800 text-base">{q.code} - {q.title}</h4>
+                            <p className="text-xs text-gray-500">Nilai setiap indikator di bawah ini</p>
                           </div>
                         </div>
-                        <div className="flex gap-1.5">
-                          {ratingOptions.map((opt) => (
-                            <button 
-                              key={opt.value} 
-                              type="button" 
-                              onClick={() => handleRadioChange(q.id, opt.value)}
-                              className={`flex-1 py-3 rounded-xl transition-all relative ${
-                                formData[q.id as keyof FormData] === opt.value 
-                                  ? `${opt.bgColor} shadow-lg scale-105` 
-                                  : 'bg-white border-2 border-gray-200 hover:border-gray-300'
-                              }`}
-                            >
-                              <div className="text-2xl mb-1">{opt.emoji}</div>
-                              <div className={`text-[9px] font-medium leading-tight ${
-                                formData[q.id as keyof FormData] === opt.value ? 'text-white' : 'text-gray-500'
-                              }`}>{opt.label}</div>
-                              {formData[q.id as keyof FormData] === opt.value && (
-                                <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-md">
-                                  <span className="material-symbols-outlined text-green-500 text-sm">check</span>
-                                </div>
-                              )}
-                            </button>
+                        
+                        {/* 3 Indikator per Unsur */}
+                        <div className="space-y-3">
+                          {q.indicators.map((ind, idx) => (
+                            <div key={ind.id} className="bg-gray-50 rounded-xl p-3">
+                              <p className="text-xs text-gray-600 mb-2 font-medium">
+                                <span className="inline-block w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center mr-1">{idx + 1}</span>
+                                {ind.text}
+                              </p>
+                              <div className="flex gap-1.5">
+                                {ratingOptions.map((opt) => (
+                                  <button 
+                                    key={opt.value} 
+                                    type="button" 
+                                    onClick={() => handleRadioChange(ind.id, opt.value)}
+                                    className={`flex-1 py-3.5 rounded-2xl transition-all relative flex flex-col items-center gap-1.5 ${
+                                      formData[ind.id as keyof FormData] === opt.value 
+                                        ? `${opt.bgColor} shadow-2xl scale-110 border-3` 
+                                        : 'bg-white border-2 border-gray-200 hover:border-gray-300 hover:shadow-md'
+                                    }`}
+                                    style={{
+                                      borderWidth: formData[ind.id as keyof FormData] === opt.value ? '3px' : '2px',
+                                      borderColor: formData[ind.id as keyof FormData] === opt.value ? 'white' : undefined
+                                    }}
+                                  >
+                                    <div className="text-4xl">{opt.emoji}</div>
+                                    <div className={`text-[10px] font-extrabold leading-tight text-center ${
+                                      formData[ind.id as keyof FormData] === opt.value ? 'text-white' : 'text-gray-700'
+                                    }`}>{opt.label}</div>
+                                    {formData[ind.id as keyof FormData] === opt.value && (
+                                      <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-green-500">
+                                        <span className="text-green-500 text-sm font-bold">✓</span>
+                                      </div>
+                                    )}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -448,6 +695,40 @@ const DirectSurveyForm: React.FC = () => {
             </div>
           </div>
 
+          {/* Footer - Data dari Pengaturan Aplikasi */}
+          {(appSettings.institution_name || appSettings.app_footer) && (
+            <div className="px-6 py-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-t border-emerald-100">
+              <div className="max-w-md mx-auto text-center space-y-2">
+                {appSettings.institution_name && (
+                  <p className="font-bold text-emerald-800 text-sm">{appSettings.institution_name}</p>
+                )}
+                {appSettings.institution_address && (
+                  <p className="text-xs text-gray-600">{appSettings.institution_address}</p>
+                )}
+                <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
+                  {appSettings.contact_phone && (
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">phone</span>
+                      {appSettings.contact_phone}
+                    </span>
+                  )}
+                  {appSettings.contact_email && (
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">email</span>
+                      {appSettings.contact_email}
+                    </span>
+                  )}
+                </div>
+                {appSettings.website && (
+                  <p className="text-xs text-emerald-600">{appSettings.website}</p>
+                )}
+                {appSettings.app_footer && (
+                  <p className="text-xs text-gray-500 mt-2">{appSettings.app_footer}</p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Bottom Navigation */}
           <div className="px-6 py-4 bg-white border-t border-gray-100 safe-area-bottom">
             <div className="max-w-md mx-auto flex gap-3">
@@ -467,7 +748,9 @@ const DirectSurveyForm: React.FC = () => {
                   onClick={() => setCurrentStep(prev => prev + 1)}
                   disabled={
                     (currentStep === 1 && (!formData.service_type || !formData.phone)) ||
-                    (currentStep === 3 && !questions.every(q => formData[q.id as keyof FormData]))
+                    (currentStep === 3 && !questions.every(q => 
+                      q.indicators.every(ind => formData[ind.id as keyof FormData])
+                    ))
                   }
                   className="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                 >
@@ -497,6 +780,11 @@ const DirectSurveyForm: React.FC = () => {
           </div>
         </form>
       </main>
+
+      {/* App Footer */}
+      <div className="relative z-10 bg-white">
+        <AppFooter variant="compact" />
+      </div>
 
       <style>{`
         @keyframes slideUp {

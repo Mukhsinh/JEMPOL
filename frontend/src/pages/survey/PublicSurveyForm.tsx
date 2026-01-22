@@ -33,13 +33,24 @@ const PublicSurveyForm = () => {
         phone: '',
         email: '',
         job: '',
+        education: '',
+        patient_type: '',
         provinsi: '',
         kota_kabupaten: '',
         kecamatan: '',
         kelurahan: '',
         age: '',
         gender: '',
-        q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: '',
+        // 9 Unsur dengan 3 indikator masing-masing (27 indikator total)
+        u1_i1: '', u1_i2: '', u1_i3: '', // Persyaratan
+        u2_i1: '', u2_i2: '', u2_i3: '', // Prosedur
+        u3_i1: '', u3_i2: '', u3_i3: '', // Waktu Pelayanan
+        u4_i1: '', u4_i2: '', u4_i3: '', // Biaya/Tarif
+        u5_i1: '', u5_i2: '', u5_i3: '', // Produk Layanan
+        u6_i1: '', u6_i2: '', u6_i3: '', // Kompetensi Pelaksana
+        u7_i1: '', u7_i2: '', u7_i3: '', // Perilaku Pelaksana
+        u8_i1: '', u8_i2: '', u8_i3: '', // Sarana dan Prasarana
+        u9_i1: '', u9_i2: '', u9_i3: '', // Penanganan Pengaduan
         overall_satisfaction: '',
         suggestions: '',
         date: new Date().toISOString().split('T')[0]
@@ -256,19 +267,111 @@ const PublicSurveyForm = () => {
         );
     }
 
-    const questions = [
-        { id: 'q1', code: 'U1', title: 'Persyaratan', text: 'Bagaimana pendapat Anda tentang kesesuaian persyaratan pelayanan dengan jenis pelayanannya?' },
-        { id: 'q2', code: 'U2', title: 'Prosedur', text: 'Bagaimana kemudahan prosedur pelayanan di unit ini?' },
-        { id: 'q3', code: 'U3', title: 'Waktu Pelayanan', text: 'Bagaimana kecepatan waktu dalam memberikan pelayanan?' },
-        { id: 'q4', code: 'U4', title: 'Biaya / Tarif', text: 'Bagaimana kewajaran biaya/tarif dalam pelayanan?' },
-        { id: 'q5', code: 'U5', title: 'Produk Spesifikasi', text: 'Bagaimana kesesuaian produk pelayanan antara yang tercantum dalam standar pelayanan dengan hasil yang diberikan?' },
-        { id: 'q6', code: 'U6', title: 'Kompetensi', text: 'Bagaimana kompetensi/kemampuan petugas dalam pelayanan?' },
-        { id: 'q7', code: 'U7', title: 'Perilaku', text: 'Bagaimana perilaku petugas dalam pelayanan terkait kesopanan dan keramahan?' },
-        { id: 'q8', code: 'U8', title: 'Pengaduan', text: 'Bagaimana kualitas penanganan pengaduan, saran dan masukan?' }
+    // 9 Unsur Layanan dengan 3 Indikator masing-masing
+    const serviceElements = [
+        {
+            id: 'u1',
+            code: 'U1',
+            title: 'Persyaratan',
+            icon: '📋',
+            indicators: [
+                { id: 'u1_i1', text: 'Persyaratan pelayanan yang diinformasikan jelas dan mudah dipahami' },
+                { id: 'u1_i2', text: 'Persyaratan pelayanan mudah dipenuhi oleh pengguna layanan' },
+                { id: 'u1_i3', text: 'Persyaratan pelayanan sesuai dengan jenis layanan yang diberikan' }
+            ]
+        },
+        {
+            id: 'u2',
+            code: 'U2',
+            title: 'Prosedur',
+            icon: '📝',
+            indicators: [
+                { id: 'u2_i1', text: 'Prosedur atau alur pelayanan diinformasikan dengan jelas' },
+                { id: 'u2_i2', text: 'Prosedur pelayanan mudah diikuti oleh pengguna layanan' },
+                { id: 'u2_i3', text: 'Pelaksanaan pelayanan sesuai dengan prosedur yang telah ditetapkan' }
+            ]
+        },
+        {
+            id: 'u3',
+            code: 'U3',
+            title: 'Waktu Pelayanan',
+            icon: '⏱️',
+            indicators: [
+                { id: 'u3_i1', text: 'Informasi mengenai jangka waktu pelayanan disampaikan dengan jelas' },
+                { id: 'u3_i2', text: 'Pelayanan diselesaikan sesuai dengan standar waktu pelayanan' },
+                { id: 'u3_i3', text: 'Tidak terdapat keterlambatan pelayanan tanpa alasan yang jelas' }
+            ]
+        },
+        {
+            id: 'u4',
+            code: 'U4',
+            title: 'Biaya/Tarif',
+            icon: '💰',
+            indicators: [
+                { id: 'u4_i1', text: 'Informasi biaya atau tarif pelayanan disampaikan secara jelas' },
+                { id: 'u4_i2', text: 'Biaya yang dibayarkan sesuai dengan ketentuan yang berlaku' },
+                { id: 'u4_i3', text: 'Tidak terdapat pungutan di luar biaya/tarif resmi' }
+            ]
+        },
+        {
+            id: 'u5',
+            code: 'U5',
+            title: 'Produk Layanan',
+            icon: '📦',
+            indicators: [
+                { id: 'u5_i1', text: 'Hasil pelayanan yang diterima sesuai dengan ketentuan yang ditetapkan' },
+                { id: 'u5_i2', text: 'Produk pelayanan diterima secara lengkap dan benar' },
+                { id: 'u5_i3', text: 'Kualitas produk pelayanan sesuai standar pelayanan' }
+            ]
+        },
+        {
+            id: 'u6',
+            code: 'U6',
+            title: 'Kompetensi Pelaksana',
+            icon: '👨‍⚕️',
+            indicators: [
+                { id: 'u6_i1', text: 'Petugas memiliki pengetahuan yang memadai dalam memberikan pelayanan' },
+                { id: 'u6_i2', text: 'Petugas memiliki keterampilan yang baik dalam melayani pengguna' },
+                { id: 'u6_i3', text: 'Petugas mampu memberikan pelayanan secara profesional' }
+            ]
+        },
+        {
+            id: 'u7',
+            code: 'U7',
+            title: 'Perilaku Pelaksana',
+            icon: '😊',
+            indicators: [
+                { id: 'u7_i1', text: 'Petugas bersikap sopan dan ramah dalam memberikan pelayanan' },
+                { id: 'u7_i2', text: 'Petugas memberikan pelayanan dengan sikap membantu' },
+                { id: 'u7_i3', text: 'Petugas melayani tanpa membedakan latar belakang pengguna' }
+            ]
+        },
+        {
+            id: 'u8',
+            code: 'U8',
+            title: 'Sarana dan Prasarana',
+            icon: '🏥',
+            indicators: [
+                { id: 'u8_i1', text: 'Sarana dan prasarana pelayanan tersedia dengan memadai' },
+                { id: 'u8_i2', text: 'Sarana dan prasarana pelayanan dalam kondisi baik dan layak digunakan' },
+                { id: 'u8_i3', text: 'Lingkungan pelayanan bersih, nyaman, dan aman' }
+            ]
+        },
+        {
+            id: 'u9',
+            code: 'U9',
+            title: 'Penanganan Pengaduan',
+            icon: '📞',
+            indicators: [
+                { id: 'u9_i1', text: 'Tersedia sarana pengaduan yang mudah diakses pengguna layanan' },
+                { id: 'u9_i2', text: 'Pengaduan ditindaklanjuti dengan cepat dan jelas' },
+                { id: 'u9_i3', text: 'Pengguna mendapatkan informasi hasil penanganan pengaduan' }
+            ]
+        }
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 font-['Inter',sans-serif]">
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 font-['Inter',sans-serif] overflow-y-auto">
             {/* Decorative Background */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute -top-40 -right-40 w-96 h-96 bg-gradient-to-br from-emerald-200/30 to-teal-200/30 rounded-full blur-3xl"></div>
@@ -290,7 +393,7 @@ const PublicSurveyForm = () => {
                 </div>
             </header>
 
-            <main className="relative z-10 w-full max-w-lg mx-auto px-5 py-6">
+            <main className="relative z-10 w-full max-w-lg mx-auto px-5 py-6 pb-24">{/* Tambah padding bottom untuk scroll */}
                 {error && (
                     <div className="mb-6 bg-rose-50/90 backdrop-blur-xl border-2 border-rose-200 rounded-2xl p-5 flex items-center gap-4 shadow-lg">
                         <div className="w-10 h-10 rounded-xl bg-rose-500 flex items-center justify-center flex-shrink-0">
@@ -466,6 +569,49 @@ const PublicSurveyForm = () => {
                                         />
                                     </div>
                                 </div>
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-bold text-gray-800" htmlFor="education">Pendidikan Terakhir <span className="text-gray-500 font-normal">(Opsional)</span></label>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">school</span>
+                                        <select
+                                            id="education"
+                                            name="education"
+                                            value={formData.education}
+                                            onChange={handleInputChange}
+                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                                        >
+                                            <option value="">Pilih Pendidikan</option>
+                                            <option value="SD">SD</option>
+                                            <option value="SMP">SMP</option>
+                                            <option value="SMA/SMK">SMA/SMK</option>
+                                            <option value="D1/D2/D3">D1/D2/D3</option>
+                                            <option value="D4/S1">D4/S1</option>
+                                            <option value="S2">S2</option>
+                                            <option value="S3">S3</option>
+                                        </select>
+                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-bold text-gray-800" htmlFor="patient_type">Jenis Pasien <span className="text-gray-500 font-normal">(Opsional)</span></label>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">medical_information</span>
+                                        <select
+                                            id="patient_type"
+                                            name="patient_type"
+                                            value={formData.patient_type}
+                                            onChange={handleInputChange}
+                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                                        >
+                                            <option value="">Pilih Jenis Pasien</option>
+                                            <option value="BPJS">BPJS</option>
+                                            <option value="Umum">Umum</option>
+                                            <option value="Asuransi">Asuransi</option>
+                                            <option value="Perusahaan">Perusahaan</option>
+                                        </select>
+                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                                    </div>
+                                </div>
                             </div>
                             <div className="space-y-3">
                                 <label className="block text-sm font-bold text-gray-800 mb-3">Alamat Domisili</label>
@@ -593,46 +739,61 @@ const PublicSurveyForm = () => {
                                     <span className="material-symbols-outlined text-white text-xl">analytics</span>
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Penilaian Layanan</h3>
-                                    <p className="text-xs text-gray-500">Beri penilaian dari 1 (Sangat Buruk) hingga 5 (Sangat Baik)</p>
+                                    <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Penilaian Unsur Layanan</h3>
+                                    <p className="text-xs text-gray-500">Beri penilaian untuk setiap indikator dari 1 (Sangat Tidak Setuju) hingga 5 (Sangat Setuju)</p>
                                 </div>
                             </div>
                         </div>
                         <div className="divide-y divide-gray-100/50">
-                            {questions.map((q) => (
-                                <div key={q.id} className="p-6 hover:bg-gradient-to-br hover:from-emerald-50/30 hover:to-teal-50/30 transition-all">
-                                    <div className="flex flex-col md:flex-row md:items-center gap-6">
+                            {serviceElements.map((element, idx) => (
+                                <div key={element.id} className="p-6 hover:bg-gradient-to-br hover:from-emerald-50/30 hover:to-teal-50/30 transition-all">
+                                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
+                                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-2xl">
+                                            {element.icon}
+                                        </div>
                                         <div className="flex-1">
-                                            <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1 block">{q.code} - {q.title}</span>
-                                            <p className="text-sm font-medium text-gray-800 leading-relaxed">{q.text}</p>
+                                            <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">{element.code}</span>
+                                            <h4 className="text-lg font-bold text-gray-800">{element.title}</h4>
                                         </div>
-                                        <div className="flex items-center justify-between gap-2 md:gap-3 min-w-[320px]">
-                                            {[1, 2, 3, 4, 5].map((val) => {
-                                                const colors = ['text-rose-600', 'text-orange-500', 'text-amber-400', 'text-emerald-500', 'text-teal-600'];
-                                                const bgColors = ['bg-rose-50', 'bg-orange-50', 'bg-amber-50', 'bg-emerald-50', 'bg-teal-50'];
-                                                const borderColors = ['border-rose-500', 'border-orange-500', 'border-amber-400', 'border-emerald-500', 'border-teal-600'];
-                                                const shadowColors = ['shadow-rose-500/30', 'shadow-orange-500/30', 'shadow-amber-400/30', 'shadow-emerald-500/30', 'shadow-teal-600/30'];
-                                                const icons = ['sentiment_very_dissatisfied', 'sentiment_dissatisfied', 'sentiment_neutral', 'sentiment_satisfied', 'sentiment_very_satisfied'];
+                                    </div>
+                                    
+                                    <div className="space-y-4">
+                                        {element.indicators.map((indicator, indicatorIdx) => (
+                                            <div key={indicator.id} className="bg-gray-50/50 rounded-xl p-4">
+                                                <p className="text-sm font-medium text-gray-700 mb-3 leading-relaxed">
+                                                    <span className="inline-block w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold flex items-center justify-center mr-2">{indicatorIdx + 1}</span>
+                                                    {indicator.text}
+                                                </p>
+                                                <div className="flex items-center justify-between gap-2">
+                                                    {[1, 2, 3, 4, 5].map((val) => {
+                                                        const colors = ['text-rose-600', 'text-orange-500', 'text-amber-400', 'text-emerald-500', 'text-teal-600'];
+                                                        const bgColors = ['bg-rose-50', 'bg-orange-50', 'bg-amber-50', 'bg-emerald-50', 'bg-teal-50'];
+                                                        const borderColors = ['border-rose-500', 'border-orange-500', 'border-amber-400', 'border-emerald-500', 'border-teal-600'];
+                                                        const shadowColors = ['shadow-rose-500/30', 'shadow-orange-500/30', 'shadow-amber-400/30', 'shadow-emerald-500/30', 'shadow-teal-600/30'];
+                                                        const icons = ['sentiment_very_dissatisfied', 'sentiment_dissatisfied', 'sentiment_neutral', 'sentiment_satisfied', 'sentiment_very_satisfied'];
 
-                                                const isChecked = (formData as any)[q.id] === val.toString();
+                                                        const isChecked = (formData as any)[indicator.id] === val.toString();
 
-                                                return (
-                                                    <label key={val} className="cursor-pointer group relative flex flex-col items-center">
-                                                        <input
-                                                            type="radio"
-                                                            name={q.id}
-                                                            value={val}
-                                                            checked={isChecked}
-                                                            onChange={(e) => handleRadioChange(q.id, e.target.value)}
-                                                            className="rating-input sr-only"
-                                                        />
-                                                        <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isChecked ? `${borderColors[val - 1]} ${bgColors[val - 1]} ${colors[val - 1]} shadow-lg ${shadowColors[val - 1]}` : 'border-gray-200 bg-white text-gray-300 group-hover:bg-gray-50 group-hover:border-gray-300'}`}>
-                                                            <span className={`rating-icon material-symbols-outlined text-3xl md:text-4xl transition-transform duration-200 ${isChecked ? 'scale-110' : ''}`}>{icons[val - 1]}</span>
-                                                        </div>
-                                                    </label>
-                                                );
-                                            })}
-                                        </div>
+                                                        return (
+                                                            <label key={val} className="cursor-pointer group relative flex flex-col items-center flex-1">
+                                                                <input
+                                                                    type="radio"
+                                                                    name={indicator.id}
+                                                                    value={val}
+                                                                    checked={isChecked}
+                                                                    onChange={(e) => handleRadioChange(indicator.id, e.target.value)}
+                                                                    className="rating-input sr-only"
+                                                                />
+                                                                <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isChecked ? `${borderColors[val - 1]} ${bgColors[val - 1]} ${colors[val - 1]} shadow-lg ${shadowColors[val - 1]}` : 'border-gray-200 bg-white text-gray-300 group-hover:bg-gray-50 group-hover:border-gray-300'}`}>
+                                                                    <span className={`rating-icon material-symbols-outlined text-2xl transition-transform duration-200 ${isChecked ? 'scale-110' : ''}`}>{icons[val - 1]}</span>
+                                                                </div>
+                                                                <span className={`text-[10px] font-medium mt-1 ${isChecked ? colors[val - 1] : 'text-gray-400'}`}>{val}</span>
+                                                            </label>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             ))}

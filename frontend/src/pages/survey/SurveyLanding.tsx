@@ -490,14 +490,14 @@ const SurveyLanding = () => {
       </div>
 
       {/* Rating Legend - Diperbesar dan Diperjelas */}
-      <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-4 border-2 border-amber-200">
-        <p className="text-xs font-bold text-amber-700 text-center mb-3 uppercase tracking-wide">Panduan Penilaian</p>
-        <div className="grid grid-cols-5 gap-2">
+      <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 border-2 border-amber-300 shadow-lg">
+        <p className="text-sm font-extrabold text-amber-800 text-center mb-4 uppercase tracking-wider">Panduan Penilaian</p>
+        <div className="grid grid-cols-5 gap-3">
           {ratingLabels.map(rating => (
             <div key={rating.value} className="flex flex-col items-center gap-2">
-              <div className="w-14 h-14 rounded-xl bg-white shadow-md flex items-center justify-center">
+              <div className="w-16 h-16 rounded-2xl bg-white shadow-lg flex items-center justify-center border-2 border-gray-100">
                 <span
-                  className="material-symbols-outlined text-4xl"
+                  className="material-symbols-outlined text-5xl"
                   style={{
                     color: rating.color,
                     fontVariationSettings: "'FILL' 1"
@@ -507,8 +507,8 @@ const SurveyLanding = () => {
                 </span>
               </div>
               <div className="text-center">
-                <p className="text-xs font-bold text-gray-700">{rating.value}</p>
-                <p className="text-[10px] text-gray-500 leading-tight">{rating.label}</p>
+                <p className="text-base font-extrabold text-gray-800 mb-0.5">{rating.value}</p>
+                <p className="text-xs font-semibold text-gray-700 leading-tight">{rating.label}</p>
               </div>
             </div>
           ))}
@@ -527,24 +527,25 @@ const SurveyLanding = () => {
                 <p className="text-sm text-gray-700 leading-relaxed">{q.text}</p>
               </div>
             </div>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 gap-2.5">
               {ratingLabels.map(rating => (
                 <button
                   key={rating.value}
                   type="button"
                   onClick={() => handleChange(q.id, rating.value.toString())}
-                  className={`py-3 px-1 rounded-2xl transition-all active:scale-95 flex flex-col items-center gap-2 ${
+                  className={`py-4 px-1 rounded-2xl transition-all active:scale-95 flex flex-col items-center gap-2 relative ${
                     formData[q.id as keyof typeof formData] === rating.value.toString()
-                      ? 'shadow-xl border-2 scale-105'
+                      ? 'shadow-2xl border-3 scale-110'
                       : 'bg-gray-50 border-2 border-gray-200 hover:border-gray-300'
                   }`}
                   style={{
                     backgroundColor: formData[q.id as keyof typeof formData] === rating.value.toString() ? rating.bgColor : '#f9fafb',
-                    borderColor: formData[q.id as keyof typeof formData] === rating.value.toString() ? rating.color : undefined
+                    borderColor: formData[q.id as keyof typeof formData] === rating.value.toString() ? rating.color : undefined,
+                    borderWidth: formData[q.id as keyof typeof formData] === rating.value.toString() ? '3px' : '2px'
                   }}
                 >
                   <span
-                    className="material-symbols-outlined text-5xl block"
+                    className="material-symbols-outlined text-6xl block"
                     style={{
                       color: formData[q.id as keyof typeof formData] === rating.value.toString() ? rating.color : '#d1d5db',
                       fontVariationSettings: formData[q.id as keyof typeof formData] === rating.value.toString() ? "'FILL' 1" : "'FILL' 0"
@@ -552,11 +553,16 @@ const SurveyLanding = () => {
                   >
                     {rating.icon}
                   </span>
-                  <span className={`text-[10px] font-bold text-center leading-tight ${
-                    formData[q.id as keyof typeof formData] === rating.value.toString() ? 'text-gray-800' : 'text-gray-500'
+                  <span className={`text-xs font-extrabold text-center leading-tight ${
+                    formData[q.id as keyof typeof formData] === rating.value.toString() ? 'text-gray-900' : 'text-gray-500'
                   }`}>
                     {rating.label}
                   </span>
+                  {formData[q.id as keyof typeof formData] === rating.value.toString() && (
+                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-green-500">
+                      <span className="text-green-500 text-sm font-bold">✓</span>
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
