@@ -126,28 +126,13 @@ const UnitsManagementDirect = ({ embedded = false }: UnitsManagementProps) => {
     const handleSaveUnit = async (unitData: Partial<Unit>) => {
         try {
             if (selectedUnit) {
-                // Update existing unit
-                const { error } = await supabase
-                    .from('units')
-                    .update({
-                        ...unitData,
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', selectedUnit.id);
-                
-                if (error) throw error;
+                // Update existing unit menggunakan service
+                await unitService.updateUnit(selectedUnit.id, unitData);
+                alert('Unit kerja berhasil diperbarui.');
             } else {
-                // Create new unit
-                const { error } = await supabase
-                    .from('units')
-                    .insert([{
-                        ...unitData,
-                        id: crypto.randomUUID(),
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }]);
-                
-                if (error) throw error;
+                // Create new unit menggunakan service
+                await unitService.createUnit(unitData);
+                alert('Unit kerja berhasil ditambahkan.');
             }
             
             await fetchUnits();
@@ -156,7 +141,7 @@ const UnitsManagementDirect = ({ embedded = false }: UnitsManagementProps) => {
             setSelectedUnit(null);
         } catch (error: any) {
             console.error('Error saving unit:', error);
-            const errorMessage = error.message || 'Gagal menyimpan unit kerja.';
+            const errorMessage = error.response?.data?.message || error.message || 'Gagal menyimpan unit kerja.';
             alert(errorMessage);
             throw error; // Re-throw to let modal handle loading state
         }

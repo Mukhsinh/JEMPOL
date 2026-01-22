@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import unitService, { Unit, UnitType } from '../../services/unitService';
+import UnitModal from '../../components/UnitModal';
+import { supabase } from '../../utils/supabaseClient';
 
 const UnitsManagement = () => {
     const [units, setUnits] = useState<Unit[]>([]);
@@ -9,6 +11,9 @@ const UnitsManagement = () => {
     const [typeFilter, setTypeFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [importing, setImporting] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
 
     useEffect(() => {
         fetchData();
@@ -210,6 +215,72 @@ const UnitsManagement = () => {
         ].join('\n');
     };
 
+    const handleDeleteUnit = async (unitId: string) => {
+        if (!confirm('Apakah Anda yakin ingin menghapus unit kerja ini?')) {
+            return;
+        }
+
+        try {
+            await unitService.deleteUnit(unitId);
+            await fetchUnits();
+            alert('Unit kerja berhasil dihapus.');
+        } catch (error: any) {
+            console.error('Error deleting unit:', error);
+            const errorMessage = error.message || 'Gagal menghapus unit kerja.';
+            alert(errorMessage);
+        }
+    };
+
+    const handleEditUnit = (unit: Unit) => {
+        setSelectedUnit(unit);
+        setShowEditModal(true);
+    };
+
+    const handleSaveUnit = async (unitData: Partial<Unit>) => {
+        try {
+            if (selectedUnit) {
+                // Update existing unit
+                const { error } = await supabase
+                    .from('units')
+                    .update({
+                        ...unitData,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', selectedUnit.id);
+                
+                if (error) throw error;
+            } else {
+                // Create new unit
+                const { error } = await supabase
+                    .from('units')
+                    .insert([{
+                        ...unitData,
+                        id: crypto.randomUUID(),
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    }]);
+                
+                if (error) throw error;
+            }
+            
+            await fetchUnits();
+            setShowAddModal(false);
+            setShowEditModal(false);
+            setSelectedUnit(null);
+        } catch (error: any) {
+            console.error('Error saving unit:', error);
+            const errorMessage = error.message || 'Gagal menyimpan unit kerja.';
+            alert(errorMessage);
+            throw error; // Re-throw to let modal handle loading state
+        }
+    };
+
+    const handleCloseModal = () => {
+        setShowAddModal(false);
+        setShowEditModal(false);
+        setSelectedUnit(null);
+    };
+
     const renderUnitRow = (unit: Unit) => {
         const isChild = !!unit.parent_unit_id;
         
@@ -242,10 +313,18 @@ const UnitsManagement = () => {
                 </td>
                 <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button className="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" title="Edit">
+                        <button 
+                            className="p-1.5 text-slate-400 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors" 
+                            title="Edit"
+                            onClick={() => handleEditUnit(unit)}
+                        >
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                         </button>
-                        <button className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" title="Hapus">
+                        <button 
+                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors" 
+                            title="Hapus"
+                            onClick={() => handleDeleteUnit(unit.id)}
+                        >
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                         </button>
                     </div>
@@ -306,7 +385,10 @@ const UnitsManagement = () => {
                         <span className="material-symbols-outlined text-[18px]">file_download</span>
                         Ekspor
                     </button>
-                    <button className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm shadow-md shadow-blue-500/20">
+                    <button 
+                        onClick={() => setShowAddModal(true)}
+                        className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm shadow-md shadow-blue-500/20"
+                    >
                         <span className="material-symbols-outlined text-[18px]">add</span>
                         Tambah Unit Baru
                     </button>
@@ -411,6 +493,25 @@ const UnitsManagement = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Add Unit Modal */}
+            <UnitModal
+                isOpen={showAddModal}
+                onClose={handleCloseModal}
+                onSave={handleSaveUnit}
+                units={units}
+                unitTypes={unitTypes}
+            />
+
+            {/* Edit Unit Modal */}
+            <UnitModal
+                isOpen={showEditModal}
+                onClose={handleCloseModal}
+                onSave={handleSaveUnit}
+                unit={selectedUnit}
+                units={units}
+                unitTypes={unitTypes}
+            />
         </div>
     );
 };

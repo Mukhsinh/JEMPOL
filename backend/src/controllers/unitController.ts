@@ -68,7 +68,27 @@ export class UnitController {
 
   async createUnit(req: Request, res: Response) {
     try {
-      const { name, code, description, unit_type_id, parent_unit_id, contact_email, contact_phone, sla_hours } = req.body;
+      const { name, code, description, unit_type_id, parent_unit_id, contact_email, contact_phone, sla_hours, is_active } = req.body;
+
+      // Validasi input
+      if (!name || !code) {
+        return res.status(400).json({ 
+          error: 'Nama unit dan kode wajib diisi' 
+        });
+      }
+
+      // Cek duplikasi kode
+      const { data: duplicateCode } = await supabase
+        .from('units')
+        .select('id')
+        .eq('code', code)
+        .single();
+
+      if (duplicateCode) {
+        return res.status(400).json({ 
+          error: 'Kode unit sudah digunakan' 
+        });
+      }
 
       const { data: unit, error } = await supabase
         .from('units')
@@ -76,11 +96,12 @@ export class UnitController {
           name,
           code,
           description,
-          unit_type_id,
-          parent_unit_id,
+          unit_type_id: unit_type_id || null,
+          parent_unit_id: parent_unit_id || null,
           contact_email,
           contact_phone,
-          sla_hours: sla_hours || 24
+          sla_hours: sla_hours || 24,
+          is_active: is_active !== undefined ? is_active : true
         })
         .select()
         .single();
@@ -90,9 +111,11 @@ export class UnitController {
       }
 
       res.status(201).json(unit);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating unit:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ 
+        error: error.message || 'Terjadi kesalahan saat membuat unit kerja' 
+      });
     }
   }
 
@@ -101,18 +124,52 @@ export class UnitController {
       const { id } = req.params;
       const { name, code, description, unit_type_id, parent_unit_id, contact_email, contact_phone, sla_hours, is_active } = req.body;
 
+      // Validasi input
+      if (!name || !code) {
+        return res.status(400).json({ 
+          error: 'Nama unit dan kode wajib diisi' 
+        });
+      }
+
+      // Cek apakah unit ada
+      const { data: existingUnit, error: checkError } = await supabase
+        .from('units')
+        .select('id')
+        .eq('id', id)
+        .single();
+
+      if (checkError || !existingUnit) {
+        return res.status(404).json({ 
+          error: 'Unit kerja tidak ditemukan' 
+        });
+      }
+
+      // Cek duplikasi kode (kecuali untuk unit yang sedang diedit)
+      const { data: duplicateCode } = await supabase
+        .from('units')
+        .select('id')
+        .eq('code', code)
+        .neq('id', id)
+        .single();
+
+      if (duplicateCode) {
+        return res.status(400).json({ 
+          error: 'Kode unit sudah digunakan oleh unit lain' 
+        });
+      }
+
       const { data: unit, error } = await supabase
         .from('units')
         .update({
           name,
           code,
           description,
-          unit_type_id,
-          parent_unit_id,
+          unit_type_id: unit_type_id || null,
+          parent_unit_id: parent_unit_id || null,
           contact_email,
           contact_phone,
-          sla_hours,
-          is_active,
+          sla_hours: sla_hours || 24,
+          is_active: is_active !== undefined ? is_active : true,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
@@ -124,9 +181,11 @@ export class UnitController {
       }
 
       res.json(unit);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating unit:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ 
+        error: error.message || 'Terjadi kesalahan saat memperbarui unit kerja' 
+      });
     }
   }
 
@@ -134,10 +193,23 @@ export class UnitController {
     try {
       const { id } = req.params;
 
+      // Cek apakah unit ada
+      const { data: existingUnit, error: checkError } = await supabase
+        .from('units')
+        .select('id, name')
+        .eq('id', id)
+        .single();
+
+      if (checkError || !existingUnit) {
+        return res.status(404).json({ 
+          error: 'Unit kerja tidak ditemukan' 
+        });
+      }
+
       // Check if unit has child units
       const { data: childUnits, error: childError } = await supabase
         .from('units')
-        .select('id')
+        .select('id, name')
         .eq('parent_unit_id', id);
 
       if (childError) {
@@ -146,7 +218,7 @@ export class UnitController {
 
       if (childUnits && childUnits.length > 0) {
         return res.status(400).json({ 
-          error: 'Cannot delete unit with child units. Please delete or reassign child units first.' 
+          error: `Tidak dapat menghapus unit yang memiliki ${childUnits.length} sub-unit. Silakan hapus atau pindahkan sub-unit terlebih dahulu.` 
         });
       }
 
@@ -163,7 +235,7 @@ export class UnitController {
 
       if (tickets && tickets.length > 0) {
         return res.status(400).json({ 
-          error: 'Cannot delete unit with associated tickets. Please reassign tickets first.' 
+          error: 'Tidak dapat menghapus unit yang memiliki tiket terkait. Silakan pindahkan tiket terlebih dahulu.' 
         });
       }
 
@@ -177,9 +249,11 @@ export class UnitController {
       }
 
       res.status(204).send();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting unit:', error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ 
+        error: error.message || 'Terjadi kesalahan saat menghapus unit kerja' 
+      });
     }
   }
 

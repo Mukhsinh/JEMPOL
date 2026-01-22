@@ -3,14 +3,13 @@ echo ========================================
 echo TEST CREATE UNIT TYPE
 echo ========================================
 echo.
-
-echo Membuka test page...
-start http://localhost:3002/test-create-unit-type.html
-
+echo Membuka test create unit type...
 echo.
-echo Silakan:
-echo 1. Login terlebih dahulu di http://localhost:3002
-echo 2. Kemudian buka test page yang sudah dibuka
-echo 3. Klik tombol "Test Create"
+start http://localhost:3002/master-data/unit-types
+timeout /t 2 /nobreak >nul
+start test-create-unit-type.html
+echo.
+echo Test page dibuka!
+echo Silakan coba tambah unit type baru.
 echo.
 pause

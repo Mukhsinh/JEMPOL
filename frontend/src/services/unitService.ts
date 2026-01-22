@@ -171,17 +171,35 @@ class UnitService {
   }
 
   async createUnit(unit: Partial<Unit>): Promise<Unit> {
-    const response = await api.post('/units', unit);
-    return response.data;
+    try {
+      const response = await api.post('/units', unit);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error creating unit:', error);
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Gagal membuat unit kerja';
+      throw new Error(errorMessage);
+    }
   }
 
   async updateUnit(id: string, unit: Partial<Unit>): Promise<Unit> {
-    const response = await api.put(`/units/${id}`, unit);
-    return response.data;
+    try {
+      const response = await api.put(`/units/${id}`, unit);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error updating unit:', error);
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Gagal memperbarui unit kerja';
+      throw new Error(errorMessage);
+    }
   }
 
   async deleteUnit(id: string): Promise<void> {
-    await api.delete(`/units/${id}`);
+    try {
+      await api.delete(`/units/${id}`);
+    } catch (error: any) {
+      console.error('Error deleting unit:', error);
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Gagal menghapus unit kerja';
+      throw new Error(errorMessage);
+    }
   }
 
   // Master data dengan improved fallback
