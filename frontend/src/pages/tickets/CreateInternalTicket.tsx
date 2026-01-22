@@ -156,7 +156,7 @@ const CreateInternalTicket = () => {
                 reporter_phone: '',
                 reporter_department: '',
                 reporter_position: '',
-                category_id: categoryId, // Kirim category_id langsung
+                category_id: categoryId,
                 priority,
                 title,
                 description,
@@ -168,11 +168,14 @@ const CreateInternalTicket = () => {
             
             console.log('📬 Create internal ticket response:', response);
             
-            if (response.success) {
-                alert(`Tiket internal berhasil dibuat dengan nomor: ${response.ticket_number || response.data?.ticket_number || 'N/A'}`);
+            // Cek apakah response berhasil
+            if (response && response.success) {
+                const ticketNumber = response.ticket_number || response.data?.ticket_number || 'N/A';
+                alert(`Tiket internal berhasil dibuat dengan nomor: ${ticketNumber}`);
                 navigate('/tickets');
             } else {
-                const errorMsg = response.error || 'Gagal membuat tiket internal';
+                // Response tidak berhasil
+                const errorMsg = response?.error || 'Gagal membuat tiket internal';
                 console.error('❌ Create internal ticket failed:', errorMsg);
                 setError(errorMsg);
             }

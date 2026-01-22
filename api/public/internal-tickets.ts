@@ -52,6 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     console.log('🎯 POST /api/public/internal-tickets dipanggil');
+    console.log('📥 Request body:', JSON.stringify(req.body, null, 2));
     
     const {
       reporter_name,
@@ -60,6 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       reporter_department,
       reporter_position,
       category,
+      category_id,
       priority,
       title,
       description,
@@ -73,6 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       reporter_email,
       unit_id,
       category,
+      category_id,
       priority,
       title,
       source
@@ -95,6 +98,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         error: 'Nama, email, judul, dan deskripsi harus diisi'
       });
     }
+
+    // Validasi priority
+    const validPriorities = ['low', 'medium', 'high', 'critical'];
+    const finalPriority = validPriorities.includes(priority) ? priority : 'medium';
+    console.log('✅ Using priority:', finalPriority);
 
     // Validasi source
     const validSources = ['web', 'qr_code', 'mobile', 'email', 'phone'];
@@ -127,11 +135,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Calculate SLA deadline based on priority
     const slaDeadline = new Date();
-    if (priority === 'critical') {
+    if (finalPriority === 'critical') {
       slaDeadline.setHours(slaDeadline.getHours() + 4);
-    } else if (priority === 'high') {
+    } else if (finalPriority === 'high') {
       slaDeadline.setHours(slaDeadline.getHours() + 24);
-    } else if (priority === 'medium') {
+    } else if (finalPriority === 'medium') {
       slaDeadline.setHours(slaDeadline.getHours() + 48);
     } else {
       slaDeadline.setHours(slaDeadline.getHours() + 72);
@@ -165,7 +173,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       description: description,
       unit_id: unit_id,
       qr_code_id: qr_code_id,
-      priority: priority || 'medium',
+      priority: finalPriority,
       status: 'open',
       sla_deadline: slaDeadline.toISOString(),
       source: finalSource,
@@ -177,10 +185,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       reporter_position: reporter_position || null
     };
 
-    // Add category if provided
-    if (category) {
-      ticketData.category_id = category;
-      console.log('✅ Using category:', category);
+    // Add category if provided - gunakan category_id atau category
+    const finalCategoryId = category_id || category || null;
+    if (finalCategoryId) {
+      ticketData.category_id = finalCategoryId;
+      console.log('✅ Using category_id:', finalCategoryId);
     }
 
     console.log('📤 Inserting ticket data:', {
@@ -189,7 +198,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       unit_id: ticketData.unit_id,
       priority: ticketData.priority,
       status: ticketData.status,
-      source: ticketData.source
+      source: ticketData.source,
+      category_id: ticketData.category_id || 'null'
     });
 
     const { data: ticket, error } = await supabase
@@ -203,12 +213,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (error) {
       console.error('❌ Error creating internal ticket:', error);
+      console.error('❌ Error details:', JSON.stringify(error, null, 2));
       
       let errorMessage = 'Gagal membuat tiket';
       if (error.code === '23503') {
         errorMessage = 'Data referensi tidak valid (unit_id atau category_id tidak ditemukan)';
       } else if (error.code === '23505') {
         errorMessage = 'Nomor tiket sudah ada, silakan coba lagi';
+      } else if (error.code === '23514') {
+        errorMessage = `Tipe tiket tidak valid. Diterima: ${ticketData.type}. Harus salah satu dari: information, complaint, suggestion, satisfaction, internal`;
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -217,7 +230,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         success: false,
         error: errorMessage,
         details: error.details || error.hint || null,
-        error_code: error.code
+        error_code: error.code,
+        ticket_data_sent: {
+          ticket_number: ticketData.ticket_number,
+          type: ticketData.type,
+          unit_id: ticketData.unit_id,
+          category_id: ticketData.category_id
+        }
       });
     }
 

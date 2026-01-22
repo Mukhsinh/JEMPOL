@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Submit Tiket Internal - Fixed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4CAF50;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎫 Test Submit Tiket Internal - Fixed</h1>
+        
+        <div class="info">
+            <strong>📋 Perbaikan yang Diterapkan:</strong>
+            <ul>
+                <li>✅ Validasi input yang lebih ketat</li>
+                <li>✅ Error handling yang lebih detail</li>
+                <li>✅ Logging yang lebih lengkap</li>
+                <li>✅ Response handling yang lebih baik</li>
+                <li>✅ Timeout 30 detik untuk request</li>
+                <li>✅ Adopsi pola dari external tickets yang berhasil</li>
+            </ul>
+        </div>
+
+        <form id="ticketForm">
+            <div class="form-group">
+                <label for="title">Judul Tiket *</label>
+                <input type="text" id="title" required placeholder="Masukkan judul tiket">
+            </div>
+
+            <div class="form-group">
+                <label for="description">Deskripsi *</label>
+                <textarea id="description" required placeholder="Jelaskan detail masalah"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="category_id">Kategori ID *</label>
+                <input type="text" id="category_id" required placeholder="Masukkan category_id (UUID)">
+                <small style="color: #666;">Contoh: 123e4567-e89b-12d3-a456-426614174000</small>
+            </div>
+
+            <div class="form-group">
+                <label for="priority">Prioritas *</label>
+                <select id="priority" required>
+                    <option value="">Pilih prioritas</option>
+                    <option value="low">Rendah</option>
+                    <option value="medium" selected>Sedang</option>
+                    <option value="high">Tinggi</option>
+                    <option value="critical">Kritis</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="unit_id">Unit ID *</label>
+                <input type="text" id="unit_id" required placeholder="Masukkan unit_id (UUID)">
+                <small style="color: #666;">Contoh: 123e4567-e89b-12d3-a456-426614174000</small>
+            </div>
+
+            <div class="form-group">
+                <label for="reporter_name">Nama Pelapor</label>
+                <input type="text" id="reporter_name" value="Staff Internal" placeholder="Nama pelapor">
+            </div>
+
+            <div class="form-group">
+                <label for="reporter_email">Email Pelapor</label>
+                <input type="email" id="reporter_email" value="staff@internal.com" placeholder="Email pelapor">
+            </div>
+
+            <button type="submit">Kirim Tiket Internal</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Mengirim tiket...</p>
+        </div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000/api'
+            : '/api';
+
+        document.getElementById('ticketForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            
+            // Reset
+            resultDiv.style.display = 'none';
+            resultDiv.className = 'result';
+            loadingDiv.style.display = 'block';
+            submitBtn.disabled = true;
+            
+            // Ambil data form
+            const data = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                category_id: document.getElementById('category_id').value,
+                priority: document.getElementById('priority').value,
+                unit_id: document.getElementById('unit_id').value,
+                reporter_name: document.getElementById('reporter_name').value || 'Staff Internal',
+                reporter_email: document.getElementById('reporter_email').value || 'staff@internal.com',
+                reporter_phone: '',
+                reporter_department: '',
+                reporter_position: '',
+                source: 'web'
+            };
+            
+            console.log('📤 Mengirim data:', data);
+            
+            try {
+                const response = await fetch(`${API_URL}/public/internal-tickets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Response headers:', [...response.headers.entries()]);
+                
+                // Cek apakah response memiliki content
+                const contentType = response.headers.get('content-type');
+                console.log('📥 Content-Type:', contentType);
+                
+                let result;
+                const responseText = await response.text();
+                console.log('📥 Response text:', responseText);
+                
+                if (responseText) {
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (parseError) {
+                        console.error('❌ Error parsing JSON:', parseError);
+                        throw new Error('Response bukan JSON valid: ' + responseText.substring(0, 100));
+                    }
+                } else {
+                    throw new Error('Response kosong dari server');
+                }
+                
+                console.log('✅ Parsed result:', result);
+                
+                loadingDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+                
+                if (response.ok && result.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h3>✅ Tiket Berhasil Dibuat!</h3>
+                        <p><strong>Nomor Tiket:</strong> ${result.ticket_number || 'N/A'}</p>
+                        <p><strong>Message:</strong> ${result.message || 'Tiket berhasil dibuat'}</p>
+                        <details>
+                            <summary>Detail Response</summary>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </details>
+                    `;
+                    
+                    // Reset form
+                    document.getElementById('ticketForm').reset();
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <h3>❌ Gagal Membuat Tiket</h3>
+                        <p><strong>Error:</strong> ${result.error || 'Unknown error'}</p>
+                        ${result.details ? `<p><strong>Details:</strong> ${result.details}</p>` : ''}
+                        ${result.error_code ? `<p><strong>Error Code:</strong> ${result.error_code}</p>` : ''}
+                        <details>
+                            <summary>Full Response</summary>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </details>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                loadingDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <h3>❌ Terjadi Kesalahan</h3>
+                    <p><strong>Error:</strong> ${error.message}</p>
+                    <details>
+                        <summary>Error Details</summary>
+                        <pre>${error.stack || error.toString()}</pre>
+                    </details>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

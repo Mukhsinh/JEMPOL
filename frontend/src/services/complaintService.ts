@@ -257,15 +257,52 @@ class ComplaintService {
   }) {
     try {
       console.log('📤 Sending internal ticket to /public/internal-tickets:', data);
-      const response = await api.post('/public/internal-tickets', data);
+      
+      const response = await api.post('/public/internal-tickets', data, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        timeout: 30000 // 30 detik timeout
+      });
+      
       console.log('✅ Internal ticket response:', response.data);
+      
+      // Pastikan response memiliki struktur yang benar
+      if (!response.data) {
+        throw new Error('Response kosong dari server');
+      }
+      
       return response.data;
     } catch (error: any) {
       console.error('❌ Error in createInternalTicket:', error);
       console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error message:', error.message);
+      
+      // Handle berbagai jenis error
+      let errorMessage = 'Gagal membuat tiket internal';
+      
+      if (error.message === 'Response kosong dari server') {
+        errorMessage = 'Server mengembalikan response kosong';
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.status === 500) {
+        errorMessage = 'Terjadi kesalahan server. Silakan coba lagi.';
+      } else if (error.response?.status === 400) {
+        errorMessage = 'Data yang dikirim tidak valid. Periksa kembali formulir.';
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Request timeout. Silakan coba lagi.';
+      } else if (error.message.includes('Network Error')) {
+        errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       return {
         success: false,
-        error: error.response?.data?.error || error.message || 'Gagal membuat tiket internal',
+        error: errorMessage,
+        details: error.response?.data?.details || null,
         data: null
       };
     }
