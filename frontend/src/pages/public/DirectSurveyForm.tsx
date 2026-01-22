@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import AppFooter from '../../components/AppFooter';
 
 interface FormData {
   service_type: string;

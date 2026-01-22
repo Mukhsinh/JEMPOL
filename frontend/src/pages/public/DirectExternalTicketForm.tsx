@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getServiceCategories, getPatientTypes } from '../../services/masterDataService';
+import AppFooter from '../../components/AppFooter';
 
 interface FormData {
   reporter_identity_type: 'personal' | 'anonymous';
