@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { submitSurveyDirectly } from '../../utils/surveyFallback';
 
 interface AppSettings {
     app_footer?: string;
@@ -181,35 +182,53 @@ const PublicSurveyForm = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch('/api/public/survey/submit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
+            // Coba gunakan backend API terlebih dahulu
+            try {
+                const response = await fetch('/api/public/survey/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ...formData,
+                        qr_code: qrCode
+                    })
+                });
+
+                // Cek apakah response adalah JSON
+                const contentType = response.headers.get('content-type');
+                let result;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    const text = await response.text();
+                    console.error('Response bukan JSON:', text);
+                    throw new Error('Server mengembalikan response yang tidak valid. Silakan coba lagi.');
+                }
+
+                if (!response.ok) {
+                    throw new Error(result.error || result.message || 'Gagal mengirim survei');
+                }
+
+                setIsSubmitted(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (backendError: any) {
+                console.warn('⚠️ Backend tidak tersedia, menggunakan Supabase langsung:', backendError.message);
+                
+                // Fallback: Gunakan Supabase client langsung
+                const result = await submitSurveyDirectly({
                     ...formData,
                     qr_code: qrCode
-                })
-            });
-
-            // Cek apakah response adalah JSON
-            const contentType = response.headers.get('content-type');
-            let result;
-            
-            if (contentType && contentType.includes('application/json')) {
-                result = await response.json();
-            } else {
-                const text = await response.text();
-                console.error('Response bukan JSON:', text);
-                throw new Error('Server mengembalikan response yang tidak valid. Silakan coba lagi.');
+                });
+                
+                if (result.success) {
+                    setIsSubmitted(true);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    throw new Error('Gagal mengirim survei');
+                }
             }
-
-            if (!response.ok) {
-                throw new Error(result.error || result.message || 'Gagal mengirim survei');
-            }
-
-            setIsSubmitted(true);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
 
         } catch (error: any) {
             console.error('Error submitting survey:', error);

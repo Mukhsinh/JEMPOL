@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getServiceCategories, getPatientTypes } from '../../services/masterDataService';
 import AppFooter from '../../components/AppFooter';
+import externalTicketService from '../../services/externalTicketService';
 
 interface FormData {
   reporter_identity_type: 'personal' | 'anonymous';
@@ -217,59 +218,31 @@ const DirectExternalTicketForm: React.FC = () => {
         return;
       }
 
-      // Kirim sebagai JSON
-      const submitData = {
+      // Gunakan service yang sudah ada (dengan fallback ke Supabase)
+      const result = await externalTicketService.createTicket({
         reporter_identity_type: formData.reporter_identity_type,
-        reporter_name: formData.reporter_identity_type === 'personal' ? formData.reporter_name : null,
-        reporter_email: formData.reporter_identity_type === 'personal' ? formData.reporter_email : null,
-        reporter_phone: formData.reporter_identity_type === 'personal' ? formData.reporter_phone : null,
+        reporter_name: formData.reporter_identity_type === 'personal' ? formData.reporter_name : undefined,
+        reporter_email: formData.reporter_identity_type === 'personal' ? formData.reporter_email : undefined,
+        reporter_phone: formData.reporter_identity_type === 'personal' ? formData.reporter_phone : undefined,
         service_type: formData.service_type,
-        service_category_id: formData.service_category_id || null,
-        patient_type_id: formData.patient_type_id || null,
+        category: formData.service_category_id || undefined,
         title: formData.title,
         description: formData.description,
-        qr_code: qrCode || null,
-        unit_id: finalUnitId,
-        source: qrCode ? 'qr_code' : 'web'
-      };
-
-      console.log('📤 Mengirim tiket eksternal:', submitData);
-
-      const response = await fetch('/api/public/external-tickets', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(submitData)
+        qr_code_id: qrCode || undefined,
+        unit_id: finalUnitId
       });
-      
-      console.log('📥 Response status:', response.status);
-      console.log('📥 Response headers:', response.headers.get('content-type'));
 
-      // Cek apakah response adalah JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const textResponse = await response.text();
-        console.error('❌ Response bukan JSON:', textResponse);
-        throw new Error(`Server mengembalikan response yang tidak valid (${response.status}). Silakan coba lagi.`);
-      }
+      console.log('✅ Tiket berhasil dibuat:', result);
 
-      const result = await response.json();
-      console.log('📥 Response data:', result);
-
-      if (response.ok && result.success) {
+      if (result.success) {
         setTicketNumber(result.ticket_number || 'TKT-' + Date.now());
         setSubmitted(true);
       } else {
-        const errorMsg = result.error || result.message || 'Gagal mengirim laporan';
-        const errorDetails = result.details ? ` (${result.details})` : '';
-        setError(errorMsg + errorDetails);
-        console.error('❌ Server error:', result);
+        setError(result.error || 'Gagal mengirim laporan');
       }
     } catch (err: any) {
       console.error('❌ Submit error:', err);
-      setError('Terjadi kesalahan saat mengirim laporan: ' + err.message);
+      setError('Terjadi kesalahan saat mengirim laporan: ' + (err.response?.data?.error || err.message));
     } finally {
       setSubmitting(false);
     }

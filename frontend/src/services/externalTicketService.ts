@@ -1,4 +1,5 @@
 import api from './api';
+import { supabase } from '../utils/supabaseClient';
 
 export interface ExternalTicket {
   id: string;
@@ -55,33 +56,137 @@ export interface CreateExternalTicketData {
   attachments?: File[];
 }
 
+// Helper function to generate ticket number
+const generateTicketNumber = async (): Promise<string> => {
+  const year = new Date().getFullYear();
+  const { data: lastTicket } = await supabase
+    .from('tickets')
+    .select('ticket_number')
+    .like('ticket_number', `TKT-${year}-%`)
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  let nextNumber = 1;
+  if (lastTicket && lastTicket.length > 0) {
+    const lastNumber = parseInt(lastTicket[0].ticket_number.split('-')[2]);
+    nextNumber = lastNumber + 1;
+  }
+
+  return `TKT-${year}-${nextNumber.toString().padStart(4, '0')}`;
+};
+
 export const externalTicketService = {
   // Create external ticket (public endpoint)
   async createTicket(data: CreateExternalTicketData): Promise<any> {
     try {
       console.log('📤 Creating external ticket:', data);
       
-      // Gunakan endpoint public yang benar
-      const response = await api.post('/public/external-tickets', {
-        reporter_identity_type: data.reporter_identity_type,
-        reporter_name: data.reporter_name,
-        reporter_email: data.reporter_email,
-        reporter_phone: data.reporter_phone,
-        reporter_address: data.reporter_address,
-        service_type: data.service_type,
-        category: data.category,
-        title: data.title,
-        description: data.description,
-        qr_code: data.qr_code_id,
-        unit_id: data.unit_id,
-        source: 'web'
-      });
-      
-      console.log('✅ External ticket created:', response.data);
-      return response.data;
+      // Coba gunakan backend API terlebih dahulu
+      try {
+        const response = await api.post('/public/external-tickets', {
+          reporter_identity_type: data.reporter_identity_type,
+          reporter_name: data.reporter_name,
+          reporter_email: data.reporter_email,
+          reporter_phone: data.reporter_phone,
+          reporter_address: data.reporter_address,
+          service_type: data.service_type,
+          category: data.category,
+          title: data.title,
+          description: data.description,
+          qr_code: data.qr_code_id,
+          unit_id: data.unit_id,
+          source: 'web'
+        });
+        
+        console.log('✅ External ticket created via backend:', response.data);
+        return response.data;
+      } catch (backendError: any) {
+        console.warn('⚠️ Backend tidak tersedia, menggunakan Supabase langsung:', backendError.message);
+        
+        // Fallback: Gunakan Supabase client langsung
+        // Generate ticket number
+        const ticketNumber = await generateTicketNumber();
+        
+        // Mapping service_type ke type yang valid di database
+        const serviceTypeMapping: { [key: string]: string } = {
+          'complaint': 'complaint',
+          'request': 'information',
+          'suggestion': 'suggestion',
+          'survey': 'satisfaction'
+        };
+        
+        const mappedType = serviceTypeMapping[data.service_type] || 'complaint';
+        
+        // Calculate SLA deadline
+        const slaDeadline = new Date();
+        if (data.service_type === 'complaint') {
+          slaDeadline.setHours(slaDeadline.getHours() + 24);
+        } else if (data.service_type === 'request') {
+          slaDeadline.setHours(slaDeadline.getHours() + 48);
+        } else {
+          slaDeadline.setHours(slaDeadline.getHours() + 72);
+        }
+        
+        // Determine priority
+        let priority = 'medium';
+        if (data.service_type === 'complaint') {
+          priority = 'high';
+        } else if (data.service_type === 'request') {
+          priority = 'medium';
+        } else {
+          priority = 'low';
+        }
+        
+        const isAnonymous = data.reporter_identity_type === 'anonymous';
+        
+        // Insert ticket langsung ke Supabase
+        const ticketData: any = {
+          ticket_number: ticketNumber,
+          type: mappedType,
+          title: data.title,
+          description: data.description,
+          unit_id: data.unit_id,
+          priority: priority,
+          status: 'open',
+          sla_deadline: slaDeadline.toISOString(),
+          source: 'web',
+          is_anonymous: isAnonymous,
+          submitter_name: isAnonymous ? null : data.reporter_name,
+          submitter_email: isAnonymous ? null : data.reporter_email,
+          submitter_phone: isAnonymous ? null : data.reporter_phone,
+          submitter_address: isAnonymous ? null : data.reporter_address
+        };
+        
+        // Tambahkan category_id jika ada
+        if (data.category) {
+          ticketData.category_id = data.category;
+        }
+        
+        const { data: ticket, error } = await supabase
+          .from('tickets')
+          .insert(ticketData)
+          .select(`
+            *,
+            units:unit_id(name, code)
+          `)
+          .single();
+        
+        if (error) {
+          console.error('❌ Error creating ticket via Supabase:', error);
+          throw new Error(`Gagal membuat tiket: ${error.message}`);
+        }
+        
+        console.log('✅ External ticket created via Supabase:', ticket);
+        
+        return {
+          success: true,
+          ticket_number: ticket.ticket_number,
+          data: ticket,
+          message: 'Tiket berhasil dibuat. Nomor tiket Anda: ' + ticket.ticket_number
+        };
+      }
     } catch (error: any) {
       console.error('❌ Error creating external ticket:', error);
-      console.error('❌ Error response:', error.response?.data);
       throw error;
     }
   },

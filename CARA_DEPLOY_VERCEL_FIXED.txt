@@ -1,0 +1,92 @@
+CARA DEPLOY KE VERCEL - SUDAH DIPERBAIKI
+=========================================
+
+MASALAH YANG SUDAH DIPERBAIKI:
+-------------------------------
+✅ Error 405 saat submit tiket eksternal
+✅ Error 405 saat submit survei
+✅ API endpoint tidak tersedia di production
+
+SOLUSI YANG DITERAPKAN:
+------------------------
+1. Membuat Vercel Serverless Functions untuk handle API requests
+2. File API dibuat di folder /api:
+   - /api/public/external-tickets.ts
+   - /api/public/surveys.ts
+3. Update vercel.json untuk routing API requests
+4. Tambah dependencies @supabase/supabase-js dan @vercel/node
+
+LANGKAH DEPLOY:
+---------------
+
+1. SETUP ENVIRONMENT VARIABLES DI VERCEL
+   Baca file: SETUP_VERCEL_ENV.txt
+   WAJIB menambahkan:
+   - VITE_SUPABASE_URL
+   - VITE_SUPABASE_ANON_KEY
+   - VITE_SUPABASE_SERVICE_ROLE_KEY
+
+2. INSTALL DEPENDENCIES BARU
+   npm install
+
+3. COMMIT PERUBAHAN
+   git add .
+   git commit -m "fix: Tambah Vercel serverless functions untuk API tiket dan survei"
+
+4. PUSH KE GITHUB
+   git push origin main
+
+5. VERCEL AKAN AUTO-DEPLOY
+   - Tunggu proses build selesai (3-5 menit)
+   - Periksa deployment logs jika ada error
+
+6. TEST DI PRODUCTION
+   - Buka aplikasi di URL Vercel
+   - Coba submit tiket eksternal
+   - Coba submit survei
+   - Periksa apakah berhasil tersimpan di database
+
+TROUBLESHOOTING:
+----------------
+
+Jika masih error 405:
+1. Periksa Vercel Logs di Dashboard
+2. Pastikan environment variables sudah benar
+3. Pastikan file di folder /api ter-commit ke Git
+4. Coba redeploy manual dari Vercel Dashboard
+
+Jika error 500:
+1. Periksa Vercel Function Logs
+2. Pastikan VITE_SUPABASE_SERVICE_ROLE_KEY benar
+3. Pastikan unit_id yang dikirim valid
+4. Periksa constraint database (type harus: information, complaint, suggestion, satisfaction)
+
+Jika error 400:
+1. Periksa data yang dikirim dari form
+2. Pastikan semua field wajib terisi
+3. Periksa mapping service_type di API
+
+CARA CEK LOGS DI VERCEL:
+-------------------------
+1. Buka Vercel Dashboard
+2. Pilih project Anda
+3. Klik tab "Functions"
+4. Klik function yang ingin dilihat lognya
+5. Atau klik "View Function Logs" untuk real-time logs
+
+STRUKTUR FILE BARU:
+-------------------
+/api/
+  /public/
+    external-tickets.ts  ← Serverless function untuk tiket
+    surveys.ts           ← Serverless function untuk survei
+  tsconfig.json          ← TypeScript config untuk API
+vercel.json              ← Updated dengan routing API
+package.json             ← Updated dengan dependencies baru
+
+CATATAN PENTING:
+----------------
+- Serverless functions di Vercel memiliki timeout 10 detik (Hobby plan)
+- Jika proses lebih lama, upgrade ke Pro plan
+- Logs hanya tersimpan 24 jam di Hobby plan
+- Setiap function berjalan independent (stateless)

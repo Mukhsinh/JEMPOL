@@ -625,6 +625,11 @@ router.options('/external-tickets', (req: Request, res: Response) => {
 });
 
 router.post('/external-tickets', async (req: Request, res: Response) => {
+  console.log('🎯 POST /api/public/external-tickets dipanggil');
+  console.log('📍 Request method:', req.method);
+  console.log('📍 Request path:', req.path);
+  console.log('📍 Request URL:', req.url);
+  
   try {
     // Set response headers untuk memastikan JSON response
     res.setHeader('Content-Type', 'application/json');

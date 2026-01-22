@@ -1,0 +1,39 @@
+SETUP ENVIRONMENT VARIABLES DI VERCEL
+======================================
+
+Untuk membuat tiket dan survei berfungsi di production (Vercel), 
+Anda HARUS menambahkan environment variables berikut di Vercel Dashboard:
+
+1. Buka Vercel Dashboard: https://vercel.com/dashboard
+2. Pilih project Anda
+3. Klik "Settings" > "Environment Variables"
+4. Tambahkan variable berikut:
+
+WAJIB:
+------
+VITE_SUPABASE_URL=<URL Supabase Anda>
+VITE_SUPABASE_ANON_KEY=<Anon Key Supabase Anda>
+VITE_SUPABASE_SERVICE_ROLE_KEY=<Service Role Key Supabase Anda>
+
+CARA MENDAPATKAN NILAI:
+------------------------
+1. Buka Supabase Dashboard: https://supabase.com/dashboard
+2. Pilih project Anda
+3. Klik "Settings" > "API"
+4. Copy nilai:
+   - Project URL → VITE_SUPABASE_URL
+   - anon public → VITE_SUPABASE_ANON_KEY
+   - service_role (secret) → VITE_SUPABASE_SERVICE_ROLE_KEY
+
+PENTING:
+--------
+- Pastikan SEMUA variable ditambahkan untuk environment: Production, Preview, dan Development
+- Setelah menambahkan, klik "Save"
+- Redeploy aplikasi Anda agar perubahan diterapkan
+
+CARA REDEPLOY:
+--------------
+1. Di Vercel Dashboard, klik tab "Deployments"
+2. Klik tombol "..." pada deployment terakhir
+3. Pilih "Redeploy"
+4. Atau push commit baru ke GitHub untuk trigger deployment otomatis
