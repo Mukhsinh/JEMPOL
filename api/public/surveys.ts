@@ -1,13 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// PERBAIKAN: Disable body parser bawaan Vercel jika perlu
-export const config = {
-  api: {
-    bodyParser: true, // Pastikan body parser aktif
-  },
-};
-
 // Initialize Supabase client
 // Vercel akan inject environment variables dari dashboard
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
@@ -20,15 +13,14 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers - PERBAIKAN: Set headers PERTAMA
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-  res.setHeader('Content-Type', 'application/json'); // PERBAIKAN: Pastikan response JSON
   
   // Handle OPTIONS request
   if (req.method === 'OPTIONS') {
-    return res.status(200).json({ success: true });
+    return res.status(200).end();
   }
 
   // Only allow POST
@@ -40,26 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    console.log('📥 Received public survey submission');
-    console.log('📍 Request body:', JSON.stringify(req.body).substring(0, 200));
-    
-    // PERBAIKAN: Validasi Supabase credentials
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('❌ Supabase credentials tidak tersedia');
-      return res.status(500).json({
-        success: false,
-        error: 'Konfigurasi server tidak lengkap'
-      });
-    }
-    
-    // PERBAIKAN: Validasi body request
-    if (!req.body || typeof req.body !== 'object') {
-      console.error('❌ Request body tidak valid');
-      return res.status(400).json({
-        success: false,
-        error: 'Request body tidak valid'
-      });
-    }
+    console.log('🎯 POST /api/public/surveys dipanggil');
     
     const {
       unit_id,
@@ -93,8 +66,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       source = 'public_survey'
     } = req.body;
 
+    console.log('📥 Received survey request:', {
+      unit_id,
+      visitor_phone,
+      is_anonymous,
+      service_type,
+      source
+    });
+
     // Validasi minimal
     if (!visitor_phone) {
+      console.error('❌ Nomor HP tidak ada');
       return res.status(400).json({
         success: false,
         error: 'Nomor HP wajib diisi'
@@ -103,11 +85,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // Validasi unit
     if (!unit_id) {
+      console.error('❌ Unit ID tidak ada');
       return res.status(400).json({
         success: false,
         error: 'Unit layanan wajib dipilih'
       });
     }
+
+    // Validasi source
+    const validSources = ['web', 'qr_code', 'mobile', 'email', 'phone', 'public_survey'];
+    const finalSource = validSources.includes(source) ? source : 'public_survey';
+    console.log('✅ Using source:', finalSource);
 
     // Verifikasi unit exists dan aktif
     const { data: unitData, error: unitCheckError } = await supabase
@@ -121,7 +109,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error('❌ Unit tidak valid atau tidak aktif:', unit_id);
       return res.status(400).json({
         success: false,
-        error: 'Unit tidak valid atau tidak aktif'
+        error: 'Unit tidak valid atau tidak aktif',
+        unit_id: unit_id,
+        details: unitCheckError?.message
       });
     }
 
@@ -215,14 +205,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       staff_courtesy_score: q7_score ? parseInt(q7_score as string) : null,
       comments: comments || null,
       qr_code: qr_code || null,
-      source: source
+      source: finalSource
     };
     
-    console.log('📝 Survey data to insert:', {
+    console.log('📤 Inserting survey data:', {
       unit_id: surveyData.unit_id,
       visitor_phone: surveyData.visitor_phone,
       is_anonymous: surveyData.is_anonymous,
-      has_scores: scores.length > 0
+      has_scores: scores.length > 0,
+      source: surveyData.source
     });
 
     const { data: survey, error: surveyError } = await supabase
@@ -233,9 +224,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (surveyError) {
       console.error('❌ Error inserting survey:', surveyError);
+      
+      let errorMessage = 'Gagal menyimpan survei';
+      if (surveyError.code === '23503') {
+        errorMessage = 'Data referensi tidak valid (unit_id tidak ditemukan)';
+      } else if (surveyError.message) {
+        errorMessage = surveyError.message;
+      }
+      
       return res.status(500).json({
         success: false,
-        error: 'Gagal menyimpan survei: ' + surveyError.message
+        error: errorMessage,
+        details: surveyError.details || surveyError.hint || null,
+        error_code: surveyError.code
       });
     }
 
@@ -259,8 +260,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .eq('id', qr_code_id);
 
         console.log('✅ Updated QR code usage count');
-      } catch (qrError) {
-        console.warn('⚠️ Failed to update QR code usage:', qrError);
+      } catch (error) {
+        console.log('⚠️ Error updating QR code usage:', error);
       }
     }
 
@@ -272,13 +273,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error: any) {
     console.error('❌ Error submitting public survey:', error);
-    console.error('❌ Error stack:', error.stack);
-    
-    // PERBAIKAN: Pastikan selalu return JSON yang valid
     return res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
-      details: error.toString()
+      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error')
     });
   }
 }

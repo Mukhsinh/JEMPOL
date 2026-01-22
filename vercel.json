@@ -6,30 +6,12 @@
   "installCommand": "cd frontend && npm install",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/api/public/:path*",
+      "destination": "/api/public/:path*"
+    },
+    {
+      "source": "/((?!api).*)",
       "destination": "/index.html"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/public/external-tickets",
-      "dest": "/api/public/external-tickets.ts"
-    },
-    {
-      "src": "/api/public/internal-tickets",
-      "dest": "/api/public/internal-tickets.ts"
-    },
-    {
-      "src": "/api/public/surveys",
-      "dest": "/api/public/surveys.ts"
-    },
-    {
-      "src": "/api/public/units",
-      "dest": "/api/public/units.ts"
-    },
-    {
-      "src": "/api/public/app-settings",
-      "dest": "/api/public/app-settings.ts"
     }
   ],
   "headers": [
