@@ -45,11 +45,11 @@ async function generateTicketNumber(): Promise<string> {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    // Set CORS headers
+    // Set CORS dan Content-Type headers PERTAMA KALI
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     
     // Handle OPTIONS request
     if (req.method === 'OPTIONS') {
