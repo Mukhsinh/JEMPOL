@@ -12,11 +12,12 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers - PERBAIKAN: Tambahkan Content-Type
+  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-  res.setHeader('Content-Type', 'application/json'); // PERBAIKAN: Pastikan response JSON
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   
   // Handle OPTIONS request
   if (req.method === 'OPTIONS') {
@@ -27,56 +28,101 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({
       success: false,
-      error: 'Method not allowed'
+      error: 'Method not allowed',
+      data: []
     });
   }
 
   try {
-    console.log('🎯 GET /api/public/units dipanggil');
+    console.log('🎯 GET /api/public/units - Vercel Function');
+    console.log('📍 Environment check:', {
+      hasSupabaseUrl: !!supabaseUrl,
+      hasSupabaseKey: !!supabaseKey,
+      supabaseUrlPrefix: supabaseUrl?.substring(0, 30) + '...'
+    });
     
-    // PERBAIKAN: Validasi Supabase credentials
+    // Validasi Supabase credentials
     if (!supabaseUrl || !supabaseKey) {
-      console.error('❌ Supabase credentials tidak tersedia');
-      return res.status(500).json({
+      console.error('❌ Missing Supabase credentials in Vercel');
+      console.error('   VITE_SUPABASE_URL:', supabaseUrl ? 'SET' : 'NOT SET');
+      console.error('   VITE_SUPABASE_SERVICE_ROLE_KEY:', process.env.VITE_SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET');
+      console.error('   VITE_SUPABASE_ANON_KEY:', process.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
+      
+      return res.status(200).json({
         success: false,
-        error: 'Konfigurasi server tidak lengkap',
-        data: []
+        error: 'Konfigurasi Supabase tidak lengkap di Vercel. Silakan set environment variables.',
+        data: [],
+        debug: {
+          hasUrl: !!supabaseUrl,
+          hasKey: !!supabaseKey,
+          env: process.env.NODE_ENV || 'unknown'
+        }
       });
     }
     
-    // Fetch active units
+    console.log('✅ Supabase credentials OK, fetching units...');
+    
+    // Fetch active units dengan error handling yang lebih baik
     const { data: units, error } = await supabase
       .from('units')
-      .select('id, name, code, description')
+      .select('id, name, code, description, is_active')
       .eq('is_active', true)
       .order('name', { ascending: true });
 
     if (error) {
-      console.error('❌ Error fetching units:', error);
-      // PERBAIKAN: Tetap return JSON valid meskipun error
+      console.error('❌ Supabase error fetching units:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
+      
       return res.status(200).json({
         success: false,
-        error: 'Gagal mengambil data unit',
+        error: 'Gagal mengambil data unit dari database',
         details: error.message,
-        data: [] // PERBAIKAN: Selalu sertakan data array kosong
+        data: [],
+        debug: {
+          errorCode: error.code,
+          errorHint: error.hint
+        }
       });
     }
 
-    console.log(`✅ Found ${units?.length || 0} active units`);
+    console.log(`✅ Successfully fetched ${units?.length || 0} active units`);
+    
+    // Log sample data untuk debugging
+    if (units && units.length > 0) {
+      console.log('📦 Sample unit:', {
+        id: units[0].id,
+        name: units[0].name,
+        code: units[0].code
+      });
+    }
 
-    // PERBAIKAN: Pastikan selalu return format yang konsisten
+    // Return format yang konsisten
     return res.status(200).json({
       success: true,
       data: units || [],
-      count: units?.length || 0
+      count: units?.length || 0,
+      timestamp: new Date().toISOString()
     });
+    
   } catch (error: any) {
-    console.error('❌ Error in get units:', error);
-    // PERBAIKAN: Return JSON valid meskipun exception
+    console.error('❌ Unexpected error in get units:', {
+      message: error.message,
+      stack: error.stack?.substring(0, 200)
+    });
+    
+    // Return JSON valid meskipun exception
     return res.status(200).json({
       success: false,
       error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
-      data: [] // PERBAIKAN: Selalu sertakan data array kosong
+      data: [],
+      debug: {
+        errorType: error.constructor.name,
+        timestamp: new Date().toISOString()
+      }
     });
   }
 }

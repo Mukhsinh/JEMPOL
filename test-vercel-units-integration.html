@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Vercel Units Integration</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .test-section h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.pending { background: #ffc107; color: #000; }
+        .status.success { background: #28a745; color: white; }
+        .status.error { background: #dc3545; color: white; }
+        .status.loading { background: #17a2b8; color: white; }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result-box {
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result-box pre {
+            margin: 0;
+            font-size: 12px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .success-text { color: #28a745; font-weight: bold; }
+        .error-text { color: #dc3545; font-weight: bold; }
+        .info-text { color: #17a2b8; font-weight: bold; }
+        
+        .units-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .unit-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+        .unit-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+        .unit-card h3 {
+            color: #667eea;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .unit-card p {
+            color: #666;
+            font-size: 13px;
+            margin: 4px 0;
+        }
+        .unit-card .code {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            display: inline-block;
+            margin-top: 8px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .alert.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .alert.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .alert.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .alert.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Vercel Units Integration</h1>
+        <p class="subtitle">Validasi integrasi master data units di Vercel</p>
+
+        <!-- Alert Info -->
+        <div class="alert info">
+            <span style="font-size: 24px;">ℹ️</span>
+            <div>
+                <strong>Panduan Test:</strong><br>
+                1. Masukkan URL Vercel app Anda<br>
+                2. Test endpoint /api/public/units<br>
+                3. Test submit form dengan unit yang dipilih
+            </div>
+        </div>
+
+        <!-- Test 1: Get Units -->
+        <div class="test-section">
+            <h2>
+                <span>📋</span>
+                Test 1: Get Units dari Master Data
+                <span class="status pending" id="status1">Pending</span>
+            </h2>
+            
+            <div class="input-group">
+                <label>Vercel App URL:</label>
+                <input type="text" id="vercelUrl" placeholder="https://your-app.vercel.app" value="">
+            </div>
+            
+            <button onclick="testGetUnits()">🚀 Test Get Units</button>
+            <button onclick="clearResults('result1')">🗑️ Clear</button>
+            
+            <div class="result-box" id="result1">
+                <p class="info-text">Klik "Test Get Units" untuk memulai...</p>
+            </div>
+            
+            <div id="unitsDisplay"></div>
+        </div>
+
+        <!-- Test 2: Submit Form -->
+        <div class="test-section">
+            <h2>
+                <span>📝</span>
+                Test 2: Submit Form dengan Unit ID
+                <span class="status pending" id="status2">Pending</span>
+            </h2>
+            
+            <div class="input-group">
+                <label>Pilih Unit:</label>
+                <select id="unitSelect" disabled>
+                    <option value="">-- Jalankan Test 1 dulu --</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label>Nama Pelapor:</label>
+                <input type="text" id="reporterName" placeholder="John Doe" value="Test User">
+            </div>
+            
+            <div class="input-group">
+                <label>Email:</label>
+                <input type="email" id="reporterEmail" placeholder="test@example.com" value="test@example.com">
+            </div>
+            
+            <div class="input-group">
+                <label>Judul Tiket:</label>
+                <input type="text" id="ticketTitle" placeholder="Test Ticket" value="Test Integrasi Units">
+            </div>
+            
+            <div class="input-group">
+                <label>Deskripsi:</label>
+                <input type="text" id="ticketDesc" placeholder="Deskripsi masalah" value="Testing integrasi units dari master data">
+            </div>
+            
+            <button onclick="testSubmitForm()" id="submitBtn" disabled>📤 Test Submit Form</button>
+            <button onclick="clearResults('result2')">🗑️ Clear</button>
+            
+            <div class="result-box" id="result2">
+                <p class="info-text">Pilih unit dan klik "Test Submit Form"...</p>
+            </div>
+        </div>
+
+        <!-- Test 3: Environment Check -->
+        <div class="test-section">
+            <h2>
+                <span>⚙️</span>
+                Test 3: Environment Variables Check
+                <span class="status pending" id="status3">Pending</span>
+            </h2>
+            
+            <button onclick="testEnvironment()">🔍 Check Environment</button>
+            <button onclick="clearResults('result3')">🗑️ Clear</button>
+            
+            <div class="result-box" id="result3">
+                <p class="info-text">Klik "Check Environment" untuk validasi...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let unitsData = [];
+        
+        function updateStatus(testId, status, message) {
+            const statusEl = document.getElementById(`status${testId}`);
+            statusEl.className = `status ${status}`;
+            statusEl.textContent = message;
+        }
+        
+        function clearResults(resultId) {
+            document.getElementById(resultId).innerHTML = '<p class="info-text">Hasil di-clear...</p>';
+        }
+        
+        async function testGetUnits() {
+            const vercelUrl = document.getElementById('vercelUrl').value.trim();
+            if (!vercelUrl) {
+                alert('Masukkan URL Vercel app terlebih dahulu!');
+                return;
+            }
+            
+            updateStatus(1, 'loading', 'Loading...');
+            const resultEl = document.getElementById('result1');
+            resultEl.innerHTML = '<p class="info-text">⏳ Fetching units...</p>';
+            
+            try {
+                const url = `${vercelUrl}/api/public/units`;
+                console.log('🔄 Fetching:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Response headers:', response.headers.get('content-type'));
+                
+                const data = await response.json();
+                console.log('📦 Response data:', data);
+                
+                if (data.success && Array.isArray(data.data)) {
+                    unitsData = data.data;
+                    updateStatus(1, 'success', `✅ Success (${data.count} units)`);
+                    
+                    resultEl.innerHTML = `
+                        <p class="success-text">✅ Berhasil fetch ${data.count} units!</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    
+                    // Display units in cards
+                    displayUnits(data.data);
+                    
+                    // Enable unit select
+                    const selectEl = document.getElementById('unitSelect');
+                    selectEl.disabled = false;
+                    selectEl.innerHTML = '<option value="">-- Pilih Unit --</option>';
+                    data.data.forEach(unit => {
+                        const option = document.createElement('option');
+                        option.value = unit.id;
+                        option.textContent = `${unit.name} (${unit.code})`;
+                        selectEl.appendChild(option);
+                    });
+                    
+                    document.getElementById('submitBtn').disabled = false;
+                } else {
+                    updateStatus(1, 'error', '❌ Failed');
+                    resultEl.innerHTML = `
+                        <p class="error-text">❌ Error: ${data.error || 'Unknown error'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                updateStatus(1, 'error', '❌ Error');
+                resultEl.innerHTML = `
+                    <p class="error-text">❌ Exception: ${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `;
+                console.error('❌ Error:', error);
+            }
+        }
+        
+        function displayUnits(units) {
+            const displayEl = document.getElementById('unitsDisplay');
+            if (!units || units.length === 0) {
+                displayEl.innerHTML = '<p class="error-text">Tidak ada units ditemukan</p>';
+                return;
+            }
+            
+            let html = '<div class="units-grid">';
+            units.forEach(unit => {
+                html += `
+                    <div class="unit-card">
+                        <h3>${unit.name}</h3>
+                        <p><strong>ID:</strong> ${unit.id.substring(0, 8)}...</p>
+                        <p><strong>Deskripsi:</strong> ${unit.description || '-'}</p>
+                        <span class="code">${unit.code}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            displayEl.innerHTML = html;
+        }
+        
+        async function testSubmitForm() {
+            const vercelUrl = document.getElementById('vercelUrl').value.trim();
+            const unitId = document.getElementById('unitSelect').value;
+            const reporterName = document.getElementById('reporterName').value;
+            const reporterEmail = document.getElementById('reporterEmail').value;
+            const title = document.getElementById('ticketTitle').value;
+            const description = document.getElementById('ticketDesc').value;
+            
+            if (!unitId) {
+                alert('Pilih unit terlebih dahulu!');
+                return;
+            }
+            
+            updateStatus(2, 'loading', 'Submitting...');
+            const resultEl = document.getElementById('result2');
+            resultEl.innerHTML = '<p class="info-text">⏳ Submitting form...</p>';
+            
+            try {
+                const selectedUnit = unitsData.find(u => u.id === unitId);
+                const payload = {
+                    reporter_name: reporterName,
+                    reporter_email: reporterEmail,
+                    reporter_phone: '081234567890',
+                    reporter_department: selectedUnit?.name || '',
+                    reporter_position: 'Tester',
+                    category: 'it_support',
+                    priority: 'medium',
+                    title: title,
+                    description: description,
+                    unit_id: unitId,
+                    source: 'web'
+                };
+                
+                console.log('📤 Submitting payload:', payload);
+                
+                const url = `${vercelUrl}/api/public/internal-tickets`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                console.log('📥 Response status:', response.status);
+                const data = await response.json();
+                console.log('📦 Response data:', data);
+                
+                if (data.success) {
+                    updateStatus(2, 'success', '✅ Success');
+                    resultEl.innerHTML = `
+                        <p class="success-text">✅ Tiket berhasil dibuat!</p>
+                        <p><strong>Nomor Tiket:</strong> ${data.ticket_number}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    updateStatus(2, 'error', '❌ Failed');
+                    resultEl.innerHTML = `
+                        <p class="error-text">❌ Error: ${data.error || 'Unknown error'}</p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                updateStatus(2, 'error', '❌ Error');
+                resultEl.innerHTML = `
+                    <p class="error-text">❌ Exception: ${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `;
+                console.error('❌ Error:', error);
+            }
+        }
+        
+        async function testEnvironment() {
+            const vercelUrl = document.getElementById('vercelUrl').value.trim();
+            if (!vercelUrl) {
+                alert('Masukkan URL Vercel app terlebih dahulu!');
+                return;
+            }
+            
+            updateStatus(3, 'loading', 'Checking...');
+            const resultEl = document.getElementById('result3');
+            resultEl.innerHTML = '<p class="info-text">⏳ Checking environment...</p>';
+            
+            try {
+                // Test units endpoint untuk melihat debug info
+                const url = `${vercelUrl}/api/public/units`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                let envStatus = {
+                    hasSupabaseUrl: false,
+                    hasSupabaseKey: false,
+                    unitsCount: 0,
+                    apiWorking: false
+                };
+                
+                if (data.debug) {
+                    envStatus.hasSupabaseUrl = data.debug.hasUrl;
+                    envStatus.hasSupabaseKey = data.debug.hasKey;
+                }
+                
+                if (data.success && data.data) {
+                    envStatus.unitsCount = data.count || 0;
+                    envStatus.apiWorking = true;
+                }
+                
+                const allGood = envStatus.hasSupabaseUrl && envStatus.hasSupabaseKey && envStatus.apiWorking;
+                
+                updateStatus(3, allGood ? 'success' : 'error', allGood ? '✅ OK' : '❌ Issues Found');
+                
+                resultEl.innerHTML = `
+                    <h3>Environment Status:</h3>
+                    <p><strong>Supabase URL:</strong> ${envStatus.hasSupabaseUrl ? '✅ SET' : '❌ NOT SET'}</p>
+                    <p><strong>Supabase Key:</strong> ${envStatus.hasSupabaseKey ? '✅ SET' : '❌ NOT SET'}</p>
+                    <p><strong>API Working:</strong> ${envStatus.apiWorking ? '✅ YES' : '❌ NO'}</p>
+                    <p><strong>Units Count:</strong> ${envStatus.unitsCount}</p>
+                    <br>
+                    <p class="${allGood ? 'success-text' : 'error-text'}">
+                        ${allGood ? '✅ Semua environment variables sudah diset dengan benar!' : '❌ Ada environment variables yang belum diset. Lihat VERCEL_ENV_SETUP_LENGKAP.md'}
+                    </p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                updateStatus(3, 'error', '❌ Error');
+                resultEl.innerHTML = `
+                    <p class="error-text">❌ Exception: ${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `;
+                console.error('❌ Error:', error);
+            }
+        }
+        
+        // Auto-detect Vercel URL from current location
+        window.addEventListener('DOMContentLoaded', () => {
+            const currentUrl = window.location.origin;
+            if (currentUrl.includes('vercel.app')) {
+                document.getElementById('vercelUrl').value = currentUrl;
+            }
+        });
+    </script>
+</body>
+</html>
