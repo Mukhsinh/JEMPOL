@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Submit Tiket Internal & Survey - Fixed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            grid-column: 1 / -1;
+        }
+        h2 {
+            color: #2563eb;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .result.success {
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+            display: block;
+        }
+        .result.error {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+            display: block;
+        }
+        .info {
+            background: #dbeafe;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            grid-column: 1 / -1;
+        }
+        pre {
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Submit Tiket Internal & Survey - Fixed</h1>
+    
+    <div class="info">
+        <strong>📋 Perbaikan yang Diterapkan:</strong>
+        <ul>
+            <li>✅ Adopsi pola sukses dari external-tickets.ts</li>
+            <li>✅ Hapus config bodyParser yang tidak perlu</li>
+            <li>✅ Konsisten dengan CORS headers (tanpa Content-Type di awal)</li>
+            <li>✅ Konsisten dengan error handling</li>
+            <li>✅ Konsisten dengan response format</li>
+            <li>✅ Validasi yang sama dengan external-tickets</li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <!-- Test Tiket Internal -->
+        <div class="test-section">
+            <h2>📝 Test Tiket Internal</h2>
+            <form id="internalForm">
+                <div class="form-group">
+                    <label>Nama Pelapor *</label>
+                    <input type="text" id="int_reporter_name" value="Test User Internal" required>
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="int_reporter_email" value="test@internal.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Telepon</label>
+                    <input type="tel" id="int_reporter_phone" value="081234567890">
+                </div>
+                <div class="form-group">
+                    <label>Unit ID *</label>
+                    <input type="text" id="int_unit_id" value="7bac7321-86e2-4dce-936d-2adde223c314" required>
+                </div>
+                <div class="form-group">
+                    <label>Prioritas *</label>
+                    <select id="int_priority" required>
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Judul *</label>
+                    <input type="text" id="int_title" value="Test Tiket Internal Fixed" required>
+                </div>
+                <div class="form-group">
+                    <label>Deskripsi *</label>
+                    <textarea id="int_description" required>Test deskripsi tiket internal setelah perbaikan adopsi pola external-tickets</textarea>
+                </div>
+                <button type="submit" id="submitInternal">Submit Tiket Internal</button>
+            </form>
+            <div id="internalResult" class="result"></div>
+        </div>
+
+        <!-- Test Survey -->
+        <div class="test-section">
+            <h2>📊 Test Survey</h2>
+            <form id="surveyForm">
+                <div class="form-group">
+                    <label>Nomor HP *</label>
+                    <input type="tel" id="srv_visitor_phone" value="081234567890" required>
+                </div>
+                <div class="form-group">
+                    <label>Nama</label>
+                    <input type="text" id="srv_visitor_name" value="Test User Survey">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="srv_visitor_email" value="test@survey.com">
+                </div>
+                <div class="form-group">
+                    <label>Unit ID *</label>
+                    <input type="text" id="srv_unit_id" value="7bac7321-86e2-4dce-936d-2adde223c314" required>
+                </div>
+                <div class="form-group">
+                    <label>Skor Q1 (1-4)</label>
+                    <input type="number" id="srv_q1_score" value="4" min="1" max="4">
+                </div>
+                <div class="form-group">
+                    <label>Skor Q2 (1-4)</label>
+                    <input type="number" id="srv_q2_score" value="4" min="1" max="4">
+                </div>
+                <div class="form-group">
+                    <label>Skor Q3 (1-4)</label>
+                    <input type="number" id="srv_q3_score" value="3" min="1" max="4">
+                </div>
+                <div class="form-group">
+                    <label>Komentar</label>
+                    <textarea id="srv_comments">Test komentar survey setelah perbaikan</textarea>
+                </div>
+                <button type="submit" id="submitSurvey">Submit Survey</button>
+            </form>
+            <div id="surveyResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api/public';
+
+        // Test Tiket Internal
+        document.getElementById('internalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitInternal');
+            const result = document.getElementById('internalResult');
+            
+            btn.disabled = true;
+            btn.textContent = 'Mengirim...';
+            result.style.display = 'none';
+
+            try {
+                const data = {
+                    reporter_name: document.getElementById('int_reporter_name').value,
+                    reporter_email: document.getElementById('int_reporter_email').value,
+                    reporter_phone: document.getElementById('int_reporter_phone').value,
+                    unit_id: document.getElementById('int_unit_id').value,
+                    priority: document.getElementById('int_priority').value,
+                    title: document.getElementById('int_title').value,
+                    description: document.getElementById('int_description').value,
+                    source: 'web'
+                };
+
+                console.log('📤 Sending internal ticket:', data);
+
+                const response = await fetch(`${API_BASE}/internal-tickets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('📥 Response status:', response.status);
+                
+                const responseText = await response.text();
+                console.log('📥 Response text:', responseText);
+
+                let responseData;
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (parseError) {
+                    throw new Error('Invalid JSON response: ' + responseText.substring(0, 100));
+                }
+
+                if (response.ok && responseData.success) {
+                    result.className = 'result success';
+                    result.innerHTML = `
+                        <strong>✅ Tiket Internal Berhasil Dibuat!</strong><br>
+                        Nomor Tiket: <strong>${responseData.ticket_number}</strong><br>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    `;
+                } else {
+                    throw new Error(responseData.error || 'Submit gagal');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                result.className = 'result error';
+                result.innerHTML = `
+                    <strong>❌ Error Submit Tiket Internal</strong><br>
+                    ${error.message}<br>
+                    <small>Lihat console untuk detail lengkap</small>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Submit Tiket Internal';
+            }
+        });
+
+        // Test Survey
+        document.getElementById('surveyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitSurvey');
+            const result = document.getElementById('surveyResult');
+            
+            btn.disabled = true;
+            btn.textContent = 'Mengirim...';
+            result.style.display = 'none';
+
+            try {
+                const data = {
+                    visitor_phone: document.getElementById('srv_visitor_phone').value,
+                    visitor_name: document.getElementById('srv_visitor_name').value,
+                    visitor_email: document.getElementById('srv_visitor_email').value,
+                    unit_id: document.getElementById('srv_unit_id').value,
+                    q1_score: document.getElementById('srv_q1_score').value,
+                    q2_score: document.getElementById('srv_q2_score').value,
+                    q3_score: document.getElementById('srv_q3_score').value,
+                    comments: document.getElementById('srv_comments').value,
+                    is_anonymous: false,
+                    source: 'public_survey'
+                };
+
+                console.log('📤 Sending survey:', data);
+
+                const response = await fetch(`${API_BASE}/surveys`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                console.log('📥 Response status:', response.status);
+                
+                const responseText = await response.text();
+                console.log('📥 Response text:', responseText);
+
+                let responseData;
+                try {
+                    responseData = JSON.parse(responseText);
+                } catch (parseError) {
+                    throw new Error('Invalid JSON response: ' + responseText.substring(0, 100));
+                }
+
+                if (response.ok && responseData.success) {
+                    result.className = 'result success';
+                    result.innerHTML = `
+                        <strong>✅ Survey Berhasil Dikirim!</strong><br>
+                        ${responseData.message}<br>
+                        <pre>${JSON.stringify(responseData, null, 2)}</pre>
+                    `;
+                } else {
+                    throw new Error(responseData.error || 'Submit gagal');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                result.className = 'result error';
+                result.innerHTML = `
+                    <strong>❌ Error Submit Survey</strong><br>
+                    ${error.message}<br>
+                    <small>Lihat console untuk detail lengkap</small>
+                `;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Submit Survey';
+            }
+        });
+    </script>
+</body>
+</html>
