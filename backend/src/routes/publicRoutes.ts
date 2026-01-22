@@ -626,7 +626,8 @@ router.options('/external-tickets', (req: Request, res: Response) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-  res.status(200).end();
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).json({ success: true });
 });
 
 router.post('/external-tickets', async (req: Request, res: Response) => {
@@ -1373,7 +1374,8 @@ router.options('/surveys', (req: Request, res: Response) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-  res.status(200).end();
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).json({ success: true });
 });
 
 router.post('/surveys', async (req: Request, res: Response) => {

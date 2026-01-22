@@ -1,6 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
+// PERBAIKAN: Disable body parser bawaan Vercel jika perlu
+export const config = {
+  api: {
+    bodyParser: true, // Pastikan body parser aktif
+  },
+};
+
 // Initialize Supabase client
 // Vercel akan inject environment variables dari dashboard
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
@@ -13,26 +20,26 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers - PERBAIKAN: Tambahkan Content-Type
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-  res.setHeader('Content-Type', 'application/json'); // PERBAIKAN: Pastikan response JSON
-  
-  // Handle OPTIONS request
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  // Only allow POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({
-      success: false,
-      error: 'Method not allowed'
-    });
-  }
-
   try {
+    // Set CORS headers - PERBAIKAN: Tambahkan Content-Type
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+    res.setHeader('Content-Type', 'application/json'); // PERBAIKAN: Pastikan response JSON
+    
+    // Handle OPTIONS request
+    if (req.method === 'OPTIONS') {
+      return res.status(200).json({ success: true });
+    }
+
+    // Only allow POST
+    if (req.method !== 'POST') {
+      return res.status(405).json({
+        success: false,
+        error: 'Method not allowed'
+      });
+    }
+
     console.log('📥 Received public survey submission:', req.body);
     
     // PERBAIKAN: Validasi Supabase credentials
@@ -41,6 +48,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({
         success: false,
         error: 'Konfigurasi server tidak lengkap'
+      });
+    }
+    
+    // PERBAIKAN: Validasi body request
+    if (!req.body || typeof req.body !== 'object') {
+      console.error('❌ Request body tidak valid');
+      return res.status(400).json({
+        success: false,
+        error: 'Request body tidak valid'
       });
     }
     
@@ -255,9 +271,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error: any) {
     console.error('❌ Error submitting public survey:', error);
+    console.error('❌ Error stack:', error.stack);
+    
+    // PERBAIKAN: Pastikan selalu return JSON yang valid
     return res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan server: ' + error.message
+      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
+      details: error.toString()
     });
   }
 }
