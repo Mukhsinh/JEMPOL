@@ -627,6 +627,8 @@ router.post('/external-tickets', async (req: Request, res: Response) => {
       age_range,
       service_type,
       category,
+      service_category_id, // PERBAIKAN: Terima service_category_id dari form
+      patient_type_id,     // PERBAIKAN: Terima patient_type_id dari form
       title,
       description,
       qr_code,
@@ -640,6 +642,8 @@ router.post('/external-tickets', async (req: Request, res: Response) => {
       unit_id,
       service_type,
       category,
+      service_category_id,
+      patient_type_id,
       title,
       source
     });
@@ -783,9 +787,18 @@ router.post('/external-tickets', async (req: Request, res: Response) => {
       user_agent: req.get('User-Agent')
     };
 
-    // Tambahkan category jika ada
-    if (category) {
-      ticketData.category_id = category;
+    // PERBAIKAN: Tambahkan category_id dan patient_type_id jika ada
+    // Prioritas: service_category_id > category
+    const finalCategoryId = service_category_id || category || null;
+    if (finalCategoryId) {
+      ticketData.category_id = finalCategoryId;
+      console.log('✅ Using category_id:', finalCategoryId);
+    }
+    
+    // Tambahkan patient_type_id jika ada
+    if (patient_type_id) {
+      ticketData.patient_type_id = patient_type_id;
+      console.log('✅ Using patient_type_id:', patient_type_id);
     }
 
     console.log('📤 Inserting ticket data:', {

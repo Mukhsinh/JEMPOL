@@ -244,23 +244,95 @@ const DirectSurveyForm: React.FC = () => {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/public/survey/submit', {
+      // Validasi unit_id
+      if (!unitId) {
+        setError('Unit harus dipilih');
+        setSubmitting(false);
+        return;
+      }
+
+      // Validasi phone
+      if (!formData.phone) {
+        setError('Nomor HP wajib diisi');
+        setSubmitting(false);
+        return;
+      }
+
+      // Siapkan data survey dengan format yang benar
+      const surveyData = {
+        unit_id: unitId,
+        visitor_name: formData.is_anonymous ? null : formData.full_name,
+        visitor_phone: formData.phone,
+        is_anonymous: formData.is_anonymous,
+        age_range: formData.age || null,
+        gender: formData.gender || null,
+        education: formData.education || null,
+        job: formData.job || null,
+        patient_type: formData.patient_type || null,
+        service_type: formData.service_type || null,
+        // Skor indikator (9 unsur x 3 indikator)
+        u1_ind1_score: formData.u1_ind1 ? parseInt(formData.u1_ind1) : null,
+        u1_ind2_score: formData.u1_ind2 ? parseInt(formData.u1_ind2) : null,
+        u1_ind3_score: formData.u1_ind3 ? parseInt(formData.u1_ind3) : null,
+        u2_ind1_score: formData.u2_ind1 ? parseInt(formData.u2_ind1) : null,
+        u2_ind2_score: formData.u2_ind2 ? parseInt(formData.u2_ind2) : null,
+        u2_ind3_score: formData.u2_ind3 ? parseInt(formData.u2_ind3) : null,
+        u3_ind1_score: formData.u3_ind1 ? parseInt(formData.u3_ind1) : null,
+        u3_ind2_score: formData.u3_ind2 ? parseInt(formData.u3_ind2) : null,
+        u3_ind3_score: formData.u3_ind3 ? parseInt(formData.u3_ind3) : null,
+        u4_ind1_score: formData.u4_ind1 ? parseInt(formData.u4_ind1) : null,
+        u4_ind2_score: formData.u4_ind2 ? parseInt(formData.u4_ind2) : null,
+        u4_ind3_score: formData.u4_ind3 ? parseInt(formData.u4_ind3) : null,
+        u5_ind1_score: formData.u5_ind1 ? parseInt(formData.u5_ind1) : null,
+        u5_ind2_score: formData.u5_ind2 ? parseInt(formData.u5_ind2) : null,
+        u5_ind3_score: formData.u5_ind3 ? parseInt(formData.u5_ind3) : null,
+        u6_ind1_score: formData.u6_ind1 ? parseInt(formData.u6_ind1) : null,
+        u6_ind2_score: formData.u6_ind2 ? parseInt(formData.u6_ind2) : null,
+        u6_ind3_score: formData.u6_ind3 ? parseInt(formData.u6_ind3) : null,
+        u7_ind1_score: formData.u7_ind1 ? parseInt(formData.u7_ind1) : null,
+        u7_ind2_score: formData.u7_ind2 ? parseInt(formData.u7_ind2) : null,
+        u7_ind3_score: formData.u7_ind3 ? parseInt(formData.u7_ind3) : null,
+        u8_ind1_score: formData.u8_ind1 ? parseInt(formData.u8_ind1) : null,
+        u8_ind2_score: formData.u8_ind2 ? parseInt(formData.u8_ind2) : null,
+        u8_ind3_score: formData.u8_ind3 ? parseInt(formData.u8_ind3) : null,
+        u9_ind1_score: formData.u9_ind1 ? parseInt(formData.u9_ind1) : null,
+        u9_ind2_score: formData.u9_ind2 ? parseInt(formData.u9_ind2) : null,
+        u9_ind3_score: formData.u9_ind3 ? parseInt(formData.u9_ind3) : null,
+        overall_score: formData.overall_satisfaction ? parseInt(formData.overall_satisfaction) : null,
+        comments: formData.suggestions || null,
+        qr_code: qrCode || null,
+        source: qrCode ? 'qr_code' : 'public_survey'
+      };
+
+      console.log('📤 Mengirim survey:', surveyData);
+
+      const response = await fetch('/api/public/surveys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, qr_code: qrCode, unit_id: unitId, unit_name: unitName, source: qrCode ? 'qr_code' : 'web' })
+        body: JSON.stringify(surveyData)
       });
+      
+      console.log('📥 Response status:', response.status);
       
       // Cek apakah response adalah JSON
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ Non-JSON response:', text);
         throw new Error('Server mengembalikan response yang tidak valid');
       }
       
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Gagal mengirim survei');
+      console.log('📥 Response data:', result);
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Gagal mengirim survei');
+      }
+      
       setSubmitted(true);
     } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan');
+      console.error('❌ Submit error:', err);
+      setError(err.message || 'Terjadi kesalahan saat mengirim survei');
     } finally {
       setSubmitting(false);
     }

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Submit Tiket Eksternal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #ff6b6b;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            margin-bottom: 20px;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎫 Test Submit Tiket Eksternal</h1>
+        
+        <div class="info">
+            <strong>ℹ️ Info:</strong> Form ini untuk test endpoint <code>/api/public/external-tickets</code>
+        </div>
+
+        <form id="ticketForm">
+            <div class="form-group">
+                <label>Identitas *</label>
+                <select id="identity_type" required>
+                    <option value="personal">Dengan Identitas</option>
+                    <option value="anonymous">Anonim</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="nameGroup">
+                <label>Nama Lengkap *</label>
+                <input type="text" id="name" placeholder="Masukkan nama lengkap">
+            </div>
+
+            <div class="form-group" id="emailGroup">
+                <label>Email</label>
+                <input type="email" id="email" placeholder="email@example.com">
+            </div>
+
+            <div class="form-group" id="phoneGroup">
+                <label>Nomor HP</label>
+                <input type="tel" id="phone" placeholder="081234567890">
+            </div>
+
+            <div class="form-group">
+                <label>Jenis Layanan *</label>
+                <select id="service_type" required>
+                    <option value="">-- Pilih --</option>
+                    <option value="complaint">Pengaduan</option>
+                    <option value="request">Permintaan</option>
+                    <option value="suggestion">Saran</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Judul *</label>
+                <input type="text" id="title" required placeholder="Ringkasan masalah">
+            </div>
+
+            <div class="form-group">
+                <label>Deskripsi *</label>
+                <textarea id="description" required placeholder="Jelaskan detail masalah..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Unit ID (untuk test) *</label>
+                <input type="text" id="unit_id" required value="test-unit-id" placeholder="ID unit">
+            </div>
+
+            <button type="submit" id="submitBtn">📤 Kirim Tiket</button>
+        </form>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('ticketForm');
+        const identityType = document.getElementById('identity_type');
+        const nameGroup = document.getElementById('nameGroup');
+        const emailGroup = document.getElementById('emailGroup');
+        const phoneGroup = document.getElementById('phoneGroup');
+        const nameInput = document.getElementById('name');
+        const resultDiv = document.getElementById('result');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Toggle identity fields
+        identityType.addEventListener('change', function() {
+            const isAnonymous = this.value === 'anonymous';
+            nameGroup.style.display = isAnonymous ? 'none' : 'block';
+            emailGroup.style.display = isAnonymous ? 'none' : 'block';
+            phoneGroup.style.display = isAnonymous ? 'none' : 'block';
+            nameInput.required = !isAnonymous;
+        });
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            resultDiv.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Mengirim...';
+
+            const formData = {
+                reporter_identity_type: identityType.value,
+                reporter_name: identityType.value === 'personal' ? nameInput.value : null,
+                reporter_email: identityType.value === 'personal' ? document.getElementById('email').value : null,
+                reporter_phone: identityType.value === 'personal' ? document.getElementById('phone').value : null,
+                service_type: document.getElementById('service_type').value,
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                unit_id: document.getElementById('unit_id').value,
+                source: 'web'
+            };
+
+            console.log('📤 Mengirim data:', formData);
+
+            try {
+                const response = await fetch('/api/public/external-tickets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                console.log('📥 Status:', response.status);
+                
+                const result = await response.json();
+                console.log('📥 Response:', result);
+
+                if (response.ok && result.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ Berhasil!</strong><br>
+                        Nomor Tiket: <strong>${result.ticket_number}</strong><br>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                    form.reset();
+                } else {
+                    throw new Error(result.error || 'Gagal mengirim tiket');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <strong>❌ Gagal!</strong><br>
+                    ${error.message}<br>
+                    <small>Lihat console untuk detail</small>
+                `;
+            } finally {
+                resultDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📤 Kirim Tiket';
+            }
+        });
+    </script>
+</body>
+</html>

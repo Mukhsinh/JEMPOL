@@ -529,60 +529,9 @@ const DirectExternalTicketForm: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Kategori Layanan */}
+                  {/* Kategori Layanan - Opsional */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Kategori Layanan *</label>
-                    {loadingMasterData ? (
-                      <div className="flex items-center justify-center py-4">
-                        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="ml-2 text-gray-500">Memuat kategori...</span>
-                      </div>
-                    ) : (
-                      <select
-                        name="service_category_id"
-                        value={formData.service_category_id}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-0 text-gray-800 text-lg transition-colors"
-                      >
-                        <option value="">-- Pilih Kategori --</option>
-                        {serviceCategories.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-
-                  {/* Jenis Pasien */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Jenis Pasien *</label>
-                    {loadingMasterData ? (
-                      <div className="flex items-center justify-center py-4">
-                        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="ml-2 text-gray-500">Memuat jenis pasien...</span>
-                      </div>
-                    ) : (
-                      <select
-                        name="patient_type_id"
-                        value={formData.patient_type_id}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:ring-0 text-gray-800 text-lg transition-colors"
-                      >
-                        <option value="">-- Pilih Jenis Pasien --</option>
-                        {patientTypes.map((type) => (
-                          <option key={type.id} value={type.id}>
-                            {type.name}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                  {/* Kategori Layanan */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Kategori Layanan</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Kategori Layanan (Opsional)</label>
                     {loadingMasterData ? (
                       <div className="flex items-center justify-center py-4">
                         <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
@@ -605,9 +554,9 @@ const DirectExternalTicketForm: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Jenis Pasien */}
+                  {/* Jenis Pasien - Opsional */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Jenis Pasien</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Jenis Pasien (Opsional)</label>
                     {loadingMasterData ? (
                       <div className="flex items-center justify-center py-4">
                         <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
@@ -769,7 +718,7 @@ const DirectExternalTicketForm: React.FC = () => {
                       (!unitId && !formData.unit_id) ||
                       (formData.reporter_identity_type === 'personal' && !formData.reporter_name)
                     )) ||
-                    (currentStep === 2 && (!formData.service_type || !formData.service_category_id || !formData.patient_type_id || !formData.title || !formData.description))
+                    (currentStep === 2 && (!formData.service_type || !formData.title || !formData.description))
                   }
                   className="flex-1 py-4 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-orange-500/30 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                 >
