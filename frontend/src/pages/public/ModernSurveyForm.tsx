@@ -99,10 +99,13 @@ const ModernSurveyForm: React.FC = () => {
     try {
       const response = await fetch('/api/public/surveys', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           unit_id: unitInfo?.id || unitId,
-          phone: phone,
+          visitor_phone: phone,
           q1_score: ratings.q1,
           q2_score: ratings.q2,
           q3_score: ratings.q3,
@@ -111,20 +114,33 @@ const ModernSurveyForm: React.FC = () => {
           q6_score: ratings.q6,
           q7_score: ratings.q7,
           q8_score: ratings.q8,
-          overall_satisfaction: overallRating || undefined,
+          overall_score: overallRating || undefined,
           comments: comment,
-          qr_token: qrToken,
+          qr_code: qrToken,
           source: 'qr_code'
         })
       });
 
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', response.headers.get('content-type'));
+
+      // Cek apakah response adalah JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ Non-JSON response:', text);
+        throw new Error(`Server mengembalikan response yang tidak valid (${response.status}). Silakan coba lagi.`);
+      }
+
+      const result = await response.json();
+      
       if (!response.ok) {
-        const result = await response.json();
         throw new Error(result.error || 'Gagal mengirim survei');
       }
 
       setSubmitted(true);
     } catch (err: any) {
+      console.error('❌ Submit error:', err);
       setError(err.message || 'Terjadi kesalahan');
     } finally {
       setSubmitting(false);

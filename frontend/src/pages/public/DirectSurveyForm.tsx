@@ -308,18 +308,22 @@ const DirectSurveyForm: React.FC = () => {
 
       const response = await fetch('/api/public/surveys', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(surveyData)
       });
       
       console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', response.headers.get('content-type'));
       
       // Cek apakah response adalah JSON
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
         console.error('❌ Non-JSON response:', text);
-        throw new Error('Server mengembalikan response yang tidak valid');
+        throw new Error(`Server mengembalikan response yang tidak valid (${response.status}). Silakan coba lagi.`);
       }
       
       const result = await response.json();

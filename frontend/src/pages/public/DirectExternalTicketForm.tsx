@@ -238,12 +238,23 @@ const DirectExternalTicketForm: React.FC = () => {
       const response = await fetch('/api/public/external-tickets', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify(submitData)
       });
       
       console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', response.headers.get('content-type'));
+
+      // Cek apakah response adalah JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textResponse = await response.text();
+        console.error('❌ Response bukan JSON:', textResponse);
+        throw new Error(`Server mengembalikan response yang tidak valid (${response.status}). Silakan coba lagi.`);
+      }
+
       const result = await response.json();
       console.log('📥 Response data:', result);
 

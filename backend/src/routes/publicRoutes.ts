@@ -616,8 +616,19 @@ router.get('/sla-settings', async (req: Request, res: Response) => {
 
 // Submit external ticket from public form (QR code scan)
 // PERBAIKAN: Menggunakan tabel 'tickets' seperti internal ticket yang berhasil
+// Handle OPTIONS request untuk CORS
+router.options('/external-tickets', (req: Request, res: Response) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  res.status(200).end();
+});
+
 router.post('/external-tickets', async (req: Request, res: Response) => {
   try {
+    // Set response headers untuk memastikan JSON response
+    res.setHeader('Content-Type', 'application/json');
+    
     const {
       reporter_identity_type,
       reporter_name,
@@ -875,7 +886,7 @@ router.post('/external-tickets', async (req: Request, res: Response) => {
       }
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       ticket_number: ticket.ticket_number,
       data: ticket,
@@ -884,7 +895,7 @@ router.post('/external-tickets', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('❌ Error in create external ticket:', error);
     console.error('❌ Stack trace:', error.stack);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error')
     });
@@ -1145,7 +1156,7 @@ router.post('/internal-tickets', async (req: Request, res: Response) => {
 
     console.log('✅ Ticket created successfully:', ticket.ticket_number);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       ticket_number: ticket.ticket_number,
       data: ticket,
@@ -1154,7 +1165,7 @@ router.post('/internal-tickets', async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('❌ Error in create internal ticket:', error);
     console.error('❌ Stack trace:', error.stack);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error')
     });
@@ -1347,8 +1358,19 @@ router.get('/surveys/responses', async (req: Request, res: Response) => {
 });
 
 // Submit public survey (standalone - tidak terkait tiket)
+// Handle OPTIONS request untuk CORS
+router.options('/surveys', (req: Request, res: Response) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  res.status(200).end();
+});
+
 router.post('/surveys', async (req: Request, res: Response) => {
   try {
+    // Set response headers untuk memastikan JSON response
+    res.setHeader('Content-Type', 'application/json');
+    
     console.log('📥 Received public survey submission:', req.body);
     
     const {
@@ -1556,7 +1578,7 @@ router.post('/surveys', async (req: Request, res: Response) => {
       }
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Survei berhasil dikirim',
       data: survey
@@ -1564,7 +1586,7 @@ router.post('/surveys', async (req: Request, res: Response) => {
 
   } catch (error: any) {
     console.error('❌ Error submitting public survey:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Terjadi kesalahan server: ' + error.message
     });
