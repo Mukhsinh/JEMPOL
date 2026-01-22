@@ -70,15 +70,11 @@ const QRManagement: React.FC = () => {
     try {
       setLoading(true);
 
-      // Load units for dropdown
-      const unitsResponse = await unitService.getUnits();
-      setUnits(unitsResponse.units || []);
-
-      // Load QR codes with filters
+      // Load units dan QR codes secara paralel untuk mempercepat loading
       const params: any = {
         page: currentPage,
         limit: 10,
-        include_analytics: true
+        include_analytics: false // Nonaktifkan analytics untuk loading lebih cepat
       };
 
       if (searchTerm) {
@@ -89,11 +85,37 @@ const QRManagement: React.FC = () => {
         params.is_active = statusFilter === 'active';
       }
 
-      const response = await qrCodeService.getQRCodes(params);
-      setQrCodes(response.qr_codes || []);
-      setTotalPages(response.pagination?.pages || 1);
-    } catch (error) {
+      // Jalankan kedua request secara paralel dengan timeout 5 detik (lebih cepat)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 5000)
+      );
+
+      const [unitsResponse, qrResponse] = await Promise.race([
+        Promise.all([
+          unitService.getUnits().catch(err => {
+            console.warn('Failed to load units:', err);
+            return { units: [] };
+          }),
+          qrCodeService.getQRCodes(params).catch(err => {
+            console.warn('Failed to load QR codes:', err);
+            return { qr_codes: [], pagination: { pages: 1 } };
+          })
+        ]),
+        timeoutPromise
+      ]) as any;
+
+      setUnits(unitsResponse.units || []);
+      setQrCodes(qrResponse.qr_codes || []);
+      setTotalPages(qrResponse.pagination?.pages || 1);
+    } catch (error: any) {
       console.error('Error loading data:', error);
+      if (error.message === 'Request timeout') {
+        alert('Koneksi lambat. Silakan refresh halaman atau periksa koneksi internet Anda.');
+      }
+      // Set data kosong jika error
+      setUnits([]);
+      setQrCodes([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
@@ -409,8 +431,24 @@ const QRManagement: React.FC = () => {
 
         {/* Data Grid Content */}
         {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="flex flex-col justify-center items-center py-16 space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">Memuat data QR Code...</p>
+            <p className="text-slate-400 dark:text-slate-500 text-xs">Jika loading terlalu lama, periksa koneksi internet Anda</p>
+          </div>
+        ) : qrCodes.length === 0 ? (
+          <div className="flex flex-col justify-center items-center py-16 space-y-4">
+            <div className="size-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
+              <span className="material-symbols-outlined text-4xl text-slate-400">qr_code_2</span>
+            </div>
+            <p className="text-slate-500 dark:text-slate-400">Belum ada QR Code</p>
+            <button
+              onClick={() => { resetForm(); setShowModal(true); }}
+              className="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all"
+            >
+              <span className="material-symbols-outlined">add</span>
+              Buat QR Code Pertama
+            </button>
           </div>
         ) : (
           <div className="space-y-3">

@@ -131,7 +131,7 @@ export const qrCodeService = {
     }
   },
 
-  // Get QR codes (admin only) with improved error handling
+  // Get QR codes (admin only) with improved error handling and timeout
   async getQRCodes(params?: {
     page?: number;
     limit?: number;
@@ -140,10 +140,18 @@ export const qrCodeService = {
     search?: string;
     include_analytics?: boolean;
   }): Promise<{ qr_codes: QRCode[]; pagination: any }> {
+    // Timeout promise untuk mencegah hanging - dikurangi jadi 3 detik untuk lebih responsif
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout after 3 seconds')), 3000)
+    );
+
     // Di Vercel production, gunakan Supabase langsung
     if (isVercelProduction()) {
       try {
-        const result = await supabaseService.getQRCodes();
+        const result = await Promise.race([
+          supabaseService.getQRCodes(),
+          timeoutPromise
+        ]);
         return {
           qr_codes: result.data || [],
           pagination: {
@@ -163,15 +171,35 @@ export const qrCodeService = {
     }
     
     try {
-      console.log('🔄 Fetching QR codes...');
-      const response = await api.get('/qr-codes', { params });
+      console.log('🔄 Fetching QR codes with timeout...');
+      const response = await Promise.race([
+        api.get('/qr-codes', { params, timeout: 3000 }),
+        timeoutPromise
+      ]);
       console.log('✅ QR codes fetched successfully');
       return response.data;
     } catch (error: any) {
       console.error('❌ Failed to fetch QR codes:', error.message);
-      // Fallback ke Supabase langsung
+      
+      // Jika timeout atau network error, langsung return empty tanpa fallback
+      if (error.message.includes('timeout') || error.code === 'ECONNABORTED') {
+        console.warn('⚠️ Request timeout, returning empty data');
+        return {
+          qr_codes: [],
+          pagination: { page: 1, limit: 10, total: 0, pages: 0 }
+        };
+      }
+      
+      // Fallback ke Supabase hanya untuk error lain - dengan timeout lebih pendek
       try {
-        const result = await supabaseService.getQRCodes();
+        console.log('🔄 Trying Supabase fallback...');
+        const quickTimeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Fallback timeout')), 2000)
+        );
+        const result = await Promise.race([
+          supabaseService.getQRCodes(),
+          quickTimeoutPromise
+        ]);
         return {
           qr_codes: result.data || [],
           pagination: {

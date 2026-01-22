@@ -114,8 +114,13 @@ export interface AiTrustSettings {
 }
 
 class UnitService {
-  // Units management dengan improved error handling
+  // Units management dengan improved error handling dan timeout
   async getUnits(params?: { search?: string; type?: string; status?: string }): Promise<{ units: Unit[] }> {
+    // Timeout promise untuk mencegah hanging - dikurangi jadi 3 detik
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout after 3 seconds')), 3000)
+    );
+
     // Di Vercel production, gunakan Supabase langsung dengan relasi
     if (isVercelProduction()) {
       try {
@@ -138,7 +143,7 @@ class UnitService {
           query = query.or(`name.ilike.%${params.search}%,code.ilike.%${params.search}%`);
         }
         
-        const { data, error } = await query;
+        const { data, error } = await Promise.race([query, timeoutPromise]);
         if (error) throw error;
         return { units: data || [] };
       } catch (error: any) {
@@ -148,8 +153,11 @@ class UnitService {
     }
     
     try {
-      console.log('🔄 Fetching units from main endpoint...');
-      const response = await api.get('/units', { params });
+      console.log('🔄 Fetching units with timeout...');
+      const response = await Promise.race([
+        api.get('/units', { params, timeout: 3000 }),
+        timeoutPromise
+      ]);
       
       // Handle berbagai format response dari backend
       if (Array.isArray(response.data)) {
@@ -164,9 +172,23 @@ class UnitService {
         return { units: [] };
       }
     } catch (error: any) {
+      // Jika timeout, langsung return empty tanpa fallback
+      if (error.message.includes('timeout') || error.code === 'ECONNABORTED') {
+        console.warn('⚠️ Request timeout, returning empty units');
+        return { units: [] };
+      }
+      
       console.warn('⚠️ Main endpoint failed, trying Supabase direct:', error.message);
-      const result = await supabaseService.getUnits();
-      return { units: result.data || [] };
+      try {
+        const result = await Promise.race([
+          supabaseService.getUnits(),
+          timeoutPromise
+        ]);
+        return { units: result.data || [] };
+      } catch (supaError) {
+        console.error('❌ Supabase fallback failed:', supaError);
+        return { units: [] };
+      }
     }
   }
 
