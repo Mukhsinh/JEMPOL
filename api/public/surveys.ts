@@ -20,27 +20,28 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Set CORS headers - PERBAIKAN: Set headers PERTAMA
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  res.setHeader('Content-Type', 'application/json'); // PERBAIKAN: Pastikan response JSON
+  
+  // Handle OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).json({ success: true });
+  }
+
+  // Only allow POST
+  if (req.method !== 'POST') {
+    return res.status(405).json({
+      success: false,
+      error: 'Method not allowed'
+    });
+  }
+
   try {
-    // Set CORS headers - PERBAIKAN: Tambahkan Content-Type
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-    res.setHeader('Content-Type', 'application/json'); // PERBAIKAN: Pastikan response JSON
-    
-    // Handle OPTIONS request
-    if (req.method === 'OPTIONS') {
-      return res.status(200).json({ success: true });
-    }
-
-    // Only allow POST
-    if (req.method !== 'POST') {
-      return res.status(405).json({
-        success: false,
-        error: 'Method not allowed'
-      });
-    }
-
-    console.log('📥 Received public survey submission:', req.body);
+    console.log('📥 Received public survey submission');
+    console.log('📍 Request body:', JSON.stringify(req.body).substring(0, 200));
     
     // PERBAIKAN: Validasi Supabase credentials
     if (!supabaseUrl || !supabaseKey) {
