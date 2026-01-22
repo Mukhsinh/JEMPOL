@@ -3,47 +3,44 @@
 ## Masalah
 Error "Unexpected end of JSON input" saat submit tiket internal di Vercel production.
 
-## Analisis
-Error terjadi karena:
-1. Response dari API endpoint kosong atau tidak valid
-2. Error handling kurang detail
-3. Tidak ada validasi response sebelum parsing JSON
-4. Timeout terlalu pendek
+## Penyebab
+1. Response dari API endpoint kosong atau tidak valid JSON
+2. Environment variables tidak terbaca di Vercel
+3. Axios mencoba parse response kosong sebagai JSON
 
 ## Solusi yang Diterapkan
 
-### 1. Backend (`api/public/internal-tickets.ts`)
-- ✅ Tambah logging detail untuk request body
-- ✅ Validasi priority dengan fallback ke 'medium'
-- ✅ Support `category_id` dan `category` (fallback)
-- ✅ Error handling lebih detail dengan error code
-- ✅ Logging error yang lebih lengkap
-- ✅ Adopsi pola dari external tickets yang sudah berhasil
+### 1. Frontend (`api.ts`)
+- ✅ Tambah `transformResponse` di axios config untuk validasi response
+- ✅ Handle response kosong sebelum JSON parsing
+- ✅ Response interceptor untuk validasi data
+- ✅ Return error object jika response kosong
 
-### 2. Frontend (`complaintService.ts`)
-- ✅ Tambah timeout 30 detik untuk request
+### 2. Backend API (`api/public/internal-tickets.ts`)
+- ✅ Support multiple environment variable names:
+  - `VITE_SUPABASE_URL` / `SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL`
+  - `VITE_SUPABASE_SERVICE_ROLE_KEY` / `SUPABASE_SERVICE_ROLE_KEY`
+- ✅ Logging environment variables availability
+- ✅ Validasi Supabase credentials di awal handler
+- ✅ Set `Content-Type: application/json` header eksplisit
+- ✅ Try-catch wrapper untuk seluruh handler
+- ✅ Error logging yang lebih detail dengan stack trace
+
+### 3. Service (`complaintService.ts`)
+- ✅ Timeout 30 detik untuk request
 - ✅ Validasi response sebelum return
-- ✅ Error handling untuk berbagai jenis error:
-  - Response kosong
-  - Network error
-  - Timeout
-  - Server error (500)
-  - Bad request (400)
-- ✅ Logging yang lebih detail
+- ✅ Error handling untuk berbagai jenis error
 
-### 3. Component (`CreateInternalTicket.tsx`)
-- ✅ Validasi response dengan null check
-- ✅ Handle response yang tidak memiliki property success
-- ✅ Error message yang lebih informatif
+## Konfigurasi Vercel
+Pastikan environment variables di Vercel dashboard sudah diset:
+- `SUPABASE_URL` atau `VITE_SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` atau `VITE_SUPABASE_SERVICE_ROLE_KEY`
 
 ## Testing
-Gunakan file `test-internal-ticket-submit-fix.html` atau jalankan:
-```bash
-TEST_INTERNAL_TICKET_SUBMIT_FIX.bat
-```
+1. Jalankan `TEST_INTERNAL_TICKET_VERCEL_FIX.bat`
+2. Atau akses: `http://localhost:5173/tickets/create-internal`
+3. Periksa console browser untuk log detail
 
-## Hasil yang Diharapkan
-- ✅ Tidak ada lagi error "Unexpected end of JSON input"
-- ✅ Error message yang jelas jika ada masalah
-- ✅ Tiket berhasil dibuat dengan nomor tiket yang valid
-- ✅ Response handling yang konsisten dengan external tickets
+## Debug Environment Variables
+Akses `/api/check-vercel-env` untuk melihat environment variables yang tersedia (hanya di development).
+

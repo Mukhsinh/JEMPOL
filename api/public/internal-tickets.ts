@@ -3,11 +3,23 @@ import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
 // Vercel akan inject environment variables dari dashboard
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+// Coba berbagai nama environment variable yang mungkin
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 
+                    process.env.SUPABASE_URL || 
+                    process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+
+const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 
+                    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+                    process.env.VITE_SUPABASE_ANON_KEY || 
+                    process.env.SUPABASE_ANON_KEY ||
+                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+console.log('🔧 Supabase URL available:', !!supabaseUrl);
+console.log('🔧 Supabase Key available:', !!supabaseKey);
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Missing Supabase credentials. Please set VITE_SUPABASE_URL and VITE_SUPABASE_SERVICE_ROLE_KEY in Vercel environment variables.');
+  console.error('❌ Missing Supabase credentials');
+  console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -32,23 +44,35 @@ async function generateTicketNumber(): Promise<string> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-  
-  // Handle OPTIONS request
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  try {
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+    res.setHeader('Content-Type', 'application/json');
+    
+    // Handle OPTIONS request
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
 
-  // Only allow POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({
-      success: false,
-      error: 'Method not allowed'
-    });
-  }
+    // Only allow POST
+    if (req.method !== 'POST') {
+      return res.status(405).json({
+        success: false,
+        error: 'Method not allowed'
+      });
+    }
+
+    // Validasi Supabase credentials
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('❌ Supabase credentials missing');
+      return res.status(500).json({
+        success: false,
+        error: 'Konfigurasi server tidak lengkap. Hubungi administrator.',
+        details: 'Supabase credentials not configured'
+      });
+    }
 
   try {
     console.log('🎯 POST /api/public/internal-tickets dipanggil');
@@ -272,10 +296,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       message: 'Tiket berhasil dibuat. Nomor tiket Anda: ' + ticket.ticket_number
     });
   } catch (error: any) {
-    console.error('❌ Error in create internal ticket:', error);
+    console.error('❌ Error in create internal ticket handler:', error);
+    console.error('❌ Error stack:', error.stack);
     return res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error')
+      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
+      details: error.stack?.split('\n')[0] || null
     });
   }
 }

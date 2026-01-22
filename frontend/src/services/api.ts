@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { APIResponse } from '../types';
 
 // Cache untuk API base URL
@@ -59,6 +59,37 @@ const api = axios.create({
   },
   timeout: 45000, // 45 detik untuk koneksi lambat // 60 detik untuk koneksi yang stabil
   withCredentials: false,
+  // Validasi response sebelum axios parse JSON
+  validateStatus: (status) => status >= 200 && status < 600, // Accept all status codes
+  transformResponse: [(data, headers) => {
+    // Jika response kosong, return object error
+    if (!data || data === '') {
+      console.error('❌ Response kosong dari server');
+      return {
+        success: false,
+        error: 'Server mengembalikan response kosong',
+        data: null
+      };
+    }
+    
+    // Jika sudah object, return langsung
+    if (typeof data === 'object') {
+      return data;
+    }
+    
+    // Coba parse JSON
+    try {
+      return JSON.parse(data);
+    } catch (e) {
+      console.error('❌ Error parsing JSON:', e);
+      console.error('❌ Response data:', data?.substring(0, 200));
+      return {
+        success: false,
+        error: 'Response bukan JSON valid',
+        data: null
+      };
+    }
+  }]
 });
 
 // Cache untuk token
@@ -69,7 +100,18 @@ const TOKEN_CACHE_DURATION = 30000; // 30 detik
 
 // Retry interceptor untuk request yang gagal
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Validasi response data
+    if (!response.data) {
+      console.error('❌ Response data kosong');
+      response.data = {
+        success: false,
+        error: 'Response data kosong dari server',
+        data: null
+      };
+    }
+    return response;
+  },
   async (error) => {
     const config = error.config;
     
