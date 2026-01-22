@@ -13,25 +13,35 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-  
-  // Handle OPTIONS request
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  // Only allow POST
-  if (req.method !== 'POST') {
-    return res.status(405).json({
-      success: false,
-      error: 'Method not allowed'
-    });
-  }
-
   try {
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+    res.setHeader('Content-Type', 'application/json');
+    
+    // Handle OPTIONS request
+    if (req.method === 'OPTIONS') {
+      return res.status(200).json({ success: true });
+    }
+
+    // Only allow POST
+    if (req.method !== 'POST') {
+      return res.status(405).json({
+        success: false,
+        error: 'Method not allowed'
+      });
+    }
+
+    // Validasi Supabase credentials
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('❌ Supabase credentials missing');
+      return res.status(500).json({
+        success: false,
+        error: 'Konfigurasi server tidak lengkap. Hubungi administrator.',
+        details: 'Supabase credentials not configured'
+      });
+    }
     console.log('🎯 POST /api/public/surveys dipanggil');
     
     const {
@@ -74,7 +84,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       source
     });
 
-    // Validasi minimal
+    // Validasi minimal - hanya visitor_phone yang wajib
     if (!visitor_phone) {
       console.error('❌ Nomor HP tidak ada');
       return res.status(400).json({
@@ -275,7 +285,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('❌ Error submitting public survey:', error);
     return res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error')
+      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
+      details: error.stack?.split('\n')[0] || null
     });
   }
 }

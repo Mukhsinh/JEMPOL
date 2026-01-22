@@ -273,6 +273,12 @@ class ComplaintService {
         throw new Error('Response kosong dari server');
       }
       
+      // Cek apakah response adalah JSON yang valid
+      if (typeof response.data === 'string') {
+        console.error('❌ Response bukan JSON, melainkan string:', response.data.substring(0, 200));
+        throw new Error('Server mengembalikan response yang tidak valid (bukan JSON)');
+      }
+      
       return response.data;
     } catch (error: any) {
       console.error('❌ Error in createInternalTicket:', error);
@@ -285,6 +291,8 @@ class ComplaintService {
       
       if (error.message === 'Response kosong dari server') {
         errorMessage = 'Server mengembalikan response kosong';
+      } else if (error.message.includes('bukan JSON')) {
+        errorMessage = 'Server mengembalikan response yang tidak valid';
       } else if (error.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error.response?.status === 500) {
@@ -295,6 +303,8 @@ class ComplaintService {
         errorMessage = 'Request timeout. Silakan coba lagi.';
       } else if (error.message.includes('Network Error')) {
         errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+      } else if (error.message.includes('JSON')) {
+        errorMessage = 'Terjadi kesalahan saat memproses response dari server';
       } else if (error.message) {
         errorMessage = error.message;
       }

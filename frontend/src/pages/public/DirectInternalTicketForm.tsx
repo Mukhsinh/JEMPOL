@@ -250,11 +250,24 @@ const DirectInternalTicketForm: React.FC = () => {
 
       const response = await fetch('/api/public/internal-tickets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(payload)
       });
       
       console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', response.headers.get('content-type'));
+      
+      // Cek apakah response adalah JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ Non-JSON response:', text.substring(0, 200));
+        throw new Error('Server mengembalikan response yang tidak valid (bukan JSON)');
+      }
+      
       const result = await response.json();
       console.log('📥 Response data:', result);
 
@@ -266,7 +279,17 @@ const DirectInternalTicketForm: React.FC = () => {
       }
     } catch (err: any) {
       console.error('❌ Submit error:', err);
-      setError('Terjadi kesalahan saat mengirim tiket: ' + err.message);
+      
+      let errorMessage = 'Terjadi kesalahan saat mengirim tiket';
+      if (err.message.includes('JSON')) {
+        errorMessage = 'Server mengembalikan response yang tidak valid. Silakan coba lagi.';
+      } else if (err.message.includes('Network')) {
+        errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }

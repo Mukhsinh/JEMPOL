@@ -178,9 +178,20 @@ const SurveyForm: React.FC = () => {
 
       const res = await fetch('/api/public/surveys', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(data)
       });
+
+      // Validasi content-type response
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text();
+        console.error('❌ Non-JSON response:', text.substring(0, 200));
+        throw new Error('Server mengembalikan response yang tidak valid');
+      }
 
       const result = await res.json();
       console.log('📥 Response dari server:', result);

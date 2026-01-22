@@ -119,6 +119,7 @@ const PublicSurvey: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
           ...formData,
@@ -128,6 +129,14 @@ const PublicSurvey: React.FC = () => {
           source: 'qr_code'
         })
       });
+
+      // Validasi content-type response
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ Non-JSON response:', text.substring(0, 200));
+        throw new Error('Server mengembalikan response yang tidak valid');
+      }
 
       const result = await response.json();
 

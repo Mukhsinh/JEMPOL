@@ -53,7 +53,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // Handle OPTIONS request
     if (req.method === 'OPTIONS') {
-      return res.status(200).end();
+      return res.status(200).json({ success: true });
     }
 
     // Only allow POST
@@ -73,8 +73,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         details: 'Supabase credentials not configured'
       });
     }
-
-  try {
     console.log('🎯 POST /api/public/internal-tickets dipanggil');
     console.log('📥 Request body:', JSON.stringify(req.body, null, 2));
     
@@ -115,11 +113,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Validasi field wajib
-    if (!reporter_name || !reporter_email || !title || !description) {
+    if (!title || !description) {
       console.error('❌ Field wajib tidak lengkap');
       return res.status(400).json({
         success: false,
-        error: 'Nama, email, judul, dan deskripsi harus diisi'
+        error: 'Judul dan deskripsi harus diisi'
       });
     }
 
@@ -192,7 +190,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Prepare ticket data
     const ticketData: any = {
       ticket_number: ticketNumber,
-      type: 'internal',
+      type: 'complaint', // PERBAIKAN: Gunakan 'complaint' untuk tiket internal
       title: title,
       description: description,
       unit_id: unit_id,
@@ -202,8 +200,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       sla_deadline: slaDeadline.toISOString(),
       source: finalSource,
       is_anonymous: false,
-      submitter_name: reporter_name,
-      submitter_email: reporter_email,
+      submitter_name: reporter_name || null,
+      submitter_email: reporter_email || null,
       submitter_phone: reporter_phone || null,
       reporter_department: reporter_department || null,
       reporter_position: reporter_position || null
@@ -295,6 +293,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       data: ticket,
       message: 'Tiket berhasil dibuat. Nomor tiket Anda: ' + ticket.ticket_number
     });
+
   } catch (error: any) {
     console.error('❌ Error in create internal ticket handler:', error);
     console.error('❌ Error stack:', error.stack);
