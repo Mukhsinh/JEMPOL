@@ -45,7 +45,7 @@ const PublicSurvey: React.FC = () => {
 
   const loadAppSettings = async () => {
     try {
-      const res = await fetch('/api/app-settings/public');
+      const res = await fetch('/api/public/app-settings');
       if (res.ok) {
         const r = await res.json();
         if (r.success && r.data) {
@@ -115,7 +115,7 @@ const PublicSurvey: React.FC = () => {
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/public/survey/submit', {
+      const response = await fetch('/api/public/surveys', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

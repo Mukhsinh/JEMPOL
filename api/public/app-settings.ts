@@ -12,10 +12,11 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers
+  // Set CORS headers - PERBAIKAN: Tambahkan Content-Type
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  res.setHeader('Content-Type', 'application/json'); // PERBAIKAN: Pastikan response JSON
   
   // Handle OPTIONS request
   if (req.method === 'OPTIONS') {
@@ -33,6 +34,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     console.log('🎯 GET /api/public/app-settings dipanggil');
     
+    // PERBAIKAN: Validasi Supabase credentials
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('❌ Supabase credentials tidak tersedia');
+      return res.status(200).json({
+        success: true,
+        data: {
+          institution_name: 'Rumah Sakit',
+          institution_address: '',
+          contact_phone: '',
+          contact_email: '',
+          website: '',
+          app_footer: ''
+        }
+      });
+    }
+    
     // Fetch app settings
     const { data: settings, error } = await supabase
       .from('app_settings')
@@ -42,10 +59,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
       console.error('❌ Error fetching app settings:', error);
-      return res.status(500).json({
-        success: false,
-        error: 'Gagal mengambil pengaturan aplikasi',
-        details: error.message
+      // PERBAIKAN: Return default settings jika error
+      return res.status(200).json({
+        success: true,
+        data: {
+          institution_name: 'Rumah Sakit',
+          institution_address: '',
+          contact_phone: '',
+          contact_email: '',
+          website: '',
+          app_footer: ''
+        }
       });
     }
 
@@ -64,9 +88,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error: any) {
     console.error('❌ Error in get app settings:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error')
+    // PERBAIKAN: Return default settings jika exception
+    return res.status(200).json({
+      success: true,
+      data: {
+        institution_name: 'Rumah Sakit',
+        institution_address: '',
+        contact_phone: '',
+        contact_email: '',
+        website: '',
+        app_footer: ''
+      }
     });
   }
 }
