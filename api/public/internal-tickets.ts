@@ -31,10 +31,11 @@ async function generateTicketNumber(): Promise<string> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers
+  // Set CORS headers - PERBAIKAN: Tambahkan Content-Type
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  res.setHeader('Content-Type', 'application/json'); // PERBAIKAN: Pastikan response JSON
   
   // Handle OPTIONS request
   if (req.method === 'OPTIONS') {
@@ -51,6 +52,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     console.log('🎯 POST /api/public/internal-tickets dipanggil');
+    
+    // PERBAIKAN: Validasi Supabase credentials
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('❌ Supabase credentials tidak tersedia');
+      return res.status(500).json({
+        success: false,
+        error: 'Konfigurasi server tidak lengkap'
+      });
+    }
     
     const {
       reporter_name,

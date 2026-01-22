@@ -12,10 +12,11 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers
+  // Set CORS headers - PERBAIKAN: Tambahkan Content-Type
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  res.setHeader('Content-Type', 'application/json'); // PERBAIKAN: Pastikan response JSON
   
   // Handle OPTIONS request
   if (req.method === 'OPTIONS') {
@@ -33,6 +34,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     console.log('🎯 GET /api/public/units dipanggil');
     
+    // PERBAIKAN: Validasi Supabase credentials
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('❌ Supabase credentials tidak tersedia');
+      return res.status(500).json({
+        success: false,
+        error: 'Konfigurasi server tidak lengkap',
+        data: []
+      });
+    }
+    
     // Fetch active units
     const { data: units, error } = await supabase
       .from('units')
@@ -42,24 +53,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (error) {
       console.error('❌ Error fetching units:', error);
-      return res.status(500).json({
+      // PERBAIKAN: Tetap return JSON valid meskipun error
+      return res.status(200).json({
         success: false,
         error: 'Gagal mengambil data unit',
-        details: error.message
+        details: error.message,
+        data: [] // PERBAIKAN: Selalu sertakan data array kosong
       });
     }
 
     console.log(`✅ Found ${units?.length || 0} active units`);
 
+    // PERBAIKAN: Pastikan selalu return format yang konsisten
     return res.status(200).json({
       success: true,
-      data: units || []
+      data: units || [],
+      count: units?.length || 0
     });
   } catch (error: any) {
     console.error('❌ Error in get units:', error);
-    return res.status(500).json({
+    // PERBAIKAN: Return JSON valid meskipun exception
+    return res.status(200).json({
       success: false,
-      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error')
+      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
+      data: [] // PERBAIKAN: Selalu sertakan data array kosong
     });
   }
 }

@@ -97,21 +97,62 @@ const DirectInternalTicketForm: React.FC = () => {
     const fetchUnits = async () => {
       try {
         setLoadingUnits(true);
-        const response = await fetch('/api/public/units');
-        if (response.ok) {
-          const result = await response.json();
-          // API mengembalikan { success: true, data: [...] }
-          const unitsArray = result?.data && Array.isArray(result.data) 
-            ? result.data 
-            : (Array.isArray(result) ? result : []);
-          setUnits(unitsArray);
-          console.log('✅ Units loaded:', unitsArray);
-        } else {
-          console.error('❌ Failed to load units');
-          setUnits([]); // Set empty array jika gagal
+        console.log('🔄 Fetching units from /api/public/units...');
+        
+        const response = await fetch('/api/public/units', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response headers:', response.headers.get('content-type'));
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      } catch (err) {
+        
+        // Cek apakah response adalah JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('❌ Non-JSON response:', text.substring(0, 200));
+          throw new Error('Server mengembalikan response yang tidak valid');
+        }
+        
+        const result = await response.json();
+        console.log('📥 Response data:', result);
+        
+        // API mengembalikan { success: true, data: [...] }
+        let unitsArray: Unit[] = [];
+        if (result?.success && Array.isArray(result.data)) {
+          unitsArray = result.data;
+        } else if (Array.isArray(result.data)) {
+          unitsArray = result.data;
+        } else if (Array.isArray(result)) {
+          unitsArray = result;
+        }
+        
+        setUnits(unitsArray);
+        console.log('✅ Units loaded successfully:', unitsArray.length, 'units');
+        
+        // Jika ada unitId dari URL dan belum terisi, set otomatis
+        if (unitId && !formData.unit_id && unitsArray.length > 0) {
+          const matchedUnit = unitsArray.find(u => u.id === unitId);
+          if (matchedUnit) {
+            setFormData(prev => ({ 
+              ...prev, 
+              unit_id: unitId,
+              reporter_department: matchedUnit.name 
+            }));
+            console.log('✅ Auto-selected unit from URL:', matchedUnit.name);
+          }
+        }
+      } catch (err: any) {
         console.error('❌ Error loading units:', err);
+        setError('Gagal memuat data unit. Silakan refresh halaman.');
         setUnits([]); // Set empty array jika error
       } finally {
         setLoadingUnits(false);
@@ -119,7 +160,7 @@ const DirectInternalTicketForm: React.FC = () => {
     };
     
     fetchUnits();
-  }, []);
+  }, [unitId]);
 
   // Load app settings untuk footer
   useEffect(() => {
