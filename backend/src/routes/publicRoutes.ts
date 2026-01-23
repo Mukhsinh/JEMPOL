@@ -915,11 +915,27 @@ router.post('/external-tickets', async (req: Request, res: Response) => {
 });
 
 // Submit internal ticket from public form (QR code scan - for staff)
+// PERBAIKAN: Tambahkan OPTIONS handler dan error handling yang lebih baik
+router.options('/internal-tickets', (req: Request, res: Response) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).json({ success: true });
+});
+
 router.post('/internal-tickets', async (req: Request, res: Response) => {
-  // Set response headers untuk memastikan JSON response
+  // CRITICAL: Set response headers PERTAMA untuk memastikan SELALU return JSON
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Access-Control-Allow-Origin', '*');
   
+  // PERBAIKAN: Wrapper try-catch untuk memastikan SELALU return JSON
   try {
+    console.log('🎯 POST /api/public/internal-tickets dipanggil');
+    console.log('📍 Request method:', req.method);
+    console.log('📍 Request path:', req.path);
+    console.log('📍 Request URL:', req.url);
+    
     const {
       reporter_name,
       reporter_email,
@@ -965,10 +981,36 @@ router.post('/internal-tickets', async (req: Request, res: Response) => {
       });
     }
 
+    // Validasi priority
+    const validPriorities = ['low', 'medium', 'high', 'critical'];
+    const finalPriority = validPriorities.includes(priority) ? priority : 'medium';
+    console.log('✅ Using priority:', finalPriority);
+
     // Validasi source - harus salah satu dari: web, qr_code, mobile, email, phone
     const validSources = ['web', 'qr_code', 'mobile', 'email', 'phone'];
     const finalSource = validSources.includes(source) ? source : 'web';
     console.log('✅ Using source:', finalSource);
+
+    // Verifikasi unit_id exists dan aktif
+    const { data: unitData, error: unitCheckError } = await supabase
+      .from('units')
+      .select('id, name')
+      .eq('id', unit_id)
+      .eq('is_active', true)
+      .single();
+
+    if (unitCheckError || !unitData) {
+      console.error('❌ Unit tidak valid atau tidak aktif:', unit_id);
+      console.error('❌ Unit check error:', unitCheckError);
+      return res.status(400).json({
+        success: false,
+        error: 'Unit tidak valid atau tidak aktif',
+        unit_id: unit_id,
+        details: unitCheckError?.message
+      });
+    }
+
+    console.log('✅ Unit verified:', unitData.name);
 
     // Generate ticket number
     const ticketNumber = await generateTicketNumber();
@@ -976,25 +1018,257 @@ router.post('/internal-tickets', async (req: Request, res: Response) => {
 
     // Calculate SLA deadline based on priority
     const slaDeadline = new Date();
-    switch (priority) {
-      case 'critical':
-        slaDeadline.setHours(slaDeadline.getHours() + 4);
-        break;
-      case 'high':
-        slaDeadline.setHours(slaDeadline.getHours() + 8);
-        break;
-      case 'medium':
-        slaDeadline.setHours(slaDeadline.getHours() + 24);
-        break;
-      case 'low':
-        slaDeadline.setHours(slaDeadline.getHours() + 48);
-        break;
-      default:
-        slaDeadline.setHours(slaDeadline.getHours() + 24);
+    if (finalPriority === 'critical') {
+      slaDeadline.setHours(slaDeadline.getHours() + 4);
+    } else if (finalPriority === 'high') {
+      slaDeadline.setHours(slaDeadline.getHours() + 24);
+    } else if (finalPriority === 'medium') {
+      slaDeadline.setHours(slaDeadline.getHours() + 48);
+    } else {
+      slaDeadline.setHours(slaDeadline.getHours() + 72);
     }
 
     // Gabungkan info department dan position ke dalam description
-    const fullDescription = `${description}\n\n--- Info Pelapor ---\nDepartemen: ${reporter_department || '-'}\nJabatan: ${reporter_position || '-'}`;
+    const fullDescription = reporter_department || reporter_position
+      ? `${description}\n\n--- Info Pelapor ---\nDepartemen: ${reporter_department || '-'}\nJabatan: ${reporter_position || '-'}`
+      : description;
+
+    // Find QR code ID if provided
+    let qr_code_id = null;
+    if (qr_code) {
+      try {
+        const { data: qrData } = await supabase
+          .from('qr_codes')
+          .select('id')
+          .eq('token', qr_code)
+          .eq('is_active', true)
+          .single();
+        
+        if (qrData) {
+          qr_code_id = qrData.id;
+          console.log('✅ Found QR code ID:', qr_code_id);
+        }
+      } catch (error) {
+        console.log('⚠️ Error finding QR code:', error);
+      }
+    }
+
+    // Handle category - prioritas category_id, fallback ke category
+    let finalCategoryId = category_id || null;
+    
+    // Jika category_id sudah ada dan valid UUID, gunakan langsung
+    if (finalCategoryId) {
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(finalCategoryId);
+      if (isUUID) {
+        console.log('✅ Using category_id directly:', finalCategoryId);
+      } else {
+        // Jika bukan UUID, coba cari berdasarkan nama/code
+        try {
+          const { data: categoryData } = await supabase
+            .from('service_categories')
+            .select('id')
+            .or(`name.ilike.%${finalCategoryId}%,code.ilike.%${finalCategoryId}%`)
+            .eq('is_active', true)
+            .limit(1);
+          
+          if (categoryData && categoryData.length > 0) {
+            finalCategoryId = categoryData[0].id;
+            console.log('✅ Found category ID from name/code:', finalCategoryId);
+          } else {
+            console.log('⚠️ Category not found, will use null');
+            finalCategoryId = null;
+          }
+        } catch (error) {
+          console.log('⚠️ Error finding category:', error);
+          finalCategoryId = null;
+        }
+      }
+    } else if (category) {
+      // Fallback ke category jika category_id tidak ada
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category);
+      
+      if (isUUID) {
+        finalCategoryId = category;
+        console.log('✅ Using category as ID:', finalCategoryId);
+      } else {
+        const categoryMap: { [key: string]: string } = {
+          'it_support': 'IT Support',
+          'facility': 'Fasilitas',
+          'equipment': 'Peralatan',
+          'hr': 'SDM',
+          'admin': 'Administrasi',
+          'other': 'Lainnya'
+        };
+        
+        const categoryName = categoryMap[category] || category;
+        console.log('🔍 Looking for category:', categoryName);
+        
+        try {
+          const { data: categoryData } = await supabase
+            .from('service_categories')
+            .select('id')
+            .or(`name.ilike.%${categoryName}%,code.ilike.%${category}%`)
+            .eq('is_active', true)
+            .limit(1);
+          
+          if (categoryData && categoryData.length > 0) {
+            finalCategoryId = categoryData[0].id;
+            console.log('✅ Found category ID:', finalCategoryId);
+          } else {
+            console.log('⚠️ Category not found, will use null');
+          }
+        } catch (error) {
+          console.log('⚠️ Error finding category:', error);
+        }
+      }
+    }
+
+    // Verifikasi category_id jika ada
+    if (finalCategoryId) {
+      const { data: categoryData, error: categoryCheckError } = await supabase
+        .from('service_categories')
+        .select('id, name')
+        .eq('id', finalCategoryId)
+        .eq('is_active', true)
+        .single();
+
+      if (categoryCheckError || !categoryData) {
+        console.error('❌ Category tidak valid atau tidak aktif:', finalCategoryId);
+        console.log('⚠️ Will proceed without category');
+        finalCategoryId = null;
+      } else {
+        console.log('✅ Category verified:', categoryData.name);
+      }
+    }
+
+    // Prepare ticket data - SINKRON DENGAN VERCEL SERVERLESS
+    const ticketData: any = {
+      ticket_number: ticketNumber,
+      type: 'complaint', // Internal ticket = complaint
+      title: title,
+      description: fullDescription,
+      unit_id: unit_id,
+      qr_code_id: qr_code_id,
+      priority: finalPriority,
+      status: 'open',
+      sla_deadline: slaDeadline.toISOString(),
+      source: finalSource,
+      is_anonymous: false,
+      submitter_name: reporter_name,
+      submitter_email: reporter_email,
+      submitter_phone: reporter_phone || null,
+      ip_address: req.ip,
+      user_agent: req.get('User-Agent')
+    };
+
+    // Tambahkan category_id hanya jika valid
+    if (finalCategoryId) {
+      ticketData.category_id = finalCategoryId;
+      console.log('✅ Using category_id:', finalCategoryId);
+    }
+
+    console.log('📤 Inserting ticket data:', {
+      ticket_number: ticketData.ticket_number,
+      type: ticketData.type,
+      unit_id: ticketData.unit_id,
+      category_id: ticketData.category_id || 'null',
+      priority: ticketData.priority,
+      status: ticketData.status,
+      source: ticketData.source
+    });
+
+    const { data: ticket, error } = await supabase
+      .from('tickets')
+      .insert(ticketData)
+      .select(`
+        *,
+        units:unit_id(name, code)
+      `)
+      .single();
+
+    if (error) {
+      console.error('❌ Error creating internal ticket:', error);
+      console.error('❌ Error code:', error.code);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error details:', error.details);
+      console.error('❌ Error hint:', error.hint);
+      console.error('❌ Ticket data yang dikirim:', JSON.stringify(ticketData, null, 2));
+      
+      // Berikan pesan error yang lebih spesifik
+      let errorMessage = 'Gagal membuat tiket internal';
+      if (error.code === '23503') {
+        errorMessage = 'Data referensi tidak valid (unit_id atau category_id tidak ditemukan)';
+      } else if (error.code === '23505') {
+        errorMessage = 'Nomor tiket sudah ada, silakan coba lagi';
+      } else if (error.code === '23514') {
+        errorMessage = `Tipe tiket tidak valid. Diterima: ${ticketData.type}. Harus salah satu dari: information, complaint, suggestion, satisfaction`;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      return res.status(500).json({
+        success: false,
+        error: errorMessage,
+        details: error.details || error.hint || null,
+        error_code: error.code
+      });
+    }
+
+    console.log('✅ Internal ticket created successfully:', ticket.ticket_number);
+
+    // Update QR code usage count if applicable
+    if (qr_code_id) {
+      try {
+        const { data: currentQR } = await supabase
+          .from('qr_codes')
+          .select('usage_count')
+          .eq('id', qr_code_id)
+          .single();
+        
+        await supabase
+          .from('qr_codes')
+          .update({ 
+            usage_count: (currentQR?.usage_count || 0) + 1,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', qr_code_id);
+
+        console.log('✅ Updated QR code usage count');
+      } catch (error) {
+        console.log('⚠️ Error updating QR code usage:', error);
+      }
+    }
+
+    return res.status(201).json({
+      success: true,
+      ticket_number: ticket.ticket_number,
+      data: ticket,
+      message: 'Tiket internal berhasil dibuat. Nomor tiket Anda: ' + ticket.ticket_number
+    });
+
+  } catch (error: any) {
+    console.error('❌ CRITICAL ERROR in create internal ticket:', error);
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error name:', error.name);
+    console.error('❌ Error message:', error.message);
+    
+    // PERBAIKAN: Pastikan header JSON tetap di-set
+    try {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    } catch (headerError) {
+      console.error('❌ Cannot set header:', headerError);
+    }
+    
+    // Return JSON valid dengan informasi error lengkap
+    return res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
+      error_type: error.name || 'UnknownError',
+      details: error.stack?.split('\n').slice(0, 3).join('\n') || null,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
     // Handle category - prioritas category_id, fallback ke category
     let finalCategoryId = category_id || null;

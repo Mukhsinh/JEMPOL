@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Submit Tiket Internal</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #8b5cf6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #7c3aed;
+    }
+    .result {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .success {
+      background: #d1fae5;
+      border: 1px solid #10b981;
+      color: #065f46;
+    }
+    .error {
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+      color: #991b1b;
+    }
+    .info {
+      background: #dbeafe;
+      border: 1px solid #3b82f6;
+      color: #1e40af;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Test Submit Tiket Internal</h1>
+  
+  <div class="test-section">
+    <h2>1. Test GET /api/public/units</h2>
+    <button onclick="testUnits()">Test Units API</button>
+    <div id="units-result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>2. Test GET /api/public/app-settings</h2>
+    <button onclick="testAppSettings()">Test App Settings API</button>
+    <div id="app-settings-result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>3. Test POST /api/public/internal-tickets</h2>
+    <button onclick="testSubmitTicket()">Test Submit Ticket</button>
+    <div id="submit-result"></div>
+  </div>
+
+  <script>
+    async function testUnits() {
+      const resultDiv = document.getElementById('units-result');
+      resultDiv.innerHTML = '<div class="result info">⏳ Testing...</div>';
+      
+      try {
+        console.log('🔄 Testing GET /api/public/units...');
+        const response = await fetch('/api/public/units', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response headers:', response.headers.get('content-type'));
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          throw new Error('Non-JSON response: ' + text.substring(0, 200));
+        }
+        
+        const result = await response.json();
+        console.log('✅ Result:', result);
+        
+        resultDiv.innerHTML = `<div class="result success">
+✅ SUCCESS
+Status: ${response.status}
+Data: ${JSON.stringify(result, null, 2)}
+        </div>`;
+      } catch (error) {
+        console.error('❌ Error:', error);
+        resultDiv.innerHTML = `<div class="result error">
+❌ ERROR
+${error.message}
+        </div>`;
+      }
+    }
+
+    async function testAppSettings() {
+      const resultDiv = document.getElementById('app-settings-result');
+      resultDiv.innerHTML = '<div class="result info">⏳ Testing...</div>';
+      
+      try {
+        console.log('🔄 Testing GET /api/public/app-settings...');
+        const timestamp = Date.now();
+        const response = await fetch(`/api/public/app-settings?t=${timestamp}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          cache: 'no-cache'
+        });
+        
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response headers:', response.headers.get('content-type'));
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          throw new Error('Non-JSON response: ' + text.substring(0, 200));
+        }
+        
+        const result = await response.json();
+        console.log('✅ Result:', result);
+        
+        resultDiv.innerHTML = `<div class="result success">
+✅ SUCCESS
+Status: ${response.status}
+Data: ${JSON.stringify(result, null, 2)}
+        </div>`;
+      } catch (error) {
+        console.error('❌ Error:', error);
+        resultDiv.innerHTML = `<div class="result error">
+❌ ERROR
+${error.message}
+        </div>`;
+      }
+    }
+
+    async function testSubmitTicket() {
+      const resultDiv = document.getElementById('submit-result');
+      resultDiv.innerHTML = '<div class="result info">⏳ Testing...</div>';
+      
+      try {
+        console.log('🔄 Testing POST /api/public/internal-tickets...');
+        
+        // Get unit_id first
+        const unitsResponse = await fetch('/api/public/units');
+        const unitsResult = await unitsResponse.json();
+        
+        if (!unitsResult.success || !unitsResult.data || unitsResult.data.length === 0) {
+          throw new Error('No units available');
+        }
+        
+        const firstUnit = unitsResult.data[0];
+        console.log('✅ Using unit:', firstUnit.name);
+        
+        const payload = {
+          reporter_name: 'Test User',
+          reporter_email: 'test@example.com',
+          reporter_phone: '08123456789',
+          reporter_department: firstUnit.name,
+          reporter_position: 'Tester',
+          category: 'it_support',
+          priority: 'medium',
+          title: 'Test Ticket - ' + new Date().toLocaleString('id-ID'),
+          description: 'Ini adalah test ticket untuk memastikan submit berfungsi dengan baik.',
+          unit_id: firstUnit.id,
+          source: 'web'
+        };
+        
+        console.log('📤 Payload:', payload);
+        
+        const response = await fetch('/api/public/internal-tickets', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response headers:', response.headers.get('content-type'));
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          throw new Error('Non-JSON response: ' + text.substring(0, 200));
+        }
+        
+        const result = await response.json();
+        console.log('✅ Result:', result);
+        
+        if (result.success) {
+          resultDiv.innerHTML = `<div class="result success">
+✅ SUCCESS - TICKET CREATED!
+Status: ${response.status}
+Ticket Number: ${result.ticket_number}
+Data: ${JSON.stringify(result, null, 2)}
+          </div>`;
+        } else {
+          resultDiv.innerHTML = `<div class="result error">
+❌ FAILED
+Status: ${response.status}
+Error: ${result.error}
+Details: ${JSON.stringify(result, null, 2)}
+          </div>`;
+        }
+      } catch (error) {
+        console.error('❌ Error:', error);
+        resultDiv.innerHTML = `<div class="result error">
+❌ ERROR
+${error.message}
+Stack: ${error.stack}
+        </div>`;
+      }
+    }
+  </script>
+</body>
+</html>
