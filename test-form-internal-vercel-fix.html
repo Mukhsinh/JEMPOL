@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Form Internal Vercel Fix</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            🔧 Test Form Internal Vercel Fix
+        </h1>
+        <p class="subtitle">
+            Test perbaikan routing API di Vercel untuk form tiket internal
+        </p>
+
+        <!-- Test 1: Units Endpoint -->
+        <div class="test-section">
+            <h3>📋 Test 1: Load Units</h3>
+            <p>Test endpoint: <code>/api/public/units</code></p>
+            <button onclick="testUnits()">Test Units Endpoint</button>
+            <div id="unitsResult"></div>
+        </div>
+
+        <!-- Test 2: App Settings Endpoint -->
+        <div class="test-section">
+            <h3>⚙️ Test 2: Load App Settings</h3>
+            <p>Test endpoint: <code>/api/public/app-settings</code></p>
+            <button onclick="testAppSettings()">Test App Settings Endpoint</button>
+            <div id="appSettingsResult"></div>
+        </div>
+
+        <!-- Test 3: Submit Internal Ticket -->
+        <div class="test-section">
+            <h3>📝 Test 3: Submit Internal Ticket</h3>
+            <p>Test endpoint: <code>/api/public/internal-tickets</code> (POST)</p>
+            
+            <div class="input-group">
+                <label>Unit ID:</label>
+                <input type="text" id="unitId" placeholder="Masukkan unit_id dari test 1">
+            </div>
+            
+            <div class="input-group">
+                <label>Nama Pelapor:</label>
+                <input type="text" id="reporterName" value="Test User" placeholder="Nama lengkap">
+            </div>
+            
+            <div class="input-group">
+                <label>Email:</label>
+                <input type="email" id="reporterEmail" value="test@example.com" placeholder="email@example.com">
+            </div>
+            
+            <div class="input-group">
+                <label>Judul:</label>
+                <input type="text" id="title" value="Test Tiket Internal" placeholder="Judul tiket">
+            </div>
+            
+            <div class="input-group">
+                <label>Deskripsi:</label>
+                <input type="text" id="description" value="Test deskripsi tiket internal dari form" placeholder="Deskripsi lengkap">
+            </div>
+            
+            <button onclick="testSubmitTicket()">Submit Test Ticket</button>
+            <div id="submitResult"></div>
+        </div>
+
+        <!-- Test 4: Vercel Routing Check -->
+        <div class="test-section">
+            <h3>🔍 Test 4: Vercel Routing Check</h3>
+            <p>Verifikasi bahwa API endpoints mengembalikan JSON, bukan HTML</p>
+            <button onclick="testRoutingCheck()">Check All Endpoints</button>
+            <div id="routingResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3004'
+            : '';
+
+        function showLoading(elementId) {
+            document.getElementById(elementId).innerHTML = '<div class="result info">⏳ Loading...<span class="loading"></span></div>';
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const resultDiv = document.getElementById(elementId);
+            const className = isError ? 'error' : 'success';
+            resultDiv.innerHTML = `<div class="result ${className}">${JSON.stringify(data, null, 2)}</div>`;
+        }
+
+        async function testUnits() {
+            showLoading('unitsResult');
+            try {
+                console.log('🔄 Testing units endpoint...');
+                const response = await fetch(`${API_BASE}/api/public/units`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Content-Type:', response.headers.get('content-type'));
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`❌ Response bukan JSON! Content-Type: ${contentType}\n\nResponse: ${text.substring(0, 200)}`);
+                }
+
+                const data = await response.json();
+                console.log('✅ Units loaded:', data);
+
+                if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+                    // Auto-fill unit_id untuk test 3
+                    document.getElementById('unitId').value = data.data[0].id;
+                    showResult('unitsResult', {
+                        status: '✅ SUCCESS',
+                        message: `Loaded ${data.data.length} units`,
+                        sample: data.data[0],
+                        note: 'Unit ID pertama sudah diisi otomatis di Test 3'
+                    });
+                } else {
+                    showResult('unitsResult', data);
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showResult('unitsResult', {
+                    status: '❌ ERROR',
+                    error: error.message
+                }, true);
+            }
+        }
+
+        async function testAppSettings() {
+            showLoading('appSettingsResult');
+            try {
+                console.log('🔄 Testing app settings endpoint...');
+                const response = await fetch(`${API_BASE}/api/public/app-settings`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Content-Type:', response.headers.get('content-type'));
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`❌ Response bukan JSON! Content-Type: ${contentType}\n\nResponse: ${text.substring(0, 200)}`);
+                }
+
+                const data = await response.json();
+                console.log('✅ App settings loaded:', data);
+                showResult('appSettingsResult', {
+                    status: '✅ SUCCESS',
+                    data: data
+                });
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showResult('appSettingsResult', {
+                    status: '❌ ERROR',
+                    error: error.message
+                }, true);
+            }
+        }
+
+        async function testSubmitTicket() {
+            const unitId = document.getElementById('unitId').value;
+            const reporterName = document.getElementById('reporterName').value;
+            const reporterEmail = document.getElementById('reporterEmail').value;
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+
+            if (!unitId || !reporterName || !reporterEmail || !title || !description) {
+                showResult('submitResult', {
+                    status: '⚠️ WARNING',
+                    message: 'Semua field harus diisi!'
+                }, true);
+                return;
+            }
+
+            showLoading('submitResult');
+            try {
+                const payload = {
+                    reporter_name: reporterName,
+                    reporter_email: reporterEmail,
+                    reporter_phone: '081234567890',
+                    reporter_department: 'Test Department',
+                    reporter_position: 'Test Position',
+                    category: 'it_support',
+                    priority: 'medium',
+                    title: title,
+                    description: description,
+                    unit_id: unitId,
+                    source: 'web'
+                };
+
+                console.log('📤 Submitting ticket:', payload);
+
+                const response = await fetch(`${API_BASE}/api/public/internal-tickets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Content-Type:', response.headers.get('content-type'));
+
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`❌ Response bukan JSON! Content-Type: ${contentType}\n\nResponse: ${text.substring(0, 200)}`);
+                }
+
+                const data = await response.json();
+                console.log('📥 Response data:', data);
+
+                if (response.ok && data.success) {
+                    showResult('submitResult', {
+                        status: '✅ SUCCESS',
+                        ticket_number: data.ticket_number,
+                        message: 'Tiket berhasil dibuat!',
+                        data: data.data
+                    });
+                } else {
+                    showResult('submitResult', {
+                        status: '❌ FAILED',
+                        error: data.error || 'Unknown error',
+                        details: data.details || null
+                    }, true);
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                showResult('submitResult', {
+                    status: '❌ ERROR',
+                    error: error.message
+                }, true);
+            }
+        }
+
+        async function testRoutingCheck() {
+            showLoading('routingResult');
+            const endpoints = [
+                '/api/public/units',
+                '/api/public/app-settings',
+                '/api/public/internal-tickets',
+                '/api/public/external-tickets',
+                '/api/public/surveys'
+            ];
+
+            const results = [];
+
+            for (const endpoint of endpoints) {
+                try {
+                    const method = endpoint.includes('tickets') || endpoint.includes('surveys') ? 'OPTIONS' : 'GET';
+                    const response = await fetch(`${API_BASE}${endpoint}`, {
+                        method: method,
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const contentType = response.headers.get('content-type');
+                    const isJson = contentType && contentType.includes('application/json');
+                    const isHtml = contentType && contentType.includes('text/html');
+
+                    results.push({
+                        endpoint: endpoint,
+                        status: response.status,
+                        contentType: contentType,
+                        result: isJson ? '✅ JSON' : (isHtml ? '❌ HTML (ERROR!)' : '⚠️ Unknown'),
+                        ok: isJson
+                    });
+                } catch (error) {
+                    results.push({
+                        endpoint: endpoint,
+                        status: 'ERROR',
+                        error: error.message,
+                        result: '❌ FAILED',
+                        ok: false
+                    });
+                }
+            }
+
+            const allOk = results.every(r => r.ok);
+            showResult('routingResult', {
+                status: allOk ? '✅ ALL ENDPOINTS OK' : '❌ SOME ENDPOINTS FAILED',
+                summary: `${results.filter(r => r.ok).length}/${results.length} endpoints returning JSON`,
+                details: results
+            }, !allOk);
+        }
+
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            console.log('🚀 Page loaded, ready to test');
+            console.log('📍 API Base URL:', API_BASE || 'Same origin');
+        });
+    </script>
+</body>
+</html>
