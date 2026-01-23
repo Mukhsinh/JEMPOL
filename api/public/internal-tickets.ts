@@ -174,12 +174,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Prepare ticket data - ADOPSI DARI EXTERNAL TICKETS YANG BERHASIL
+    // Gabungkan info department dan position ke dalam description
+    const fullDescription = reporter_department || reporter_position
+      ? `${description}\n\n--- Info Pelapor ---\nDepartemen: ${reporter_department || '-'}\nJabatan: ${reporter_position || '-'}`
+      : description;
+
+    // Prepare ticket data - SINKRON DENGAN BACKEND EXPRESS
     const ticketData: any = {
       ticket_number: ticketNumber,
-      type: 'complaint', // PERBAIKAN: Gunakan 'complaint' untuk internal ticket (sesuai external yang berhasil)
+      type: 'complaint', // Internal ticket = complaint
       title: title,
-      description: description,
+      description: fullDescription,
       unit_id: unit_id,
       qr_code_id: qr_code_id,
       priority: finalPriority,
@@ -190,21 +195,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       submitter_name: reporter_name || null,
       submitter_email: reporter_email || null,
       submitter_phone: reporter_phone || null,
-      submitter_address: null, // PERBAIKAN: Tambahkan field yang ada di external tickets
-      ip_address: null, // PERBAIKAN: Tambahkan field yang ada di external tickets
-      user_agent: null // PERBAIKAN: Tambahkan field yang ada di external tickets
+      ip_address: req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || null,
+      user_agent: req.headers['user-agent'] || null
     };
 
-    // PERBAIKAN: Tambahkan info department dan position ke description seperti di publicRoutes.ts
-    if (reporter_department || reporter_position) {
-      ticketData.description = `${description}\n\n--- Info Pelapor ---\nDepartemen: ${reporter_department || '-'}\nJabatan: ${reporter_position || '-'}`;
-    }
-
-    // Add category_id if provided - ADOPSI DARI EXTERNAL TICKETS
+    // Add category_id if provided - SINKRON DENGAN BACKEND EXPRESS
     const finalCategoryId = category_id || category || null;
     if (finalCategoryId) {
-      ticketData.category_id = finalCategoryId;
-      console.log('✅ Using category_id:', finalCategoryId);
+      // Jika sudah UUID, gunakan langsung
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(finalCategoryId);
+      if (isUUID) {
+        ticketData.category_id = finalCategoryId;
+        console.log('✅ Using category_id (UUID):', finalCategoryId);
+      } else {
+        // Coba cari berdasarkan nama/code
+        try {
+          const categoryMap: { [key: string]: string } = {
+            'it_support': 'IT Support',
+            'facility': 'Fasilitas',
+            'equipment': 'Peralatan',
+            'hr': 'SDM',
+            'admin': 'Administrasi',
+            'other': 'Lainnya'
+          };
+          
+          const categoryName = categoryMap[finalCategoryId] || finalCategoryId;
+          console.log('🔍 Looking for category:', categoryName);
+          
+          const { data: categoryData } = await supabase
+            .from('service_categories')
+            .select('id')
+            .or(`name.ilike.%${categoryName}%,code.ilike.%${finalCategoryId}%`)
+            .eq('is_active', true)
+            .limit(1);
+          
+          if (categoryData && categoryData.length > 0) {
+            ticketData.category_id = categoryData[0].id;
+            console.log('✅ Found category ID from name/code:', ticketData.category_id);
+          } else {
+            console.log('⚠️ Category not found, will use null');
+          }
+        } catch (error) {
+          console.log('⚠️ Error finding category:', error);
+        }
+      }
     }
 
     console.log('📤 Inserting ticket data:', {
