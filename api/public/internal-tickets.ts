@@ -2,18 +2,15 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
-// Vercel akan inject environment variables dari dashboard
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Missing Supabase credentials. Please set VITE_SUPABASE_URL and VITE_SUPABASE_SERVICE_ROLE_KEY in Vercel environment variables.');
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 // Helper function to generate ticket number
 async function generateTicketNumber(): Promise<string> {
+  if (!supabase) throw new Error('Supabase not initialized');
+  
   const year = new Date().getFullYear();
   const { data: lastTicket } = await supabase
     .from('tickets')
@@ -32,38 +29,55 @@ async function generateTicketNumber(): Promise<string> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // PERBAIKAN: Set headers PERTAMA untuk memastikan SELALU return JSON
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  // CRITICAL: Set headers PERTAMA SEBELUM SEMUA LOGIC
+  try {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  } catch (headerError) {
+    console.error('❌ Failed to set headers:', headerError);
+  }
   
   // PERBAIKAN: Wrapper try-catch untuk memastikan SELALU return JSON
   try {
+    console.log('🎯 Vercel Function: /api/public/internal-tickets');
+    console.log('📍 Method:', req.method);
+    console.log('📍 URL:', req.url);
     
     // Handle OPTIONS request
     if (req.method === 'OPTIONS') {
+      console.log('✅ OPTIONS request handled');
       return res.status(200).json({ success: true });
     }
 
     // Only allow POST
     if (req.method !== 'POST') {
+      console.error('❌ Method not allowed:', req.method);
       return res.status(405).json({
         success: false,
-        error: 'Method not allowed. Use POST method.'
+        error: `Method ${req.method} not allowed. Use POST method.`,
+        allowed_methods: ['POST', 'OPTIONS']
       });
     }
 
     // Validasi Supabase credentials
-    if (!supabaseUrl || !supabaseKey) {
+    if (!supabaseUrl || !supabaseKey || !supabase) {
       console.error('❌ Supabase credentials missing');
+      console.error('   VITE_SUPABASE_URL:', supabaseUrl ? 'SET' : 'NOT SET');
+      console.error('   VITE_SUPABASE_SERVICE_ROLE_KEY:', process.env.VITE_SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET');
+      console.error('   VITE_SUPABASE_ANON_KEY:', process.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
+      
       return res.status(500).json({
         success: false,
         error: 'Konfigurasi server tidak lengkap. Hubungi administrator.',
-        details: 'Supabase credentials not configured'
+        details: 'Supabase credentials not configured in Vercel environment variables'
       });
     }
-    console.log('🎯 POST /api/public/internal-tickets dipanggil');
+    
+    console.log('✅ Supabase credentials OK');
+    console.log('📥 Request body:', JSON.stringify(req.body, null, 2));
     
     const {
       reporter_name,
@@ -81,14 +95,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       source = 'web'
     } = req.body;
 
-    console.log('📥 Received internal ticket request:', {
+    console.log('📋 Parsed data:', {
       reporter_name,
       reporter_email,
       unit_id,
       category,
       category_id,
       priority,
-      title,
+      title: title?.substring(0, 50),
       source
     });
 
@@ -130,6 +144,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (unitCheckError || !unitData) {
       console.error('❌ Unit tidak valid atau tidak aktif:', unit_id);
+      console.error('❌ Unit check error:', unitCheckError);
       return res.status(400).json({
         success: false,
         error: 'Unit tidak valid atau tidak aktif',
@@ -181,7 +196,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ? `${description}\n\n--- Info Pelapor ---\nDepartemen: ${reporter_department || '-'}\nJabatan: ${reporter_position || '-'}`
       : description;
 
-    // Prepare ticket data - SINKRON DENGAN BACKEND EXPRESS
+    // Prepare ticket data
     const ticketData: any = {
       ticket_number: ticketNumber,
       type: 'complaint', // Internal ticket = complaint
@@ -201,16 +216,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       user_agent: req.headers['user-agent'] || null
     };
 
-    // Add category_id if provided - SINKRON DENGAN BACKEND EXPRESS
+    // Add category_id if provided
     const finalCategoryId = category_id || category || null;
     if (finalCategoryId) {
-      // Jika sudah UUID, gunakan langsung
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(finalCategoryId);
       if (isUUID) {
         ticketData.category_id = finalCategoryId;
         console.log('✅ Using category_id (UUID):', finalCategoryId);
       } else {
-        // Coba cari berdasarkan nama/code
         try {
           const categoryMap: { [key: string]: string } = {
             'it_support': 'IT Support',

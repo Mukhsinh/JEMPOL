@@ -32,12 +32,20 @@ async function generateTicketNumber(): Promise<string> {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // CRITICAL: Set headers PERTAMA
   try {
-    // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  } catch (headerError) {
+    console.error('❌ Failed to set headers:', headerError);
+  }
+  
+  try {
+    console.log('🎯 Vercel Function: /api/public/external-tickets');
+    console.log('📍 Method:', req.method);
     
     // Handle OPTIONS request
     if (req.method === 'OPTIONS') {
@@ -48,7 +56,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
       return res.status(405).json({
         success: false,
-        error: 'Method not allowed'
+        error: `Method ${req.method} not allowed. Use POST method.`,
+        allowed_methods: ['POST', 'OPTIONS']
+      });
+    }
+    
+    // Validasi Supabase credentials
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('❌ Supabase credentials missing');
+      return res.status(500).json({
+        success: false,
+        error: 'Konfigurasi server tidak lengkap. Hubungi administrator.',
+        details: 'Supabase credentials not configured'
       });
     }
     console.log('🎯 POST /api/public/external-tickets dipanggil');
