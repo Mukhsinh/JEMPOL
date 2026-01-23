@@ -1,7 +1,7 @@
 // Test script untuk mengecek endpoint submit tiket internal dan survey
 const API_BASE_URL = 'http://localhost:3004';
 
-async function testInternalTicketEndpoint() {
+async function testInternalTicketEndpoint(validUnitId) {
   console.log('\n🧪 Testing Internal Ticket Endpoint...');
   console.log('='.repeat(50));
   
@@ -16,7 +16,7 @@ async function testInternalTicketEndpoint() {
       priority: 'medium',
       title: 'Test Tiket Internal',
       description: 'Ini adalah test tiket internal untuk memastikan endpoint berfungsi',
-      unit_id: '00000000-0000-0000-0000-000000000001', // Ganti dengan unit_id yang valid
+      unit_id: validUnitId,
       source: 'web'
     };
 
@@ -62,13 +62,13 @@ async function testInternalTicketEndpoint() {
   }
 }
 
-async function testSurveyEndpoint() {
+async function testSurveyEndpoint(validUnitId) {
   console.log('\n🧪 Testing Survey Endpoint...');
   console.log('='.repeat(50));
   
   try {
     const payload = {
-      unit_id: '00000000-0000-0000-0000-000000000001', // Ganti dengan unit_id yang valid
+      unit_id: validUnitId,
       visitor_phone: '081234567890',
       visitor_name: 'Test User',
       is_anonymous: false,
@@ -191,10 +191,10 @@ async function runTests() {
   console.log('\n📝 Menggunakan unit_id:', validUnitId);
 
   // Test 2: Internal Ticket
-  const internalTicketSuccess = await testInternalTicketEndpoint();
+  const internalTicketSuccess = await testInternalTicketEndpoint(validUnitId);
 
   // Test 3: Survey
-  const surveySuccess = await testSurveyEndpoint();
+  const surveySuccess = await testSurveyEndpoint(validUnitId);
 
   // Summary
   console.log('\n' + '='.repeat(50));

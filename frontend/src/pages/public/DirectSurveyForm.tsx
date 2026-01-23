@@ -306,7 +306,14 @@ const DirectSurveyForm: React.FC = () => {
 
       console.log('📤 Mengirim survey:', surveyData);
 
-      const response = await fetch('/api/public/surveys', {
+      // Tentukan base URL berdasarkan environment
+      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const apiBaseUrl = isDevelopment ? 'http://localhost:3004' : '';
+      const apiEndpoint = `${apiBaseUrl}/api/public/surveys`;
+
+      console.log('🌐 API Endpoint:', apiEndpoint);
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

@@ -248,7 +248,14 @@ const DirectInternalTicketForm: React.FC = () => {
 
       console.log('📤 Mengirim tiket internal:', payload);
 
-      const response = await fetch('/api/public/internal-tickets', {
+      // Tentukan base URL berdasarkan environment
+      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const apiBaseUrl = isDevelopment ? 'http://localhost:3004' : '';
+      const apiEndpoint = `${apiBaseUrl}/api/public/internal-tickets`;
+
+      console.log('🌐 API Endpoint:', apiEndpoint);
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
