@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Submit Tiket Vercel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+    }
+    .test-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 5px;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    button.secondary {
+      background: #2196F3;
+    }
+    button.secondary:hover {
+      background: #0b7dda;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    .error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+    .info {
+      background: #d1ecf1;
+      border: 1px solid #bee5eb;
+      color: #0c5460;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Test Submit Tiket Vercel</h1>
+    
+    <div class="test-section">
+      <h3>1. Test Endpoint Internal Tickets</h3>
+      <button onclick="testInternalTickets()">Test POST Internal Ticket</button>
+      <button class="secondary" onclick="testOptionsInternal()">Test OPTIONS</button>
+      <div id="result-internal" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+      <h3>2. Test Endpoint External Tickets</h3>
+      <button onclick="testExternalTickets()">Test POST External Ticket</button>
+      <button class="secondary" onclick="testOptionsExternal()">Test OPTIONS</button>
+      <div id="result-external" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+      <h3>3. Test Endpoint App Settings</h3>
+      <button onclick="testAppSettings()">Test GET App Settings</button>
+      <div id="result-settings" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+      <h3>4. Test Endpoint Units</h3>
+      <button onclick="testUnits()">Test GET Units</button>
+      <div id="result-units" class="result" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin + '/api';
+    
+    function showResult(elementId, data, isError = false) {
+      const element = document.getElementById(elementId);
+      element.style.display = 'block';
+      element.className = 'result ' + (isError ? 'error' : 'success');
+      element.textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function testOptionsInternal() {
+      const resultId = 'result-internal';
+      try {
+        const response = await fetch(API_BASE + '/public/internal-tickets', {
+          method: 'OPTIONS',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        showResult(resultId, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          data: data
+        });
+      } catch (error) {
+        showResult(resultId, {
+          error: error.message,
+          stack: error.stack
+        }, true);
+      }
+    }
+
+    async function testInternalTickets() {
+      const resultId = 'result-internal';
+      try {
+        const testData = {
+          reporter_name: 'Test User',
+          reporter_email: 'test@example.com',
+          reporter_phone: '081234567890',
+          reporter_department: 'IT',
+          reporter_position: 'Staff',
+          category: 'it_support',
+          priority: 'medium',
+          title: 'Test Tiket Internal dari Vercel',
+          description: 'Ini adalah test tiket untuk verifikasi endpoint berfungsi',
+          unit_id: 'UNIT_ID_DISINI', // Ganti dengan unit_id yang valid
+          source: 'web'
+        };
+
+        console.log('📤 Sending request to:', API_BASE + '/public/internal-tickets');
+        console.log('📤 Data:', testData);
+
+        const response = await fetch(API_BASE + '/public/internal-tickets', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(testData)
+        });
+
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          throw new Error('Response bukan JSON: ' + text.substring(0, 200));
+        }
+
+        const data = await response.json();
+        console.log('📥 Response data:', data);
+
+        showResult(resultId, {
+          status: response.status,
+          statusText: response.statusText,
+          data: data
+        }, !response.ok);
+      } catch (error) {
+        console.error('❌ Error:', error);
+        showResult(resultId, {
+          error: error.message,
+          stack: error.stack
+        }, true);
+      }
+    }
+
+    async function testOptionsExternal() {
+      const resultId = 'result-external';
+      try {
+        const response = await fetch(API_BASE + '/public/external-tickets', {
+          method: 'OPTIONS',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        showResult(resultId, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          data: data
+        });
+      } catch (error) {
+        showResult(resultId, {
+          error: error.message,
+          stack: error.stack
+        }, true);
+      }
+    }
+
+    async function testExternalTickets() {
+      const resultId = 'result-external';
+      try {
+        const testData = {
+          reporter_identity_type: 'named',
+          reporter_name: 'Test User External',
+          reporter_email: 'external@example.com',
+          reporter_phone: '081234567890',
+          reporter_address: 'Jl. Test No. 123',
+          service_type: 'complaint',
+          title: 'Test Tiket External dari Vercel',
+          description: 'Ini adalah test tiket external untuk verifikasi endpoint berfungsi',
+          unit_id: 'UNIT_ID_DISINI', // Ganti dengan unit_id yang valid
+          source: 'web'
+        };
+
+        const response = await fetch(API_BASE + '/public/external-tickets', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(testData)
+        });
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          throw new Error('Response bukan JSON: ' + text.substring(0, 200));
+        }
+
+        const data = await response.json();
+        showResult(resultId, {
+          status: response.status,
+          statusText: response.statusText,
+          data: data
+        }, !response.ok);
+      } catch (error) {
+        showResult(resultId, {
+          error: error.message,
+          stack: error.stack
+        }, true);
+      }
+    }
+
+    async function testAppSettings() {
+      const resultId = 'result-settings';
+      try {
+        const response = await fetch(API_BASE + '/public/app-settings', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          throw new Error('Response bukan JSON: ' + text.substring(0, 200));
+        }
+
+        const data = await response.json();
+        showResult(resultId, {
+          status: response.status,
+          statusText: response.statusText,
+          data: data
+        }, !response.ok);
+      } catch (error) {
+        showResult(resultId, {
+          error: error.message,
+          stack: error.stack
+        }, true);
+      }
+    }
+
+    async function testUnits() {
+      const resultId = 'result-units';
+      try {
+        const response = await fetch(API_BASE + '/public/units', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          throw new Error('Response bukan JSON: ' + text.substring(0, 200));
+        }
+
+        const data = await response.json();
+        showResult(resultId, {
+          status: response.status,
+          statusText: response.statusText,
+          data: data
+        }, !response.ok);
+      } catch (error) {
+        showResult(resultId, {
+          error: error.message,
+          stack: error.stack
+        }, true);
+      }
+    }
+  </script>
+</body>
+</html>
