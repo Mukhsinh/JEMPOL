@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Perbaikan Error Units</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #334155;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success {
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+        }
+        .error {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+        .info {
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+            color: #1e40af;
+        }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #3b82f6;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Perbaikan Error Units di Vercel</h1>
+        <p class="subtitle">Verifikasi endpoint units dan unit-types berfungsi dengan benar</p>
+
+        <div class="test-section">
+            <h3>1. Test Endpoint /api/public/units</h3>
+            <button onclick="testUnitsEndpoint()">Test Units</button>
+            <div id="units-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test Endpoint /api/public/unit-types</h3>
+            <button onclick="testUnitTypesEndpoint()">Test Unit Types</button>
+            <div id="unit-types-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test Array Validation</h3>
+            <button onclick="testArrayValidation()">Test Validasi</button>
+            <div id="validation-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test Timeout Handling</h3>
+            <button onclick="testTimeout()">Test Timeout</button>
+            <div id="timeout-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000/api'
+            : '/api';
+
+        async function testUnitsEndpoint() {
+            const resultDiv = document.getElementById('units-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Testing...';
+
+            try {
+                const response = await fetch(`${API_URL}/public/units`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success && Array.isArray(data.data)) {
+                    resultDiv.innerHTML = `<div class="result success">
+✅ SUCCESS
+Status: ${response.status}
+Data Count: ${data.count || data.data.length}
+Is Array: ${Array.isArray(data.data)}
+Sample: ${JSON.stringify(data.data[0] || {}, null, 2)}
+                    </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">
+❌ RESPONSE FORMAT ERROR
+${JSON.stringify(data, null, 2)}
+                    </div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">
+❌ ERROR: ${error.message}
+                </div>`;
+            }
+        }
+
+        async function testUnitTypesEndpoint() {
+            const resultDiv = document.getElementById('unit-types-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Testing...';
+
+            try {
+                const response = await fetch(`${API_URL}/public/unit-types`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success && Array.isArray(data.data)) {
+                    resultDiv.innerHTML = `<div class="result success">
+✅ SUCCESS
+Status: ${response.status}
+Data Count: ${data.count || data.data.length}
+Is Array: ${Array.isArray(data.data)}
+Sample: ${JSON.stringify(data.data[0] || {}, null, 2)}
+                    </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">
+❌ RESPONSE FORMAT ERROR
+${JSON.stringify(data, null, 2)}
+                    </div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">
+❌ ERROR: ${error.message}
+                </div>`;
+            }
+        }
+
+        function testArrayValidation() {
+            const resultDiv = document.getElementById('validation-result');
+            
+            const testCases = [
+                { input: [], expected: true, desc: 'Empty array' },
+                { input: [1, 2, 3], expected: true, desc: 'Array with items' },
+                { input: null, expected: false, desc: 'Null value' },
+                { input: undefined, expected: false, desc: 'Undefined value' },
+                { input: {}, expected: false, desc: 'Object' },
+                { input: 'string', expected: false, desc: 'String' }
+            ];
+
+            let results = '✅ ARRAY VALIDATION TESTS:\n\n';
+            let allPassed = true;
+
+            testCases.forEach(test => {
+                const result = Array.isArray(test.input);
+                const passed = result === test.expected;
+                allPassed = allPassed && passed;
+                
+                results += `${passed ? '✅' : '❌'} ${test.desc}: ${result} (expected: ${test.expected})\n`;
+            });
+
+            resultDiv.innerHTML = `<div class="result ${allPassed ? 'success' : 'error'}">
+${results}
+${allPassed ? '\n✅ All validation tests passed!' : '\n❌ Some tests failed!'}
+            </div>`;
+        }
+
+        async function testTimeout() {
+            const resultDiv = document.getElementById('timeout-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Testing timeout (3 seconds)...';
+
+            const startTime = Date.now();
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+                const response = await fetch(`${API_URL}/public/units`, {
+                    method: 'GET',
+                    signal: controller.signal,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                clearTimeout(timeoutId);
+                const elapsed = Date.now() - startTime;
+
+                resultDiv.innerHTML = `<div class="result success">
+✅ REQUEST COMPLETED
+Time: ${elapsed}ms
+Status: ${response.status}
+                </div>`;
+            } catch (error) {
+                const elapsed = Date.now() - startTime;
+                
+                if (error.name === 'AbortError') {
+                    resultDiv.innerHTML = `<div class="result info">
+⏱️ TIMEOUT TRIGGERED (as expected)
+Time: ${elapsed}ms
+Error: ${error.message}
+                    </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">
+❌ ERROR: ${error.message}
+Time: ${elapsed}ms
+                    </div>`;
+                }
+            }
+        }
+
+        // Auto-run tests on load
+        window.addEventListener('load', () => {
+            console.log('🧪 Test page loaded. Click buttons to run tests.');
+        });
+    </script>
+</body>
+</html>

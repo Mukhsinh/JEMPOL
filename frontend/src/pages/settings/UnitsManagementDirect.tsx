@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import unitService from '../../services/unitService';
 import UnitModal from '../../components/UnitModal';
-import { supabase } from '../../utils/supabaseClient';
 
 export interface Unit {
   id: string;
@@ -511,7 +510,7 @@ const UnitsManagementDirect = ({ embedded = false }: UnitsManagementProps) => {
                             onChange={(e) => setTypeFilter(e.target.value)}
                         >
                             <option value="">Semua Tipe</option>
-                            {unitTypes.map(type => (
+                            {Array.isArray(unitTypes) && unitTypes.map(type => (
                                 <option key={type.id} value={type.code}>{type.name}</option>
                             ))}
                         </select>
@@ -555,14 +554,14 @@ const UnitsManagementDirect = ({ embedded = false }: UnitsManagementProps) => {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : units.length === 0 ? (
+                            ) : Array.isArray(units) && units.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
                                         Tidak ada data unit kerja
                                     </td>
                                 </tr>
                             ) : (
-                                units.map(unit => renderUnitRow(unit))
+                                Array.isArray(units) && units.map(unit => renderUnitRow(unit))
                             )}
                         </tbody>
                     </table>
@@ -570,7 +569,7 @@ const UnitsManagementDirect = ({ embedded = false }: UnitsManagementProps) => {
                 
                 {/* Pagination */}
                 <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20">
-                    <span className="text-sm text-slate-500">Menampilkan 1 sampai {units.length} dari {units.length} entri</span>
+                    <span className="text-sm text-slate-500">Menampilkan 1 sampai {Array.isArray(units) ? units.length : 0} dari {Array.isArray(units) ? units.length : 0} entri</span>
                     <div className="flex items-center gap-2">
                         <button className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-white dark:hover:bg-slate-800 shadow-sm disabled:opacity-50 transition-all" disabled>
                             <span className="material-symbols-outlined text-sm">chevron_left</span>

@@ -418,7 +418,7 @@ const UnitsManagement = () => {
                             onChange={(e) => setTypeFilter(e.target.value)}
                         >
                             <option value="">Semua Tipe</option>
-                            {unitTypes.map(type => (
+                            {Array.isArray(unitTypes) && unitTypes.map(type => (
                                 <option key={type.id} value={type.code}>{type.name}</option>
                             ))}
                         </select>
@@ -469,7 +469,7 @@ const UnitsManagement = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                units.map(unit => renderUnitRow(unit))
+                                Array.isArray(units) && units.map(unit => renderUnitRow(unit))
                             )}
                         </tbody>
                     </table>

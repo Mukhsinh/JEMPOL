@@ -27,6 +27,10 @@
       "destination": "/api/public/units"
     },
     {
+      "source": "/api/public/unit-types",
+      "destination": "/api/public/unit-types"
+    },
+    {
       "source": "/api/public/app-settings",
       "destination": "/api/public/app-settings"
     }

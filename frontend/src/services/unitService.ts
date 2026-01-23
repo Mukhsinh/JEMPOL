@@ -226,12 +226,17 @@ class UnitService {
 
   // Master data dengan improved fallback
   async getUnitTypes(): Promise<UnitType[]> {
+    // Timeout promise
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout after 3 seconds')), 3000)
+    );
+
     if (isVercelProduction()) {
       try {
-        const { data, error } = await supabase
-          .from('unit_types')
-          .select('*')
-          .order('name');
+        const { data, error } = await Promise.race([
+          supabase.from('unit_types').select('*').eq('is_active', true).order('name'),
+          timeoutPromise
+        ]);
         if (error) throw error;
         return data || [];
       } catch (error: any) {
@@ -239,14 +244,37 @@ class UnitService {
         return [];
       }
     }
+    
     try {
-      const response = await api.get('/units/unit-types');
-      return response.data;
-    } catch {
+      const response = await Promise.race([
+        api.get('/units/unit-types', { timeout: 3000 }),
+        timeoutPromise
+      ]);
+      
+      // Handle berbagai format response
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        return response.data.data;
+      } else {
+        console.warn('Format response unit types tidak dikenali:', response.data);
+        return [];
+      }
+    } catch (error: any) {
+      if (error.message.includes('timeout') || error.code === 'ECONNABORTED') {
+        console.warn('⚠️ Request timeout, returning empty unit types');
+        return [];
+      }
+      
       try {
-        const { data } = await supabase.from('unit_types').select('*').order('name');
+        const { data } = await Promise.race([
+          supabase.from('unit_types').select('*').eq('is_active', true).order('name'),
+          timeoutPromise
+        ]);
         return data || [];
-      } catch { return []; }
+      } catch { 
+        return []; 
+      }
     }
   }
 
