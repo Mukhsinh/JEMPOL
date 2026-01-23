@@ -631,14 +631,15 @@ router.options('/external-tickets', (req: Request, res: Response) => {
 });
 
 router.post('/external-tickets', async (req: Request, res: Response) => {
+  // Set response headers untuk memastikan JSON response
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  
   console.log('🎯 POST /api/public/external-tickets dipanggil');
   console.log('📍 Request method:', req.method);
   console.log('📍 Request path:', req.path);
   console.log('📍 Request URL:', req.url);
   
   try {
-    // Set response headers untuk memastikan JSON response
-    res.setHeader('Content-Type', 'application/json');
     
     const {
       reporter_identity_type,
@@ -915,6 +916,9 @@ router.post('/external-tickets', async (req: Request, res: Response) => {
 
 // Submit internal ticket from public form (QR code scan - for staff)
 router.post('/internal-tickets', async (req: Request, res: Response) => {
+  // Set response headers untuk memastikan JSON response
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  
   try {
     const {
       reporter_name,
@@ -1379,10 +1383,10 @@ router.options('/surveys', (req: Request, res: Response) => {
 });
 
 router.post('/surveys', async (req: Request, res: Response) => {
+  // Set response headers untuk memastikan JSON response
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  
   try {
-    // Set response headers untuk memastikan JSON response
-    res.setHeader('Content-Type', 'application/json');
-    
     console.log('📥 Received public survey submission:', req.body);
     
     const {

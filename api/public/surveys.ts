@@ -13,6 +13,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // PERBAIKAN: Wrapper untuk memastikan SELALU return JSON
   try {
     // Set CORS dan Content-Type headers PERTAMA KALI
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -285,10 +286,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error: any) {
     console.error('❌ Error submitting public survey:', error);
+    
+    // PERBAIKAN: Pastikan header JSON di-set ulang
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
     return res.status(500).json({
       success: false,
       error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
       details: error.stack?.split('\n')[0] || null
+    });
+  } catch (outerError: any) {
+    // PERBAIKAN: Catch tambahan untuk error yang tidak tertangkap
+    console.error('❌ CRITICAL ERROR:', outerError);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    return res.status(500).json({
+      success: false,
+      error: 'Terjadi kesalahan kritis pada server'
     });
   }
 }

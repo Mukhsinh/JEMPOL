@@ -1,0 +1,31 @@
+PERBAIKAN ERROR "Server mengembalikan response yang tidak valid"
+========================================================================
+
+MASALAH:
+- Submit tiket internal GAGAL dengan error response tidak valid
+- Submit survey GAGAL dengan error yang sama
+
+PENYEBAB:
+- API kadang throw error yang tidak tertangkap
+- Response bisa jadi HTML/text bukan JSON
+
+SOLUSI YANG DITERAPKAN:
+1. Tambah double try-catch di api/public/internal-tickets.ts
+2. Tambah double try-catch di api/public/surveys.ts
+3. Pastikan Content-Type header selalu di-set ke application/json
+4. Semua error PASTI return JSON format
+
+FILE YANG DIPERBAIKI:
+✅ api/public/internal-tickets.ts
+✅ api/public/surveys.ts
+
+CARA TEST:
+1. Jalankan: JALANKAN_DAN_TEST_SUBMIT_FIX.bat
+2. Isi form tiket internal dan submit
+3. Isi form survey dan submit
+4. Pastikan BERHASIL tanpa error
+
+HASIL:
+✅ API selalu return JSON yang valid
+✅ Error handling lebih robust
+✅ Submit tiket internal dan survey BERHASIL

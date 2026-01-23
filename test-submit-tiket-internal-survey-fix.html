@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Submit Tiket Internal & Survey - PERBAIKAN</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        .test-section {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #28a745;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #dc3545;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #17a2b8;
+        }
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #ffc107;
+        }
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin: 5px;
+        }
+        .status.pending { background: #ffc107; color: #000; }
+        .status.success { background: #28a745; color: #fff; }
+        .status.failed { background: #dc3545; color: #fff; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+            font-weight: bold;
+            color: #34495e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Submit Tiket Internal & Survey - PERBAIKAN</h1>
+        <div class="info">
+            <strong>Tujuan:</strong> Menguji submit tiket internal dan survey dengan perbaikan response handling
+        </div>
+
+        <!-- Test 1: Submit Tiket Internal -->
+        <div class="test-section">
+            <h2>📝 Test 1: Submit Tiket Internal</h2>
+            <div id="test1-status" class="status pending">Belum Dijalankan</div>
+            
+            <label>Nama Pelapor:</label>
+            <input type="text" id="internal-name" value="Test User Internal" />
+            
+            <label>Email:</label>
+            <input type="email" id="internal-email" value="test@internal.com" />
+            
+            <label>Telepon:</label>
+            <input type="tel" id="internal-phone" value="081234567890" />
+            
+            <label>Unit:</label>
+            <select id="internal-unit">
+                <option value="">Pilih Unit...</option>
+            </select>
+            
+            <label>Judul:</label>
+            <input type="text" id="internal-title" value="Test Tiket Internal - Perbaikan Response" />
+            
+            <label>Deskripsi:</label>
+            <textarea id="internal-description" rows="3">Ini adalah test tiket internal untuk memastikan response JSON valid</textarea>
+            
+            <button onclick="testSubmitInternalTicket()">🚀 Submit Tiket Internal</button>
+            <div id="test1-result"></div>
+        </div>
+
+        <!-- Test 2: Submit Survey -->
+        <div class="test-section">
+            <h2>📊 Test 2: Submit Survey</h2>
+            <div id="test2-status" class="status pending">Belum Dijalankan</div>
+            
+            <label>Nomor HP:</label>
+            <input type="tel" id="survey-phone" value="081234567890" />
+            
+            <label>Nama (Opsional):</label>
+            <input type="text" id="survey-name" value="Test User Survey" />
+            
+            <label>Unit:</label>
+            <select id="survey-unit">
+                <option value="">Pilih Unit...</option>
+            </select>
+            
+            <label>Skor Q1 (1-5):</label>
+            <input type="number" id="survey-q1" min="1" max="5" value="5" />
+            
+            <label>Skor Q2 (1-5):</label>
+            <input type="number" id="survey-q2" min="1" max="5" value="4" />
+            
+            <label>Skor Q3 (1-5):</label>
+            <input type="number" id="survey-q3" min="1" max="5" value="5" />
+            
+            <label>Komentar:</label>
+            <textarea id="survey-comments" rows="3">Test survey dengan perbaikan response handling</textarea>
+            
+            <button onclick="testSubmitSurvey()">🚀 Submit Survey</button>
+            <div id="test2-result"></div>
+        </div>
+
+        <!-- Test 3: Test Keduanya Bersamaan -->
+        <div class="test-section">
+            <h2>🔄 Test 3: Submit Keduanya Bersamaan</h2>
+            <div id="test3-status" class="status pending">Belum Dijalankan</div>
+            <button onclick="testBothSubmissions()">🚀 Test Keduanya</button>
+            <div id="test3-result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3004/api';
+        
+        // Load units on page load
+        window.onload = async () => {
+            try {
+                const response = await fetch(`${API_BASE}/public/units`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const internalSelect = document.getElementById('internal-unit');
+                    const surveySelect = document.getElementById('survey-unit');
+                    
+                    data.data.forEach(unit => {
+                        const option1 = new Option(unit.name, unit.id);
+                        const option2 = new Option(unit.name, unit.id);
+                        internalSelect.add(option1);
+                        surveySelect.add(option2);
+                    });
+                    
+                    // Select first unit by default
+                    if (data.data.length > 0) {
+                        internalSelect.value = data.data[0].id;
+                        surveySelect.value = data.data[0].id;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading units:', error);
+            }
+        };
+
+        async function testSubmitInternalTicket() {
+            const resultDiv = document.getElementById('test1-result');
+            const statusDiv = document.getElementById('test1-status');
+            
+            statusDiv.className = 'status pending';
+            statusDiv.textContent = 'Mengirim...';
+            resultDiv.innerHTML = '<div class="info">⏳ Mengirim tiket internal...</div>';
+            
+            try {
+                const payload = {
+                    reporter_name: document.getElementById('internal-name').value,
+                    reporter_email: document.getElementById('internal-email').value,
+                    reporter_phone: document.getElementById('internal-phone').value,
+                    reporter_department: 'IT Department',
+                    reporter_position: 'Staff',
+                    unit_id: document.getElementById('internal-unit').value,
+                    title: document.getElementById('internal-title').value,
+                    description: document.getElementById('internal-description').value,
+                    priority: 'medium',
+                    source: 'web'
+                };
+                
+                console.log('📤 Sending internal ticket:', payload);
+                
+                const response = await fetch(`${API_BASE}/public/internal-tickets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                const contentType = response.headers.get('content-type');
+                console.log('📥 Content-Type:', contentType);
+                
+                // Check if response is JSON
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error(`Server mengembalikan response yang tidak valid. Content-Type: ${contentType || 'tidak ada'}`);
+                }
+                
+                const text = await response.text();
+                console.log('📥 Response text:', text);
+                
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (parseError) {
+                    console.error('❌ JSON parse error:', parseError);
+                    throw new Error(`Server mengembalikan response yang tidak valid. Response: ${text.substring(0, 100)}`);
+                }
+                
+                console.log('📥 Parsed data:', data);
+                
+                if (response.ok && data.success) {
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = 'Berhasil';
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ Tiket Internal Berhasil Dibuat!</strong><br>
+                            Nomor Tiket: <strong>${data.ticket_number || 'N/A'}</strong><br>
+                            Message: ${data.message || 'Sukses'}
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    throw new Error(data.error || 'Gagal membuat tiket internal');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                statusDiv.className = 'status failed';
+                statusDiv.textContent = 'Gagal';
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ Error:</strong><br>
+                        ${error.message}
+                    </div>
+                    <pre>${error.stack || ''}</pre>
+                `;
+            }
+        }
+
+        async function testSubmitSurvey() {
+            const resultDiv = document.getElementById('test2-result');
+            const statusDiv = document.getElementById('test2-status');
+            
+            statusDiv.className = 'status pending';
+            statusDiv.textContent = 'Mengirim...';
+            resultDiv.innerHTML = '<div class="info">⏳ Mengirim survey...</div>';
+            
+            try {
+                const payload = {
+                    visitor_phone: document.getElementById('survey-phone').value,
+                    visitor_name: document.getElementById('survey-name').value,
+                    unit_id: document.getElementById('survey-unit').value,
+                    q1_score: parseInt(document.getElementById('survey-q1').value),
+                    q2_score: parseInt(document.getElementById('survey-q2').value),
+                    q3_score: parseInt(document.getElementById('survey-q3').value),
+                    q4_score: 4,
+                    q5_score: 5,
+                    q6_score: 4,
+                    q7_score: 5,
+                    q8_score: 4,
+                    comments: document.getElementById('survey-comments').value,
+                    is_anonymous: false,
+                    source: 'web'
+                };
+                
+                console.log('📤 Sending survey:', payload);
+                
+                const response = await fetch(`${API_BASE}/public/surveys`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                console.log('📥 Response status:', response.status);
+                console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
+                
+                const contentType = response.headers.get('content-type');
+                console.log('📥 Content-Type:', contentType);
+                
+                // Check if response is JSON
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error(`Server mengembalikan response yang tidak valid. Content-Type: ${contentType || 'tidak ada'}`);
+                }
+                
+                const text = await response.text();
+                console.log('📥 Response text:', text);
+                
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (parseError) {
+                    console.error('❌ JSON parse error:', parseError);
+                    throw new Error(`Server mengembalikan response yang tidak valid. Response: ${text.substring(0, 100)}`);
+                }
+                
+                console.log('📥 Parsed data:', data);
+                
+                if (response.ok && data.success) {
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = 'Berhasil';
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ Survey Berhasil Dikirim!</strong><br>
+                            Message: ${data.message || 'Sukses'}
+                        </div>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    throw new Error(data.error || 'Gagal mengirim survey');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                statusDiv.className = 'status failed';
+                statusDiv.textContent = 'Gagal';
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ Error:</strong><br>
+                        ${error.message}
+                    </div>
+                    <pre>${error.stack || ''}</pre>
+                `;
+            }
+        }
+
+        async function testBothSubmissions() {
+            const resultDiv = document.getElementById('test3-result');
+            const statusDiv = document.getElementById('test3-status');
+            
+            statusDiv.className = 'status pending';
+            statusDiv.textContent = 'Mengirim...';
+            resultDiv.innerHTML = '<div class="info">⏳ Mengirim tiket internal dan survey...</div>';
+            
+            try {
+                // Submit both in parallel
+                const [ticketResult, surveyResult] = await Promise.allSettled([
+                    testSubmitInternalTicket(),
+                    testSubmitSurvey()
+                ]);
+                
+                const ticketSuccess = ticketResult.status === 'fulfilled';
+                const surveySuccess = surveyResult.status === 'fulfilled';
+                
+                if (ticketSuccess && surveySuccess) {
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = 'Semua Berhasil';
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ Kedua Submission Berhasil!</strong><br>
+                            Tiket Internal: ✅ Berhasil<br>
+                            Survey: ✅ Berhasil
+                        </div>
+                    `;
+                } else {
+                    statusDiv.className = 'status failed';
+                    statusDiv.textContent = 'Ada yang Gagal';
+                    resultDiv.innerHTML = `
+                        <div class="warning">
+                            <strong>⚠️ Hasil Mixed:</strong><br>
+                            Tiket Internal: ${ticketSuccess ? '✅ Berhasil' : '❌ Gagal'}<br>
+                            Survey: ${surveySuccess ? '✅ Berhasil' : '❌ Gagal'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                statusDiv.className = 'status failed';
+                statusDiv.textContent = 'Gagal';
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ Error:</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
