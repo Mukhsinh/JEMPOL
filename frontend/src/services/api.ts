@@ -31,20 +31,24 @@ const getApiBaseUrl = (): string => {
 
   const envApiUrl = (import.meta as any).env?.VITE_API_URL;
 
-  // In production (Vercel), we'll use Supabase directly
+  // In production (Vercel), gunakan relative path /api
+  // Ini akan di-route ke Vercel serverless functions di folder /api
   if (import.meta.env.PROD) {
     cachedApiBaseUrl = '/api';
+    console.log('🚀 Production mode: Using Vercel API at /api');
     return cachedApiBaseUrl;
   }
 
   // In development with explicit API URL
-  if (envApiUrl && envApiUrl.includes('localhost')) {
+  if (envApiUrl) {
     cachedApiBaseUrl = envApiUrl;
+    console.log('🔧 Development mode: Using API at', cachedApiBaseUrl);
     return cachedApiBaseUrl;
   }
 
-  // Default fallback
+  // Default fallback untuk development
   cachedApiBaseUrl = 'http://localhost:3004/api';
+  console.log('🔧 Development mode (fallback): Using API at', cachedApiBaseUrl);
   return cachedApiBaseUrl;
 };
 

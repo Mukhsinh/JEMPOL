@@ -306,10 +306,9 @@ const DirectSurveyForm: React.FC = () => {
 
       console.log('📤 Mengirim survey:', surveyData);
 
-      // Tentukan base URL berdasarkan environment
-      const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const apiBaseUrl = isDevelopment ? 'http://localhost:3004' : '';
-      const apiEndpoint = `${apiBaseUrl}/api/public/surveys`;
+      // Gunakan relative path untuk production (Vercel)
+      // Di production, /api akan di-route ke Vercel serverless functions
+      const apiEndpoint = '/api/public/surveys';
 
       console.log('🌐 API Endpoint:', apiEndpoint);
 
