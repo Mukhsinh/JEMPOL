@@ -302,10 +302,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       message: 'Tiket berhasil dibuat. Nomor tiket Anda: ' + ticket.ticket_number
     });
   } catch (error: any) {
-    console.error('❌ Error in create external ticket:', error);
+    console.error('❌ CRITICAL ERROR in create external ticket handler:', error);
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error name:', error.name);
+    console.error('❌ Error message:', error.message);
+    
+    // PERBAIKAN: Pastikan header JSON tetap di-set
+    try {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    } catch (headerError) {
+      console.error('❌ Cannot set header:', headerError);
+    }
+    
+    // Return JSON valid dengan informasi error lengkap
     return res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error')
+      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
+      error_type: error.name || 'UnknownError',
+      details: error.stack?.split('\n').slice(0, 3).join('\n') || null,
+      timestamp: new Date().toISOString()
     });
   }
 }

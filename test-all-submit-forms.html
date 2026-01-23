@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Submit Semua Form - KISS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .test-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+            display: block;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+            display: block;
+        }
+        .result.info {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            color: #0c5460;
+            display: block;
+        }
+        .result pre {
+            margin-top: 10px;
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status-badge.pending {
+            background: #ffc107;
+            color: #000;
+        }
+        .status-badge.success {
+            background: #28a745;
+            color: white;
+        }
+        .status-badge.failed {
+            background: #dc3545;
+            color: white;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Submit Semua Form - KISS</h1>
+
+        <!-- Test 1: Tiket Internal -->
+        <div class="test-section">
+            <h2>1. Test Tiket Internal <span class="status-badge pending" id="status-internal">Belum Ditest</span></h2>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Nama Pelapor:</label>
+                    <input type="text" id="internal-name" value="Test Internal User">
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="internal-email" value="internal@test.com">
+                </div>
+                <div class="form-group">
+                    <label>Telepon:</label>
+                    <input type="tel" id="internal-phone" value="081234567890">
+                </div>
+                <div class="form-group">
+                    <label>Unit ID:</label>
+                    <input type="text" id="internal-unit" value="" placeholder="Akan diisi otomatis">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Judul:</label>
+                <input type="text" id="internal-title" value="Test Tiket Internal - Jlamprang">
+            </div>
+            <div class="form-group">
+                <label>Deskripsi:</label>
+                <textarea id="internal-desc">Ini adalah test tiket internal untuk unit Jlamprang. Mohon segera ditindaklanjuti.</textarea>
+            </div>
+            <button onclick="testInternalTicket()">🚀 Submit Tiket Internal</button>
+            <div id="result-internal" class="result"></div>
+        </div>
+
+        <!-- Test 2: Tiket Eksternal -->
+        <div class="test-section">
+            <h2>2. Test Tiket Eksternal <span class="status-badge pending" id="status-external">Belum Ditest</span></h2>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Nama:</label>
+                    <input type="text" id="external-name" value="Test External User">
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="external-email" value="external@test.com">
+                </div>
+                <div class="form-group">
+                    <label>Telepon:</label>
+                    <input type="tel" id="external-phone" value="081234567891">
+                </div>
+                <div class="form-group">
+                    <label>Unit ID:</label>
+                    <input type="text" id="external-unit" value="" placeholder="Akan diisi otomatis">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Jenis Layanan:</label>
+                <select id="external-service">
+                    <option value="complaint">Pengaduan</option>
+                    <option value="request">Permintaan</option>
+                    <option value="suggestion">Saran</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Judul:</label>
+                <input type="text" id="external-title" value="Test Tiket Eksternal - Bagian Keuangan">
+            </div>
+            <div class="form-group">
+                <label>Deskripsi:</label>
+                <textarea id="external-desc">Ini adalah test tiket eksternal untuk Bagian Keuangan. Mohon segera ditindaklanjuti.</textarea>
+            </div>
+            <button onclick="testExternalTicket()">🚀 Submit Tiket Eksternal</button>
+            <div id="result-external" class="result"></div>
+        </div>
+
+        <!-- Test 3: Survey -->
+        <div class="test-section">
+            <h2>3. Test Survey <span class="status-badge pending" id="status-survey">Belum Ditest</span></h2>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Nama:</label>
+                    <input type="text" id="survey-name" value="Test Survey User">
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="survey-email" value="survey@test.com">
+                </div>
+                <div class="form-group">
+                    <label>Telepon (Wajib):</label>
+                    <input type="tel" id="survey-phone" value="081234567892">
+                </div>
+                <div class="form-group">
+                    <label>Unit ID:</label>
+                    <input type="text" id="survey-unit" value="" placeholder="Akan diisi otomatis">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Skor Kepuasan (1-4):</label>
+                <input type="number" id="survey-score" value="4" min="1" max="4">
+            </div>
+            <div class="form-group">
+                <label>Komentar:</label>
+                <textarea id="survey-comments">Pelayanan sangat memuaskan. Terima kasih!</textarea>
+            </div>
+            <button onclick="testSurvey()">🚀 Submit Survey</button>
+            <div id="result-survey" class="result"></div>
+        </div>
+
+        <!-- Test All Button -->
+        <div class="test-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <button onclick="testAll()" style="background: white; color: #667eea; font-size: 18px;">
+                🎯 TEST SEMUA FORM SEKALIGUS
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        
+        // Fetch unit pertama yang aktif
+        async function fetchFirstUnit() {
+            try {
+                const response = await fetch(`${API_BASE}/api/public/units`);
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.length > 0) {
+                    const unitId = data.data[0].id;
+                    document.getElementById('internal-unit').value = unitId;
+                    document.getElementById('external-unit').value = unitId;
+                    document.getElementById('survey-unit').value = unitId;
+                    console.log('✅ Unit ID loaded:', unitId);
+                    return unitId;
+                }
+            } catch (error) {
+                console.error('❌ Error fetching units:', error);
+            }
+            return null;
+        }
+
+        // Load unit saat halaman dimuat
+        window.addEventListener('DOMContentLoaded', fetchFirstUnit);
+
+        async function testInternalTicket() {
+            const resultDiv = document.getElementById('result-internal');
+            const statusBadge = document.getElementById('status-internal');
+            const button = event.target;
+            
+            button.disabled = true;
+            button.textContent = '⏳ Mengirim...';
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '⏳ Mengirim tiket internal...';
+            statusBadge.className = 'status-badge pending';
+            statusBadge.textContent = 'Sedang Ditest...';
+
+            try {
+                const payload = {
+                    reporter_name: document.getElementById('internal-name').value,
+                    reporter_email: document.getElementById('internal-email').value,
+                    reporter_phone: document.getElementById('internal-phone').value,
+                    unit_id: document.getElementById('internal-unit').value,
+                    title: document.getElementById('internal-title').value,
+                    description: document.getElementById('internal-desc').value,
+                    priority: 'medium',
+                    source: 'web'
+                };
+
+                console.log('📤 Sending internal ticket:', payload);
+
+                const response = await fetch(`${API_BASE}/api/public/internal-tickets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const contentType = response.headers.get('content-type');
+                console.log('📥 Response content-type:', contentType);
+                console.log('📥 Response status:', response.status);
+
+                let data;
+                const text = await response.text();
+                console.log('📥 Response text:', text);
+
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(`Response bukan JSON valid: ${text.substring(0, 200)}`);
+                }
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ BERHASIL!</strong><br>
+                        Nomor Tiket: <strong>${data.ticket_number}</strong><br>
+                        ${data.message || 'Tiket internal berhasil dibuat'}
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    statusBadge.className = 'status-badge success';
+                    statusBadge.textContent = 'BERHASIL ✓';
+                } else {
+                    throw new Error(data.error || 'Unknown error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <strong>❌ GAGAL!</strong><br>
+                    ${error.message}
+                    <pre>${error.stack || ''}</pre>
+                `;
+                statusBadge.className = 'status-badge failed';
+                statusBadge.textContent = 'GAGAL ✗';
+            } finally {
+                button.disabled = false;
+                button.textContent = '🚀 Submit Tiket Internal';
+            }
+        }
+
+        async function testExternalTicket() {
+            const resultDiv = document.getElementById('result-external');
+            const statusBadge = document.getElementById('status-external');
+            const button = event.target;
+            
+            button.disabled = true;
+            button.textContent = '⏳ Mengirim...';
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '⏳ Mengirim tiket eksternal...';
+            statusBadge.className = 'status-badge pending';
+            statusBadge.textContent = 'Sedang Ditest...';
+
+            try {
+                const payload = {
+                    reporter_identity_type: 'known',
+                    reporter_name: document.getElementById('external-name').value,
+                    reporter_email: document.getElementById('external-email').value,
+                    reporter_phone: document.getElementById('external-phone').value,
+                    unit_id: document.getElementById('external-unit').value,
+                    service_type: document.getElementById('external-service').value,
+                    title: document.getElementById('external-title').value,
+                    description: document.getElementById('external-desc').value,
+                    source: 'web'
+                };
+
+                console.log('📤 Sending external ticket:', payload);
+
+                const response = await fetch(`${API_BASE}/api/public/external-tickets`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const contentType = response.headers.get('content-type');
+                console.log('📥 Response content-type:', contentType);
+                console.log('📥 Response status:', response.status);
+
+                let data;
+                const text = await response.text();
+                console.log('📥 Response text:', text);
+
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(`Response bukan JSON valid: ${text.substring(0, 200)}`);
+                }
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ BERHASIL!</strong><br>
+                        Nomor Tiket: <strong>${data.ticket_number}</strong><br>
+                        ${data.message || 'Tiket eksternal berhasil dibuat'}
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    statusBadge.className = 'status-badge success';
+                    statusBadge.textContent = 'BERHASIL ✓';
+                } else {
+                    throw new Error(data.error || 'Unknown error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <strong>❌ GAGAL!</strong><br>
+                    ${error.message}
+                    <pre>${error.stack || ''}</pre>
+                `;
+                statusBadge.className = 'status-badge failed';
+                statusBadge.textContent = 'GAGAL ✗';
+            } finally {
+                button.disabled = false;
+                button.textContent = '🚀 Submit Tiket Eksternal';
+            }
+        }
+
+        async function testSurvey() {
+            const resultDiv = document.getElementById('result-survey');
+            const statusBadge = document.getElementById('status-survey');
+            const button = event.target;
+            
+            button.disabled = true;
+            button.textContent = '⏳ Mengirim...';
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '⏳ Mengirim survey...';
+            statusBadge.className = 'status-badge pending';
+            statusBadge.textContent = 'Sedang Ditest...';
+
+            try {
+                const score = parseInt(document.getElementById('survey-score').value);
+                const payload = {
+                    unit_id: document.getElementById('survey-unit').value,
+                    visitor_name: document.getElementById('survey-name').value,
+                    visitor_email: document.getElementById('survey-email').value,
+                    visitor_phone: document.getElementById('survey-phone').value,
+                    is_anonymous: false,
+                    q1_score: score,
+                    q2_score: score,
+                    q3_score: score,
+                    q4_score: score,
+                    q5_score: score,
+                    q6_score: score,
+                    q7_score: score,
+                    q8_score: score,
+                    overall_score: score,
+                    comments: document.getElementById('survey-comments').value,
+                    source: 'public_survey'
+                };
+
+                console.log('📤 Sending survey:', payload);
+
+                const response = await fetch(`${API_BASE}/api/public/surveys`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const contentType = response.headers.get('content-type');
+                console.log('📥 Response content-type:', contentType);
+                console.log('📥 Response status:', response.status);
+
+                let data;
+                const text = await response.text();
+                console.log('📥 Response text:', text);
+
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error(`Response bukan JSON valid: ${text.substring(0, 200)}`);
+                }
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ BERHASIL!</strong><br>
+                        ${data.message || 'Survey berhasil dikirim'}
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                    statusBadge.className = 'status-badge success';
+                    statusBadge.textContent = 'BERHASIL ✓';
+                } else {
+                    throw new Error(data.error || 'Unknown error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `
+                    <strong>❌ GAGAL!</strong><br>
+                    ${error.message}
+                    <pre>${error.stack || ''}</pre>
+                `;
+                statusBadge.className = 'status-badge failed';
+                statusBadge.textContent = 'GAGAL ✗';
+            } finally {
+                button.disabled = false;
+                button.textContent = '🚀 Submit Survey';
+            }
+        }
+
+        async function testAll() {
+            console.log('🎯 Testing all forms...');
+            
+            // Pastikan unit ID sudah terisi
+            await fetchFirstUnit();
+            
+            // Test satu per satu dengan delay
+            await testInternalTicket();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testExternalTicket();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testSurvey();
+            
+            console.log('✅ All tests completed!');
+            alert('✅ Semua test selesai! Lihat hasil di masing-masing section.');
+        }
+    </script>
+</body>
+</html>

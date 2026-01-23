@@ -1,0 +1,70 @@
+========================================
+CARA TEST SUBMIT FORMS - KISS
+========================================
+
+Ada 3 cara untuk test submit forms:
+
+1. OTOMATIS - Jalankan semua test sekaligus
+   ----------------------------------------
+   Jalankan: JALANKAN_DAN_TEST_SUBMIT_SEMUA.bat
+   
+   Script ini akan:
+   - Start backend (jika belum running)
+   - Start frontend (jika belum running)
+   - Buka halaman test di browser
+   - Klik tombol "TEST SEMUA FORM SEKALIGUS"
+
+2. DIAGNOSTIC - Test via Node.js script
+   --------------------------------------
+   Jalankan: DIAGNOSA_SUBMIT_FORMS.bat
+   
+   Script ini akan:
+   - Test API endpoint langsung
+   - Tampilkan detail request/response
+   - Identifikasi masalah JSON/error
+
+3. MANUAL - Test via browser
+   ---------------------------
+   1. Pastikan backend running: cd backend && npm run dev
+   2. Pastikan frontend running: cd frontend && npm run dev
+   3. Buka: http://localhost:5173/test-all-submit-forms.html
+   4. Klik tombol test untuk masing-masing form
+
+========================================
+TROUBLESHOOTING
+========================================
+
+Jika ada error "Server mengembalikan response yang tidak valid":
+- Buka browser console (F12)
+- Lihat tab Network
+- Klik request yang error
+- Lihat Response tab
+- Periksa apakah response adalah HTML atau JSON
+
+Jika ada error "Server mengembalikan response kosong":
+- Periksa backend log di terminal
+- Pastikan tidak ada error di backend
+- Periksa koneksi ke Supabase
+
+Jika ada error 405 Method Not Allowed:
+- Periksa routing di backend
+- Pastikan endpoint sudah terdaftar
+- Periksa CORS settings
+
+========================================
+EXPECTED RESULTS
+========================================
+
+✅ Internal Ticket:
+   - Status: 201 Created
+   - Response: { success: true, ticket_number: "INT-2026-XXXX", ... }
+
+✅ External Ticket:
+   - Status: 201 Created
+   - Response: { success: true, ticket_number: "TKT-2026-XXXX", ... }
+
+✅ Survey:
+   - Status: 201 Created
+   - Response: { success: true, message: "Survei berhasil dikirim", ... }
+
+========================================

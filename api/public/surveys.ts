@@ -13,13 +13,14 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Set CORS dan Content-Type headers PERTAMA KALI
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  
   // PERBAIKAN: Wrapper untuk memastikan SELALU return JSON
   try {
-    // Set CORS dan Content-Type headers PERTAMA KALI
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
     
     // Handle OPTIONS request
     if (req.method === 'OPTIONS') {
@@ -285,23 +286,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
   } catch (error: any) {
-    console.error('❌ Error submitting public survey:', error);
+    console.error('❌ CRITICAL ERROR submitting public survey:', error);
+    console.error('❌ Error stack:', error.stack);
     
     // PERBAIKAN: Pastikan header JSON di-set ulang
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    try {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    } catch (headerError) {
+      console.error('❌ Cannot set header:', headerError);
+    }
     
     return res.status(500).json({
       success: false,
       error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
-      details: error.stack?.split('\n')[0] || null
-    });
-  } catch (outerError: any) {
-    // PERBAIKAN: Catch tambahan untuk error yang tidak tertangkap
-    console.error('❌ CRITICAL ERROR:', outerError);
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    return res.status(500).json({
-      success: false,
-      error: 'Terjadi kesalahan kritis pada server'
+      error_type: error.name || 'UnknownError',
+      details: error.stack?.split('\n').slice(0, 3).join('\n') || null,
+      timestamp: new Date().toISOString()
     });
   }
 }
