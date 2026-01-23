@@ -3,23 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
 // Vercel akan inject environment variables dari dashboard
-// Coba berbagai nama environment variable yang mungkin
-const supabaseUrl = process.env.VITE_SUPABASE_URL || 
-                    process.env.SUPABASE_URL || 
-                    process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-
-const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 
-                    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-                    process.env.VITE_SUPABASE_ANON_KEY || 
-                    process.env.SUPABASE_ANON_KEY ||
-                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-console.log('🔧 Supabase URL available:', !!supabaseUrl);
-console.log('🔧 Supabase Key available:', !!supabaseKey);
+const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Missing Supabase credentials');
-  console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
+  console.error('❌ Missing Supabase credentials. Please set VITE_SUPABASE_URL and VITE_SUPABASE_SERVICE_ROLE_KEY in Vercel environment variables.');
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -74,7 +62,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
     console.log('🎯 POST /api/public/internal-tickets dipanggil');
-    console.log('📥 Request body:', JSON.stringify(req.body, null, 2));
     
     const {
       reporter_name,
@@ -187,10 +174,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Prepare ticket data
+    // Prepare ticket data - ADOPSI DARI EXTERNAL TICKETS YANG BERHASIL
     const ticketData: any = {
       ticket_number: ticketNumber,
-      type: 'internal', // PERBAIKAN: Gunakan 'internal' untuk tiket internal
+      type: 'complaint', // PERBAIKAN: Gunakan 'complaint' untuk internal ticket (sesuai external yang berhasil)
       title: title,
       description: description,
       unit_id: unit_id,
@@ -203,11 +190,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       submitter_name: reporter_name || null,
       submitter_email: reporter_email || null,
       submitter_phone: reporter_phone || null,
-      reporter_department: reporter_department || null,
-      reporter_position: reporter_position || null
+      submitter_address: null, // PERBAIKAN: Tambahkan field yang ada di external tickets
+      ip_address: null, // PERBAIKAN: Tambahkan field yang ada di external tickets
+      user_agent: null // PERBAIKAN: Tambahkan field yang ada di external tickets
     };
 
-    // Add category if provided - gunakan category_id atau category
+    // PERBAIKAN: Tambahkan info department dan position ke description seperti di publicRoutes.ts
+    if (reporter_department || reporter_position) {
+      ticketData.description = `${description}\n\n--- Info Pelapor ---\nDepartemen: ${reporter_department || '-'}\nJabatan: ${reporter_position || '-'}`;
+    }
+
+    // Add category_id if provided - ADOPSI DARI EXTERNAL TICKETS
     const finalCategoryId = category_id || category || null;
     if (finalCategoryId) {
       ticketData.category_id = finalCategoryId;
@@ -243,7 +236,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else if (error.code === '23505') {
         errorMessage = 'Nomor tiket sudah ada, silakan coba lagi';
       } else if (error.code === '23514') {
-        errorMessage = `Tipe tiket tidak valid. Diterima: ${ticketData.type}. Harus salah satu dari: information, complaint, suggestion, satisfaction, internal`;
+        errorMessage = `Tipe tiket tidak valid. Diterima: ${ticketData.type}. Harus salah satu dari: information, complaint, suggestion, satisfaction`;
       } else if (error.message) {
         errorMessage = error.message;
       }

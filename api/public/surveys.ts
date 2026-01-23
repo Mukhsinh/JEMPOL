@@ -157,7 +157,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Simpan ke tabel public_surveys
+    // Simpan ke tabel public_surveys - ADOPSI DARI EXTERNAL TICKETS
     const surveyData: any = {
       unit_id: unit_id,
       service_category_id: service_category_id || null,
@@ -214,8 +214,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       solution_quality_score: q5_score ? parseInt(q5_score as string) : null,
       staff_courtesy_score: q7_score ? parseInt(q7_score as string) : null,
       comments: comments || null,
-      qr_code: qr_code || null,
-      source: finalSource
+      qr_code: qr_code || null, // PERBAIKAN: Gunakan qr_code seperti external tickets
+      source: finalSource,
+      ip_address: null, // PERBAIKAN: Tambahkan field seperti external tickets
+      user_agent: null // PERBAIKAN: Tambahkan field seperti external tickets
     };
     
     console.log('📤 Inserting survey data:', {
