@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test App Settings Endpoint</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #7c3aed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success {
+            background: #d1fae5;
+            border: 1px solid #10b981;
+        }
+        .error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+        }
+        .info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test App Settings Endpoint</h1>
+        <p>Test untuk memverifikasi endpoint <code>/api/public/app-settings</code></p>
+        
+        <div>
+            <button onclick="testEndpoint()">Test Endpoint</button>
+            <button onclick="testWithRetry()">Test dengan Retry</button>
+            <button onclick="clearResults()">Clear</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testEndpoint() {
+            clearResults();
+            addResult('🔄 Testing /api/public/app-settings...', 'info');
+            
+            try {
+                const timestamp = Date.now();
+                const url = `/api/public/app-settings?t=${timestamp}`;
+                
+                addResult(`📍 URL: ${url}`, 'info');
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    cache: 'no-cache'
+                });
+                
+                addResult(`📥 Status: ${response.status} ${response.statusText}`, 'info');
+                addResult(`📥 Content-Type: ${response.headers.get('content-type')}`, 'info');
+                
+                const contentType = response.headers.get('content-type');
+                
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    addResult(`❌ Response bukan JSON!`, 'error');
+                    addResult(`Response (200 karakter pertama):\n${text.substring(0, 200)}`, 'error');
+                    return;
+                }
+                
+                const data = await response.json();
+                addResult(`✅ Response JSON berhasil!`, 'success');
+                addResult(`Data:\n${JSON.stringify(data, null, 2)}`, 'success');
+                
+            } catch (error) {
+                addResult(`❌ Error: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        async function testWithRetry() {
+            clearResults();
+            addResult('🔄 Testing dengan retry logic...', 'info');
+            
+            let retryCount = 0;
+            const maxRetries = 3;
+            
+            async function attemptFetch() {
+                try {
+                    addResult(`\n🔄 Attempt ${retryCount + 1}/${maxRetries}`, 'info');
+                    
+                    const timestamp = Date.now();
+                    const url = `/api/public/app-settings?t=${timestamp}`;
+                    
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        cache: 'no-cache'
+                    });
+                    
+                    addResult(`📥 Status: ${response.status}`, 'info');
+                    addResult(`📥 Content-Type: ${response.headers.get('content-type')}`, 'info');
+                    
+                    const contentType = response.headers.get('content-type');
+                    
+                    if (!contentType || !contentType.includes('application/json')) {
+                        const text = await response.text();
+                        throw new Error(`Response bukan JSON: ${text.substring(0, 100)}`);
+                    }
+                    
+                    const data = await response.json();
+                    addResult(`✅ Berhasil pada attempt ${retryCount + 1}!`, 'success');
+                    addResult(`Data:\n${JSON.stringify(data, null, 2)}`, 'success');
+                    return true;
+                    
+                } catch (error) {
+                    addResult(`❌ Attempt ${retryCount + 1} gagal: ${error.message}`, 'error');
+                    
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                        const delay = retryCount * 1000;
+                        addResult(`⏳ Retry dalam ${delay}ms...`, 'info');
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        return attemptFetch();
+                    } else {
+                        addResult(`❌ Semua retry gagal!`, 'error');
+                        return false;
+                    }
+                }
+            }
+            
+            await attemptFetch();
+        }
+
+        // Auto test saat halaman dimuat
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('🚀 Auto-testing endpoint...', 'info');
+                testEndpoint();
+            }, 500);
+        });
+    </script>
+</body>
+</html>

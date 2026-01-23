@@ -162,20 +162,73 @@ const DirectInternalTicketForm: React.FC = () => {
     fetchUnits();
   }, [unitId]);
 
-  // Load app settings untuk footer
+  // Load app settings untuk footer dengan retry logic
   useEffect(() => {
-    const fetchAppSettings = async () => {
+    const fetchAppSettings = async (retryCount = 0) => {
       try {
-        const response = await fetch('/api/public/app-settings');
+        console.log(`🔄 Fetching app settings (attempt ${retryCount + 1})...`);
+        
+        // Tambahkan cache busting parameter
+        const timestamp = Date.now();
+        const response = await fetch(`/api/public/app-settings?t=${timestamp}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          cache: 'no-cache' // Disable caching
+        });
+        
+        console.log('📥 App settings response status:', response.status);
+        console.log('📥 App settings response headers:', response.headers.get('content-type'));
+        
+        // Cek apakah response adalah JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('❌ Non-JSON response:', text.substring(0, 200));
+          
+          // Retry jika masih ada kesempatan
+          if (retryCount < 2) {
+            console.log(`🔄 Retrying in ${(retryCount + 1) * 1000}ms...`);
+            setTimeout(() => fetchAppSettings(retryCount + 1), (retryCount + 1) * 1000);
+            return;
+          }
+          
+          throw new Error('Server mengembalikan response yang tidak valid');
+        }
+        
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data) {
             setAppSettings(result.data);
             console.log('✅ App settings loaded:', result.data);
+          } else {
+            throw new Error('Invalid response format');
           }
+        } else {
+          throw new Error(`HTTP ${response.status}`);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('❌ Error loading app settings:', err);
+        
+        // Retry jika masih ada kesempatan
+        if (retryCount < 2) {
+          console.log(`🔄 Retrying in ${(retryCount + 1) * 1000}ms...`);
+          setTimeout(() => fetchAppSettings(retryCount + 1), (retryCount + 1) * 1000);
+          return;
+        }
+        
+        // Set default settings jika gagal load setelah retry
+        console.log('⚠️ Using default app settings');
+        setAppSettings({
+          institution_name: 'Rumah Sakit',
+          institution_address: '',
+          contact_phone: '',
+          contact_email: '',
+          website: '',
+          app_footer: ''
+        });
       }
     };
     
