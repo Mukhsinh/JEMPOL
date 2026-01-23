@@ -9,36 +9,29 @@
       "maxDuration": 10
     }
   },
-  "rewrites": [
-    {
-      "source": "/api/public/internal-tickets",
-      "destination": "/api/public/internal-tickets"
-    },
-    {
-      "source": "/api/public/external-tickets",
-      "destination": "/api/public/external-tickets"
-    },
-    {
-      "source": "/api/public/surveys",
-      "destination": "/api/public/surveys"
-    },
-    {
-      "source": "/api/public/units",
-      "destination": "/api/public/units"
-    },
-    {
-      "source": "/api/public/unit-types",
-      "destination": "/api/public/unit-types"
-    },
-    {
-      "source": "/api/public/app-settings",
-      "destination": "/api/public/app-settings"
-    }
-  ],
   "routes": [
     {
-      "src": "/api/public/(.*)",
-      "dest": "/api/public/$1"
+      "src": "/api/public/internal-tickets",
+      "dest": "/api/public/internal-tickets.ts"
+    },
+    {
+      "src": "/api/public/external-tickets",
+      "dest": "/api/public/external-tickets.ts"
+    },
+    {
+      "src": "/api/public/surveys",
+      "dest": "/api/public/surveys.ts"
+    },
+    {
+      "src": "/api/public/units",
+      "dest": "/api/public/units.ts"
+    },
+    {
+      "src": "/api/public/app-settings",
+      "dest": "/api/public/app-settings.ts"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",

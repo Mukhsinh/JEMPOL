@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Vercel API - Fixed</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-success {
+            background: #28a745;
+            color: white;
+        }
+        .status-error {
+            background: #dc3545;
+            color: white;
+        }
+        .status-pending {
+            background: #ffc107;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Vercel API - Perbaikan Error</h1>
+        
+        <div class="input-group">
+            <label>Vercel App URL:</label>
+            <input type="text" id="baseUrl" placeholder="https://your-app.vercel.app" value="">
+        </div>
+
+        <div class="test-section">
+            <h2>1. Test Units Endpoint <span id="status-units" class="status-badge status-pending">Pending</span></h2>
+            <button onclick="testUnits()">Test GET /api/public/units</button>
+            <div id="result-units" class="result info" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. Test App Settings Endpoint <span id="status-settings" class="status-badge status-pending">Pending</span></h2>
+            <button onclick="testAppSettings()">Test GET /api/public/app-settings</button>
+            <div id="result-settings" class="result info" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. Test Internal Tickets Endpoint <span id="status-tickets" class="status-badge status-pending">Pending</span></h2>
+            <div class="input-group">
+                <label>Unit ID (dari test units):</label>
+                <input type="text" id="unitId" placeholder="Paste unit ID dari hasil test units">
+            </div>
+            <button onclick="testInternalTickets()">Test POST /api/public/internal-tickets</button>
+            <div id="result-tickets" class="result info" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. Test All Endpoints</h2>
+            <button onclick="testAll()" style="background: #2196F3;">🚀 Test Semua Endpoint</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Checklist Troubleshooting</h2>
+            <div class="info result">
+✅ Checklist jika ada error:
+
+1. Environment Variables di Vercel:
+   - VITE_SUPABASE_URL
+   - VITE_SUPABASE_ANON_KEY
+   - VITE_SUPABASE_SERVICE_ROLE_KEY
+   - NODE_ENV=production
+
+2. Sudah Redeploy setelah set env vars?
+
+3. Cek Function Logs di Vercel Dashboard
+
+4. Pastikan vercel.json sudah di-push ke GitHub
+
+5. Clear cache browser (Ctrl+Shift+Delete)
+
+6. Test dengan Incognito/Private window
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getBaseUrl() {
+            const url = document.getElementById('baseUrl').value.trim();
+            if (!url) {
+                alert('Masukkan Vercel App URL terlebih dahulu!');
+                return null;
+            }
+            return url.replace(/\/$/, ''); // Remove trailing slash
+        }
+
+        function updateStatus(elementId, status) {
+            const badge = document.getElementById(elementId);
+            badge.className = 'status-badge status-' + status;
+            badge.textContent = status === 'success' ? '✅ Success' : status === 'error' ? '❌ Error' : '⏳ Pending';
+        }
+
+        async function testUnits() {
+            const baseUrl = getBaseUrl();
+            if (!baseUrl) return;
+
+            const resultDiv = document.getElementById('result-units');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '⏳ Testing GET /api/public/units...\n';
+
+            try {
+                const response = await fetch(`${baseUrl}/api/public/units`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const contentType = response.headers.get('content-type');
+                resultDiv.textContent += `\n📊 Response Status: ${response.status} ${response.statusText}\n`;
+                resultDiv.textContent += `📋 Content-Type: ${contentType}\n\n`;
+
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent += `❌ ERROR: Server mengembalikan HTML, bukan JSON!\n\n`;
+                    resultDiv.textContent += `Response:\n${text.substring(0, 500)}...\n\n`;
+                    resultDiv.textContent += `🔧 Solusi:\n`;
+                    resultDiv.textContent += `1. Cek environment variables di Vercel\n`;
+                    resultDiv.textContent += `2. Pastikan sudah redeploy setelah set env vars\n`;
+                    resultDiv.textContent += `3. Cek Function Logs di Vercel Dashboard\n`;
+                    updateStatus('status-units', 'error');
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent += `✅ SUCCESS!\n\n`;
+                    resultDiv.textContent += `Jumlah units: ${data.count || data.data?.length || 0}\n\n`;
+                    
+                    if (data.data && data.data.length > 0) {
+                        resultDiv.textContent += `Sample unit:\n`;
+                        resultDiv.textContent += JSON.stringify(data.data[0], null, 2);
+                        
+                        // Auto-fill unit ID
+                        document.getElementById('unitId').value = data.data[0].id;
+                    } else {
+                        resultDiv.textContent += `⚠️ Tidak ada units aktif di database\n`;
+                    }
+                    updateStatus('status-units', 'success');
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent += `❌ ERROR: ${data.error || 'Unknown error'}\n\n`;
+                    resultDiv.textContent += JSON.stringify(data, null, 2);
+                    updateStatus('status-units', 'error');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent += `\n❌ EXCEPTION: ${error.message}\n\n`;
+                resultDiv.textContent += `🔧 Kemungkinan penyebab:\n`;
+                resultDiv.textContent += `1. CORS error - cek vercel.json\n`;
+                resultDiv.textContent += `2. Network error - cek koneksi internet\n`;
+                resultDiv.textContent += `3. URL salah - cek Vercel App URL\n`;
+                updateStatus('status-units', 'error');
+            }
+        }
+
+        async function testAppSettings() {
+            const baseUrl = getBaseUrl();
+            if (!baseUrl) return;
+
+            const resultDiv = document.getElementById('result-settings');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '⏳ Testing GET /api/public/app-settings...\n';
+
+            try {
+                const response = await fetch(`${baseUrl}/api/public/app-settings`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const contentType = response.headers.get('content-type');
+                resultDiv.textContent += `\n📊 Response Status: ${response.status} ${response.statusText}\n`;
+                resultDiv.textContent += `📋 Content-Type: ${contentType}\n\n`;
+
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent += `❌ ERROR: Server mengembalikan HTML, bukan JSON!\n\n`;
+                    resultDiv.textContent += `Response:\n${text.substring(0, 500)}...\n`;
+                    updateStatus('status-settings', 'error');
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent += `✅ SUCCESS!\n\n`;
+                    resultDiv.textContent += `App Settings:\n`;
+                    resultDiv.textContent += JSON.stringify(data.data, null, 2);
+                    updateStatus('status-settings', 'success');
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent += `❌ ERROR: ${data.error || 'Unknown error'}\n\n`;
+                    resultDiv.textContent += JSON.stringify(data, null, 2);
+                    updateStatus('status-settings', 'error');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent += `\n❌ EXCEPTION: ${error.message}\n`;
+                updateStatus('status-settings', 'error');
+            }
+        }
+
+        async function testInternalTickets() {
+            const baseUrl = getBaseUrl();
+            if (!baseUrl) return;
+
+            const unitId = document.getElementById('unitId').value.trim();
+            if (!unitId) {
+                alert('Masukkan Unit ID terlebih dahulu! (dari hasil test units)');
+                return;
+            }
+
+            const resultDiv = document.getElementById('result-tickets');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '⏳ Testing POST /api/public/internal-tickets...\n';
+
+            const testData = {
+                reporter_name: 'Test User',
+                reporter_email: 'test@example.com',
+                reporter_phone: '08123456789',
+                reporter_department: 'IT',
+                reporter_position: 'Staff',
+                category: 'it_support',
+                priority: 'medium',
+                title: 'Test Ticket dari Vercel API Test',
+                description: 'Ini adalah test ticket untuk memverifikasi API berfungsi dengan baik',
+                unit_id: unitId,
+                source: 'web'
+            };
+
+            try {
+                const response = await fetch(`${baseUrl}/api/public/internal-tickets`, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                const contentType = response.headers.get('content-type');
+                resultDiv.textContent += `\n📊 Response Status: ${response.status} ${response.statusText}\n`;
+                resultDiv.textContent += `📋 Content-Type: ${contentType}\n\n`;
+
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent += `❌ ERROR: Server mengembalikan HTML, bukan JSON!\n\n`;
+                    resultDiv.textContent += `Response:\n${text.substring(0, 500)}...\n`;
+                    updateStatus('status-tickets', 'error');
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent += `✅ SUCCESS!\n\n`;
+                    resultDiv.textContent += `Ticket Number: ${data.ticket_number}\n\n`;
+                    resultDiv.textContent += `Response:\n`;
+                    resultDiv.textContent += JSON.stringify(data, null, 2);
+                    updateStatus('status-tickets', 'success');
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent += `❌ ERROR: ${data.error || 'Unknown error'}\n\n`;
+                    resultDiv.textContent += JSON.stringify(data, null, 2);
+                    updateStatus('status-tickets', 'error');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent += `\n❌ EXCEPTION: ${error.message}\n`;
+                updateStatus('status-tickets', 'error');
+            }
+        }
+
+        async function testAll() {
+            await testUnits();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await testAppSettings();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const unitId = document.getElementById('unitId').value.trim();
+            if (unitId) {
+                await testInternalTickets();
+            } else {
+                alert('Unit ID tidak tersedia. Jalankan test units terlebih dahulu.');
+            }
+        }
+
+        // Auto-detect Vercel URL from current location
+        window.addEventListener('DOMContentLoaded', () => {
+            const currentUrl = window.location.origin;
+            if (currentUrl.includes('vercel.app') || currentUrl.includes('localhost')) {
+                document.getElementById('baseUrl').value = currentUrl;
+            }
+        });
+    </script>
+</body>
+</html>
