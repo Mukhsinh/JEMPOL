@@ -9,33 +9,26 @@
       "maxDuration": 10
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/public/internal-tickets",
-      "dest": "/api/public/internal-tickets.ts"
+      "source": "/api/public/internal-tickets",
+      "destination": "/api/public/internal-tickets"
     },
     {
-      "src": "/api/public/external-tickets",
-      "dest": "/api/public/external-tickets.ts"
+      "source": "/api/public/external-tickets",
+      "destination": "/api/public/external-tickets"
     },
     {
-      "src": "/api/public/surveys",
-      "dest": "/api/public/surveys.ts"
+      "source": "/api/public/surveys",
+      "destination": "/api/public/surveys"
     },
     {
-      "src": "/api/public/units",
-      "dest": "/api/public/units.ts"
+      "source": "/api/public/units",
+      "destination": "/api/public/units"
     },
     {
-      "src": "/api/public/app-settings",
-      "dest": "/api/public/app-settings.ts"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/api/public/app-settings",
+      "destination": "/api/public/app-settings"
     }
   ],
   "headers": [
