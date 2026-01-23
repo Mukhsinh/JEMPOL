@@ -81,6 +81,18 @@ const api = axios.create({
       return data;
     }
     
+    // Cek apakah response adalah HTML (error page)
+    if (typeof data === 'string' && data.trim().startsWith('<!')) {
+      console.error('❌ Server mengembalikan HTML bukan JSON');
+      console.error('❌ Response data:', data?.substring(0, 200));
+      return {
+        success: false,
+        error: 'Server mengembalikan halaman HTML. Endpoint mungkin tidak tersedia.',
+        data: null,
+        isHtmlError: true
+      };
+    }
+    
     // Coba parse JSON
     try {
       return JSON.parse(data);
@@ -90,7 +102,8 @@ const api = axios.create({
       return {
         success: false,
         error: 'Response bukan JSON valid',
-        data: null
+        data: null,
+        rawData: data?.substring(0, 100)
       };
     }
   }]

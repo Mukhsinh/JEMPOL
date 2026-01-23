@@ -12,28 +12,27 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers PERTAMA - SEBELUM TRY/CATCH
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  
-  // Handle OPTIONS request
-  if (req.method === 'OPTIONS') {
-    return res.status(200).json({ success: true });
-  }
-
-  // Only allow GET
-  if (req.method !== 'GET') {
-    return res.status(405).json({
-      success: false,
-      error: 'Method not allowed. Use GET method.',
-      data: []
-    });
-  }
-
   try {
+    // Set CORS headers PERTAMA - SEBELUM SEMUA LOGIC
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    
+    // Handle OPTIONS request
+    if (req.method === 'OPTIONS') {
+      return res.status(200).json({ success: true });
+    }
+
+    // Only allow GET
+    if (req.method !== 'GET') {
+      return res.status(405).json({
+        success: false,
+        error: 'Method not allowed. Use GET method.',
+        data: []
+      });
+    }
     console.log('🎯 GET /api/public/units - Vercel Function');
     console.log('📍 Environment check:', {
       hasSupabaseUrl: !!supabaseUrl,

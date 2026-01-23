@@ -12,26 +12,25 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers PERTAMA - SEBELUM TRY/CATCH
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  
-  // Handle OPTIONS request
-  if (req.method === 'OPTIONS') {
-    return res.status(200).json({ success: true });
-  }
-
-  // Only allow GET
-  if (req.method !== 'GET') {
-    return res.status(405).json({
-      success: false,
-      error: 'Method not allowed. Use GET method.'
-    });
-  }
-
   try {
+    // Set CORS headers PERTAMA
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
+    // Handle OPTIONS request
+    if (req.method === 'OPTIONS') {
+      return res.status(200).json({ success: true });
+    }
+
+    // Only allow GET
+    if (req.method !== 'GET') {
+      return res.status(405).json({
+        success: false,
+        error: 'Method not allowed. Use GET method.'
+      });
+    }
     console.log('🎯 GET /api/public/app-settings dipanggil');
     
     // PERBAIKAN: Validasi Supabase credentials

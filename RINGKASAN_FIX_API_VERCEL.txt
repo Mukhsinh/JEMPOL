@@ -1,0 +1,42 @@
+PERBAIKAN ERROR API VERCEL - JSON PARSE ERROR
+==============================================
+
+MASALAH:
+- Error: "Unexpected token '<', "<!doctype "... is not valid JSON"
+- API mengembalikan HTML bukan JSON
+
+PENYEBAB:
+- Routing Vercel tidak benar
+- Request ke /api/public/units tidak sampai ke serverless function
+- Vercel mengembalikan index.html untuk request yang tidak dikenali
+
+SOLUSI DITERAPKAN:
+✅ 1. Perbaiki vercel.json - tambah rewrites + perbaiki routes
+✅ 2. Perbaiki semua file API - set headers di dalam try-catch
+✅ 3. Perbaiki frontend - deteksi HTML response sebelum parse JSON
+✅ 4. Verifikasi semua file API public (5 files OK)
+
+FILE YANG DIPERBAIKI:
+- vercel.json
+- api/public/units.ts
+- api/public/internal-tickets.ts
+- api/public/external-tickets.ts
+- api/public/surveys.ts
+- api/public/app-settings.ts
+- frontend/src/services/api.ts
+
+LANGKAH DEPLOY:
+1. Pastikan environment variables di Vercel sudah di-set:
+   - VITE_SUPABASE_URL
+   - VITE_SUPABASE_ANON_KEY
+   - VITE_SUPABASE_SERVICE_ROLE_KEY
+
+2. Jalankan: DEPLOY_VERCEL_FIX_API_ERROR.bat
+
+3. Test setelah deploy:
+   - Buka aplikasi di browser
+   - Test form yang pakai dropdown units
+   - Cek console tidak ada error JSON parse
+   - Test endpoint: https://your-app.vercel.app/api/public/units
+
+STATUS: SIAP DEPLOY
