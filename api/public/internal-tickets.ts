@@ -190,7 +190,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Prepare ticket data
     const ticketData: any = {
       ticket_number: ticketNumber,
-      type: 'complaint', // PERBAIKAN: Gunakan 'complaint' untuk tiket internal
+      type: 'internal', // PERBAIKAN: Gunakan 'internal' untuk tiket internal
       title: title,
       description: description,
       unit_id: unit_id,
