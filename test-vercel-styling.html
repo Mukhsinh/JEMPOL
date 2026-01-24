@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Vercel Styling</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8fafc;
+            border-left: 4px solid #2563eb;
+            border-radius: 5px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .status.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .info {
+            background: #dbeafe;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Vercel Styling</h1>
+        
+        <div class="info">
+            <strong>Tujuan:</strong> Memverifikasi apakah CSS/Tailwind ter-load dengan benar di Vercel
+        </div>
+
+        <div class="test-section">
+            <h3>1. Test CSS File Loading</h3>
+            <button onclick="testCSSLoading()">Test CSS Loading</button>
+            <div id="css-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test Tailwind Classes</h3>
+            <button onclick="testTailwind()">Test Tailwind</button>
+            <div id="tailwind-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test Environment Variables</h3>
+            <button onclick="testEnvVars()">Test Env Vars</button>
+            <div id="env-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test API Connection</h3>
+            <button onclick="testAPI()">Test API</button>
+            <div id="api-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Analisis Lengkap</h3>
+            <button onclick="runFullAnalysis()">Run Full Analysis</button>
+            <div id="full-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        function testCSSLoading() {
+            const result = document.getElementById('css-result');
+            result.innerHTML = '<p>Memeriksa CSS files...</p>';
+            
+            const links = document.querySelectorAll('link[rel="stylesheet"]');
+            let html = '<div class="result">';
+            
+            if (links.length === 0) {
+                html += '<span class="status error">❌ Tidak ada CSS file yang di-load!</span><br>';
+                html += 'Ini adalah masalah utama. CSS tidak ter-bundle atau tidak di-link.';
+            } else {
+                html += `<span class="status success">✅ Ditemukan ${links.length} CSS file(s)</span><br><br>`;
+                links.forEach((link, i) => {
+                    html += `${i + 1}. ${link.href}<br>`;
+                });
+            }
+            
+            html += '</div>';
+            result.innerHTML = html;
+        }
+
+        function testTailwind() {
+            const result = document.getElementById('tailwind-result');
+            result.innerHTML = '<p>Testing Tailwind classes...</p>';
+            
+            // Create test element
+            const testDiv = document.createElement('div');
+            testDiv.className = 'bg-blue-500 text-white p-4 rounded-lg';
+            testDiv.textContent = 'Test Tailwind';
+            testDiv.style.display = 'none';
+            document.body.appendChild(testDiv);
+            
+            const styles = window.getComputedStyle(testDiv);
+            const bgColor = styles.backgroundColor;
+            const padding = styles.padding;
+            const borderRadius = styles.borderRadius;
+            
+            let html = '<div class="result">';
+            
+            if (bgColor === 'rgb(59, 130, 246)' || bgColor.includes('59, 130, 246')) {
+                html += '<span class="status success">✅ Tailwind classes berfungsi!</span><br><br>';
+                html += `Background: ${bgColor}<br>`;
+                html += `Padding: ${padding}<br>`;
+                html += `Border Radius: ${borderRadius}`;
+            } else {
+                html += '<span class="status error">❌ Tailwind classes TIDAK berfungsi!</span><br><br>';
+                html += `Expected bg-blue-500: rgb(59, 130, 246)<br>`;
+                html += `Got: ${bgColor}<br><br>`;
+                html += 'Kemungkinan penyebab:<br>';
+                html += '1. CSS tidak ter-load<br>';
+                html += '2. Tailwind tidak ter-compile<br>';
+                html += '3. Build cache lama di Vercel';
+            }
+            
+            html += '</div>';
+            result.innerHTML = html;
+            document.body.removeChild(testDiv);
+        }
+
+        function testEnvVars() {
+            const result = document.getElementById('env-result');
+            let html = '<div class="result">';
+            
+            // Check if running on Vercel
+            const isVercel = window.location.hostname.includes('vercel.app');
+            html += `<strong>Environment:</strong> ${isVercel ? 'Vercel Production' : 'Local/Other'}<br><br>`;
+            
+            // Note: VITE env vars are embedded at build time, not runtime
+            html += '<span class="status warning">⚠️ Environment variables di-embed saat build</span><br><br>';
+            html += 'Untuk memverifikasi env vars, periksa:<br>';
+            html += '1. Vercel Dashboard > Settings > Environment Variables<br>';
+            html += '2. Build logs untuk konfirmasi vars ter-load<br>';
+            html += '3. Network tab untuk API calls';
+            
+            html += '</div>';
+            result.innerHTML = html;
+        }
+
+        async function testAPI() {
+            const result = document.getElementById('api-result');
+            result.innerHTML = '<p>Testing API connection...</p>';
+            
+            let html = '<div class="result">';
+            
+            try {
+                // Test public endpoint
+                const apiUrl = window.location.origin + '/api';
+                const response = await fetch(`${apiUrl}/public/app-settings`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    html += '<span class="status success">✅ API connection berhasil!</span><br><br>';
+                    html += `Status: ${response.status}<br>`;
+                    html += `API URL: ${apiUrl}<br>`;
+                    html += `Response: ${JSON.stringify(data, null, 2)}`;
+                } else {
+                    html += '<span class="status error">❌ API error!</span><br><br>';
+                    html += `Status: ${response.status}<br>`;
+                    html += `API URL: ${apiUrl}`;
+                }
+            } catch (error) {
+                html += '<span class="status error">❌ API connection gagal!</span><br><br>';
+                html += `Error: ${error.message}`;
+            }
+            
+            html += '</div>';
+            result.innerHTML = html;
+        }
+
+        async function runFullAnalysis() {
+            const result = document.getElementById('full-result');
+            result.innerHTML = 'Running full analysis...\n\n';
+            
+            let report = '=== ANALISIS LENGKAP VERCEL DEPLOYMENT ===\n\n';
+            
+            // 1. Environment
+            report += '1. ENVIRONMENT\n';
+            report += `   URL: ${window.location.href}\n`;
+            report += `   Hostname: ${window.location.hostname}\n`;
+            report += `   Protocol: ${window.location.protocol}\n`;
+            report += `   Is Vercel: ${window.location.hostname.includes('vercel.app') ? 'YES' : 'NO'}\n\n`;
+            
+            // 2. CSS Files
+            report += '2. CSS FILES\n';
+            const links = document.querySelectorAll('link[rel="stylesheet"]');
+            if (links.length === 0) {
+                report += '   ❌ TIDAK ADA CSS FILES!\n';
+                report += '   Ini adalah masalah utama!\n\n';
+            } else {
+                report += `   ✅ Ditemukan ${links.length} CSS file(s)\n`;
+                links.forEach((link, i) => {
+                    report += `   ${i + 1}. ${link.href}\n`;
+                });
+                report += '\n';
+            }
+            
+            // 3. Scripts
+            report += '3. JAVASCRIPT FILES\n';
+            const scripts = document.querySelectorAll('script[src]');
+            report += `   Ditemukan ${scripts.length} script file(s)\n`;
+            scripts.forEach((script, i) => {
+                if (i < 5) { // Show first 5
+                    report += `   ${i + 1}. ${script.src}\n`;
+                }
+            });
+            report += '\n';
+            
+            // 4. Computed Styles
+            report += '4. TAILWIND TEST\n';
+            const testDiv = document.createElement('div');
+            testDiv.className = 'bg-blue-500 text-white p-4';
+            testDiv.style.display = 'none';
+            document.body.appendChild(testDiv);
+            const styles = window.getComputedStyle(testDiv);
+            const bgColor = styles.backgroundColor;
+            
+            if (bgColor === 'rgb(59, 130, 246)' || bgColor.includes('59, 130, 246')) {
+                report += '   ✅ Tailwind berfungsi dengan baik\n';
+            } else {
+                report += '   ❌ Tailwind TIDAK berfungsi!\n';
+                report += `   Expected: rgb(59, 130, 246)\n`;
+                report += `   Got: ${bgColor}\n`;
+            }
+            document.body.removeChild(testDiv);
+            report += '\n';
+            
+            // 5. API Test
+            report += '5. API CONNECTION\n';
+            try {
+                const apiUrl = window.location.origin + '/api';
+                const response = await fetch(`${apiUrl}/public/app-settings`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    report += '   ✅ API connection berhasil\n';
+                    report += `   Status: ${response.status}\n`;
+                } else {
+                    report += '   ❌ API error\n';
+                    report += `   Status: ${response.status}\n`;
+                }
+            } catch (error) {
+                report += '   ❌ API connection gagal\n';
+                report += `   Error: ${error.message}\n`;
+            }
+            report += '\n';
+            
+            // 6. Recommendations
+            report += '6. REKOMENDASI\n';
+            if (links.length === 0) {
+                report += '   🔴 CRITICAL: CSS tidak ter-load!\n';
+                report += '   Solusi:\n';
+                report += '   1. Clear Vercel build cache\n';
+                report += '   2. Redeploy aplikasi\n';
+                report += '   3. Periksa build logs\n';
+            } else if (bgColor !== 'rgb(59, 130, 246)' && !bgColor.includes('59, 130, 246')) {
+                report += '   🟡 WARNING: CSS ter-load tapi Tailwind tidak berfungsi\n';
+                report += '   Solusi:\n';
+                report += '   1. Periksa PostCSS config\n';
+                report += '   2. Periksa Tailwind config\n';
+                report += '   3. Rebuild dengan cache bersih\n';
+            } else {
+                report += '   🟢 Semua terlihat baik!\n';
+                report += '   Jika masih ada masalah visual:\n';
+                report += '   1. Hard refresh browser (Ctrl+Shift+R)\n';
+                report += '   2. Clear browser cache\n';
+                report += '   3. Test di incognito mode\n';
+            }
+            
+            result.textContent = report;
+        }
+    </script>
+</body>
+</html>

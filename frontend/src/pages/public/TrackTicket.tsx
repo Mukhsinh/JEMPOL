@@ -116,10 +116,10 @@ const TrackTicket: React.FC = () => {
     setTicketData(null);
 
     try {
-      // Gunakan relative path untuk production (Vercel)
+      // Gunakan endpoint yang benar untuk Vercel
       const apiUrl = import.meta.env.VITE_API_URL || '/api';
       const response = await fetch(
-        `${apiUrl}/public/track/${ticket.trim()}`
+        `${apiUrl}/public/track-ticket?ticket=${encodeURIComponent(ticket.trim())}`
       );
 
       const data = await response.json();

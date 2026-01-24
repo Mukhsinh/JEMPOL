@@ -11,6 +11,18 @@
   },
   "rewrites": [
     {
+      "source": "/api/public/track-ticket",
+      "destination": "/api/public/track-ticket"
+    },
+    {
+      "source": "/api/public/app-settings",
+      "destination": "/api/public/app-settings"
+    },
+    {
+      "source": "/api/public/:path*",
+      "destination": "/api/public/:path*"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

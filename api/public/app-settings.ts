@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       return res.status(200).json({
         success: true,
-        data: [],
+        data: DEFAULT_SETTINGS,
         warning: 'Using default settings - Supabase credentials not configured'
       });
     }
@@ -80,16 +80,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Return default settings jika error
       return res.status(200).json({
         success: true,
-        data: [],
+        data: DEFAULT_SETTINGS,
         warning: 'Using default settings - database query failed'
       });
     }
 
     console.log('✅ App settings fetched successfully:', settings?.length || 0, 'items');
 
+    // Convert array to object format yang diharapkan frontend
+    const settingsObject: any = {};
+    if (settings && settings.length > 0) {
+      settings.forEach((item: any) => {
+        settingsObject[item.setting_key] = item.setting_value;
+      });
+    }
+
+    // Merge dengan default settings
+    const finalSettings = {
+      ...DEFAULT_SETTINGS,
+      ...settingsObject
+    };
+
     return res.status(200).json({
       success: true,
-      data: settings || []
+      data: finalSettings
     });
   } catch (error: any) {
     console.error('❌ Unexpected error in get app settings:', {
@@ -100,7 +114,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // PERBAIKAN: Return default settings jika exception dengan JSON valid
     return res.status(200).json({
       success: true,
-      data: [],
+      data: DEFAULT_SETTINGS,
       error: 'Server error: ' + (error.message || 'Unknown error'),
       debug: {
         errorType: error.constructor.name,
