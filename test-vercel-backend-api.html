@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Vercel Backend API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #666;
+            margin-top: 20px;
+        }
+        .endpoint {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+        }
+        .endpoint-url {
+            font-family: monospace;
+            color: #2196F3;
+            font-weight: bold;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            background: #f0f0f0;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            border-left: 4px solid #f44336;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-ok {
+            background: #4CAF50;
+            color: white;
+        }
+        .status-error {
+            background: #f44336;
+            color: white;
+        }
+        .status-pending {
+            background: #ff9800;
+            color: white;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Vercel Backend API</h1>
+        <p>Tool untuk testing semua endpoint backend API yang di-deploy ke Vercel</p>
+        
+        <div>
+            <label>Base URL:</label>
+            <input type="text" id="baseUrl" value="https://your-app.vercel.app" style="width: 400px;">
+            <button onclick="saveBaseUrl()">Simpan</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>1. Health Check</h2>
+        <div class="endpoint">
+            <div class="endpoint-url">GET /api/health</div>
+            <button onclick="testHealth()">Test Health</button>
+            <div id="health-result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>2. Authentication</h2>
+        
+        <div class="endpoint">
+            <div class="endpoint-url">POST /api/auth/login</div>
+            <div>
+                <input type="text" id="username" placeholder="Username" value="jempol">
+                <input type="password" id="password" placeholder="Password" value="jempol123">
+                <button onclick="testLogin()">Test Login</button>
+            </div>
+            <div id="login-result"></div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-url">GET /api/auth/verify</div>
+            <button onclick="testVerify()">Test Verify Token</button>
+            <div id="verify-result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>3. Complaints/Tickets</h2>
+        
+        <div class="endpoint">
+            <div class="endpoint-url">GET /api/complaints</div>
+            <button onclick="testGetComplaints()">Test Get Tickets</button>
+            <div id="complaints-result"></div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-url">GET /api/complaints/stats</div>
+            <button onclick="testGetStats()">Test Get Stats</button>
+            <div id="stats-result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>4. Master Data</h2>
+        
+        <div class="endpoint">
+            <div class="endpoint-url">GET /api/master-data/patient-types</div>
+            <button onclick="testGetPatientTypes()">Test Get Patient Types</button>
+            <div id="patient-types-result"></div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-url">GET /api/master-data/service-categories</div>
+            <button onclick="testGetCategories()">Test Get Categories</button>
+            <div id="categories-result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>5. Units</h2>
+        
+        <div class="endpoint">
+            <div class="endpoint-url">GET /api/units</div>
+            <button onclick="testGetUnits()">Test Get Units</button>
+            <div id="units-result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>6. QR Codes</h2>
+        
+        <div class="endpoint">
+            <div class="endpoint-url">GET /api/qr-codes</div>
+            <button onclick="testGetQRCodes()">Test Get QR Codes</button>
+            <div id="qr-codes-result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>7. Users</h2>
+        
+        <div class="endpoint">
+            <div class="endpoint-url">GET /api/users</div>
+            <button onclick="testGetUsers()">Test Get Users</button>
+            <div id="users-result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>8. Public Endpoints (Tanpa Auth)</h2>
+        
+        <div class="endpoint">
+            <div class="endpoint-url">GET /api/public/app-settings</div>
+            <button onclick="testPublicAppSettings()">Test Public App Settings</button>
+            <div id="public-app-settings-result"></div>
+        </div>
+
+        <div class="endpoint">
+            <div class="endpoint-url">GET /api/public/units</div>
+            <button onclick="testPublicUnits()">Test Public Units</button>
+            <div id="public-units-result"></div>
+        </div>
+    </div>
+
+    <script>
+        let token = null;
+        let baseUrl = 'https://your-app.vercel.app';
+
+        function saveBaseUrl() {
+            baseUrl = document.getElementById('baseUrl').value;
+            localStorage.setItem('vercel-base-url', baseUrl);
+            alert('Base URL disimpan: ' + baseUrl);
+        }
+
+        // Load saved base URL
+        window.onload = function() {
+            const saved = localStorage.getItem('vercel-base-url');
+            if (saved) {
+                baseUrl = saved;
+                document.getElementById('baseUrl').value = saved;
+            }
+        };
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result ' + (isError ? 'error' : 'success');
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+            
+            // Clear previous results
+            const existing = element.querySelector('.result');
+            if (existing) {
+                existing.remove();
+            }
+            
+            element.appendChild(resultDiv);
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${baseUrl}/api/health`);
+                const data = await response.json();
+                showResult('health-result', data, !response.ok);
+            } catch (error) {
+                showResult('health-result', { error: error.message }, true);
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+
+                const response = await fetch(`${baseUrl}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (data.token) {
+                    token = data.token;
+                    localStorage.setItem('vercel-test-token', token);
+                }
+
+                showResult('login-result', data, !response.ok);
+            } catch (error) {
+                showResult('login-result', { error: error.message }, true);
+            }
+        }
+
+        async function testVerify() {
+            try {
+                if (!token) {
+                    token = localStorage.getItem('vercel-test-token');
+                }
+
+                if (!token) {
+                    showResult('verify-result', { error: 'Token tidak ada. Login dulu!' }, true);
+                    return;
+                }
+
+                const response = await fetch(`${baseUrl}/api/auth/verify`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                showResult('verify-result', data, !response.ok);
+            } catch (error) {
+                showResult('verify-result', { error: error.message }, true);
+            }
+        }
+
+        async function testGetComplaints() {
+            try {
+                if (!token) token = localStorage.getItem('vercel-test-token');
+
+                const response = await fetch(`${baseUrl}/api/complaints?limit=5`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                showResult('complaints-result', data, !response.ok);
+            } catch (error) {
+                showResult('complaints-result', { error: error.message }, true);
+            }
+        }
+
+        async function testGetStats() {
+            try {
+                if (!token) token = localStorage.getItem('vercel-test-token');
+
+                const response = await fetch(`${baseUrl}/api/complaints/stats`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                showResult('stats-result', data, !response.ok);
+            } catch (error) {
+                showResult('stats-result', { error: error.message }, true);
+            }
+        }
+
+        async function testGetPatientTypes() {
+            try {
+                if (!token) token = localStorage.getItem('vercel-test-token');
+
+                const response = await fetch(`${baseUrl}/api/master-data/patient-types`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                showResult('patient-types-result', data, !response.ok);
+            } catch (error) {
+                showResult('patient-types-result', { error: error.message }, true);
+            }
+        }
+
+        async function testGetCategories() {
+            try {
+                if (!token) token = localStorage.getItem('vercel-test-token');
+
+                const response = await fetch(`${baseUrl}/api/master-data/service-categories`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                showResult('categories-result', data, !response.ok);
+            } catch (error) {
+                showResult('categories-result', { error: error.message }, true);
+            }
+        }
+
+        async function testGetUnits() {
+            try {
+                if (!token) token = localStorage.getItem('vercel-test-token');
+
+                const response = await fetch(`${baseUrl}/api/units`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                showResult('units-result', data, !response.ok);
+            } catch (error) {
+                showResult('units-result', { error: error.message }, true);
+            }
+        }
+
+        async function testGetQRCodes() {
+            try {
+                if (!token) token = localStorage.getItem('vercel-test-token');
+
+                const response = await fetch(`${baseUrl}/api/qr-codes`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                showResult('qr-codes-result', data, !response.ok);
+            } catch (error) {
+                showResult('qr-codes-result', { error: error.message }, true);
+            }
+        }
+
+        async function testGetUsers() {
+            try {
+                if (!token) token = localStorage.getItem('vercel-test-token');
+
+                const response = await fetch(`${baseUrl}/api/users`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                showResult('users-result', data, !response.ok);
+            } catch (error) {
+                showResult('users-result', { error: error.message }, true);
+            }
+        }
+
+        async function testPublicAppSettings() {
+            try {
+                const response = await fetch(`${baseUrl}/api/public/app-settings`);
+                const data = await response.json();
+                showResult('public-app-settings-result', data, !response.ok);
+            } catch (error) {
+                showResult('public-app-settings-result', { error: error.message }, true);
+            }
+        }
+
+        async function testPublicUnits() {
+            try {
+                const response = await fetch(`${baseUrl}/api/public/units`);
+                const data = await response.json();
+                showResult('public-units-result', data, !response.ok);
+            } catch (error) {
+                showResult('public-units-result', { error: error.message }, true);
+            }
+        }
+    </script>
+</body>
+</html>
