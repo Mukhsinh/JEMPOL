@@ -213,12 +213,8 @@ const PublicSurveyFullscreen: React.FC = () => {
                 <input type="text" name="full_name" value={formData.full_name} onChange={handleInputChange} disabled={formData.is_anonymous}
                   className="w-full px-4 py-4 rounded-2xl border border-gray-200 text-lg disabled:opacity-50" placeholder="Masukkan nama lengkap" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nomor HP (WhatsApp) *</label>
-                <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} required
-                  className="w-full px-4 py-4 rounded-2xl border border-gray-200 text-lg" placeholder="08xxxxxxxxxx" />
-              </div>
-              <button type="button" onClick={() => setCurrentStep(2)} disabled={!formData.service_type || !formData.phone}
+              {/* Nomor HP - DIHAPUS */}
+              <button type="button" onClick={() => setCurrentStep(2)} disabled={!formData.service_type}
                 className="w-full py-4 bg-green-500 text-white rounded-2xl font-bold text-lg disabled:opacity-50">Lanjutkan</button>
             </div>
           )}
@@ -332,17 +328,7 @@ const PublicSurveyFullscreen: React.FC = () => {
         </div>
       </form>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-100 py-4 px-4 mt-auto">
-        <div className="text-center space-y-1">
-          {appSettings.institution_name && (
-            <p className="text-xs font-medium text-gray-600">{appSettings.institution_name}</p>
-          )}
-          {appSettings.app_footer && (
-            <p className="text-xs text-gray-400">{appSettings.app_footer}</p>
-          )}
-        </div>
-      </footer>
+      {/* Footer dihapus sesuai permintaan */}
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

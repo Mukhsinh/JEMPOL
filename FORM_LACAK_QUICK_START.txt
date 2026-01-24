@@ -1,0 +1,109 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                  FORM LACAK TIKET - QUICK START               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+📋 FITUR BARU YANG DITAMBAHKAN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ Halaman Form Lacak Tiket (Public Access)
+✅ Menu di Sidebar (Tickets > Form Lacak)
+✅ QR Code Generator untuk akses mudah
+✅ Integrasi dengan Backend API
+✅ Responsive & Mobile-Friendly
+✅ Dark Mode Support
+✅ Timeline Progres Tiket
+✅ AI Status Insight
+✅ Notifikasi WhatsApp (UI Ready)
+
+🚀 CARA MENJALANKAN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+OPSI 1: Menggunakan Batch File (Recommended)
+   Double-click: TEST_FORM_LACAK.bat
+
+OPSI 2: Manual
+   1. Install dependency QR code:
+      npm install
+
+   2. Generate QR Codes:
+      npm run generate-qr-form-lacak
+
+   3. Jalankan Backend:
+      cd backend
+      npm run dev
+
+   4. Jalankan Frontend (terminal baru):
+      cd frontend
+      npm run dev
+
+📱 AKSES HALAMAN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Form Lacak: http://localhost:5173/form-lacak
+• Short URL:   http://localhost:5173/lacak
+• Test Page:   test-form-lacak.html
+• QR Preview:  public/qr-form-lacak.html
+
+🔍 CARA TEST:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Buka: http://localhost:5173/form-lacak
+2. Masukkan nomor tiket (contoh: TKT-2024-0001)
+3. Klik tombol "Lacak"
+4. Verifikasi data yang ditampilkan:
+   ✓ Status tiket
+   ✓ Timeline progres
+   ✓ Detail tiket
+   ✓ Riwayat pembaruan
+
+📂 FILE YANG DITAMBAHKAN:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+frontend/src/pages/public/FormLacak.tsx     - Halaman utama
+frontend/src/components/Sidebar.tsx          - Menu terintegrasi
+scripts/generate-form-lacak-qr.js            - QR generator
+TEST_FORM_LACAK.bat                          - Batch file test
+test-form-lacak.html                         - Test page
+PANDUAN_FORM_LACAK.md                        - Dokumentasi lengkap
+
+🎯 INTEGRASI:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Backend API: GET /api/public/track/:ticketNumber
+✓ Database: Supabase (tickets, units, service_categories)
+✓ Frontend Route: /form-lacak, /lacak
+✓ Sidebar Menu: Tickets > Form Lacak
+✓ QR Code: Auto-generated untuk akses publik
+
+📲 QR CODE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Generate QR Code:
+   npm run generate-qr-form-lacak
+
+Lokasi file:
+   public/qr-codes/form-lacak-*.png
+   public/qr-codes/form-lacak-*.svg
+
+Preview:
+   public/qr-form-lacak.html
+
+💡 TIPS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• QR Code dapat dicetak dan ditempel di loket, ruang tunggu
+• Halaman dapat diakses tanpa login (public access)
+• Responsive untuk mobile dan desktop
+• Support dark mode otomatis
+• Timeline menampilkan progres real-time
+
+🔧 TROUBLESHOOTING:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Error: Module 'qrcode' not found
+   → npm install
+
+Tiket tidak ditemukan
+   → Pastikan nomor tiket ada di database
+   → Format: TKT-YYYY-XXXX
+
+Data tidak muncul
+   → Cek backend running di port 3000
+   → Verifikasi Supabase connection
+
+✨ SELESAI!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Form Lacak Tiket sudah siap digunakan!
+Buka test-form-lacak.html untuk panduan lengkap.

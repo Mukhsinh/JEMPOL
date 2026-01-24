@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { downloadInternalTicketPDF } from '../../utils/pdfGenerator';
 
 interface FormData {
   reporter_name: string;
@@ -25,6 +26,7 @@ const StandaloneInternalTicketForm: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [ticketNumber, setTicketNumber] = useState('');
+  const [submittedTicketData, setSubmittedTicketData] = useState<any>(null);
   const [error, setError] = useState('');
   
   const [formData, setFormData] = useState<FormData>({
@@ -84,7 +86,24 @@ const StandaloneInternalTicketForm: React.FC = () => {
       const result = await response.json();
 
       if (response.ok) {
-        setTicketNumber(result.ticket_number || 'INT-' + Date.now());
+        const ticketNum = result.ticket_number || 'INT-' + Date.now();
+        
+        setSubmittedTicketData({
+          ticket_number: ticketNum,
+          title: formData.title,
+          description: formData.description,
+          category: categories.find(c => c.value === formData.category)?.label || '-',
+          priority: formData.priority,
+          unit_name: unitName || formData.reporter_department,
+          reporter_name: formData.reporter_name,
+          reporter_email: formData.reporter_email,
+          reporter_phone: formData.reporter_phone,
+          reporter_address: formData.reporter_department,
+          created_at: new Date().toISOString(),
+          type: 'internal'
+        });
+        
+        setTicketNumber(ticketNum);
         setSubmitted(true);
       } else {
         setError(result.error || 'Gagal mengirim tiket');
@@ -98,6 +117,7 @@ const StandaloneInternalTicketForm: React.FC = () => {
 
   const resetForm = () => {
     setSubmitted(false);
+    setSubmittedTicketData(null);
     setFormData({
       reporter_name: '',
       reporter_email: '',
@@ -109,6 +129,12 @@ const StandaloneInternalTicketForm: React.FC = () => {
       title: '',
       description: ''
     });
+  };
+
+  const handleDownloadPDF = () => {
+    if (submittedTicketData) {
+      downloadInternalTicketPDF(submittedTicketData);
+    }
   };
 
   // Success Screen
@@ -128,6 +154,14 @@ const StandaloneInternalTicketForm: React.FC = () => {
           </div>
           
           <p className="text-gray-400 text-sm mb-6">Simpan nomor ini untuk melacak status tiket Anda</p>
+          
+          <button 
+            onClick={handleDownloadPDF}
+            className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform mb-3 flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined">download</span>
+            Unduh Tiket (PDF)
+          </button>
           
           <button 
             onClick={resetForm} 

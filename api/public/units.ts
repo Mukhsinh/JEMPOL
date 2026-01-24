@@ -1,25 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Missing Supabase credentials');
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Set CORS headers PERTAMA - SEBELUM SEMUA LOGIC
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  
   try {
-    // Set CORS headers PERTAMA - SEBELUM SEMUA LOGIC
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    
     // Handle OPTIONS request
     if (req.method === 'OPTIONS') {
       return res.status(200).json({ success: true });
@@ -33,7 +23,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         data: []
       });
     }
+    
     console.log('🎯 GET /api/public/units - Vercel Function');
+    
+    // Initialize Supabase client dengan validasi - coba berbagai environment variable
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+    
     console.log('📍 Environment check:', {
       hasSupabaseUrl: !!supabaseUrl,
       hasSupabaseKey: !!supabaseKey,
@@ -43,9 +39,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Validasi Supabase credentials
     if (!supabaseUrl || !supabaseKey) {
       console.error('❌ Missing Supabase credentials in Vercel');
-      console.error('   VITE_SUPABASE_URL:', supabaseUrl ? 'SET' : 'NOT SET');
-      console.error('   VITE_SUPABASE_SERVICE_ROLE_KEY:', process.env.VITE_SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET');
-      console.error('   VITE_SUPABASE_ANON_KEY:', process.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
+      console.error('   SUPABASE_URL:', process.env.SUPABASE_URL ? 'SET' : 'NOT SET');
+      console.error('   VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET');
+      console.error('   SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET');
+      console.error('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
       
       return res.status(200).json({
         success: false,
@@ -59,6 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
     
+    const supabase = createClient(supabaseUrl, supabaseKey);
     console.log('✅ Supabase credentials OK, fetching units...');
     
     // Fetch active units dengan error handling yang lebih baik

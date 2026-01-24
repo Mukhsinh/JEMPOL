@@ -1,13 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
+// Initialize Supabase client - gunakan variable yang benar (tanpa VITE_ prefix untuk backend)
 // Vercel akan inject environment variables dari dashboard
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Missing Supabase credentials. Please set VITE_SUPABASE_URL and VITE_SUPABASE_SERVICE_ROLE_KEY in Vercel environment variables.');
+  console.error('❌ Missing Supabase credentials. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel environment variables.');
+  console.error('   SUPABASE_URL:', supabaseUrl ? 'SET' : 'NOT SET');
+  console.error('   SUPABASE_KEY:', supabaseKey ? 'SET' : 'NOT SET');
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -86,45 +88,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       source
     });
 
-    // Validasi minimal - hanya visitor_phone yang wajib
-    if (!visitor_phone) {
-      console.error('❌ Nomor HP tidak ada');
-      return res.status(400).json({
-        success: false,
-        error: 'Nomor HP wajib diisi'
-      });
-    }
-    
-    // Validasi unit
-    if (!unit_id) {
-      console.error('❌ Unit ID tidak ada');
-      return res.status(400).json({
-        success: false,
-        error: 'Unit layanan wajib dipilih'
-      });
-    }
-
     // Validasi source
     const validSources = ['web', 'qr_code', 'mobile', 'email', 'phone', 'public_survey'];
     const finalSource = validSources.includes(source) ? source : 'public_survey';
     console.log('✅ Using source:', finalSource);
 
-    // Verifikasi unit exists dan aktif
-    const { data: unitData, error: unitCheckError } = await supabase
-      .from('units')
-      .select('id, name')
-      .eq('id', unit_id)
-      .eq('is_active', true)
-      .single();
+    // Validasi unit (optional - hanya jika unit_id diberikan)
+    let unitData = null;
+    if (unit_id) {
+      const { data, error: unitCheckError } = await supabase
+        .from('units')
+        .select('id, name')
+        .eq('id', unit_id)
+        .eq('is_active', true)
+        .single();
 
-    if (unitCheckError || !unitData) {
-      console.error('❌ Unit tidak valid atau tidak aktif:', unit_id);
-      return res.status(400).json({
-        success: false,
-        error: 'Unit tidak valid atau tidak aktif',
-        unit_id: unit_id,
-        details: unitCheckError?.message
-      });
+      if (unitCheckError || !data) {
+        console.error('❌ Unit tidak valid atau tidak aktif:', unit_id);
+        return res.status(400).json({
+          success: false,
+          error: 'Unit tidak valid atau tidak aktif',
+          unit_id: unit_id,
+          details: unitCheckError?.message
+        });
+      }
+      unitData = data;
     }
 
     console.log('✅ Unit verified:', unitData.name);

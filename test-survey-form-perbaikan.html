@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Form Survey - Perbaikan Lengkap</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .field {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .required {
+            color: #e74c3c;
+        }
+        select, input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        select:disabled, input:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .checklist {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .checklist-item {
+            padding: 8px;
+            margin: 5px 0;
+            border-left: 3px solid #ddd;
+            padding-left: 12px;
+        }
+        .checklist-item.done {
+            border-left-color: #28a745;
+            background: #f0fff4;
+        }
+        .checklist-item.pending {
+            border-left-color: #ffc107;
+            background: #fffbf0;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        @media (max-width: 600px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Test Form Survey - Perbaikan Lengkap</h1>
+        <p class="subtitle">Verifikasi perbaikan: Usia (Dropdown), Pekerjaan (Dropdown), Alamat (Kab/Kota + Kecamatan + Detail)</p>
+
+        <div class="status info">
+            <strong>📋 Checklist Perbaikan:</strong>
+            <div class="checklist">
+                <div class="checklist-item done">✓ Usia diubah dari Radio Button ke Dropdown</div>
+                <div class="checklist-item done">✓ Pekerjaan diubah dari Input Text ke Dropdown</div>
+                <div class="checklist-item done">✓ Alamat diperbaiki: Kab/Kota (Dropdown) + Kecamatan (Dropdown) + Alamat Detail (Textarea)</div>
+                <div class="checklist-item done">✓ Backend sudah terintegrasi dengan field: regency, district, address_detail</div>
+            </div>
+        </div>
+
+        <div id="result"></div>
+
+        <form id="surveyForm">
+            <!-- Usia - DROPDOWN -->
+            <div class="section">
+                <div class="section-title">
+                    <span>🎂</span> 1. Usia (Dropdown)
+                </div>
+                <div class="field">
+                    <label>Pilih Rentang Usia <span class="required">*</span></label>
+                    <select id="age" required>
+                        <option value="">-- Pilih Rentang Usia --</option>
+                        <option value="Kurang dari 20 Tahun">Kurang dari 20 Tahun</option>
+                        <option value="20 - 40 Tahun">20 - 40 Tahun</option>
+                        <option value="41 - 60 Tahun">41 - 60 Tahun</option>
+                        <option value="Lebih dari 60 Tahun">Lebih dari 60 Tahun</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Pekerjaan - DROPDOWN -->
+            <div class="section">
+                <div class="section-title">
+                    <span>💼</span> 2. Pekerjaan (Dropdown)
+                </div>
+                <div class="field">
+                    <label>Pilih Pekerjaan <span class="required">*</span></label>
+                    <select id="job" required>
+                        <option value="">-- Pilih Pekerjaan --</option>
+                        <option value="PNS">PNS</option>
+                        <option value="TNI/Polri">TNI/Polri</option>
+                        <option value="Swasta">Swasta</option>
+                        <option value="Wiraswasta">Wiraswasta</option>
+                        <option value="Petani">Petani</option>
+                        <option value="Nelayan">Nelayan</option>
+                        <option value="Pelajar/Mahasiswa">Pelajar/Mahasiswa</option>
+                        <option value="Ibu Rumah Tangga">Ibu Rumah Tangga</option>
+                        <option value="Pensiunan">Pensiunan</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Alamat Domisili - KAB/KOTA + KECAMATAN + DETAIL -->
+            <div class="section">
+                <div class="section-title">
+                    <span>🏠</span> 3. Alamat Domisili (Lengkap)
+                </div>
+                
+                <!-- Kab/Kota -->
+                <div class="field">
+                    <label>Kabupaten/Kota <span class="required">*</span></label>
+                    <select id="regency" required>
+                        <option value="">-- Pilih Kab/Kota --</option>
+                        <option value="Kota Pekalongan">Kota Pekalongan</option>
+                        <option value="Kab Pekalongan">Kab Pekalongan</option>
+                        <option value="Kab Batang">Kab Batang</option>
+                        <option value="Kab Pemalang">Kab Pemalang</option>
+                    </select>
+                </div>
+
+                <!-- Kecamatan -->
+                <div class="field">
+                    <label>Kecamatan <span class="required">*</span></label>
+                    <select id="district" required disabled>
+                        <option value="">-- Pilih Kecamatan --</option>
+                    </select>
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Pilih Kab/Kota terlebih dahulu
+                    </small>
+                </div>
+
+                <!-- Alamat Detail -->
+                <div class="field">
+                    <label>Alamat Detail <span class="required">*</span></label>
+                    <textarea id="address_detail" required placeholder="Masukkan alamat lengkap (Jalan, RT/RW, Kelurahan/Desa)"></textarea>
+                </div>
+            </div>
+
+            <!-- Data Tambahan -->
+            <div class="section">
+                <div class="section-title">
+                    <span>📝</span> Data Tambahan
+                </div>
+                <div class="grid-2">
+                    <div class="field">
+                        <label>Nama Lengkap</label>
+                        <input type="text" id="full_name" placeholder="Masukkan nama">
+                    </div>
+                    <div class="field">
+                        <label>Nomor HP <span class="required">*</span></label>
+                        <input type="tel" id="phone" required placeholder="08xxxxxxxxxx">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit">🚀 Test Submit Form</button>
+        </form>
+    </div>
+
+    <script>
+        // Data kecamatan per kabupaten
+        const kecamatanData = {
+            'Kota Pekalongan': [
+                'Pekalongan Barat', 'Pekalongan Timur', 'Pekalongan Utara', 'Pekalongan Selatan'
+            ],
+            'Kab Pekalongan': [
+                'Kedungwuni', 'Karanganyar', 'Sragi', 'Wonokerto', 'Wiradesa', 
+                'Siwalan', 'Karangdadap', 'Bojong', 'Buaran', 'Tirto'
+            ],
+            'Kab Batang': [
+                'Batang', 'Warungasem', 'Wonotunggal', 'Bandar', 'Gringsing', 
+                'Limpung', 'Subah', 'Tulis'
+            ],
+            'Kab Pemalang': [
+                'Pemalang', 'Taman', 'Petarukan', 'Randudongkal', 'Comal', 
+                'Ulujami', 'Ampelgading', 'Bodeh', 'Belik', 'Moga'
+            ]
+        };
+
+        // Update kecamatan saat kab/kota dipilih
+        document.getElementById('regency').addEventListener('change', function() {
+            const districtSelect = document.getElementById('district');
+            const selectedRegency = this.value;
+            
+            // Reset kecamatan
+            districtSelect.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
+            districtSelect.disabled = !selectedRegency;
+            
+            // Populate kecamatan
+            if (selectedRegency && kecamatanData[selectedRegency]) {
+                kecamatanData[selectedRegency].forEach(kec => {
+                    const option = document.createElement('option');
+                    option.value = kec;
+                    option.textContent = kec;
+                    districtSelect.appendChild(option);
+                });
+            }
+        });
+
+        // Handle form submit
+        document.getElementById('surveyForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="status info">⏳ Mengirim data...</div>';
+            
+            const formData = {
+                age: document.getElementById('age').value,
+                job: document.getElementById('job').value,
+                regency: document.getElementById('regency').value,
+                district: document.getElementById('district').value,
+                address_detail: document.getElementById('address_detail').value,
+                full_name: document.getElementById('full_name').value,
+                phone: document.getElementById('phone').value,
+                unit_id: 'test-unit-id',
+                service_type: 'rawat_jalan',
+                q1_score: 5,
+                q2_score: 5,
+                q3_score: 5,
+                q4_score: 5,
+                q5_score: 5,
+                q6_score: 5,
+                q7_score: 5,
+                q8_score: 5
+            };
+            
+            console.log('📤 Data yang dikirim:', formData);
+            
+            try {
+                const response = await fetch('http://localhost:3004/api/public/surveys', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                console.log('📥 Response:', result);
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="status success">
+                            <strong>✅ BERHASIL!</strong><br>
+                            Data survey berhasil dikirim dengan perbaikan lengkap:<br>
+                            <ul style="margin-top: 10px; padding-left: 20px;">
+                                <li>Usia: ${formData.age} (Dropdown)</li>
+                                <li>Pekerjaan: ${formData.job} (Dropdown)</li>
+                                <li>Kab/Kota: ${formData.regency}</li>
+                                <li>Kecamatan: ${formData.district}</li>
+                                <li>Alamat Detail: ${formData.address_detail}</li>
+                            </ul>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(result.error || 'Gagal mengirim data');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultDiv.innerHTML = `
+                    <div class="status error">
+                        <strong>❌ ERROR!</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

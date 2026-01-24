@@ -19,7 +19,8 @@
     "test:backend": "npm run test --workspace=backend",
     "convert-ebooks": "node scripts/convert-to-pdf.js",
     "generate-pdfs": "node scripts/generate-pdfs.js",
-    "generate-ebook-pdfs": "node scripts/generate-ebook-pdfs.js"
+    "generate-ebook-pdfs": "node scripts/generate-ebook-pdfs.js",
+    "generate-qr-form-lacak": "node scripts/generate-form-lacak-qr.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
@@ -31,6 +32,7 @@
     "bcrypt": "^6.0.0",
     "cloudinary": "2.8.0",
     "node-fetch": "^3.3.2",
+    "qrcode": "^1.5.3",
     "vite": "7.3.0"
   }
 }

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { getServiceCategories, getPatientTypes } from '../../services/masterDataService';
 import AppFooter from '../../components/AppFooter';
 import externalTicketService from '../../services/externalTicketService';
+import { downloadExternalTicketPDF } from '../../utils/pdfGenerator';
 
 interface FormData {
   reporter_identity_type: 'personal' | 'anonymous';
@@ -61,6 +62,7 @@ const DirectExternalTicketForm: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [ticketNumber, setTicketNumber] = useState('');
+  const [submittedTicketData, setSubmittedTicketData] = useState<any>(null);
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
   const [units, setUnits] = useState<any[]>([]);
@@ -203,13 +205,8 @@ const DirectExternalTicketForm: React.FC = () => {
     setError('');
 
     try {
-      // Validasi unit_id - gunakan dari form data
+      // Gunakan unit_id dari URL parameter atau form data
       const finalUnitId = formData.unit_id || unitId;
-      if (!finalUnitId) {
-        setError('Unit harus dipilih');
-        setSubmitting(false);
-        return;
-      }
 
       // Validasi field wajib untuk personal identity
       if (formData.reporter_identity_type === 'personal' && !formData.reporter_name) {
@@ -235,6 +232,22 @@ const DirectExternalTicketForm: React.FC = () => {
       console.log('✅ Tiket berhasil dibuat:', result);
 
       if (result.success) {
+        const selectedCategory = serviceCategories.find(c => c.id === formData.service_category_id);
+        
+        setSubmittedTicketData({
+          ticket_number: result.ticket_number || 'TKT-' + Date.now(),
+          title: formData.title,
+          description: formData.description,
+          category: selectedCategory?.name || '-',
+          priority: 'medium',
+          unit_name: unitName || 'Unit Umum',
+          reporter_name: formData.reporter_identity_type === 'personal' ? formData.reporter_name : 'Anonim',
+          reporter_email: formData.reporter_identity_type === 'personal' ? formData.reporter_email : null,
+          reporter_phone: formData.reporter_identity_type === 'personal' ? formData.reporter_phone : null,
+          created_at: new Date().toISOString(),
+          type: 'external'
+        });
+        
         setTicketNumber(result.ticket_number || 'TKT-' + Date.now());
         setSubmitted(true);
       } else {
@@ -251,6 +264,7 @@ const DirectExternalTicketForm: React.FC = () => {
   const resetForm = () => {
     setSubmitted(false);
     setCurrentStep(1);
+    setSubmittedTicketData(null);
     setFormData({
       reporter_identity_type: 'personal',
       reporter_name: '',
@@ -263,6 +277,12 @@ const DirectExternalTicketForm: React.FC = () => {
       description: '',
       unit_id: unitId || ''
     });
+  };
+
+  const handleDownloadPDF = () => {
+    if (submittedTicketData) {
+      downloadExternalTicketPDF(submittedTicketData);
+    }
   };
 
   // Success Screen
@@ -287,6 +307,14 @@ const DirectExternalTicketForm: React.FC = () => {
           </div>
           
           <p className="text-gray-400 text-sm mb-6">Simpan nomor ini untuk melacak status laporan Anda</p>
+          
+          <button 
+            onClick={handleDownloadPDF}
+            className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform mb-3 flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined">download</span>
+            Unduh Tiket (PDF)
+          </button>
           
           <button 
             onClick={resetForm} 
@@ -646,39 +674,7 @@ const DirectExternalTicketForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Footer - Data dari Pengaturan Aplikasi */}
-          {(appSettings.institution_name || appSettings.app_footer) && (
-            <div className="px-6 py-4 bg-gradient-to-r from-orange-50 to-rose-50 border-t border-orange-100">
-              <div className="max-w-md mx-auto text-center space-y-2">
-                {appSettings.institution_name && (
-                  <p className="font-bold text-orange-800 text-sm">{appSettings.institution_name}</p>
-                )}
-                {appSettings.institution_address && (
-                  <p className="text-xs text-gray-600">{appSettings.institution_address}</p>
-                )}
-                <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
-                  {appSettings.contact_phone && (
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">phone</span>
-                      {appSettings.contact_phone}
-                    </span>
-                  )}
-                  {appSettings.contact_email && (
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">email</span>
-                      {appSettings.contact_email}
-                    </span>
-                  )}
-                </div>
-                {appSettings.website && (
-                  <p className="text-xs text-orange-600">{appSettings.website}</p>
-                )}
-                {appSettings.app_footer && (
-                  <p className="text-xs text-gray-500 mt-2">{appSettings.app_footer}</p>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Footer dihapus sesuai permintaan */}
 
           {/* Bottom Navigation */}
           <div className="px-6 py-4 bg-white border-t border-gray-100 safe-area-bottom">

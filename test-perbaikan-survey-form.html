@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Perbaikan Survey Form</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-section h3 {
+            color: #555;
+            margin: 20px 0 10px 0;
+            font-size: 18px;
+        }
+        
+        .test-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .test-item label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .test-item input,
+        .test-item select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .test-item input:focus,
+        .test-item select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .test-item input.valid {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        
+        .test-item input.invalid {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        
+        .result {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .result.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+        
+        .result.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #ef4444;
+        }
+        
+        .result.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #3b82f6;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .status-badge.success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status-badge.error {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .icon {
+            font-size: 24px;
+        }
+        
+        .code {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin-top: 10px;
+            overflow-x: auto;
+        }
+        
+        .wilayah-data {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .wilayah-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            text-align: center;
+        }
+        
+        .wilayah-card h4 {
+            color: #667eea;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        
+        .wilayah-card p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .wilayah-card .count {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Perbaikan Survey Form</h1>
+        <p class="subtitle">Verifikasi perbaikan validasi nomor HP dan kelengkapan data wilayah</p>
+        
+        <!-- Test 1: Validasi Nomor HP -->
+        <div class="test-section">
+            <h2><span class="icon">📱</span> Test 1: Validasi Nomor HP</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Sistem harus membersihkan input dari spasi dan karakter non-digit, 
+                kemudian memvalidasi format nomor HP (10-13 digit, dimulai dengan 08)
+            </p>
+            
+            <div class="test-item">
+                <label>Masukkan Nomor HP (coba dengan berbagai format):</label>
+                <input type="text" id="phoneInput" placeholder="Contoh: 0812 3456 7890 atau 0812-3456-7890">
+                <div id="phoneResult"></div>
+            </div>
+            
+            <h3>Test Cases:</h3>
+            <div class="test-item">
+                <button onclick="testPhone('081234567890')">Test: 081234567890 (Format Benar)</button>
+                <button onclick="testPhone('0812 3456 7890')">Test: 0812 3456 7890 (Dengan Spasi)</button>
+                <button onclick="testPhone('0812-3456-7890')">Test: 0812-3456-7890 (Dengan Tanda Hubung)</button>
+                <button onclick="testPhone('08123')">Test: 08123 (Terlalu Pendek)</button>
+                <button onclick="testPhone('12345678901')">Test: 12345678901 (Tidak Dimulai 08)</button>
+                <button onclick="testPhone('')">Test: (Kosong)</button>
+            </div>
+        </div>
+        
+        <!-- Test 2: Data Wilayah -->
+        <div class="test-section">
+            <h2><span class="icon">🗺️</span> Test 2: Kelengkapan Data Wilayah</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Sistem harus menyediakan data kecamatan dan kelurahan yang lengkap untuk semua kabupaten/kota
+            </p>
+            
+            <div class="wilayah-data">
+                <div class="wilayah-card">
+                    <h4>Kota Pekalongan</h4>
+                    <div class="count">4</div>
+                    <p>Kecamatan</p>
+                    <div class="count">36</div>
+                    <p>Kelurahan</p>
+                </div>
+                <div class="wilayah-card">
+                    <h4>Kab. Pekalongan</h4>
+                    <div class="count">10</div>
+                    <p>Kecamatan</p>
+                    <div class="count">77</div>
+                    <p>Kelurahan</p>
+                </div>
+                <div class="wilayah-card">
+                    <h4>Kab. Batang</h4>
+                    <div class="count">8</div>
+                    <p>Kecamatan</p>
+                    <div class="count">63</div>
+                    <p>Kelurahan</p>
+                </div>
+                <div class="wilayah-card">
+                    <h4>Kab. Pemalang</h4>
+                    <div class="count">10</div>
+                    <p>Kecamatan</p>
+                    <div class="count">77</div>
+                    <p>Kelurahan</p>
+                </div>
+            </div>
+            
+            <h3>Test Dropdown Wilayah:</h3>
+            <div class="test-item">
+                <label>Pilih Kabupaten/Kota:</label>
+                <select id="kabupatenSelect" onchange="loadKecamatan()">
+                    <option value="">-- Pilih Kabupaten/Kota --</option>
+                    <option value="3375">Kota Pekalongan</option>
+                    <option value="3326">Kabupaten Pekalongan</option>
+                    <option value="3324">Kabupaten Batang</option>
+                    <option value="3327">Kabupaten Pemalang</option>
+                </select>
+            </div>
+            
+            <div class="test-item">
+                <label>Pilih Kecamatan:</label>
+                <select id="kecamatanSelect" onchange="loadKelurahan()" disabled>
+                    <option value="">-- Pilih Kecamatan --</option>
+                </select>
+                <div id="kecamatanResult"></div>
+            </div>
+            
+            <div class="test-item">
+                <label>Pilih Kelurahan:</label>
+                <select id="kelurahanSelect" disabled>
+                    <option value="">-- Pilih Kelurahan --</option>
+                </select>
+                <div id="kelurahanResult"></div>
+            </div>
+        </div>
+        
+        <!-- Test 3: Integrasi Lengkap -->
+        <div class="test-section">
+            <h2><span class="icon">✅</span> Test 3: Integrasi Lengkap</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Test form lengkap dengan validasi nomor HP dan pemilihan alamat
+            </p>
+            
+            <button onclick="openSurveyForm()" style="width: 100%; font-size: 18px; padding: 20px;">
+                🚀 Buka Form Survey Lengkap
+            </button>
+            
+            <div class="result info" style="margin-top: 20px;">
+                <strong>📝 Petunjuk Testing:</strong><br>
+                1. Isi nomor HP dengan berbagai format (dengan/tanpa spasi)<br>
+                2. Pilih alamat lengkap (Kabupaten → Kecamatan → Kelurahan)<br>
+                3. Isi semua field yang wajib<br>
+                4. Klik "Lanjutkan" di setiap step<br>
+                5. Pastikan bisa submit tanpa error "no hp belum diisi"
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Data wilayah (simplified untuk testing)
+        const wilayahData = {
+            '3375': {
+                nama: 'Kota Pekalongan',
+                kecamatan: {
+                    '3375010': { nama: 'Pekalongan Barat', kelurahan: 9 },
+                    '3375020': { nama: 'Pekalongan Timur', kelurahan: 10 },
+                    '3375030': { nama: 'Pekalongan Utara', kelurahan: 9 },
+                    '3375040': { nama: 'Pekalongan Selatan', kelurahan: 10 }
+                }
+            },
+            '3326': {
+                nama: 'Kabupaten Pekalongan',
+                kecamatan: {
+                    '3326010': { nama: 'Kedungwuni', kelurahan: 10 },
+                    '3326020': { nama: 'Karanganyar', kelurahan: 8 },
+                    '3326030': { nama: 'Sragi', kelurahan: 9 },
+                    '3326040': { nama: 'Wonokerto', kelurahan: 8 },
+                    '3326050': { nama: 'Wiradesa', kelurahan: 8 },
+                    '3326060': { nama: 'Siwalan', kelurahan: 7 },
+                    '3326070': { nama: 'Karangdadap', kelurahan: 7 },
+                    '3326080': { nama: 'Bojong', kelurahan: 7 },
+                    '3326090': { nama: 'Buaran', kelurahan: 7 },
+                    '3326100': { nama: 'Tirto', kelurahan: 7 }
+                }
+            },
+            '3324': {
+                nama: 'Kabupaten Batang',
+                kecamatan: {
+                    '3324010': { nama: 'Batang', kelurahan: 10 },
+                    '3324020': { nama: 'Warungasem', kelurahan: 8 },
+                    '3324030': { nama: 'Wonotunggal', kelurahan: 8 },
+                    '3324040': { nama: 'Bandar', kelurahan: 8 },
+                    '3324050': { nama: 'Gringsing', kelurahan: 8 },
+                    '3324060': { nama: 'Limpung', kelurahan: 8 },
+                    '3324070': { nama: 'Subah', kelurahan: 7 },
+                    '3324080': { nama: 'Tulis', kelurahan: 7 }
+                }
+            },
+            '3327': {
+                nama: 'Kabupaten Pemalang',
+                kecamatan: {
+                    '3327010': { nama: 'Pemalang', kelurahan: 10 },
+                    '3327020': { nama: 'Taman', kelurahan: 8 },
+                    '3327030': { nama: 'Petarukan', kelurahan: 8 },
+                    '3327040': { nama: 'Randudongkal', kelurahan: 8 },
+                    '3327050': { nama: 'Comal', kelurahan: 8 },
+                    '3327060': { nama: 'Ulujami', kelurahan: 8 },
+                    '3327070': { nama: 'Ampelgading', kelurahan: 7 },
+                    '3327080': { nama: 'Bodeh', kelurahan: 7 },
+                    '3327090': { nama: 'Belik', kelurahan: 7 },
+                    '3327100': { nama: 'Moga', kelurahan: 7 }
+                }
+            }
+        };
+        
+        // Test validasi nomor HP
+        document.getElementById('phoneInput').addEventListener('input', function(e) {
+            testPhone(e.target.value);
+        });
+        
+        function testPhone(value) {
+            document.getElementById('phoneInput').value = value;
+            const resultDiv = document.getElementById('phoneResult');
+            
+            // Bersihkan input (hanya ambil angka)
+            const cleanPhone = value.replace(/[^\d]/g, '');
+            
+            console.log('📱 Test Nomor HP:', {
+                original: value,
+                cleaned: cleanPhone,
+                length: cleanPhone.length
+            });
+            
+            // Validasi
+            let isValid = true;
+            let message = '';
+            let statusClass = '';
+            
+            if (!cleanPhone || cleanPhone.length === 0) {
+                isValid = false;
+                message = '❌ Nomor HP wajib diisi';
+                statusClass = 'error';
+            } else if (cleanPhone.length < 10 || cleanPhone.length > 13) {
+                isValid = false;
+                message = `❌ Nomor HP harus 10-13 digit (saat ini ${cleanPhone.length} digit)`;
+                statusClass = 'error';
+            } else if (!cleanPhone.startsWith('08')) {
+                isValid = false;
+                message = '❌ Nomor HP harus dimulai dengan 08';
+                statusClass = 'error';
+            } else {
+                isValid = true;
+                message = `✅ Nomor HP valid! (${cleanPhone.length} digit)`;
+                statusClass = 'success';
+            }
+            
+            // Update UI
+            document.getElementById('phoneInput').className = isValid ? 'valid' : 'invalid';
+            resultDiv.className = `result ${statusClass}`;
+            resultDiv.innerHTML = `
+                <strong>${message}</strong><br>
+                <div class="code">
+                    Input Original: "${value}"<br>
+                    Setelah Dibersihkan: "${cleanPhone}"<br>
+                    Panjang: ${cleanPhone.length} digit<br>
+                    Dimulai dengan 08: ${cleanPhone.startsWith('08') ? 'Ya' : 'Tidak'}
+                </div>
+            `;
+        }
+        
+        // Load kecamatan berdasarkan kabupaten
+        function loadKecamatan() {
+            const kabupatenId = document.getElementById('kabupatenSelect').value;
+            const kecamatanSelect = document.getElementById('kecamatanSelect');
+            const kelurahanSelect = document.getElementById('kelurahanSelect');
+            const resultDiv = document.getElementById('kecamatanResult');
+            
+            // Reset
+            kecamatanSelect.innerHTML = '<option value="">-- Pilih Kecamatan --</option>';
+            kelurahanSelect.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
+            kelurahanSelect.disabled = true;
+            resultDiv.innerHTML = '';
+            
+            if (!kabupatenId) {
+                kecamatanSelect.disabled = true;
+                return;
+            }
+            
+            const wilayah = wilayahData[kabupatenId];
+            const kecamatanList = Object.entries(wilayah.kecamatan);
+            
+            kecamatanList.forEach(([id, data]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = `${data.nama} (${data.kelurahan} kelurahan)`;
+                kecamatanSelect.appendChild(option);
+            });
+            
+            kecamatanSelect.disabled = false;
+            
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `✅ Berhasil memuat ${kecamatanList.length} kecamatan untuk ${wilayah.nama}`;
+        }
+        
+        // Load kelurahan berdasarkan kecamatan
+        function loadKelurahan() {
+            const kabupatenId = document.getElementById('kabupatenSelect').value;
+            const kecamatanId = document.getElementById('kecamatanSelect').value;
+            const kelurahanSelect = document.getElementById('kelurahanSelect');
+            const resultDiv = document.getElementById('kelurahanResult');
+            
+            // Reset
+            kelurahanSelect.innerHTML = '<option value="">-- Pilih Kelurahan --</option>';
+            resultDiv.innerHTML = '';
+            
+            if (!kecamatanId) {
+                kelurahanSelect.disabled = true;
+                return;
+            }
+            
+            const wilayah = wilayahData[kabupatenId];
+            const kecamatan = wilayah.kecamatan[kecamatanId];
+            
+            // Generate dummy kelurahan
+            for (let i = 1; i <= kecamatan.kelurahan; i++) {
+                const option = document.createElement('option');
+                option.value = `${kecamatanId}00${i}`;
+                option.textContent = `Kelurahan ${i}`;
+                kelurahanSelect.appendChild(option);
+            }
+            
+            kelurahanSelect.disabled = false;
+            
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `✅ Berhasil memuat ${kecamatan.kelurahan} kelurahan untuk ${kecamatan.nama}`;
+        }
+        
+        // Buka form survey lengkap
+        function openSurveyForm() {
+            const url = 'http://localhost:3002/survey?unit_id=test&unit_name=Test%20Unit';
+            window.open(url, '_blank');
+        }
+        
+        // Auto test saat halaman dimuat
+        window.onload = function() {
+            console.log('🧪 Test Perbaikan Survey Form dimuat');
+            console.log('📱 Silakan test validasi nomor HP');
+            console.log('🗺️ Silakan test dropdown wilayah');
+        };
+    </script>
+</body>
+</html>

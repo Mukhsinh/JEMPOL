@@ -1270,197 +1270,6 @@ router.post('/internal-tickets', async (req: Request, res: Response) => {
   }
 });
 
-    // Handle category - prioritas category_id, fallback ke category
-    let finalCategoryId = category_id || null;
-    
-    // Jika category_id sudah ada dan valid UUID, gunakan langsung
-    if (finalCategoryId) {
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(finalCategoryId);
-      if (isUUID) {
-        console.log('✅ Using category_id directly:', finalCategoryId);
-      } else {
-        // Jika bukan UUID, coba cari berdasarkan nama/code
-        try {
-          const { data: categoryData } = await supabase
-            .from('service_categories')
-            .select('id')
-            .or(`name.ilike.%${finalCategoryId}%,code.ilike.%${finalCategoryId}%`)
-            .eq('is_active', true)
-            .limit(1);
-          
-          if (categoryData && categoryData.length > 0) {
-            finalCategoryId = categoryData[0].id;
-            console.log('✅ Found category ID from name/code:', finalCategoryId);
-          } else {
-            console.log('⚠️ Category not found, will use null');
-            finalCategoryId = null;
-          }
-        } catch (error) {
-          console.log('⚠️ Error finding category:', error);
-          finalCategoryId = null;
-        }
-      }
-    } else if (category) {
-      // Fallback ke category jika category_id tidak ada
-      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(category);
-      
-      if (isUUID) {
-        finalCategoryId = category;
-        console.log('✅ Using category as ID:', finalCategoryId);
-      } else {
-        const categoryMap: { [key: string]: string } = {
-          'it_support': 'IT Support',
-          'facility': 'Fasilitas',
-          'equipment': 'Peralatan',
-          'hr': 'SDM',
-          'admin': 'Administrasi',
-          'other': 'Lainnya'
-        };
-        
-        const categoryName = categoryMap[category] || category;
-        console.log('🔍 Looking for category:', categoryName);
-        
-        try {
-          const { data: categoryData } = await supabase
-            .from('service_categories')
-            .select('id')
-            .or(`name.ilike.%${categoryName}%,code.ilike.%${category}%`)
-            .eq('is_active', true)
-            .limit(1);
-          
-          if (categoryData && categoryData.length > 0) {
-            finalCategoryId = categoryData[0].id;
-            console.log('✅ Found category ID:', finalCategoryId);
-          } else {
-            console.log('⚠️ Category not found, will use null');
-          }
-        } catch (error) {
-          console.log('⚠️ Error finding category:', error);
-        }
-      }
-    }
-
-    // Verifikasi unit_id exists dan aktif
-    const { data: unitData, error: unitCheckError } = await supabase
-      .from('units')
-      .select('id, name')
-      .eq('id', unit_id)
-      .eq('is_active', true)
-      .single();
-
-    if (unitCheckError || !unitData) {
-      console.error('❌ Unit tidak valid atau tidak aktif:', unit_id);
-      return res.status(400).json({
-        success: false,
-        error: 'Unit tidak valid atau tidak aktif'
-      });
-    }
-
-    console.log('✅ Unit verified:', unitData.name);
-
-    // Verifikasi category_id jika ada
-    if (finalCategoryId) {
-      const { data: categoryData, error: categoryCheckError } = await supabase
-        .from('service_categories')
-        .select('id, name')
-        .eq('id', finalCategoryId)
-        .eq('is_active', true)
-        .single();
-
-      if (categoryCheckError || !categoryData) {
-        console.error('❌ Category tidak valid atau tidak aktif:', finalCategoryId);
-        console.log('⚠️ Will proceed without category');
-        finalCategoryId = null;
-      } else {
-        console.log('✅ Category verified:', categoryData.name);
-      }
-    }
-
-    const ticketData: any = {
-      ticket_number: ticketNumber,
-      type: 'complaint',
-      title,
-      description: fullDescription,
-      unit_id: unit_id,
-      priority: priority || 'medium',
-      status: 'open',
-      sla_deadline: slaDeadline.toISOString(),
-      source: finalSource,
-      is_anonymous: false,
-      submitter_name: reporter_name,
-      submitter_email: reporter_email,
-      submitter_phone: reporter_phone || null,
-      ip_address: req.ip,
-      user_agent: req.get('User-Agent')
-    };
-
-    // Tambahkan category_id hanya jika valid
-    if (finalCategoryId) {
-      ticketData.category_id = finalCategoryId;
-    }
-
-    console.log('📤 Inserting ticket data:', {
-      ticket_number: ticketData.ticket_number,
-      type: ticketData.type,
-      unit_id: ticketData.unit_id,
-      category_id: ticketData.category_id || 'null',
-      priority: ticketData.priority,
-      status: ticketData.status,
-      source: ticketData.source
-    });
-
-    const { data: ticket, error } = await supabase
-      .from('tickets')
-      .insert(ticketData)
-      .select(`
-        *,
-        units:unit_id(name, code)
-      `)
-      .single();
-
-    if (error) {
-      console.error('❌ Error creating internal ticket:', error);
-      console.error('❌ Error code:', error.code);
-      console.error('❌ Error message:', error.message);
-      console.error('❌ Error details:', error.details);
-      console.error('❌ Error hint:', error.hint);
-      console.error('❌ Ticket data yang dikirim:', JSON.stringify(ticketData, null, 2));
-      
-      // Berikan pesan error yang lebih spesifik
-      let errorMessage = 'Gagal membuat tiket internal';
-      if (error.code === '23503') {
-        errorMessage = 'Data referensi tidak valid (unit_id atau category_id tidak ditemukan)';
-      } else if (error.code === '23505') {
-        errorMessage = 'Nomor tiket sudah ada, silakan coba lagi';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      return res.status(500).json({
-        success: false,
-        error: errorMessage,
-        details: error.details || error.hint || null
-      });
-    }
-
-    console.log('✅ Ticket created successfully:', ticket.ticket_number);
-
-    return res.status(201).json({
-      success: true,
-      ticket_number: ticket.ticket_number,
-      data: ticket,
-      message: 'Tiket internal berhasil dibuat. Nomor tiket Anda: ' + ticket.ticket_number
-    });
-  } catch (error: any) {
-    console.error('❌ Error in create internal ticket:', error);
-    console.error('❌ Stack trace:', error.stack);
-    return res.status(500).json({
-      success: false,
-      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error')
-    });
-  }
-});
-
 // Get survey statistics (must be before :ticketId route)
 router.get('/surveys/stats', async (req: Request, res: Response) => {
   try {
@@ -1695,36 +1504,24 @@ router.post('/surveys', async (req: Request, res: Response) => {
       source = 'public_survey'
     } = req.body;
 
-    // Validasi minimal
-    if (!visitor_phone) {
-      return res.status(400).json({
-        success: false,
-        error: 'Nomor HP wajib diisi'
-      });
-    }
-    
-    // Validasi unit
-    if (!unit_id) {
-      return res.status(400).json({
-        success: false,
-        error: 'Unit layanan wajib dipilih'
-      });
-    }
+    // Validasi unit (optional - hanya jika unit_id diberikan)
+    let unitData = null;
+    if (unit_id) {
+      const { data, error: unitCheckError } = await supabase
+        .from('units')
+        .select('id, name')
+        .eq('id', unit_id)
+        .eq('is_active', true)
+        .single();
 
-    // Verifikasi unit exists dan aktif
-    const { data: unitData, error: unitCheckError } = await supabase
-      .from('units')
-      .select('id, name')
-      .eq('id', unit_id)
-      .eq('is_active', true)
-      .single();
-
-    if (unitCheckError || !unitData) {
-      console.error('❌ Unit tidak valid atau tidak aktif:', unit_id);
-      return res.status(400).json({
-        success: false,
-        error: 'Unit tidak valid atau tidak aktif'
-      });
+      if (unitCheckError || !data) {
+        console.error('❌ Unit tidak valid atau tidak aktif:', unit_id);
+        return res.status(400).json({
+          success: false,
+          error: 'Unit tidak valid atau tidak aktif'
+        });
+      }
+      unitData = data;
     }
 
     console.log('✅ Unit verified:', unitData.name);

@@ -46,7 +46,7 @@ const MobileSurveiForm: React.FC = () => {
     { id: 'q1', code: 'U1', title: 'Persyaratan', text: 'Kesesuaian persyaratan pelayanan', icon: '📋' },
     { id: 'q2', code: 'U2', title: 'Prosedur', text: 'Kemudahan prosedur pelayanan', icon: '📝' },
     { id: 'q3', code: 'U3', title: 'Waktu', text: 'Kecepatan waktu pelayanan', icon: '⏱️' },
-    { id: 'q4', code: 'U4', title: 'Biaya', text: 'Kewajaran biaya/tarif', icon: '💰' },
+    { id: 'q4', code: 'U4', title: 'Biaya', text: 'Kewajaran biaya/tarif', icon: 'Rp' },
     { id: 'q5', code: 'U5', title: 'Produk', text: 'Kesesuaian produk pelayanan', icon: '📦' },
     { id: 'q6', code: 'U6', title: 'Kompetensi', text: 'Kemampuan petugas', icon: '👨‍⚕️' },
     { id: 'q7', code: 'U7', title: 'Perilaku', text: 'Kesopanan & keramahan', icon: '😊' },
@@ -262,18 +262,7 @@ const MobileSurveiForm: React.FC = () => {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Nomor HP (WhatsApp) *</label>
-                    <input 
-                      type="tel" 
-                      name="phone" 
-                      value={formData.phone} 
-                      onChange={handleInputChange} 
-                      required
-                      className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-lg transition-colors"
-                      placeholder="08xxxxxxxxxx"
-                    />
-                  </div>
+                  {/* Nomor HP - DIHAPUS */}
                 </div>
               )}
 

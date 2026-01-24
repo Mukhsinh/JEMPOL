@@ -1,8 +1,15 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+// Initialize Supabase client - gunakan variable yang benar (tanpa VITE_ prefix untuk backend)
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('❌ Missing Supabase credentials');
+  console.error('   SUPABASE_URL:', supabaseUrl ? 'SET' : 'NOT SET');
+  console.error('   SUPABASE_KEY:', supabaseKey ? 'SET' : 'NOT SET');
+}
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 

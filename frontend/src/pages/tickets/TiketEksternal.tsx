@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { masterDataService, ServiceCategory } from '../../services/masterDataService';
 import { qrCodeService, QRCode } from '../../services/qrCodeService';
 import { externalTicketService } from '../../services/externalTicketService';
+import { downloadExternalTicketPDF } from '../../utils/pdfGenerator';
 
 interface AppSettings {
   app_name?: string;
@@ -36,6 +37,9 @@ const TiketEksternal: React.FC = () => {
   const [serviceCategories, setServiceCategories] = useState<ServiceCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [ticketNumber, setTicketNumber] = useState('');
+  const [submittedTicketData, setSubmittedTicketData] = useState<any>(null);
   const [captchaVerified, setCaptchaVerified] = useState(false);
   const [charCount, setCharCount] = useState(0);
   const [unitLocked, setUnitLocked] = useState(false);
@@ -179,21 +183,26 @@ const TiketEksternal: React.FC = () => {
 
       const result = await externalTicketService.createTicket(submitData);
       
-      alert(`Laporan berhasil dikirim! Nomor tiket: ${result.ticket_number}`);
+      // Simpan data untuk PDF
+      const selectedCategory = serviceCategories.find(c => c.id === formData.category);
       
-      setFormData({
-        reporter_identity_type: 'personal',
-        reporter_name: '',
-        reporter_email: '',
-        reporter_phone: '',
-        reporter_address: '',
-        age_range: '',
-        service_type: '',
-        category: '',
-        title: '',
-        description: ''
+      setSubmittedTicketData({
+        ticket_number: result.ticket_number,
+        title: formData.title,
+        description: formData.description,
+        category: selectedCategory?.name || formData.category || '-',
+        priority: 'medium',
+        unit_name: qrData?.units?.name || 'Unit Umum',
+        reporter_name: formData.reporter_identity_type === 'personal' ? formData.reporter_name : 'Anonim',
+        reporter_email: formData.reporter_identity_type === 'personal' ? formData.reporter_email : null,
+        reporter_phone: formData.reporter_identity_type === 'personal' ? formData.reporter_phone : null,
+        reporter_address: formData.reporter_identity_type === 'personal' ? formData.reporter_address : null,
+        created_at: new Date().toISOString(),
+        type: 'external'
       });
-      setCharCount(0);
+      
+      setTicketNumber(result.ticket_number);
+      setSubmitted(true);
       setCaptchaVerified(false);
       
     } catch (error) {
@@ -204,12 +213,76 @@ const TiketEksternal: React.FC = () => {
     }
   };
 
+  const resetForm = () => {
+    setSubmitted(false);
+    setTicketNumber('');
+    setSubmittedTicketData(null);
+    setFormData({
+      reporter_identity_type: 'personal',
+      reporter_name: '',
+      reporter_email: '',
+      reporter_phone: '',
+      reporter_address: '',
+      age_range: '',
+      service_type: '',
+      category: '',
+      title: '',
+      description: ''
+    });
+    setCharCount(0);
+  };
+
+  const handleDownloadPDF = () => {
+    if (submittedTicketData) {
+      downloadExternalTicketPDF(submittedTicketData);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-500 text-sm">Memuat formulir...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Success Screen
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-rose-50 to-pink-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
+          <div className="w-24 h-24 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/30">
+            <span className="material-symbols-outlined text-white text-5xl">check_circle</span>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Laporan Berhasil Dikirim!</h2>
+          <p className="text-gray-500 mb-6">Terima kasih atas laporan Anda. Tim kami akan segera menindaklanjuti.</p>
+          
+          <div className="bg-gradient-to-r from-orange-500 to-rose-500 rounded-2xl p-6 mb-6 text-white shadow-lg">
+            <p className="text-white/80 text-sm mb-1">Nomor Tiket</p>
+            <p className="text-3xl font-bold tracking-wider">{ticketNumber}</p>
+          </div>
+          
+          <p className="text-gray-400 text-sm mb-6">Simpan nomor ini untuk melacak status laporan Anda</p>
+          
+          <div className="space-y-3">
+            <button 
+              onClick={handleDownloadPDF}
+              className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined">download</span>
+              Unduh Tiket (PDF)
+            </button>
+            
+            <button 
+              onClick={resetForm} 
+              className="w-full py-4 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-orange-500/30 active:scale-95 transition-transform"
+            >
+              Buat Laporan Baru
+            </button>
+          </div>
         </div>
       </div>
     );

@@ -14,6 +14,8 @@ import BukuPetunjuk from './pages/BukuPetunjuk';
 import TicketList from './pages/tickets/TicketList';
 import TicketDetail from './pages/tickets/TicketDetail';
 import TicketDetailView from './pages/tickets/TicketDetailView';
+import TicketTracker from './pages/tickets/TicketTracker';
+import TrackTicketAdmin from './pages/tickets/TrackTicket';
 
 import InternalTicketForm from './pages/tickets/InternalTicketForm';
 import TiketEksternal from './pages/tickets/TiketEksternal';
@@ -36,6 +38,9 @@ import PublicExternalTicketFullscreen from './pages/public/PublicExternalTicketF
 import PublicSurveyFullscreen from './pages/public/PublicSurveyFullscreen';
 import FullscreenInternalTicket from './pages/public/FullscreenInternalTicket';
 import TrackTicket from './pages/public/TrackTicket';
+import TrackTicketMobile from './pages/public/TrackTicketMobile';
+import FormLacak from './pages/public/FormLacak';
+import FormLacakAdmin from './pages/tickets/FormLacakAdmin';
 
 // Mobile-First Public Forms (Clean & Modern UI)
 import MobileFormLanding from './pages/public/MobileFormLanding';
@@ -90,7 +95,12 @@ function App() {
           
           {/* Lacak Tiket - Public Access */}
           <Route path="/lacak-tiket" element={<TrackTicket />} />
-          <Route path="/track-ticket" element={<TrackTicket />} />
+          <Route path="/track-ticket" element={<TrackTicketMobile />} />
+          <Route path="/track-ticket-mobile" element={<TrackTicketMobile />} />
+          <Route path="/lacak" element={<FormLacak />} />
+          
+          {/* Form Lacak - Admin dengan Sidebar */}
+          <Route path="/form-lacak" element={<ProtectedPage><FormLacakAdmin /></ProtectedPage>} />
           
           {/* QR Code routes - redirect ke mobile fullscreen */}
           <Route path="/qr/:code" element={<MobileFormLanding />} />
@@ -134,6 +144,7 @@ function App() {
 
           {/* Ticket Management */}
           <Route path="/tickets" element={<ProtectedPage><TicketList /></ProtectedPage>} />
+          <Route path="/track-ticket" element={<ProtectedPage><TrackTicketAdmin /></ProtectedPage>} />
           <Route path="/tickets/:id" element={<ProtectedPage><TicketDetail /></ProtectedPage>} />
           <Route path="/tickets/view" element={<ProtectedPage><TicketDetailView /></ProtectedPage>} />
           {/* Route lama - redirect ke /form/* untuk backward compatibility */}

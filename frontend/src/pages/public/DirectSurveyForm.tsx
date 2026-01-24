@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import AppFooter from '../../components/AppFooter';
+import { wilayahIndonesia, getKecamatanByKabupaten } from '../../data/wilayahIndonesia';
+import { downloadSurveyPDF } from '../../utils/pdfGenerator';
 
 interface FormData {
   service_type: string;
@@ -12,6 +14,10 @@ interface FormData {
   education: string;
   job: string;
   patient_type: string;
+  // Alamat
+  kota_kabupaten: string;
+  kecamatan: string;
+  alamat_detail: string;
   // 9 Unsur x 3 Indikator = 27 field
   u1_ind1: string; u1_ind2: string; u1_ind3: string;
   u2_ind1: string; u2_ind2: string; u2_ind3: string;
@@ -88,12 +94,14 @@ const DirectSurveyForm: React.FC = () => {
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [surveyId, setSurveyId] = useState('');
+  const [submittedSurveyData, setSubmittedSurveyData] = useState<any>(null);
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
   const [appSettings, setAppSettings] = useState<AppSettings>({});
   
   const [formData, setFormData] = useState<FormData>({
-    service_type: '',
+    service_type: '', // Tetap ada di state tapi tidak ditampilkan
     full_name: '',
     is_anonymous: false,
     phone: '',
@@ -102,6 +110,9 @@ const DirectSurveyForm: React.FC = () => {
     education: '',
     job: '',
     patient_type: '',
+    kota_kabupaten: '',
+    kecamatan: '',
+    alamat_detail: '',
     u1_ind1: '', u1_ind2: '', u1_ind3: '',
     u2_ind1: '', u2_ind2: '', u2_ind3: '',
     u3_ind1: '', u3_ind2: '', u3_ind3: '',
@@ -115,7 +126,9 @@ const DirectSurveyForm: React.FC = () => {
     suggestions: ''
   });
 
-  const totalSteps = 4;
+  const [kecamatanList, setKecamatanList] = useState<any[]>([]);
+
+  const totalSteps = 2; // Step 1: Identitas, Step 2: Penilaian
   const progress = (currentStep / totalSteps) * 100;
 
   const questions = [
@@ -228,10 +241,22 @@ const DirectSurveyForm: React.FC = () => {
     { value: '5', label: 'Sangat Puas', emoji: '😊', color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-500', desc: 'Sangat baik' }
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
-    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    
+    // Jika yang diubah adalah kota_kabupaten, update kecamatan list
+    if (name === 'kota_kabupaten') {
+      const selectedKabupaten = wilayahIndonesia.find(k => k.nama === value);
+      setKecamatanList(selectedKabupaten?.kecamatan || []);
+      setFormData(prev => ({
+        ...prev,
+        kota_kabupaten: value,
+        kecamatan: ''
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+    }
   };
 
   const handleRadioChange = (name: string, value: string) => {
@@ -240,6 +265,14 @@ const DirectSurveyForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // PENTING: Cegah submit jika masih di step 1 (identitas)
+    if (currentStep < totalSteps) {
+      console.log('⚠️ Mencegah submit prematur - masih di step', currentStep);
+      e.stopPropagation(); // Stop event propagation
+      return false; // Explicitly return false
+    }
+    
     setError('');
     setSubmitting(true);
 
@@ -258,6 +291,37 @@ const DirectSurveyForm: React.FC = () => {
         return;
       }
 
+      // Validasi field identitas baru
+      if (!formData.age) {
+        setError('Usia wajib diisi');
+        setSubmitting(false);
+        return;
+      }
+
+      if (!formData.gender) {
+        setError('Jenis kelamin wajib diisi');
+        setSubmitting(false);
+        return;
+      }
+
+      if (!formData.education) {
+        setError('Pendidikan terakhir wajib diisi');
+        setSubmitting(false);
+        return;
+      }
+
+      if (!formData.job) {
+        setError('Pekerjaan wajib diisi');
+        setSubmitting(false);
+        return;
+      }
+
+      if (!formData.kota_kabupaten || !formData.kecamatan || !formData.alamat_detail) {
+        setError('Alamat domisili lengkap wajib diisi');
+        setSubmitting(false);
+        return;
+      }
+
       // Siapkan data survey dengan format yang benar
       const surveyData = {
         unit_id: unitId,
@@ -270,6 +334,9 @@ const DirectSurveyForm: React.FC = () => {
         job: formData.job || null,
         patient_type: formData.patient_type || null,
         service_type: formData.service_type || null,
+        regency: formData.kota_kabupaten || null,
+        district: formData.kecamatan || null,
+        address_detail: formData.alamat_detail || null,
         // Skor indikator (9 unsur x 3 indikator)
         u1_ind1_score: formData.u1_ind1 ? parseInt(formData.u1_ind1) : null,
         u1_ind2_score: formData.u1_ind2 ? parseInt(formData.u1_ind2) : null,
@@ -339,6 +406,37 @@ const DirectSurveyForm: React.FC = () => {
         throw new Error(result.error || 'Gagal mengirim survei');
       }
       
+      // Simpan data untuk PDF
+      setSubmittedSurveyData({
+        survey_id: result.data?.id || 'SRV-' + Date.now(),
+        respondent_name: formData.is_anonymous ? 'Anonim' : formData.full_name,
+        respondent_phone: formData.phone,
+        service_type: formData.service_type || 'Umum',
+        unit_name: unitName || 'Unit Umum',
+        visit_date: new Date().toISOString(),
+        responses: {
+          q1: parseInt(formData.u1_ind1) || 0,
+          q2: parseInt(formData.u2_ind1) || 0,
+          q3: parseInt(formData.u3_ind1) || 0,
+          q4: parseInt(formData.u4_ind1) || 0,
+          q5: parseInt(formData.u5_ind1) || 0,
+          q6: parseInt(formData.u6_ind1) || 0,
+          q7: parseInt(formData.u7_ind1) || 0,
+          q8: parseInt(formData.u8_ind1) || 0,
+          q9: parseInt(formData.u9_ind1) || 0
+        },
+        suggestions: formData.suggestions,
+        created_at: new Date().toISOString(),
+        age_range: formData.age,
+        gender: formData.gender,
+        education: formData.education,
+        job: formData.job,
+        regency: formData.kota_kabupaten,
+        district: formData.kecamatan,
+        address_detail: formData.alamat_detail
+      });
+      
+      setSurveyId(result.data?.id || 'SRV-' + Date.now());
       setSubmitted(true);
     } catch (err: any) {
       console.error('❌ Submit error:', err);
@@ -351,9 +449,21 @@ const DirectSurveyForm: React.FC = () => {
   const resetForm = () => {
     setSubmitted(false);
     setCurrentStep(1);
+    setSurveyId('');
+    setSubmittedSurveyData(null);
     setFormData({
-      service_type: '', full_name: '', is_anonymous: false, phone: '', age: '', gender: '',
-      education: '', job: '', patient_type: '',
+      service_type: '',
+      full_name: '', 
+      is_anonymous: false, 
+      phone: '', 
+      age: '', 
+      gender: '',
+      education: '', 
+      job: '', 
+      patient_type: '', 
+      kota_kabupaten: '', 
+      kecamatan: '', 
+      alamat_detail: '',
       u1_ind1: '', u1_ind2: '', u1_ind3: '',
       u2_ind1: '', u2_ind2: '', u2_ind3: '',
       u3_ind1: '', u3_ind2: '', u3_ind3: '',
@@ -363,8 +473,15 @@ const DirectSurveyForm: React.FC = () => {
       u7_ind1: '', u7_ind2: '', u7_ind3: '',
       u8_ind1: '', u8_ind2: '', u8_ind3: '',
       u9_ind1: '', u9_ind2: '', u9_ind3: '',
-      overall_satisfaction: '', suggestions: ''
+      overall_satisfaction: '', 
+      suggestions: ''
     });
+  };
+
+  const handleDownloadPDF = () => {
+    if (submittedSurveyData) {
+      downloadSurveyPDF(submittedSurveyData);
+    }
   };
 
   // Success Screen
@@ -379,14 +496,29 @@ const DirectSurveyForm: React.FC = () => {
         <div className="relative bg-white rounded-[2rem] shadow-2xl p-8 max-w-sm w-full text-center">
           <div className="text-7xl mb-6">🎉</div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Terima Kasih!</h2>
-          <p className="text-gray-500 mb-8">Survei Anda telah berhasil dikirim. Masukan Anda sangat berharga bagi kami.</p>
+          <p className="text-gray-500 mb-6">Survei Anda telah berhasil dikirim. Masukan Anda sangat berharga bagi kami.</p>
           
-          <button 
-            onClick={resetForm} 
-            className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform"
-          >
-            Isi Survei Lagi
-          </button>
+          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-6 mb-6 text-white shadow-lg">
+            <p className="text-white/80 text-sm mb-1">ID Survei</p>
+            <p className="text-2xl font-bold tracking-wider">{surveyId}</p>
+          </div>
+          
+          <div className="space-y-3">
+            <button 
+              onClick={handleDownloadPDF}
+              className="w-full py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-blue-500/30 active:scale-95 transition-transform flex items-center justify-center gap-2"
+            >
+              <span className="material-symbols-outlined">download</span>
+              Unduh Survei (PDF)
+            </button>
+            
+            <button 
+              onClick={resetForm} 
+              className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform"
+            >
+              Isi Survei Lagi
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -439,37 +571,32 @@ const DirectSurveyForm: React.FC = () => {
                 <span className="text-gray-500 text-sm font-medium">{currentStep}/{totalSteps}</span>
               </div>
 
-              {/* Step 1: Service Type & Identity */}
+              {/* Step 1: Identitas Diri */}
               {currentStep === 1 && (
                 <div className="space-y-6 animate-slideUp">
                   <div>
-                    <h2 className="text-xl font-bold text-gray-800 mb-2">Jenis Layanan</h2>
-                    <p className="text-gray-500 text-sm">Pilih layanan yang Anda gunakan</p>
+                    <h2 className="text-xl font-bold text-gray-800 mb-2">Identitas Diri</h2>
+                    <p className="text-gray-500 text-sm">Informasi responden dan alamat</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { value: 'rawat_jalan', label: 'Rawat Jalan', icon: '🏥' },
-                      { value: 'rawat_inap', label: 'Rawat Inap', icon: '🛏️' },
-                      { value: 'darurat', label: 'Darurat', icon: '🚑' },
-                      { value: 'lainnya', label: 'Lainnya', icon: '📋' }
-                    ].map((type) => (
-                      <button 
-                        key={type.value} 
-                        type="button" 
-                        onClick={() => handleRadioChange('service_type', type.value)}
-                        className={`p-5 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${
-                          formData.service_type === type.value 
-                            ? 'border-emerald-500 bg-emerald-50' 
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
+                  {/* Jenis Pasien */}
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Jenis Pasien (Opsional)</label>
+                    <div className="relative">
+                      <select
+                        name="patient_type"
+                        value={formData.patient_type}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-lg transition-colors cursor-pointer appearance-none"
                       >
-                        <span className="text-3xl">{type.icon}</span>
-                        <span className={`font-semibold text-sm ${
-                          formData.service_type === type.value ? 'text-emerald-600' : 'text-gray-600'
-                        }`}>{type.label}</span>
-                      </button>
-                    ))}
+                        <option value="">Pilih Jenis Pasien</option>
+                        <option value="BPJS">BPJS</option>
+                        <option value="Umum">Umum</option>
+                        <option value="Asuransi">Asuransi</option>
+                        <option value="Lainnya">Lainnya</option>
+                      </select>
+                      <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
@@ -509,98 +636,87 @@ const DirectSurveyForm: React.FC = () => {
                       placeholder="08xxxxxxxxxx"
                     />
                   </div>
-                </div>
-              )}
-
-              {/* Step 2: Demographics */}
-              {currentStep === 2 && (
-                <div className="space-y-6 animate-slideUp">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-800 mb-2">Data Diri</h2>
-                    <p className="text-gray-500 text-sm">Informasi tambahan untuk analisis</p>
-                  </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Usia</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {['< 20 Th', '20-40 Th', '41-60 Th', '> 60 Th'].map((range) => (
-                        <button 
-                          key={range} 
-                          type="button" 
-                          onClick={() => handleRadioChange('age', range)}
-                          className={`p-4 rounded-xl border-2 font-medium transition-all ${
-                            formData.age === range 
-                              ? 'border-emerald-500 bg-emerald-500 text-white' 
-                              : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                          }`}
-                        >
-                          {range}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Jenis Kelamin</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { value: 'male', label: 'Laki-laki', icon: '👨' }, 
-                        { value: 'female', label: 'Perempuan', icon: '👩' }
-                      ].map((opt) => (
-                        <button 
-                          key={opt.value} 
-                          type="button" 
-                          onClick={() => handleRadioChange('gender', opt.value)}
-                          className={`p-5 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 ${
-                            formData.gender === opt.value 
-                              ? 'border-emerald-500 bg-emerald-50' 
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <span className="text-2xl">{opt.icon}</span>
-                          <span className={`font-semibold ${
-                            formData.gender === opt.value ? 'text-emerald-600' : 'text-gray-600'
-                          }`}>{opt.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Pendidikan</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Usia *</label>
                     <div className="relative">
                       <select
-                        name="education"
-                        value={formData.education}
+                        name="age"
+                        value={formData.age}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-base transition-colors appearance-none bg-white"
+                        required
+                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-lg transition-colors cursor-pointer appearance-none"
                       >
-                        <option value="">Pilih Pendidikan</option>
-                        <option value="SD">SD</option>
-                        <option value="SMP">SMP</option>
-                        <option value="SMA/SMK">SMA/SMK</option>
-                        <option value="D3">D3</option>
-                        <option value="S1">S1</option>
-                        <option value="S2">S2</option>
-                        <option value="S3">S3</option>
+                        <option value="">Pilih Rentang Usia</option>
+                        <option value="Kurang dari 20 Tahun">Kurang dari 20 Tahun</option>
+                        <option value="20 - 40 Tahun">20 - 40 Tahun</option>
+                        <option value="41 - 60 Tahun">41 - 60 Tahun</option>
+                        <option value="Lebih dari 60 Tahun">Lebih dari 60 Tahun</option>
                       </select>
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">▼</span>
+                      <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Pekerjaan</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Jenis Kelamin *</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { value: 'Laki-laki', icon: '👨', label: 'Laki-laki' },
+                        { value: 'Perempuan', icon: '👩', label: 'Perempuan' }
+                      ].map((option) => (
+                        <label key={option.value} className="cursor-pointer">
+                          <input
+                            type="radio"
+                            name="gender"
+                            value={option.value}
+                            checked={formData.gender === option.value}
+                            onChange={(e) => handleRadioChange('gender', e.target.value)}
+                            required
+                            className="peer sr-only"
+                          />
+                          <div className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all ${formData.gender === option.value ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-bold' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}>
+                            <span className="text-xl">{option.icon}</span>
+                            <span>{option.label}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Pendidikan Terakhir *</label>
+                    <select
+                      name="education"
+                      value={formData.education}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-lg transition-colors cursor-pointer"
+                    >
+                      <option value="">Pilih Pendidikan</option>
+                      <option value="SD">SD</option>
+                      <option value="SMP">SMP</option>
+                      <option value="SMA/SMK">SMA/SMK</option>
+                      <option value="D1/D2/D3">D1/D2/D3</option>
+                      <option value="D4/S1">D4/S1</option>
+                      <option value="S2">S2</option>
+                      <option value="S3">S3</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Pekerjaan *</label>
                     <div className="relative">
                       <select
                         name="job"
                         value={formData.job}
                         onChange={handleInputChange}
-                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-base transition-colors appearance-none bg-white"
+                        required
+                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-lg transition-colors cursor-pointer appearance-none"
                       >
                         <option value="">Pilih Pekerjaan</option>
                         <option value="PNS">PNS</option>
                         <option value="TNI/Polri">TNI/Polri</option>
-                        <option value="Pegawai Swasta">Pegawai Swasta</option>
+                        <option value="Swasta">Swasta</option>
                         <option value="Wiraswasta">Wiraswasta</option>
                         <option value="Petani">Petani</option>
                         <option value="Nelayan">Nelayan</option>
@@ -609,41 +725,56 @@ const DirectSurveyForm: React.FC = () => {
                         <option value="Pensiunan">Pensiunan</option>
                         <option value="Lainnya">Lainnya</option>
                       </select>
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">▼</span>
+                      <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Jenis Pasien</label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        { value: 'BPJS', label: 'BPJS', icon: '🏥', color: 'blue' },
-                        { value: 'Umum', label: 'Umum', icon: '💳', color: 'green' },
-                        { value: 'Asuransi', label: 'Asuransi', icon: '🛡️', color: 'purple' }
-                      ].map((opt) => (
-                        <button 
-                          key={opt.value} 
-                          type="button" 
-                          onClick={() => handleRadioChange('patient_type', opt.value)}
-                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${
-                            formData.patient_type === opt.value 
-                              ? 'border-emerald-500 bg-emerald-50 shadow-lg' 
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <span className="text-3xl">{opt.icon}</span>
-                          <span className={`font-semibold text-sm ${
-                            formData.patient_type === opt.value ? 'text-emerald-600' : 'text-gray-600'
-                          }`}>{opt.label}</span>
-                        </button>
-                      ))}
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Alamat Domisili *</label>
+                    <div className="space-y-3">
+                      <select
+                        name="kota_kabupaten"
+                        value={formData.kota_kabupaten}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-lg transition-colors cursor-pointer"
+                      >
+                        <option value="">Pilih Kabupaten/Kota</option>
+                        {wilayahIndonesia.map((kab) => (
+                          <option key={kab.id} value={kab.nama}>{kab.nama}</option>
+                        ))}
+                      </select>
+                      
+                      <select
+                        name="kecamatan"
+                        value={formData.kecamatan}
+                        onChange={handleInputChange}
+                        required
+                        disabled={!formData.kota_kabupaten}
+                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <option value="">Pilih Kecamatan</option>
+                        {kecamatanList.map((kec) => (
+                          <option key={kec.id} value={kec.nama}>{kec.nama}</option>
+                        ))}
+                      </select>
+                      
+                      <textarea
+                        name="alamat_detail"
+                        value={formData.alamat_detail}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="Masukkan alamat lengkap (Nama Jalan, RT/RW, Kelurahan/Desa)"
+                        rows={3}
+                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-lg transition-colors resize-none"
+                      />
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Step 3: Survey Questions - 9 Unsur dengan Indikator */}
-              {currentStep === 3 && (
+              {/* Step 2: Survey Questions - 9 Unsur dengan Indikator */}
+              {currentStep === 2 && (
                 <div className="space-y-6 animate-slideUp">
                   <div>
                     <h2 className="text-xl font-bold text-gray-800 mb-2">Penilaian Layanan</h2>
@@ -722,95 +853,52 @@ const DirectSurveyForm: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
 
-              {/* Step 4: Overall & Submit */}
-              {currentStep === 4 && (
-                <div className="space-y-6 animate-slideUp">
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-800 mb-2">Kepuasan Keseluruhan</h2>
-                    <p className="text-gray-500 text-sm">Berikan rating keseluruhan</p>
-                  </div>
-
-                  {/* Star Rating */}
-                  <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 text-center">
-                    <p className="text-gray-600 mb-4">Seberapa puas Anda dengan layanan kami?</p>
-                    <div className="flex justify-center gap-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button 
-                          key={star} 
-                          type="button" 
-                          onClick={() => handleRadioChange('overall_satisfaction', star.toString())}
-                          className="p-1 transition-transform hover:scale-110 active:scale-95"
-                        >
-                          <span className={`text-5xl ${
-                            parseInt(formData.overall_satisfaction) >= star 
-                              ? 'text-amber-400 drop-shadow-lg' 
-                              : 'text-gray-300'
-                          }`}>★</span>
-                        </button>
-                      ))}
+                  {/* Overall Satisfaction & Suggestions - Digabung di Step 2 */}
+                  <div className="mt-8 space-y-6">
+                    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-6 text-center">
+                      <p className="text-gray-600 mb-4 font-semibold">Seberapa puas Anda dengan layanan kami?</p>
+                      <div className="flex justify-center gap-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button 
+                            key={star} 
+                            type="button" 
+                            onClick={() => handleRadioChange('overall_satisfaction', star.toString())}
+                            className="p-1 transition-transform hover:scale-110 active:scale-95"
+                          >
+                            <span className={`text-5xl ${
+                              parseInt(formData.overall_satisfaction) >= star 
+                                ? 'text-amber-400 drop-shadow-lg' 
+                                : 'text-gray-300'
+                            }`}>★</span>
+                          </button>
+                        ))}
+                      </div>
+                      {formData.overall_satisfaction && (
+                        <p className="mt-3 font-semibold text-gray-700">
+                          {parseInt(formData.overall_satisfaction) <= 2 ? 'Kurang Puas 😔' : 
+                           parseInt(formData.overall_satisfaction) <= 3 ? 'Cukup Puas 🙂' : 
+                           parseInt(formData.overall_satisfaction) <= 4 ? 'Puas 😊' : 'Sangat Puas 🤩'}
+                        </p>
+                      )}
                     </div>
-                    {formData.overall_satisfaction && (
-                      <p className="mt-3 font-semibold text-gray-700">
-                        {parseInt(formData.overall_satisfaction) <= 2 ? 'Kurang Puas 😔' : 
-                         parseInt(formData.overall_satisfaction) <= 3 ? 'Cukup Puas 🙂' : 
-                         parseInt(formData.overall_satisfaction) <= 4 ? 'Puas 😊' : 'Sangat Puas 🤩'}
-                      </p>
-                    )}
-                  </div>
 
-                  {/* Suggestions */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Saran & Masukan (Opsional)</label>
-                    <textarea 
-                      name="suggestions" 
-                      value={formData.suggestions} 
-                      onChange={handleInputChange} 
-                      rows={4}
-                      className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-lg transition-colors resize-none"
-                      placeholder="Berikan saran untuk peningkatan layanan..."
-                    />
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Saran & Masukan (Opsional)</label>
+                      <textarea 
+                        name="suggestions" 
+                        value={formData.suggestions} 
+                        onChange={handleInputChange} 
+                        rows={4}
+                        className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-emerald-500 focus:ring-0 text-gray-800 text-lg transition-colors resize-none"
+                        placeholder="Berikan saran untuk peningkatan layanan..."
+                      />
+                    </div>
                   </div>
                 </div>
               )}
             </div>
           </div>
-
-          {/* Footer - Data dari Pengaturan Aplikasi */}
-          {(appSettings.institution_name || appSettings.app_footer) && (
-            <div className="px-6 py-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-t border-emerald-100">
-              <div className="max-w-md mx-auto text-center space-y-2">
-                {appSettings.institution_name && (
-                  <p className="font-bold text-emerald-800 text-sm">{appSettings.institution_name}</p>
-                )}
-                {appSettings.institution_address && (
-                  <p className="text-xs text-gray-600">{appSettings.institution_address}</p>
-                )}
-                <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
-                  {appSettings.contact_phone && (
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">phone</span>
-                      {appSettings.contact_phone}
-                    </span>
-                  )}
-                  {appSettings.contact_email && (
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">email</span>
-                      {appSettings.contact_email}
-                    </span>
-                  )}
-                </div>
-                {appSettings.website && (
-                  <p className="text-xs text-emerald-600">{appSettings.website}</p>
-                )}
-                {appSettings.app_footer && (
-                  <p className="text-xs text-gray-500 mt-2">{appSettings.app_footer}</p>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Bottom Navigation */}
           <div className="px-6 py-4 bg-white border-t border-gray-100 safe-area-bottom">
@@ -828,12 +916,13 @@ const DirectSurveyForm: React.FC = () => {
               {currentStep < totalSteps ? (
                 <button 
                   type="button" 
-                  onClick={() => setCurrentStep(prev => prev + 1)}
+                  onClick={(e) => {
+                    e.preventDefault(); // Prevent form submission
+                    e.stopPropagation(); // Stop event bubbling
+                    setCurrentStep(prev => prev + 1);
+                  }}
                   disabled={
-                    (currentStep === 1 && (!formData.service_type || !formData.phone)) ||
-                    (currentStep === 3 && !questions.every(q => 
-                      q.indicators.every(ind => formData[ind.id as keyof FormData])
-                    ))
+                    (currentStep === 1 && (!formData.phone || !formData.age || !formData.gender || !formData.education || !formData.job || !formData.kota_kabupaten || !formData.kecamatan || !formData.alamat_detail))
                   }
                   className="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-emerald-500/30 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                 >
@@ -843,7 +932,7 @@ const DirectSurveyForm: React.FC = () => {
               ) : (
                 <button 
                   type="submit" 
-                  disabled={submitting || !formData.overall_satisfaction}
+                  disabled={submitting}
                   className="flex-1 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl font-bold text-lg shadow-lg shadow-emerald-500/30 disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                 >
                   {submitting ? (
@@ -863,11 +952,6 @@ const DirectSurveyForm: React.FC = () => {
           </div>
         </form>
       </main>
-
-      {/* App Footer */}
-      <div className="relative z-10 bg-white">
-        <AppFooter variant="compact" />
-      </div>
 
       <style>{`
         @keyframes slideUp {

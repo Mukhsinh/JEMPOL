@@ -25,6 +25,17 @@ export const submitPublicSurvey = async (req: Request, res: Response) => {
             education,
             job,
             patient_type,
+            // Data alamat
+            provinsi,
+            kabupaten_kota,
+            kota_kabupaten,
+            kecamatan,
+            kelurahan,
+            alamat_jalan,
+            alamat_detail,
+            regency,
+            district,
+            address_detail,
             // Skor pertanyaan (format q1-q8 atau q1_score-q8_score) - legacy
             q1, q2, q3, q4, q5, q6, q7, q8,
             q1_score, q2_score, q3_score, q4_score, q5_score, q6_score, q7_score, q8_score,
@@ -46,22 +57,8 @@ export const submitPublicSurvey = async (req: Request, res: Response) => {
             source = 'public_survey'
         } = req.body;
 
-        // Validasi minimal
-        const phoneNumber = phone || reporter_phone;
-        if (!phoneNumber) {
-            return res.status(400).json({
-                success: false,
-                error: 'Nomor HP wajib diisi'
-            });
-        }
-        
-        // Validasi unit
-        if (!unit_id && !unit_tujuan) {
-            return res.status(400).json({
-                success: false,
-                error: 'Unit layanan wajib dipilih'
-            });
-        }
+        // Validasi unit (optional - hanya jika ada)
+        const finalUnitId = unit_id || unit_tujuan || null;
 
         // Hitung skor rata-rata
         const scores = [
@@ -73,11 +70,11 @@ export const submitPublicSurvey = async (req: Request, res: Response) => {
 
         // Simpan ke tabel public_surveys dengan semua kolom
         const surveyData: any = {
-            unit_id: unit_id || unit_tujuan || null,
+            unit_id: finalUnitId,
             service_category_id: service_category_id || null,
             visitor_name: is_anonymous ? null : (full_name || reporter_name || null),
             visitor_email: is_anonymous ? null : (email || reporter_email || null),
-            visitor_phone: phoneNumber,
+            visitor_phone: is_anonymous ? null : (phone || reporter_phone || null),
             // Data responden tambahan
             service_type: service_type || null,
             age_range: age || age_range || null,
@@ -86,6 +83,12 @@ export const submitPublicSurvey = async (req: Request, res: Response) => {
             job: job || null,
             patient_type: patient_type || null,
             is_anonymous: is_anonymous || false,
+            // Data alamat
+            provinsi: provinsi || null,
+            kabupaten_kota: regency || kabupaten_kota || kota_kabupaten || null,
+            kecamatan: district || kecamatan || null,
+            kelurahan: kelurahan || null,
+            alamat_jalan: address_detail || alamat_jalan || alamat_detail || null,
             // Skor 8 pertanyaan survey (legacy - untuk backward compatibility)
             q1_score: q1 || q1_score ? parseInt(q1 || q1_score) : null,
             q2_score: q2 || q2_score ? parseInt(q2 || q2_score) : null,
@@ -657,3 +660,93 @@ function calculateAverageRating(survey: any): number {
     if (scores.length === 0) return 0;
     return Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10;
 }
+
+// Get address statistics for survey report
+export const getAddressStatistics = async (req: Request, res: Response) => {
+    try {
+        const { start_date, end_date, unit_id, service_type, group_by = 'kabupaten_kota' } = req.query;
+
+        console.log('📊 Fetching address statistics with filters:', { start_date, end_date, unit_id, service_type, group_by });
+
+        let query = supabase
+            .from('public_surveys')
+            .select('kabupaten_kota, kecamatan, kelurahan, alamat_jalan');
+
+        // Apply date filters
+        if (start_date) {
+            query = query.gte('created_at', start_date);
+        }
+        if (end_date) {
+            const endDateObj = new Date(end_date as string);
+            endDateObj.setHours(23, 59, 59, 999);
+            query = query.lte('created_at', endDateObj.toISOString());
+        }
+        
+        // Apply unit filter
+        if (unit_id && unit_id !== 'all') {
+            query = query.eq('unit_id', unit_id);
+        }
+        
+        // Apply service type filter
+        if (service_type && service_type !== 'all') {
+            query = query.eq('service_type', service_type);
+        }
+
+        const { data: surveys, error } = await query;
+
+        if (error) {
+            console.error('❌ Error fetching address statistics:', error);
+            return res.status(500).json({
+                success: false,
+                error: 'Gagal mengambil statistik alamat'
+            });
+        }
+
+        console.log(`📊 Found ${surveys?.length || 0} surveys with address data`);
+
+        // Group by selected field
+        const addressMap = new Map<string, number>();
+
+        surveys?.forEach(survey => {
+            let key: string | null = null;
+            
+            if (group_by === 'kabupaten_kota' && survey.kabupaten_kota) {
+                key = survey.kabupaten_kota;
+            } else if (group_by === 'kecamatan' && survey.kecamatan) {
+                key = survey.kecamatan;
+            } else if (group_by === 'kelurahan' && survey.kelurahan) {
+                key = survey.kelurahan;
+            }
+
+            if (key) {
+                addressMap.set(key, (addressMap.get(key) || 0) + 1);
+            }
+        });
+
+        // Convert to array and sort by count
+        const addressStats = Array.from(addressMap.entries())
+            .map(([name, count]) => ({
+                name,
+                count,
+                percentage: surveys && surveys.length > 0 
+                    ? parseFloat(((count / surveys.length) * 100).toFixed(1))
+                    : 0
+            }))
+            .sort((a, b) => b.count - a.count);
+
+        console.log(`✅ Returning ${addressStats.length} address statistics`);
+
+        res.json({
+            success: true,
+            data: addressStats,
+            total: surveys?.length || 0
+        });
+
+    } catch (error) {
+        console.error('❌ Error fetching address statistics:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Terjadi kesalahan server'
+        });
+    }
+};

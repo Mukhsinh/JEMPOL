@@ -23,7 +23,6 @@ const ModernSurveyForm: React.FC = () => {
   const [unitInfo, setUnitInfo] = useState<UnitInfo | null>(null);
 
   // Form state - simplified
-  const [phone, setPhone] = useState('');
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [overallRating, setOverallRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -32,7 +31,7 @@ const ModernSurveyForm: React.FC = () => {
     { id: 'q1', label: 'Persyaratan', icon: '📋' },
     { id: 'q2', label: 'Prosedur', icon: '📝' },
     { id: 'q3', label: 'Waktu', icon: '⏱️' },
-    { id: 'q4', label: 'Biaya', icon: '💰' },
+    { id: 'q4', label: 'Biaya', icon: 'Rp' },
     { id: 'q5', label: 'Produk', icon: '📦' },
     { id: 'q6', label: 'Kompetensi', icon: '👨‍⚕️' },
     { id: 'q7', label: 'Perilaku', icon: '😊' },
@@ -83,11 +82,7 @@ const ModernSurveyForm: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!phone) {
-      setError('Mohon isi nomor HP');
-      return;
-    }
-
+    // Validasi minimal penilaian
     if (Object.keys(ratings).length < 4) {
       setError('Mohon isi minimal 4 penilaian');
       return;
@@ -105,7 +100,7 @@ const ModernSurveyForm: React.FC = () => {
         },
         body: JSON.stringify({
           unit_id: unitInfo?.id || unitId,
-          visitor_phone: phone,
+          visitor_phone: null, // Nomor HP dihapus
           q1_score: ratings.q1,
           q2_score: ratings.q2,
           q3_score: ratings.q3,
@@ -220,19 +215,7 @@ const ModernSurveyForm: React.FC = () => {
           </div>
         )}
 
-        {/* Phone Input */}
-        <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Nomor HP (WhatsApp) *
-          </label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="08xxxxxxxxxx"
-            className="w-full px-4 py-4 bg-gray-50 rounded-xl border-2 border-gray-100 focus:border-teal-500 focus:ring-0 text-lg transition-colors"
-          />
-        </div>
+        {/* Phone Input - DIHAPUS */}
 
         {/* Quick Rating Section */}
         <div className="mb-6">

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import AppFooter from '../../components/AppFooter';
+import { downloadInternalTicketPDF } from '../../utils/pdfGenerator';
 
 interface FormData {
   reporter_name: string;
@@ -162,73 +163,47 @@ const DirectInternalTicketForm: React.FC = () => {
     fetchUnits();
   }, [unitId]);
 
-  // Load app settings untuk footer dengan retry logic
+  // Load app settings untuk footer dengan fallback
   useEffect(() => {
-    const fetchAppSettings = async (retryCount = 0) => {
+    const fetchAppSettings = async () => {
+      // Set default settings dulu
+      const defaultSettings = {
+        institution_name: 'Rumah Sakit',
+        institution_address: '',
+        contact_phone: '',
+        contact_email: '',
+        website: '',
+        app_footer: ''
+      };
+      
+      setAppSettings(defaultSettings);
+      
       try {
-        console.log(`🔄 Fetching app settings (attempt ${retryCount + 1})...`);
+        console.log('🔄 Fetching app settings...');
         
-        // Tambahkan cache busting parameter
-        const timestamp = Date.now();
-        const response = await fetch(`/api/public/app-settings?t=${timestamp}`, {
+        const response = await fetch('/api/public/app-settings', {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json'
-          },
-          cache: 'no-cache' // Disable caching
+          }
         });
         
         console.log('📥 App settings response status:', response.status);
-        console.log('📥 App settings response headers:', response.headers.get('content-type'));
-        
-        // Cek apakah response adalah JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('❌ Non-JSON response:', text.substring(0, 200));
-          
-          // Retry jika masih ada kesempatan
-          if (retryCount < 2) {
-            console.log(`🔄 Retrying in ${(retryCount + 1) * 1000}ms...`);
-            setTimeout(() => fetchAppSettings(retryCount + 1), (retryCount + 1) * 1000);
-            return;
-          }
-          
-          throw new Error('Server mengembalikan response yang tidak valid');
-        }
         
         if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            setAppSettings(result.data);
-            console.log('✅ App settings loaded:', result.data);
-          } else {
-            throw new Error('Invalid response format');
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const result = await response.json();
+            if (result.success && result.data) {
+              setAppSettings(result.data);
+              console.log('✅ App settings loaded:', result.data);
+            }
           }
-        } else {
-          throw new Error(`HTTP ${response.status}`);
         }
       } catch (err: any) {
-        console.error('❌ Error loading app settings:', err);
-        
-        // Retry jika masih ada kesempatan
-        if (retryCount < 2) {
-          console.log(`🔄 Retrying in ${(retryCount + 1) * 1000}ms...`);
-          setTimeout(() => fetchAppSettings(retryCount + 1), (retryCount + 1) * 1000);
-          return;
-        }
-        
-        // Set default settings jika gagal load setelah retry
-        console.log('⚠️ Using default app settings');
-        setAppSettings({
-          institution_name: 'Rumah Sakit',
-          institution_address: '',
-          contact_phone: '',
-          contact_email: '',
-          website: '',
-          app_footer: ''
-        });
+        console.error('⚠️ Error loading app settings, using defaults:', err.message);
+        // Tetap gunakan default settings yang sudah di-set
       }
     };
     
@@ -393,6 +368,14 @@ const DirectInternalTicketForm: React.FC = () => {
           </div>
           
           <p className="text-gray-400 text-sm mb-6">Simpan nomor ini untuk melacak status tiket Anda</p>
+          
+          <button 
+            onClick={handleDownloadPDF}
+            className="w-full py-4 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-2xl font-bold text-lg shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform mb-3 flex items-center justify-center gap-2"
+          >
+            <span className="material-symbols-outlined">download</span>
+            Unduh Tiket (PDF)
+          </button>
           
           <button 
             onClick={resetForm} 
@@ -675,39 +658,7 @@ const DirectInternalTicketForm: React.FC = () => {
             </div>
           </div>
 
-          {/* Footer - Data dari Pengaturan Aplikasi */}
-          {(appSettings.institution_name || appSettings.app_footer) && (
-            <div className="px-6 py-4 bg-gradient-to-r from-violet-50 to-purple-50 border-t border-violet-100">
-              <div className="max-w-md mx-auto text-center space-y-2">
-                {appSettings.institution_name && (
-                  <p className="font-bold text-violet-800 text-sm">{appSettings.institution_name}</p>
-                )}
-                {appSettings.institution_address && (
-                  <p className="text-xs text-gray-600">{appSettings.institution_address}</p>
-                )}
-                <div className="flex items-center justify-center gap-4 text-xs text-gray-600">
-                  {appSettings.contact_phone && (
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">phone</span>
-                      {appSettings.contact_phone}
-                    </span>
-                  )}
-                  {appSettings.contact_email && (
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">email</span>
-                      {appSettings.contact_email}
-                    </span>
-                  )}
-                </div>
-                {appSettings.website && (
-                  <p className="text-xs text-violet-600">{appSettings.website}</p>
-                )}
-                {appSettings.app_footer && (
-                  <p className="text-xs text-gray-500 mt-2">{appSettings.app_footer}</p>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Footer dihapus sesuai permintaan */}
 
           {/* Bottom Navigation */}
           <div className="px-6 py-4 bg-white border-t border-gray-100 safe-area-bottom">

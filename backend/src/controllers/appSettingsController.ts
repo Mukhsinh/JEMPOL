@@ -64,6 +64,11 @@ export class AppSettingsController {
   // Mendapatkan pengaturan publik saja
   async getPublicSettings(req: Request, res: Response) {
     try {
+      // Set response header untuk memastikan JSON response
+      res.setHeader('Content-Type', 'application/json');
+      
+      console.log('🔄 GET /api/public/app-settings dipanggil (backend)');
+      
       const { data, error } = await supabase
         .from('app_settings')
         .select('setting_key, setting_value, setting_type')
@@ -71,11 +76,20 @@ export class AppSettingsController {
         .order('setting_key');
 
       if (error) {
-        console.error('Error fetching public settings:', error);
-        return res.status(500).json({ 
-          success: false, 
-          message: 'Gagal mengambil pengaturan publik',
-          error: error.message 
+        console.error('❌ Error fetching public settings:', error);
+        
+        // Return default settings jika error
+        return res.status(200).json({ 
+          success: true, 
+          data: {
+            institution_name: 'Rumah Sakit',
+            institution_address: '',
+            contact_phone: '',
+            contact_email: '',
+            website: '',
+            app_footer: ''
+          },
+          warning: 'Using default settings - database query failed'
         });
       }
 
@@ -102,15 +116,24 @@ export class AppSettingsController {
         settings[setting.setting_key] = value;
       });
 
+      console.log('✅ Public settings fetched successfully');
+
       res.json({
         success: true,
         data: settings
       });
     } catch (error) {
-      console.error('Error in getPublicSettings:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Terjadi kesalahan server',
+      console.error('❌ Error in getPublicSettings:', error);
+      res.status(200).json({ 
+        success: true, 
+        data: {
+          institution_name: 'Rumah Sakit',
+          institution_address: '',
+          contact_phone: '',
+          contact_email: '',
+          website: '',
+          app_footer: ''
+        },
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }

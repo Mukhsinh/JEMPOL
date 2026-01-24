@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { submitSurveyDirectly } from '../../utils/surveyFallback';
+import { wilayahIndonesia, getKecamatanByKabupaten } from '../../data/wilayahIndonesia';
 
 interface AppSettings {
     app_footer?: string;
@@ -36,10 +37,10 @@ const PublicSurveyForm = () => {
         job: '',
         education: '',
         patient_type: '',
-        provinsi: '',
+        provinsi: 'Jawa Tengah',
         kota_kabupaten: '',
         kecamatan: '',
-        kelurahan: '',
+        alamat_detail: '',
         age: '',
         gender: '',
         // 9 Unsur dengan 3 indikator masing-masing (27 indikator total)
@@ -63,6 +64,7 @@ const PublicSurveyForm = () => {
     const [appSettings, setAppSettings] = useState<AppSettings>({});
     const [units, setUnits] = useState<Unit[]>([]);
     const [loadingUnits, setLoadingUnits] = useState(true);
+    const [kecamatanList, setKecamatanList] = useState<any[]>([]);
 
     useEffect(() => {
         loadAppSettings();
@@ -139,7 +141,26 @@ const PublicSurveyForm = () => {
                 unit_id: value,
                 unit_tujuan: selectedUnit ? selectedUnit.name : ''
             }));
-        } else {
+        } 
+        // Jika yang diubah adalah kota_kabupaten, update kecamatan list dan simpan nama
+        else if (name === 'kota_kabupaten') {
+            const selectedKabupaten = wilayahIndonesia.find(k => k.nama === value);
+            setKecamatanList(selectedKabupaten?.kecamatan || []);
+            setFormData(prev => ({
+                ...prev,
+                kota_kabupaten: value,
+                kecamatan: '',
+                provinsi: 'Jawa Tengah'
+            }));
+        }
+        // Jika yang diubah adalah kecamatan, simpan nama
+        else if (name === 'kecamatan') {
+            setFormData(prev => ({
+                ...prev,
+                kecamatan: value
+            }));
+        }
+        else {
             setFormData(prev => ({
                 ...prev,
                 [name]: type === 'checkbox' ? checked : value
@@ -168,13 +189,6 @@ const PublicSurveyForm = () => {
         // Validasi service type
         if (!formData.service_type) {
             setError('Silakan pilih jenis layanan terlebih dahulu');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            return;
-        }
-        
-        // Validasi phone
-        if (!formData.phone) {
-            setError('Nomor HP wajib diisi');
             window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
@@ -325,7 +339,7 @@ const PublicSurveyForm = () => {
             id: 'u4',
             code: 'U4',
             title: 'Biaya/Tarif',
-            icon: '💰',
+            icon: 'Rp',
             indicators: [
                 { id: 'u4_i1', text: 'Informasi biaya atau tarif pelayanan disampaikan secara jelas' },
                 { id: 'u4_i2', text: 'Biaya yang dibayarkan sesuai dengan ketentuan yang berlaku' },
@@ -492,28 +506,6 @@ const PublicSurveyForm = () => {
                         </div>
                         <div className="p-6 space-y-6">
                             <div className="space-y-3">
-                                <label className="block text-sm font-bold text-gray-800 mb-3">Jenis Layanan yang Diterima <span className="text-rose-500">*</span></label>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    {['rawat_jalan', 'rawat_inap', 'darurat', 'lainnya'].map((type) => (
-                                        <label key={type} className="cursor-pointer relative group">
-                                            <input
-                                                type="radio"
-                                                name="service_type"
-                                                value={type}
-                                                checked={formData.service_type === type}
-                                                onChange={(e) => handleRadioChange('service_type', e.target.value)}
-                                                className="custom-radio sr-only"
-                                            />
-                                            <div className={`flex items-center justify-center gap-2 p-4 rounded-2xl border-2 transition-all h-full shadow-sm ${formData.service_type === type ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 shadow-lg shadow-emerald-500/20' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-600'}`}>
-                                                <div className={`radio-dot w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all ${formData.service_type === type ? 'border-emerald-500 bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.2)]' : 'border-gray-300 bg-transparent'}`}></div>
-                                                <span className="text-sm font-bold capitalize">{type.replace('_', ' ')}</span>
-                                            </div>
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                            <hr className="border-gray-100/50" />
-                            <div className="space-y-3">
                                 <div className="flex justify-between items-center">
                                     <label className="block text-sm font-bold text-gray-800" htmlFor="full_name">Nama Lengkap</label>
                                     <label className="inline-flex items-center cursor-pointer group">
@@ -541,23 +533,184 @@ const PublicSurveyForm = () => {
                                     />
                                 </div>
                             </div>
+                            <div className="space-y-3">
+                                <label className="block text-sm font-bold text-gray-800" htmlFor="phone">Nomor HP (WhatsApp) <span className="text-rose-500">*</span></label>
+                                <div className="relative group">
+                                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-emerald-500 transition-colors">phone</span>
+                                    <input
+                                        type="tel"
+                                        id="phone"
+                                        name="phone"
+                                        value={formData.phone}
+                                        onChange={handleInputChange}
+                                        required
+                                        placeholder="08xxxxxxxxxx"
+                                        className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base shadow-sm"
+                                    />
+                                </div>
+                            </div>
+                            <hr className="border-gray-100/50" />
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="space-y-3">
-                                    <label className="block text-sm font-bold text-gray-800" htmlFor="phone">Nomor HP (WhatsApp) <span className="text-rose-500">*</span></label>
+                                    <label className="block text-sm font-bold text-gray-800" htmlFor="age">Usia <span className="text-rose-500">*</span></label>
                                     <div className="relative group">
-                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-emerald-500 transition-colors">smartphone</span>
-                                        <input
-                                            type="tel"
-                                            id="phone"
-                                            name="phone"
-                                            value={formData.phone}
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">cake</span>
+                                        <select
+                                            id="age"
+                                            name="age"
+                                            value={formData.age}
                                             onChange={handleInputChange}
                                             required
-                                            placeholder="08xxxxxxxxxx"
-                                            className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base shadow-sm"
-                                        />
+                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                                        >
+                                            <option value="">Pilih Rentang Usia</option>
+                                            <option value="Kurang dari 20 Tahun">Kurang dari 20 Tahun</option>
+                                            <option value="20 - 40 Tahun">20 - 40 Tahun</option>
+                                            <option value="41 - 60 Tahun">41 - 60 Tahun</option>
+                                            <option value="Lebih dari 60 Tahun">Lebih dari 60 Tahun</option>
+                                        </select>
+                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                                     </div>
                                 </div>
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-bold text-gray-800 mb-3">Jenis Kelamin <span className="text-rose-500">*</span></label>
+                                    <div className="flex gap-3">
+                                        {[
+                                            { value: 'Laki-laki', icon: '👨', label: 'Laki-laki' },
+                                            { value: 'Perempuan', icon: '👩', label: 'Perempuan' }
+                                        ].map((option) => (
+                                            <label key={option.value} className="cursor-pointer group flex-1">
+                                                <input
+                                                    type="radio"
+                                                    name="gender"
+                                                    value={option.value}
+                                                    checked={formData.gender === option.value}
+                                                    onChange={(e) => handleRadioChange('gender', e.target.value)}
+                                                    required
+                                                    className="peer sr-only"
+                                                />
+                                                <div className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all ${formData.gender === option.value ? 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 shadow-lg' : 'border-gray-200 bg-white hover:border-gray-300 text-gray-600'}`}>
+                                                    <span className="text-xl">{option.icon}</span>
+                                                    <span className="text-sm font-bold">{option.label}</span>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <hr className="border-gray-100/50" />
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-bold text-gray-800" htmlFor="education">Pendidikan Terakhir <span className="text-rose-500">*</span></label>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">school</span>
+                                        <select
+                                            id="education"
+                                            name="education"
+                                            value={formData.education}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                                        >
+                                            <option value="">Pilih Pendidikan</option>
+                                            <option value="SD">SD</option>
+                                            <option value="SMP">SMP</option>
+                                            <option value="SMA/SMK">SMA/SMK</option>
+                                            <option value="D1/D2/D3">D1/D2/D3</option>
+                                            <option value="D4/S1">D4/S1</option>
+                                            <option value="S2">S2</option>
+                                            <option value="S3">S3</option>
+                                        </select>
+                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-bold text-gray-800" htmlFor="job">Pekerjaan <span className="text-rose-500">*</span></label>
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">work</span>
+                                        <select
+                                            id="job"
+                                            name="job"
+                                            value={formData.job}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                                        >
+                                            <option value="">Pilih Pekerjaan</option>
+                                            <option value="PNS">PNS</option>
+                                            <option value="TNI/Polri">TNI/Polri</option>
+                                            <option value="Swasta">Swasta</option>
+                                            <option value="Wiraswasta">Wiraswasta</option>
+                                            <option value="Petani">Petani</option>
+                                            <option value="Nelayan">Nelayan</option>
+                                            <option value="Pelajar/Mahasiswa">Pelajar/Mahasiswa</option>
+                                            <option value="Ibu Rumah Tangga">Ibu Rumah Tangga</option>
+                                            <option value="Pensiunan">Pensiunan</option>
+                                            <option value="Lainnya">Lainnya</option>
+                                        </select>
+                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr className="border-gray-100/50" />
+                            <div className="space-y-4">
+                                <label className="block text-sm font-bold text-gray-800 mb-3">Alamat Domisili <span className="text-rose-500">*</span></label>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Kabupaten/Kota */}
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">apartment</span>
+                                        <select
+                                            name="kota_kabupaten"
+                                            value={formData.kota_kabupaten}
+                                            onChange={handleInputChange}
+                                            required
+                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                                        >
+                                            <option value="">Pilih Kabupaten/Kota</option>
+                                            {wilayahIndonesia.map((kab) => (
+                                                <option key={kab.id} value={kab.nama}>{kab.nama}</option>
+                                            ))}
+                                        </select>
+                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                                    </div>
+
+                                    {/* Kecamatan */}
+                                    <div className="relative group">
+                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">signpost</span>
+                                        <select
+                                            name="kecamatan"
+                                            value={formData.kecamatan}
+                                            onChange={handleInputChange}
+                                            required
+                                            disabled={!formData.kota_kabupaten}
+                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <option value="">Pilih Kecamatan</option>
+                                            {kecamatanList.map((kec) => (
+                                                <option key={kec.id} value={kec.nama}>{kec.nama}</option>
+                                            ))}
+                                        </select>
+                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
+                                    </div>
+                                </div>
+
+                                {/* Alamat Detail (Manual Input) */}
+                                <div className="relative group">
+                                    <span className="material-symbols-outlined absolute left-4 top-4 text-gray-400 text-xl group-focus-within:text-emerald-500 transition-colors">home</span>
+                                    <textarea
+                                        name="alamat_detail"
+                                        value={formData.alamat_detail}
+                                        onChange={handleInputChange}
+                                        required
+                                        placeholder="Masukkan alamat lengkap (Nama Jalan, RT/RW, Kelurahan/Desa)"
+                                        rows={3}
+                                        className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base shadow-sm resize-none"
+                                    />
+                                </div>
+                            </div>
+                            <hr className="border-gray-100/50" />
+                            <div className="grid md:grid-cols-1 gap-6">
                                 <div className="space-y-3">
                                     <label className="block text-sm font-bold text-gray-800" htmlFor="email">Email <span className="text-gray-500 font-normal">(Opsional)</span></label>
                                     <div className="relative group">
@@ -571,44 +724,6 @@ const PublicSurveyForm = () => {
                                             placeholder="contoh@email.com"
                                             className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base shadow-sm"
                                         />
-                                    </div>
-                                </div>
-                                <div className="space-y-3 md:col-span-2">
-                                    <label className="block text-sm font-bold text-gray-800" htmlFor="job">Pekerjaan <span className="text-gray-500 font-normal">(Opsional)</span></label>
-                                    <div className="relative group">
-                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl group-focus-within:text-emerald-500 transition-colors">work</span>
-                                        <input
-                                            type="text"
-                                            id="job"
-                                            name="job"
-                                            value={formData.job}
-                                            onChange={handleInputChange}
-                                            placeholder="PNS, Swasta, Wiraswasta, dll"
-                                            className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base shadow-sm"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="block text-sm font-bold text-gray-800" htmlFor="education">Pendidikan Terakhir <span className="text-gray-500 font-normal">(Opsional)</span></label>
-                                    <div className="relative group">
-                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">school</span>
-                                        <select
-                                            id="education"
-                                            name="education"
-                                            value={formData.education}
-                                            onChange={handleInputChange}
-                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
-                                        >
-                                            <option value="">Pilih Pendidikan</option>
-                                            <option value="SD">SD</option>
-                                            <option value="SMP">SMP</option>
-                                            <option value="SMA/SMK">SMA/SMK</option>
-                                            <option value="D1/D2/D3">D1/D2/D3</option>
-                                            <option value="D4/S1">D4/S1</option>
-                                            <option value="S2">S2</option>
-                                            <option value="S3">S3</option>
-                                        </select>
-                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                                     </div>
                                 </div>
                                 <div className="space-y-3">
@@ -632,64 +747,61 @@ const PublicSurveyForm = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className="space-y-3">
-                                <label className="block text-sm font-bold text-gray-800 mb-3">Alamat Domisili</label>
+                            <hr className="border-gray-100/50" />
+                            <div className="space-y-4">
+                                <label className="block text-sm font-bold text-gray-800 mb-3">Alamat Domisili <span className="text-rose-500">*</span></label>
+                                
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="relative group">
-                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">location_city</span>
-                                        <select
-                                            name="provinsi"
-                                            value={formData.provinsi}
-                                            onChange={handleInputChange}
-                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
-                                        >
-                                            <option value="">Pilih Provinsi</option>
-                                            <option value="Jawa Tengah">Jawa Tengah</option>
-                                            <option value="Jawa Barat">Jawa Barat</option>
-                                            <option value="Jawa Timur">Jawa Timur</option>
-                                            <option value="DKI Jakarta">DKI Jakarta</option>
-                                            <option value="DI Yogyakarta">DI Yogyakarta</option>
-                                        </select>
-                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
-                                    </div>
+                                    {/* Kabupaten/Kota */}
                                     <div className="relative group">
                                         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">apartment</span>
                                         <select
                                             name="kota_kabupaten"
                                             value={formData.kota_kabupaten}
                                             onChange={handleInputChange}
+                                            required
                                             className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
                                         >
-                                            <option value="">Pilih Kota/Kabupaten</option>
-                                            <option value="Kota Semarang">Kota Semarang</option>
-                                            <option value="Kabupaten Semarang">Kabupaten Semarang</option>
+                                            <option value="">Pilih Kabupaten/Kota</option>
+                                            {wilayahIndonesia.map((kab) => (
+                                                <option key={kab.id} value={kab.nama}>{kab.nama}</option>
+                                            ))}
                                         </select>
                                         <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                                     </div>
+
+                                    {/* Kecamatan */}
                                     <div className="relative group">
                                         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">signpost</span>
                                         <select
                                             name="kecamatan"
                                             value={formData.kecamatan}
                                             onChange={handleInputChange}
-                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
+                                            required
+                                            disabled={!formData.kota_kabupaten}
+                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <option value="">Pilih Kecamatan</option>
+                                            {kecamatanList.map((kec) => (
+                                                <option key={kec.id} value={kec.nama}>{kec.nama}</option>
+                                            ))}
                                         </select>
                                         <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
                                     </div>
-                                    <div className="relative group">
-                                        <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl pointer-events-none group-focus-within:text-emerald-500 transition-colors">home</span>
-                                        <select
-                                            name="kelurahan"
-                                            value={formData.kelurahan}
-                                            onChange={handleInputChange}
-                                            className="w-full pl-12 pr-10 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base appearance-none shadow-sm cursor-pointer"
-                                        >
-                                            <option value="">Pilih Kelurahan/Desa</option>
-                                        </select>
-                                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">expand_more</span>
-                                    </div>
+                                </div>
+
+                                {/* Alamat Detail (Manual Input) */}
+                                <div className="relative group">
+                                    <span className="material-symbols-outlined absolute left-4 top-4 text-gray-400 text-xl group-focus-within:text-emerald-500 transition-colors">home</span>
+                                    <textarea
+                                        name="alamat_detail"
+                                        value={formData.alamat_detail}
+                                        onChange={handleInputChange}
+                                        required
+                                        placeholder="Masukkan alamat lengkap (Nama Jalan, RT/RW, Kelurahan/Desa)"
+                                        rows={3}
+                                        className="w-full pl-12 pr-4 py-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 focus:outline-none transition-all text-base shadow-sm resize-none"
+                                    />
                                 </div>
                             </div>
                             <hr className="border-gray-100/50" />
@@ -766,14 +878,33 @@ const PublicSurveyForm = () => {
                         <div className="divide-y divide-gray-100/50">
                             {serviceElements.map((element, idx) => (
                                 <div key={element.id} className="p-6 hover:bg-gradient-to-br hover:from-emerald-50/30 hover:to-teal-50/30 transition-all">
-                                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-                                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-2xl">
-                                            {element.icon}
+                                    <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
+                                        <div className="flex items-center gap-3 flex-1">
+                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-2xl">
+                                                {element.icon}
+                                            </div>
+                                            <div className="flex-1">
+                                                <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">{element.code}</span>
+                                                <h4 className="text-lg font-bold text-gray-800">{element.title}</h4>
+                                            </div>
                                         </div>
-                                        <div className="flex-1">
-                                            <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">{element.code}</span>
-                                            <h4 className="text-lg font-bold text-gray-800">{element.title}</h4>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                // Isi semua indikator unsur ini dengan nilai 5 (Sangat Setuju)
+                                                const updates: any = {};
+                                                element.indicators.forEach(indicator => {
+                                                    updates[indicator.id] = '5';
+                                                });
+                                                setFormData(prev => ({ ...prev, ...updates }));
+                                            }}
+                                            className="px-4 py-2 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors flex items-center gap-1.5 flex-shrink-0 shadow-sm"
+                                            title="Isi semua indikator dengan nilai tertinggi"
+                                        >
+                                            <span className="material-symbols-outlined text-base">done_all</span>
+                                            <span className="hidden sm:inline">Sangat Setuju Semua</span>
+                                            <span className="sm:hidden">All</span>
+                                        </button>
                                     </div>
                                     
                                     <div className="space-y-4">
@@ -894,7 +1025,7 @@ const PublicSurveyForm = () => {
                     <div className="flex justify-end pt-4 pb-12">
                         <button
                             type="submit"
-                            disabled={isLoading}
+                            disabled={isLoading || !formData.unit_id || !formData.service_type}
                             className="w-full md:w-auto px-10 py-5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white font-bold text-lg shadow-2xl shadow-emerald-500/40 hover:shadow-emerald-500/50 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:shadow-lg flex items-center justify-center gap-3 group"
                         >
                             {isLoading ? (
@@ -905,7 +1036,7 @@ const PublicSurveyForm = () => {
                             ) : (
                                 <>
                                     <span className="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform">send</span>
-                                    <span>Kirim Survei</span>
+                                    <span>Lanjutkan</span>
                                 </>
                             )}
                         </button>
@@ -913,33 +1044,7 @@ const PublicSurveyForm = () => {
                 </form>
             </main>
 
-            <footer className="relative z-10 bg-white/80 backdrop-blur-xl border-t border-gray-100/50 py-6 px-4">
-                <div className="max-w-lg mx-auto text-center space-y-2">
-                    {appSettings.institution_name && (
-                        <p className="text-sm font-bold text-gray-800">{appSettings.institution_name}</p>
-                    )}
-                    {appSettings.institution_address && (
-                        <p className="text-xs text-gray-500">{appSettings.institution_address}</p>
-                    )}
-                    <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
-                        {appSettings.contact_phone && (
-                            <span className="flex items-center gap-1">
-                                <span className="material-symbols-outlined text-sm">call</span>
-                                {appSettings.contact_phone}
-                            </span>
-                        )}
-                        {appSettings.contact_email && (
-                            <span className="flex items-center gap-1">
-                                <span className="material-symbols-outlined text-sm">mail</span>
-                                {appSettings.contact_email}
-                            </span>
-                        )}
-                    </div>
-                    {appSettings.app_footer && (
-                        <p className="text-xs text-gray-400 pt-2 border-t border-gray-100">{appSettings.app_footer}</p>
-                    )}
-                </div>
-            </footer>
+            {/* Footer dihapus sesuai permintaan */}
         </div>
     );
 };

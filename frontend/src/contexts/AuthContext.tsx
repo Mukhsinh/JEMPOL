@@ -34,6 +34,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const initAuth = async () => {
       try {
+        // Cek cache dulu untuk instant load
+        const cachedUser = localStorage.getItem('adminUser');
+        if (cachedUser) {
+          try {
+            const userData = JSON.parse(cachedUser);
+            setUser(userData);
+            setIsLoading(false);
+            // Lanjutkan verifikasi di background tanpa blocking UI
+          } catch (e) {
+            localStorage.removeItem('adminUser');
+          }
+        }
+
         // Timeout yang cukup untuk inisialisasi
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error('Auth initialization timeout')), 10000);
@@ -55,6 +68,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               return null;
             }
 
+            // Jika sudah ada cache, skip profile fetch untuk performa
+            if (cachedUser) {
+              return JSON.parse(cachedUser);
+            }
+
             // Get admin profile dengan timeout singkat
             const profilePromise = supabase
               .from('admins')
@@ -74,13 +92,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               return null;
             }
 
-            return {
+            const userData = {
               id: profileData.id,
               username: profileData.username,
               full_name: profileData.full_name,
               email: profileData.email,
               role: profileData.role || 'admin',
             };
+
+            // Simpan ke cache untuk next load
+            localStorage.setItem('adminUser', JSON.stringify(userData));
+
+            return userData;
           } catch (error: any) {
             // Handle refresh token error
             if (error?.message?.includes('Refresh Token') || error?.message?.includes('refresh_token')) {
@@ -240,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      // Set user data
+      // Set user data dan simpan ke cache
       const userData = {
         id: adminProfile.id,
         username: adminProfile.username,
@@ -250,6 +273,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       setUser(userData);
+      // Simpan ke cache untuk next load
+      localStorage.setItem('adminUser', JSON.stringify(userData));
       return { success: true };
     } catch (error: any) {
       let errorMessage = 'Terjadi kesalahan yang tidak terduga';
@@ -271,8 +296,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await supabase.auth.signOut();
       setUser(null);
+      localStorage.removeItem('adminUser'); // Clear cache saat logout
     } catch (error) {
       setUser(null);
+      localStorage.removeItem('adminUser');
     }
   }, []);
 

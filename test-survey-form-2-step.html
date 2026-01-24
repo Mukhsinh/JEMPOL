@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Survey Form 2 Step</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .status {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .checklist {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .checklist h3 {
+            color: #333;
+            margin-top: 0;
+        }
+        .checklist ul {
+            list-style: none;
+            padding: 0;
+        }
+        .checklist li {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+        .checklist li:before {
+            content: "✓ ";
+            color: #4caf50;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .info {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Test Form Survey 2 Step</h1>
+        <p style="color: #666;">Verifikasi perbaikan form survey sesuai ringkasan</p>
+
+        <div class="success">
+            <h3 style="margin-top: 0;">📋 Perubahan yang Dilakukan:</h3>
+            <p><strong>1. Ubah menjadi 2 Step Saja:</strong></p>
+            <ul style="margin: 10px 0;">
+                <li>✅ Step 1: Identitas Diri (termasuk Unit Tujuan, Nama, HP, dan Alamat)</li>
+                <li>✅ Step 2: Form Survey (Penilaian 8 pertanyaan + Saran)</li>
+                <li>✅ Progress bar menunjukkan "Step 1 dari 2" dan "Step 2 dari 2"</li>
+            </ul>
+            <p><strong>2. Hapus Footer:</strong></p>
+            <ul style="margin: 10px 0;">
+                <li>✅ Footer dengan teks "RSUD Bendan, Jl. Sriwijaya 2 Pekalongan" sudah dihapus</li>
+                <li>✅ Teks "KISS@ 2025. Mukhsin Hadi. Hak Cipta dilindungi oleh Undang-Undang" sudah dihapus</li>
+                <li>✅ Bagian bawah form sekarang bersih tanpa footer</li>
+            </ul>
+        </div>
+
+        <div class="checklist">
+            <h3>🔍 Checklist Verifikasi:</h3>
+            <ul>
+                <li>Progress bar menampilkan "Step 1 dari 2"</li>
+                <li>Step 1 berisi: Unit Tujuan, Nama Lengkap, Nomor HP, dan Alamat (Provinsi, Kabupaten, Kecamatan)</li>
+                <li>Tombol "Lanjutkan" untuk ke Step 2</li>
+                <li>Step 2 menampilkan "Step 2 dari 2"</li>
+                <li>Step 2 berisi: 8 pertanyaan penilaian dengan emoji rating</li>
+                <li>Step 2 berisi: Kolom Saran & Masukan</li>
+                <li>Tombol "Kembali" dan "Kirim Survei"</li>
+                <li>Footer sudah tidak ada di bagian bawah form</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <strong>ℹ️ Catatan:</strong>
+            <p>Form survey sekarang lebih sederhana dengan:</p>
+            <ul>
+                <li>Hanya 2 langkah yang jelas</li>
+                <li>Tanpa footer yang mengganggu</li>
+                <li>Tampilan lebih bersih dan fokus pada konten survey</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="http://localhost:3002/form/survey" class="btn" target="_blank">
+                🚀 Buka Form Survey
+            </a>
+        </div>
+
+        <div class="status">
+            <strong>✅ Status:</strong> Form survey sudah diperbaiki sesuai ringkasan perbaikan
+        </div>
+    </div>
+
+    <script>
+        // Auto open form survey
+        setTimeout(() => {
+            window.open('http://localhost:3002/form/survey', '_blank');
+        }, 1000);
+    </script>
+</body>
+</html>

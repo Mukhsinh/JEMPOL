@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Kecepatan Refresh - KISS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2563eb;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+        .loading {
+            background: #fef3c7;
+            color: #92400e;
+            border: 2px solid #f59e0b;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #ef4444;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 2px solid #3b82f6;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #e5e7eb;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Test Kecepatan Refresh</h1>
+        
+        <div class="info">
+            <strong>📋 Instruksi:</strong><br>
+            1. Pastikan Anda sudah login ke aplikasi<br>
+            2. Klik tombol "Test Refresh" untuk mengukur kecepatan<br>
+            3. Refresh halaman ini beberapa kali untuk melihat konsistensi<br>
+            4. Target: < 500ms untuk refresh dengan cache
+        </div>
+
+        <div id="status" class="status loading">
+            <div class="spinner"></div>
+            Memuat...
+        </div>
+
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-label">Waktu Inisialisasi</div>
+                <div class="metric-value" id="initTime">-</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Waktu Total</div>
+                <div class="metric-value" id="totalTime">-</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Status Cache</div>
+                <div class="metric-value" id="cacheStatus">-</div>
+            </div>
+            <div class="metric">
+                <div class="metric-label">Status Session</div>
+                <div class="metric-value" id="sessionStatus">-</div>
+            </div>
+        </div>
+
+        <div>
+            <button onclick="testRefresh()">🔄 Test Refresh</button>
+            <button onclick="clearCacheAndTest()">🗑️ Clear Cache & Test</button>
+            <button onclick="location.reload()">↻ Refresh Halaman</button>
+        </div>
+
+        <div id="details" style="margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 5px; display: none;">
+            <h3>Detail Pengukuran:</h3>
+            <pre id="detailsContent" style="white-space: pre-wrap; font-size: 12px;"></pre>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const supabaseUrl = 'https://yfvvqvqxqvqvqvqv.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlmdnZxdnF4cXZxdnF2cXYiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczNDU5NzYwMCwiZXhwIjoyMDUwMTczNjAwfQ.placeholder';
+        
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        let startTime;
+        let measurements = {};
+
+        async function measureRefreshSpeed() {
+            startTime = performance.now();
+            measurements = {};
+
+            try {
+                // 1. Cek cache
+                const cacheCheckStart = performance.now();
+                const cachedUser = localStorage.getItem('adminUser');
+                measurements.cacheCheck = performance.now() - cacheCheckStart;
+
+                if (cachedUser) {
+                    document.getElementById('cacheStatus').textContent = '✅ Hit';
+                    measurements.cacheHit = true;
+                } else {
+                    document.getElementById('cacheStatus').textContent = '❌ Miss';
+                    measurements.cacheHit = false;
+                }
+
+                // 2. Verifikasi session
+                const sessionCheckStart = performance.now();
+                const { data: { session }, error } = await supabase.auth.getSession();
+                measurements.sessionCheck = performance.now() - sessionCheckStart;
+
+                if (error || !session) {
+                    document.getElementById('sessionStatus').textContent = '❌ Invalid';
+                    measurements.sessionValid = false;
+                    throw new Error('Session tidak valid');
+                }
+
+                document.getElementById('sessionStatus').textContent = '✅ Valid';
+                measurements.sessionValid = true;
+
+                // 3. Fetch profile (jika perlu)
+                if (!cachedUser) {
+                    const profileFetchStart = performance.now();
+                    const { data: profileData, error: profileError } = await supabase
+                        .from('admins')
+                        .select('id, username, full_name, email, role')
+                        .eq('email', session.user.email)
+                        .eq('is_active', true)
+                        .single();
+                    measurements.profileFetch = performance.now() - profileFetchStart;
+
+                    if (profileError || !profileData) {
+                        throw new Error('Profile tidak ditemukan');
+                    }
+
+                    // Cache hasil
+                    localStorage.setItem('adminUser', JSON.stringify(profileData));
+                }
+
+                const totalTime = performance.now() - startTime;
+                measurements.total = totalTime;
+
+                // Update UI
+                document.getElementById('initTime').textContent = `${measurements.sessionCheck.toFixed(0)}ms`;
+                document.getElementById('totalTime').textContent = `${totalTime.toFixed(0)}ms`;
+
+                // Status
+                const statusDiv = document.getElementById('status');
+                if (totalTime < 500) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `✅ Sangat Cepat! (${totalTime.toFixed(0)}ms)`;
+                } else if (totalTime < 1000) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `✅ Cepat (${totalTime.toFixed(0)}ms)`;
+                } else if (totalTime < 2000) {
+                    statusDiv.className = 'status loading';
+                    statusDiv.innerHTML = `⚠️ Sedang (${totalTime.toFixed(0)}ms)`;
+                } else {
+                    statusDiv.className = 'status error';
+                    statusDiv.innerHTML = `❌ Lambat (${totalTime.toFixed(0)}ms)`;
+                }
+
+                // Show details
+                document.getElementById('details').style.display = 'block';
+                document.getElementById('detailsContent').textContent = JSON.stringify(measurements, null, 2);
+
+            } catch (error) {
+                const totalTime = performance.now() - startTime;
+                document.getElementById('status').className = 'status error';
+                document.getElementById('status').innerHTML = `❌ Error: ${error.message} (${totalTime.toFixed(0)}ms)`;
+                
+                document.getElementById('details').style.display = 'block';
+                document.getElementById('detailsContent').textContent = JSON.stringify({
+                    error: error.message,
+                    measurements
+                }, null, 2);
+            }
+        }
+
+        window.testRefresh = measureRefreshSpeed;
+
+        window.clearCacheAndTest = async () => {
+            localStorage.removeItem('adminUser');
+            document.getElementById('cacheStatus').textContent = 'Cleared';
+            await new Promise(resolve => setTimeout(resolve, 100));
+            await measureRefreshSpeed();
+        };
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            setTimeout(measureRefreshSpeed, 100);
+        });
+    </script>
+</body>
+</html>

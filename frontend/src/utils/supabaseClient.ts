@@ -30,31 +30,22 @@ const createSupabaseClient = () => {
           'Prefer': 'return=representation'
         },
         fetch: async (url, options = {}) => {
-          // Timeout lebih panjang (30 detik) dengan retry
-          const maxRetries = 2;
-          const timeout = 30000;
+          // Timeout lebih singkat (15 detik) tanpa retry untuk performa lebih cepat
+          const timeout = 15000;
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), timeout);
           
-          for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeout);
-            
-            try {
-              const response = await fetch(url, {
-                ...options,
-                signal: controller.signal
-              });
-              clearTimeout(timeoutId);
-              return response;
-            } catch (error: any) {
-              clearTimeout(timeoutId);
-              if (attempt === maxRetries || error.name !== 'AbortError') {
-                throw error;
-              }
-              // Wait before retry
-              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-            }
+          try {
+            const response = await fetch(url, {
+              ...options,
+              signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            return response;
+          } catch (error: any) {
+            clearTimeout(timeoutId);
+            throw error;
           }
-          throw new Error('Request failed after retries');
         }
       },
       realtime: {

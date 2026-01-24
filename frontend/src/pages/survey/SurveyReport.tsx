@@ -52,6 +52,12 @@ interface UnitIKM {
   ikm_score: number;
 }
 
+interface AddressStats {
+  name: string;
+  count: number;
+  percentage: number;
+}
+
 interface Unit {
   id: string;
   name: string;
@@ -73,11 +79,13 @@ const SurveyReport: React.FC = () => {
   const [stats, setStats] = useState<SurveyStats | null>(null);
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [unitIKM, setUnitIKM] = useState<UnitIKM[]>([]);
+  const [addressStats, setAddressStats] = useState<AddressStats[]>([]);
+  const [addressGroupBy, setAddressGroupBy] = useState<'kabupaten_kota' | 'kecamatan' | 'kelurahan'>('kabupaten_kota');
   const [units, setUnits] = useState<Unit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState({ period: 'this_month', unit: 'all', service_type: 'all' });
+  const [filters, setFilters] = useState({ period: 'this_month', unit: 'all' });
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
@@ -89,7 +97,11 @@ const SurveyReport: React.FC = () => {
 
   useEffect(() => { 
     fetchSurveyData(); 
-  }, [dateRange, filters.unit, filters.service_type]);
+  }, [dateRange, filters.unit]);
+
+  useEffect(() => {
+    fetchAddressStats();
+  }, [dateRange, filters.unit, addressGroupBy]);
 
   const fetchUnits = async () => {
     try {
@@ -112,8 +124,7 @@ const SurveyReport: React.FC = () => {
         params: {
           start_date: dateRange.start,
           end_date: dateRange.end,
-          unit_id: filters.unit !== 'all' ? filters.unit : undefined,
-          service_type: filters.service_type !== 'all' ? filters.service_type : undefined
+          unit_id: filters.unit !== 'all' ? filters.unit : undefined
         }
       });
       if (statsRes.data?.success) {
@@ -125,8 +136,7 @@ const SurveyReport: React.FC = () => {
         params: {
           start_date: dateRange.start,
           end_date: dateRange.end,
-          unit_id: filters.unit !== 'all' ? filters.unit : undefined,
-          service_type: filters.service_type !== 'all' ? filters.service_type : undefined
+          unit_id: filters.unit !== 'all' ? filters.unit : undefined
         }
       });
       if (responsesRes.data?.success) {
@@ -138,8 +148,7 @@ const SurveyReport: React.FC = () => {
         params: {
           start_date: dateRange.start,
           end_date: dateRange.end,
-          unit_id: filters.unit !== 'all' ? filters.unit : undefined,
-          service_type: filters.service_type !== 'all' ? filters.service_type : undefined
+          unit_id: filters.unit !== 'all' ? filters.unit : undefined
         }
       });
       if (ikmRes.data?.success) {
@@ -150,6 +159,24 @@ const SurveyReport: React.FC = () => {
       setError(err.message || 'Gagal mengambil data survei');
     } finally { 
       setLoading(false); 
+    }
+  };
+
+  const fetchAddressStats = async () => {
+    try {
+      const addressRes = await api.get('/public/surveys/address-stats', {
+        params: {
+          start_date: dateRange.start,
+          end_date: dateRange.end,
+          unit_id: filters.unit !== 'all' ? filters.unit : undefined,
+          group_by: addressGroupBy
+        }
+      });
+      if (addressRes.data?.success) {
+        setAddressStats(addressRes.data.data || []);
+      }
+    } catch (err: any) {
+      console.error('Error fetching address stats:', err);
     }
   };
 
@@ -273,16 +300,6 @@ const SurveyReport: React.FC = () => {
               ))}
             </select>
           </label>
-          <label className="flex flex-col flex-1 min-w-[200px]">
-            <span className="text-slate-700 text-xs font-semibold uppercase mb-2">Jenis Layanan</span>
-            <select className="h-11 px-4 bg-slate-50 border border-slate-200 rounded-lg text-sm" value={filters.service_type} onChange={(e) => setFilters({...filters, service_type: e.target.value})}>
-              <option value="all">Semua</option>
-              <option value="rawat_jalan">Rawat Jalan</option>
-              <option value="rawat_inap">Rawat Inap</option>
-              <option value="darurat">IGD</option>
-              <option value="lainnya">Lainnya</option>
-            </select>
-          </label>
           <button onClick={handleApplyFilter} className="h-11 px-6 bg-[#137fec] text-white rounded-lg text-sm font-bold flex items-center gap-2">
             <span className="material-symbols-outlined text-[20px]">filter_list</span>Terapkan
           </button>
@@ -376,23 +393,16 @@ const SurveyReport: React.FC = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold text-slate-900">
-                {filters.unit !== 'all' 
-                  ? 'Komparasi IKM Per Jenis Layanan' 
-                  : 'Komparasi IKM Per Unit Kerja'}
+                Komparasi IKM Per Unit Kerja
               </h3>
               {filters.unit !== 'all' && (
                 <p className="text-xs text-slate-500 mt-1">
                   Unit: {units.find(u => u.id === filters.unit)?.name || 'Unit Terpilih'}
                 </p>
               )}
-              {filters.service_type !== 'all' && filters.unit === 'all' && (
-                <p className="text-xs text-slate-500 mt-1">
-                  Filter Jenis Layanan: {getServiceTypeLabel(filters.service_type)}
-                </p>
-              )}
             </div>
             <span className="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-              {unitIKM.length} {filters.unit !== 'all' ? 'Jenis Layanan' : 'Unit'}
+              {unitIKM.length} Unit
             </span>
           </div>
           <div className="flex flex-col gap-3">
@@ -458,6 +468,69 @@ const SurveyReport: React.FC = () => {
         </div>
       )}
 
+      {/* Grafik Distribusi Alamat */}
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 bg-slate-50/50">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-slate-900">Distribusi Responden Berdasarkan Alamat</h3>
+            <select 
+              className="h-9 px-3 rounded-lg border border-slate-200 text-sm"
+              value={addressGroupBy}
+              onChange={(e) => setAddressGroupBy(e.target.value as 'kabupaten_kota' | 'kecamatan' | 'kelurahan')}
+            >
+              <option value="kabupaten_kota">Kabupaten/Kota</option>
+              <option value="kecamatan">Kecamatan</option>
+              <option value="kelurahan">Kelurahan/Desa</option>
+            </select>
+          </div>
+        </div>
+        <div className="p-6">
+          {addressStats.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              <span className="material-symbols-outlined text-4xl mb-2 opacity-30">location_off</span>
+              <p>Belum ada data alamat</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {addressStats.slice(0, 10).map((addr, idx) => {
+                const maxCount = Math.max(...addressStats.map(a => a.count));
+                const barWidth = (addr.count / maxCount) * 100;
+                const colors = [
+                  'bg-blue-500', 'bg-emerald-500', 'bg-purple-500', 'bg-orange-500', 
+                  'bg-pink-500', 'bg-teal-500', 'bg-indigo-500', 'bg-yellow-500',
+                  'bg-red-500', 'bg-cyan-500'
+                ];
+                const color = colors[idx % colors.length];
+                
+                return (
+                  <div key={addr.name} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium text-slate-700">{addr.name}</span>
+                      <span className="text-slate-500">{addr.count} responden ({addr.percentage}%)</span>
+                    </div>
+                    <div className="h-8 bg-slate-100 rounded-lg overflow-hidden relative">
+                      <div 
+                        className={`h-full ${color} transition-all duration-500 flex items-center justify-end px-3`}
+                        style={{ width: `${barWidth}%` }}
+                      >
+                        {barWidth > 15 && (
+                          <span className="text-white text-xs font-bold">{addr.percentage}%</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {addressStats.length > 10 && (
+            <div className="mt-4 text-center text-sm text-slate-500">
+              Menampilkan 10 teratas dari {addressStats.length} {addressGroupBy === 'kabupaten_kota' ? 'kabupaten/kota' : addressGroupBy === 'kecamatan' ? 'kecamatan' : 'kelurahan'}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Feedback Table */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
@@ -476,7 +549,6 @@ const SurveyReport: React.FC = () => {
                 <th className="px-4 py-3 text-slate-500">Tanggal</th>
                 <th className="px-4 py-3 text-slate-500">Responden</th>
                 <th className="px-4 py-3 text-slate-500">Unit</th>
-                <th className="px-4 py-3 text-slate-500">Layanan</th>
                 <th className="px-4 py-3 text-slate-500">Rating</th>
                 <th className="px-4 py-3 text-slate-500">Komentar</th>
                 <th className="px-4 py-3 text-slate-500">Sentimen</th>
@@ -485,7 +557,7 @@ const SurveyReport: React.FC = () => {
             <tbody className="divide-y divide-slate-200">
               {filteredResponses.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
                     Belum ada data survei
                   </td>
                 </tr>
@@ -507,9 +579,6 @@ const SurveyReport: React.FC = () => {
                         <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
                           {response.unit || '-'}
                         </span>
-                      </td>
-                      <td className="px-4 py-4 text-slate-700">
-                        {getServiceTypeLabel(response.service_type)}
                       </td>
                       <td className="px-4 py-4">
                         {renderStars(Math.round(response.average_rating))}

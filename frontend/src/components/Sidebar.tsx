@@ -167,6 +167,17 @@ export default function Sidebar() {
                                 </Link>
                                 
                                 <Link
+                                    to="/track-ticket"
+                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/track-ticket')
+                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                        }`}
+                                >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                    <p className="text-sm font-medium">Lacak Tiket</p>
+                                </Link>
+                                
+                                <Link
                                     to="/form/internal"
                                     className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/form/internal')
                                         ? 'bg-primary text-white shadow-md shadow-blue-500/20'

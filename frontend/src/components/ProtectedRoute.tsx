@@ -18,16 +18,16 @@ function ProtectedRoute({
   const [showTimeoutMessage, setShowTimeoutMessage] = useState(false);
   const [showRefreshButton, setShowRefreshButton] = useState(false);
 
-  // Show timeout message after 5 seconds, refresh button after 8 seconds
+  // Show timeout message after 10 seconds, refresh button after 15 seconds
   useEffect(() => {
     if (isLoading) {
       const timeoutMessage = setTimeout(() => {
         setShowTimeoutMessage(true);
-      }, 5000);
+      }, 10000); // 10 detik baru muncul peringatan
 
       const refreshButton = setTimeout(() => {
         setShowRefreshButton(true);
-      }, 8000);
+      }, 15000); // 15 detik baru muncul tombol refresh
 
       return () => {
         clearTimeout(timeoutMessage);

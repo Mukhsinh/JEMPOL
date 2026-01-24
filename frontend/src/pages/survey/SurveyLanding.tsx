@@ -131,16 +131,12 @@ const SurveyLanding = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.phone) {
-      alert('Mohon isi nomor HP');
-      return;
-    }
     setIsLoading(true);
     try {
       const data = {
         service_type: formData.service_type,
         reporter_name: formData.is_anonymous ? null : formData.full_name,
-        reporter_phone: formData.phone,
+        reporter_phone: null, // Nomor HP dihapus
         reporter_email: formData.is_anonymous ? null : formData.email,
         job: formData.job,
         age_range: formData.age,
@@ -410,7 +406,7 @@ const SurveyLanding = () => {
         </button>
       </div>
 
-      {/* Name & Phone */}
+      {/* Name & Email */}
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-semibold text-gray-700">Nama Lengkap</label>
@@ -424,13 +420,12 @@ const SurveyLanding = () => {
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700">Nomor HP (WhatsApp) *</label>
+          <label className="text-sm font-semibold text-gray-700">Email</label>
           <input
-            type="tel"
-            placeholder="08xxxxxxxxxx"
-            value={formData.phone}
-            onChange={e => handleChange('phone', e.target.value)}
-            required
+            type="email"
+            placeholder="email@example.com"
+            value={formData.email}
+            onChange={e => handleChange('email', e.target.value)}
             className="w-full px-4 py-3.5 bg-gray-50 rounded-xl border-0 focus:ring-2 focus:ring-purple-500 text-sm"
           />
         </div>
@@ -471,7 +466,7 @@ const SurveyLanding = () => {
         <button type="button" onClick={prevStep} className="flex-1 py-4 bg-gray-100 text-gray-600 font-semibold rounded-2xl active:scale-95 transition-transform">
           Kembali
         </button>
-        <button type="button" onClick={nextStep} disabled={!formData.phone} className="flex-1 py-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg active:scale-95 transition-transform disabled:opacity-50">
+        <button type="button" onClick={nextStep} className="flex-1 py-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-2xl shadow-lg active:scale-95 transition-transform">
           Lanjutkan
         </button>
       </div>

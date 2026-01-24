@@ -5,7 +5,6 @@ interface FormData {
   service_type: string;
   full_name: string;
   is_anonymous: boolean;
-  phone: string;
   email: string;
   age: string;
   gender: string;
@@ -65,7 +64,6 @@ const PublicSurvey: React.FC = () => {
     service_type: '',
     full_name: '',
     is_anonymous: false,
-    phone: '',
     email: '',
     age: '',
     gender: '',
@@ -318,33 +316,17 @@ const PublicSurvey: React.FC = () => {
                   />
                 </div>
 
-                {/* Contact Info */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                      Nomor HP (WhatsApp) <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="08xxxxxxxxxx"
-                      className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Email (Opsional)</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="contoh@email.com"
-                      className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
-                  </div>
+                {/* Contact Info - Email Only */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">Email (Opsional)</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="contoh@email.com"
+                    className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  />
                 </div>
 
                 {/* Demographics */}
@@ -529,34 +511,7 @@ const PublicSurvey: React.FC = () => {
         </div>
       </main>
 
-      {/* Footer - Dynamic from App Settings */}
-      <footer className="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-6 mt-8">
-        <div className="max-w-lg mx-auto px-4 text-center space-y-2">
-          {appSettings.institution_name && (
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{appSettings.institution_name}</p>
-          )}
-          {appSettings.institution_address && (
-            <p className="text-xs text-slate-500 dark:text-slate-400">{appSettings.institution_address}</p>
-          )}
-          <div className="flex items-center justify-center gap-4 text-xs text-slate-400">
-            {appSettings.contact_phone && (
-              <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">call</span>
-                {appSettings.contact_phone}
-              </span>
-            )}
-            {appSettings.contact_email && (
-              <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-sm">mail</span>
-                {appSettings.contact_email}
-              </span>
-            )}
-          </div>
-          {appSettings.app_footer && (
-            <p className="text-xs text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-700">{appSettings.app_footer}</p>
-          )}
-        </div>
-      </footer>
+      {/* Footer dihapus sesuai permintaan */}
     </div>
   );
 };

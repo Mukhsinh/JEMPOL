@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Pelacakan Tiket - Perbaikan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto p-6">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h1 class="text-2xl font-bold text-gray-900 mb-4">✅ Test Halaman Pelacakan Tiket - Perbaikan</h1>
+            
+            <div class="space-y-4">
+                <div class="bg-green-50 border-l-4 border-green-500 p-4">
+                    <h2 class="font-bold text-green-800 mb-2">Perbaikan yang Dilakukan:</h2>
+                    <ul class="list-disc list-inside text-green-700 space-y-1">
+                        <li>✅ Header menggunakan nama instansi dan aplikasi dari pengaturan</li>
+                        <li>✅ Footer terintegrasi dengan data pengaturan aplikasi (logo, alamat, kontak)</li>
+                        <li>✅ Rincian tiket lebih lengkap (judul, deskripsi lengkap, tidak overflow)</li>
+                        <li>✅ Ganti 'AI Status Insight' dengan 'Admin'</li>
+                        <li>✅ Tambah field call_center_number dan whatsapp_help_number di pengaturan</li>
+                        <li>✅ Call Center dan WhatsApp Help terintegrasi dengan pengaturan</li>
+                        <li>✅ Tampilan lebih modern dan mobile-friendly</li>
+                    </ul>
+                </div>
+
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4">
+                    <h2 class="font-bold text-blue-800 mb-2">File yang Diubah:</h2>
+                    <ul class="list-disc list-inside text-blue-700 space-y-1">
+                        <li><code>frontend/src/pages/public/TrackTicket.tsx</code></li>
+                        <li><code>frontend/src/pages/settings/AppSettings.tsx</code></li>
+                    </ul>
+                </div>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4">
+                    <h2 class="font-bold text-yellow-800 mb-2">Cara Test:</h2>
+                    <ol class="list-decimal list-inside text-yellow-700 space-y-2">
+                        <li>Buka halaman <strong>Pengaturan Aplikasi</strong></li>
+                        <li>Isi data:
+                            <ul class="list-disc list-inside ml-6 mt-1">
+                                <li>Nama Aplikasi</li>
+                                <li>Nama Instansi</li>
+                                <li>Alamat Instansi</li>
+                                <li>Nomor Call Center (contoh: 112)</li>
+                                <li>Nomor WhatsApp Help (contoh: 628123456789)</li>
+                                <li>Footer Aplikasi</li>
+                            </ul>
+                        </li>
+                        <li>Simpan pengaturan</li>
+                        <li>Buka halaman <strong>Pelacakan Tiket</strong> (localhost:3005/track-ticket)</li>
+                        <li>Cek header, footer, dan tombol kontak</li>
+                        <li>Cari tiket untuk melihat rincian lengkap</li>
+                    </ol>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <a href="http://localhost:3005/settings/app-settings" 
+                       class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-center font-semibold">
+                        🔧 Buka Pengaturan Aplikasi
+                    </a>
+                    <a href="http://localhost:3005/track-ticket" 
+                       class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 text-center font-semibold">
+                        🔍 Buka Pelacakan Tiket
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-4">📋 Checklist Testing</h2>
+            <div class="space-y-2">
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" class="w-4 h-4">
+                    <span>Header menampilkan logo dan nama instansi dari pengaturan</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" class="w-4 h-4">
+                    <span>Footer menampilkan informasi lengkap (logo, alamat, kontak)</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" class="w-4 h-4">
+                    <span>Rincian tiket menampilkan judul dan deskripsi lengkap</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" class="w-4 h-4">
+                    <span>Text tidak terpotong (overflow)</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" class="w-4 h-4">
+                    <span>Label berubah dari 'AI Status Insight' menjadi 'Admin'</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" class="w-4 h-4">
+                    <span>Tombol Call Center menampilkan nomor dari pengaturan</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" class="w-4 h-4">
+                    <span>Tombol WhatsApp Help berfungsi dengan nomor dari pengaturan</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" class="w-4 h-4">
+                    <span>Tampilan responsive dan mobile-friendly</span>
+                </label>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

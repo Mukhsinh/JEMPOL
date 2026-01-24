@@ -55,29 +55,6 @@ const TicketTracker = () => {
     logo_url: '',
   });
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const { data } = await supabase.from('app_settings').select('setting_key, setting_value');
-        if (data) {
-          const map: Record<string, string> = {};
-          data.forEach((item: { setting_key: string; setting_value: string }) => {
-            map[item.setting_key] = item.setting_value || '';
-          });
-          setAppSettings({
-            app_name: map.app_name || 'Sistem Pengaduan Terpadu',
-            app_footer: map.app_footer || '',
-            institution_name: map.institution_name || 'Rumah Sakit Kota',
-            logo_url: map.logo_url || map.institution_logo || '',
-          });
-        }
-      } catch (err) {
-        console.error('Error fetching settings:', err);
-      }
-    };
-    fetchSettings();
-  }, []);
-
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ticketNumber.trim()) return;

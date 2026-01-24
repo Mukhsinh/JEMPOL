@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../utils/supabaseClient';
 import { useAuth } from '../../contexts/AuthContext';
+import { downloadInternalTicketPDF } from '../../utils/pdfGenerator';
 
 interface Unit {
   id: string;
@@ -44,6 +45,7 @@ const TiketInternal: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [ticketNumber, setTicketNumber] = useState('');
+  const [submittedTicketData, setSubmittedTicketData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Master Data
@@ -191,6 +193,25 @@ const TiketInternal: React.FC = () => {
 
       if (insertError) throw insertError;
 
+      // Simpan data tiket untuk PDF
+      const selectedUnit = units.find(u => u.id === formData.unit_id);
+      const selectedCategory = categories.find(c => c.id === formData.category_id);
+      
+      setSubmittedTicketData({
+        ticket_number: ticketNum,
+        title: formData.title,
+        description: formData.description,
+        category: selectedCategory?.name || '-',
+        priority: formData.priority,
+        unit_name: selectedUnit?.name || '-',
+        reporter_name: formData.is_anonymous ? 'Anonim' : formData.submitter_name,
+        reporter_email: formData.is_anonymous ? null : formData.submitter_email,
+        reporter_phone: formData.is_anonymous ? null : formData.submitter_phone,
+        reporter_address: formData.is_anonymous ? null : formData.submitter_address,
+        created_at: now.toISOString(),
+        type: 'internal'
+      });
+
       setTicketNumber(ticketNum);
       setSubmitted(true);
     } catch (err: any) {
@@ -204,6 +225,7 @@ const TiketInternal: React.FC = () => {
   const resetForm = () => {
     setSubmitted(false);
     setTicketNumber('');
+    setSubmittedTicketData(null);
     setFormData({
       type: 'information',
       category_id: '',
@@ -217,6 +239,26 @@ const TiketInternal: React.FC = () => {
       submitter_address: '',
       is_anonymous: false
     });
+  };
+
+  const handleDownloadPDF = () => {
+    if (submittedTicketData) {
+      generateInternalTicketPDF(
+        submittedTicketData.ticket_number,
+        {
+          reporter_name: submittedTicketData.reporter_name,
+          reporter_email: submittedTicketData.reporter_email || '-',
+          reporter_phone: submittedTicketData.reporter_phone || '-',
+          reporter_department: submittedTicketData.unit_name,
+          reporter_position: '-',
+          category: submittedTicketData.category,
+          priority: submittedTicketData.priority,
+          title: submittedTicketData.title,
+          description: submittedTicketData.description
+        },
+        submittedTicketData.unit_name
+      );
+    }
   };
 
   if (loading) {
@@ -250,21 +292,31 @@ const TiketInternal: React.FC = () => {
             Simpan nomor tiket ini untuk melacak status pengaduan Anda
           </p>
           
-          <div className="flex gap-3 justify-center">
+          <div className="flex flex-col gap-3">
             <button 
-              onClick={resetForm}
-              className="px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-blue-600 transition-colors flex items-center gap-2"
+              onClick={handleDownloadPDF}
+              className="w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-xl font-semibold hover:from-emerald-600 hover:to-green-700 transition-all shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2"
             >
-              <span className="material-symbols-outlined">add</span>
-              Buat Tiket Baru
+              <span className="material-symbols-outlined">download</span>
+              Unduh Tiket (PDF)
             </button>
-            <button 
-              onClick={() => window.location.href = '/tickets'}
-              className="px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined">list</span>
-              Lihat Daftar Tiket
-            </button>
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={resetForm}
+                className="flex-1 px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-blue-600 transition-colors flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined">add</span>
+                Buat Tiket Baru
+              </button>
+              <button 
+                onClick={() => window.location.href = '/tickets'}
+                className="flex-1 px-6 py-3 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined">list</span>
+                Lihat Daftar Tiket
+              </button>
+            </div>
           </div>
         </div>
 

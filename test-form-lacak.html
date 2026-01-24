@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Form Lacak Tiket</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #137fec;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2rem;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border-left: 4px solid #137fec;
+        }
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        .test-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+        }
+        .test-item h3 {
+            color: #137fec;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        .test-item p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .test-button {
+            display: inline-block;
+            background: #137fec;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        .test-button:hover {
+            background: #0d5fb8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(19, 127, 236, 0.3);
+        }
+        .test-button.secondary {
+            background: #6c757d;
+        }
+        .test-button.secondary:hover {
+            background: #5a6268;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        .status-badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-badge.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+        .feature-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .feature-list li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+            color: #555;
+        }
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Test Form Lacak Tiket</h1>
+
+        <div class="test-section">
+            <h2>📱 Akses Halaman Form Lacak</h2>
+            <div class="test-item">
+                <h3>URL Utama <span class="status-badge success">Ready</span></h3>
+                <p>Akses halaman Form Lacak melalui URL utama:</p>
+                <a href="http://localhost:5173/form-lacak" class="test-button" target="_blank">
+                    🚀 Buka Form Lacak
+                </a>
+                <a href="http://localhost:5173/lacak" class="test-button secondary" target="_blank">
+                    🔗 Short URL (/lacak)
+                </a>
+                <div class="code-block">http://localhost:5173/form-lacak</div>
+            </div>
+
+            <div class="test-item">
+                <h3>Akses dari Sidebar <span class="status-badge info">Integrated</span></h3>
+                <p>Form Lacak sudah terintegrasi di menu Tickets pada sidebar aplikasi:</p>
+                <ul class="feature-list">
+                    <li>Login ke aplikasi sebagai admin</li>
+                    <li>Buka menu "Tickets" di sidebar</li>
+                    <li>Klik submenu "Form Lacak"</li>
+                </ul>
+                <a href="http://localhost:5173/login" class="test-button" target="_blank">
+                    🔐 Login Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔍 Test Fitur Pelacakan</h2>
+            <div class="test-item">
+                <h3>Test dengan Nomor Tiket</h3>
+                <p>Untuk test pelacakan, gunakan nomor tiket yang sudah ada di database:</p>
+                <ol style="margin-left: 20px; color: #555; line-height: 1.8;">
+                    <li>Buka Form Lacak</li>
+                    <li>Masukkan nomor tiket (contoh: TKT-2024-0001)</li>
+                    <li>Klik tombol "Lacak"</li>
+                    <li>Sistem akan menampilkan detail tiket dan timeline</li>
+                </ol>
+                <div class="code-block">
+Contoh Nomor Tiket:
+- TKT-2024-0001
+- TKT-2024-0002
+- TKT-2023-8892
+                </div>
+            </div>
+
+            <div class="test-item">
+                <h3>Fitur yang Tersedia</h3>
+                <ul class="feature-list">
+                    <li>Pencarian tiket berdasarkan nomor</li>
+                    <li>Tampilan status tiket real-time</li>
+                    <li>Timeline progres penanganan</li>
+                    <li>AI Status Insight</li>
+                    <li>Notifikasi WhatsApp (coming soon)</li>
+                    <li>Rincian tiket lengkap</li>
+                    <li>Riwayat pembaruan</li>
+                    <li>Kontak call center & WhatsApp</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📲 QR Code untuk Akses Mudah</h2>
+            <div class="test-item">
+                <h3>Generate QR Code</h3>
+                <p>QR Code sudah di-generate otomatis untuk memudahkan akses publik:</p>
+                <a href="http://localhost:5173/qr-form-lacak.html" class="test-button" target="_blank">
+                    📱 Lihat QR Codes
+                </a>
+                <p style="margin-top: 15px; color: #666;">
+                    QR Code dapat dicetak dan ditempel di:
+                </p>
+                <ul class="feature-list">
+                    <li>Loket pendaftaran</li>
+                    <li>Ruang tunggu</li>
+                    <li>Area informasi</li>
+                    <li>Brosur & pamflet</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Test Backend Integration</h2>
+            <div class="test-item">
+                <h3>API Endpoint</h3>
+                <p>Form Lacak terintegrasi dengan backend API yang sudah ada:</p>
+                <div class="code-block">
+GET /api/public/track/:ticketNumber
+- Endpoint untuk tracking tiket publik
+- Tidak memerlukan autentikasi
+- Return: detail tiket + timeline
+                </div>
+                <a href="http://localhost:3000/api/public/track/TKT-2024-0001" class="test-button secondary" target="_blank">
+                    🔌 Test API Endpoint
+                </a>
+            </div>
+
+            <div class="test-item">
+                <h3>Database Integration</h3>
+                <p>Data diambil langsung dari Supabase:</p>
+                <ul class="feature-list">
+                    <li>Tabel: tickets</li>
+                    <li>Relasi: units, service_categories</li>
+                    <li>Responses: ticket_responses</li>
+                    <li>Real-time data</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Checklist Testing</h2>
+            <div class="test-item">
+                <ul class="feature-list">
+                    <li>Halaman Form Lacak dapat diakses</li>
+                    <li>Form pencarian berfungsi</li>
+                    <li>Data tiket ditampilkan dengan benar</li>
+                    <li>Timeline progres muncul</li>
+                    <li>Status badge sesuai</li>
+                    <li>Responsive di mobile</li>
+                    <li>Dark mode support</li>
+                    <li>QR Code ter-generate</li>
+                    <li>Menu sidebar terintegrasi</li>
+                    <li>Backend API berfungsi</li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #e0e0e0;">
+            <p style="color: #666; margin-bottom: 15px;">
+                Pastikan backend dan frontend sudah berjalan sebelum testing
+            </p>
+            <a href="http://localhost:5173/form-lacak" class="test-button">
+                🚀 Mulai Test Sekarang
+            </a>
+        </div>
+    </div>
+</body>
+</html>

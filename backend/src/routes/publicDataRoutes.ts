@@ -1,12 +1,16 @@
 import { Router } from 'express';
 import * as masterDataController from '../controllers/masterDataController.js';
 import unitController from '../controllers/unitController.js';
+import { appSettingsController } from '../controllers/appSettingsController.js';
 import supabase from '../config/supabase.js';
 
 const router = Router();
 
 // Public endpoints untuk data yang bisa diakses tanpa autentikasi
 // Ini adalah fallback ketika endpoint utama gagal karena masalah token
+
+// App Settings public endpoint
+router.get('/app-settings', appSettingsController.getPublicSettings.bind(appSettingsController));
 
 // Master data public endpoints
 router.get('/unit-types', masterDataController.getUnitTypes);

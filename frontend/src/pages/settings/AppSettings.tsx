@@ -14,6 +14,8 @@ interface AppSettingsForm {
   contact_email: string;
   contact_phone: string;
   website: string;
+  call_center_number: string;
+  whatsapp_help_number: string;
 }
 
 const AppSettings: React.FC = () => {
@@ -29,7 +31,9 @@ const AppSettings: React.FC = () => {
     description: '',
     contact_email: '',
     contact_phone: '',
-    website: ''
+    website: '',
+    call_center_number: '',
+    whatsapp_help_number: ''
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -68,7 +72,9 @@ const AppSettings: React.FC = () => {
           description: map.description || '',
           contact_email: map.contact_email || '',
           contact_phone: map.contact_phone || '',
-          website: map.website || ''
+          website: map.website || '',
+          call_center_number: map.call_center_number || '',
+          whatsapp_help_number: map.whatsapp_help_number || ''
         });
       }
     } catch (err: unknown) {
@@ -203,6 +209,14 @@ const AppSettings: React.FC = () => {
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Website</label>
               <input type="url" value={settings.website} onChange={(e) => handleChange('website', e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nomor Call Center</label>
+              <input type="text" value={settings.call_center_number} onChange={(e) => handleChange('call_center_number', e.target.value)} placeholder="Contoh: 112" className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nomor WhatsApp Help</label>
+              <input type="text" value={settings.whatsapp_help_number} onChange={(e) => handleChange('whatsapp_help_number', e.target.value)} placeholder="Contoh: 628123456789" className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white" />
             </div>
           </div>
         </div>

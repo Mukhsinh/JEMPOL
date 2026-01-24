@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Form Survey - Perbaikan Alamat</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin: 25px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .section h3 {
+            color: #667eea;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .check {
+            color: #28a745;
+            font-size: 24px;
+        }
+        ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+            margin: 20px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Form Survey Berhasil Diperbaiki!</h1>
+        <p class="subtitle">Perbaikan Inputan Usia, Pekerjaan, dan Alamat</p>
+
+        <div class="section">
+            <h3><span class="check">✓</span> 1. Usia - Dropdown</h3>
+            <ul>
+                <li>Kurang dari 20 Tahun</li>
+                <li>20 - 40 Tahun</li>
+                <li>41 - 60 Tahun</li>
+                <li>Lebih dari 60 Tahun</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3><span class="check">✓</span> 2. Pekerjaan - Dropdown</h3>
+            <ul>
+                <li>PNS</li>
+                <li>TNI/Polri</li>
+                <li>Swasta</li>
+                <li>Wiraswasta</li>
+                <li>Petani</li>
+                <li>Nelayan</li>
+                <li>Pelajar/Mahasiswa</li>
+                <li>Ibu Rumah Tangga</li>
+                <li>Pensiunan</li>
+                <li>Lainnya</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3><span class="check">✓</span> 3. Alamat - Dropdown Kab/Kota</h3>
+            <ul>
+                <li><strong>Kota Pekalongan</strong> (4 Kecamatan)</li>
+                <li><strong>Kabupaten Pekalongan</strong> (10 Kecamatan)</li>
+                <li><strong>Kabupaten Batang</strong> (8 Kecamatan)</li>
+                <li><strong>Kabupaten Pemalang</strong> (10 Kecamatan)</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3><span class="check">✓</span> 4. Kecamatan - Dinamis</h3>
+            <p>Kecamatan akan muncul otomatis sesuai dengan Kab/Kota yang dipilih. Setiap kecamatan memiliki data lengkap kelurahan/desa.</p>
+        </div>
+
+        <div class="section">
+            <h3><span class="check">✓</span> 5. Alamat Detail - Input Manual</h3>
+            <p>Textarea untuk mengisi alamat lengkap secara manual:</p>
+            <ul>
+                <li>Nama Jalan</li>
+                <li>RT/RW</li>
+                <li>Kelurahan/Desa</li>
+                <li>Detail lainnya</li>
+            </ul>
+        </div>
+
+        <div class="info">
+            <strong>ℹ️ Cara Kerja:</strong><br>
+            1. Pilih Kab/Kota → Kecamatan akan muncul otomatis<br>
+            2. Pilih Kecamatan<br>
+            3. Isi alamat detail secara manual di textarea
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Catatan:</strong><br>
+            - Provinsi otomatis terisi "Jawa Tengah"<br>
+            - Semua field alamat wajib diisi (required)<br>
+            - Data wilayah lengkap sampai kelurahan tersimpan di database
+        </div>
+
+        <a href="http://localhost:3002/form/survey" class="btn" target="_blank">
+            🚀 Buka Form Survey untuk Test
+        </a>
+
+        <a href="http://localhost:3002/form/survey?unit_id=test&unit_name=Test%20Unit" class="btn" target="_blank">
+            🧪 Test dengan Unit Parameter
+        </a>
+    </div>
+
+    <script>
+        console.log('✅ Form Survey Perbaikan Alamat');
+        console.log('1. Usia: Dropdown ✓');
+        console.log('2. Pekerjaan: Dropdown ✓');
+        console.log('3. Alamat Kab/Kota: 4 wilayah (Pekalongan, Batang, Pemalang) ✓');
+        console.log('4. Kecamatan: Dinamis ✓');
+        console.log('5. Alamat Detail: Input manual ✓');
+    </script>
+</body>
+</html>
