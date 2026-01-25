@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Internal Tickets API - Vercel</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    .test-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      border-left: 4px solid #4CAF50;
+    }
+    .test-section.error {
+      border-left-color: #f44336;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 15px;
+      padding: 15px;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .success {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+    .error-text {
+      color: #f44336;
+      font-weight: bold;
+    }
+    .info {
+      color: #2196F3;
+    }
+    .warning {
+      color: #ff9800;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0 15px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    label {
+      font-weight: 600;
+      color: #555;
+      display: block;
+      margin-top: 10px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Test Internal Tickets API - Vercel</h1>
+    <p class="subtitle">Test endpoint /api/public/internal-tickets di production</p>
+
+    <!-- Test 1: Check Endpoint -->
+    <div class="test-section" id="test1">
+      <h3>Test 1: Cek Endpoint (OPTIONS)</h3>
+      <button onclick="testOptions()">Test OPTIONS Request</button>
+      <div id="result1" class="result" style="display:none;"></div>
+    </div>
+
+    <!-- Test 2: Get Units -->
+    <div class="test-section" id="test2">
+      <h3>Test 2: Get Units (Untuk Dropdown)</h3>
+      <button onclick="testGetUnits()">Test GET Units</button>
+      <div id="result2" class="result" style="display:none;"></div>
+    </div>
+
+    <!-- Test 3: Submit Ticket -->
+    <div class="test-section" id="test3">
+      <h3>Test 3: Submit Internal Ticket</h3>
+      
+      <div class="form-grid">
+        <div>
+          <label>Nama Pelapor *</label>
+          <input type="text" id="reporter_name" value="Test User" required>
+        </div>
+        <div>
+          <label>Email *</label>
+          <input type="email" id="reporter_email" value="test@example.com" required>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div>
+          <label>Telepon</label>
+          <input type="tel" id="reporter_phone" value="081234567890">
+        </div>
+        <div>
+          <label>Unit ID *</label>
+          <input type="text" id="unit_id" placeholder="Paste unit ID dari Test 2" required>
+        </div>
+      </div>
+
+      <label>Departemen</label>
+      <input type="text" id="reporter_department" value="IT Department">
+
+      <label>Jabatan</label>
+      <input type="text" id="reporter_position" value="Staff IT">
+
+      <div class="form-grid">
+        <div>
+          <label>Kategori *</label>
+          <select id="category" required>
+            <option value="it_support">IT Support</option>
+            <option value="facility">Fasilitas</option>
+            <option value="equipment">Peralatan</option>
+            <option value="hr">SDM</option>
+            <option value="admin">Administrasi</option>
+            <option value="other">Lainnya</option>
+          </select>
+        </div>
+        <div>
+          <label>Prioritas *</label>
+          <select id="priority" required>
+            <option value="low">Rendah</option>
+            <option value="medium" selected>Sedang</option>
+            <option value="high">Tinggi</option>
+            <option value="critical">Kritis</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Judul Tiket *</label>
+      <input type="text" id="title" value="Test Tiket Internal dari Vercel" required>
+
+      <label>Deskripsi *</label>
+      <textarea id="description" rows="4" required>Ini adalah test tiket internal untuk memverifikasi endpoint API di Vercel production.</textarea>
+
+      <button onclick="testSubmitTicket()">Submit Test Ticket</button>
+      <div id="result3" class="result" style="display:none;"></div>
+    </div>
+
+    <!-- Test 4: Network Info -->
+    <div class="test-section" id="test4">
+      <h3>Test 4: Network & Environment Info</h3>
+      <button onclick="showNetworkInfo()">Show Info</button>
+      <div id="result4" class="result" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    
+    function log(elementId, message, type = 'info') {
+      const resultDiv = document.getElementById(elementId);
+      resultDiv.style.display = 'block';
+      
+      const timestamp = new Date().toLocaleTimeString();
+      const colorClass = type === 'error' ? 'error-text' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+      
+      resultDiv.innerHTML += `<span class="${colorClass}">[${timestamp}] ${message}</span>\n`;
+      resultDiv.scrollTop = resultDiv.scrollHeight;
+    }
+
+    function clearLog(elementId) {
+      const resultDiv = document.getElementById(elementId);
+      resultDiv.innerHTML = '';
+      resultDiv.style.display = 'none';
+    }
+
+    async function testOptions() {
+      clearLog('result1');
+      log('result1', '🔄 Testing OPTIONS request...', 'info');
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/public/internal-tickets`, {
+          method: 'OPTIONS',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        log('result1', `📥 Status: ${response.status} ${response.statusText}`, 'info');
+        log('result1', `📥 Content-Type: ${response.headers.get('content-type')}`, 'info');
+        
+        const text = await response.text();
+        log('result1', `📥 Response: ${text}`, 'info');
+        
+        if (response.ok) {
+          log('result1', '✅ OPTIONS request berhasil!', 'success');
+        } else {
+          log('result1', '❌ OPTIONS request gagal!', 'error');
+        }
+      } catch (error) {
+        log('result1', `❌ Error: ${error.message}`, 'error');
+        console.error('OPTIONS error:', error);
+      }
+    }
+
+    async function testGetUnits() {
+      clearLog('result2');
+      log('result2', '🔄 Fetching units...', 'info');
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/public/units`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        log('result2', `📥 Status: ${response.status} ${response.statusText}`, 'info');
+        log('result2', `📥 Content-Type: ${response.headers.get('content-type')}`, 'info');
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          log('result2', `❌ Response bukan JSON!`, 'error');
+          log('result2', `Response: ${text.substring(0, 500)}`, 'error');
+          return;
+        }
+        
+        const result = await response.json();
+        log('result2', `📦 Response: ${JSON.stringify(result, null, 2)}`, 'info');
+        
+        if (result.success && result.data && result.data.length > 0) {
+          log('result2', `✅ Berhasil! Ditemukan ${result.data.length} unit`, 'success');
+          log('result2', `💡 Copy salah satu unit ID untuk Test 3:`, 'warning');
+          result.data.slice(0, 3).forEach(unit => {
+            log('result2', `   - ${unit.name}: ${unit.id}`, 'info');
+          });
+        } else {
+          log('result2', '⚠️ Tidak ada unit ditemukan', 'warning');
+        }
+      } catch (error) {
+        log('result2', `❌ Error: ${error.message}`, 'error');
+        console.error('Get units error:', error);
+      }
+    }
+
+    async function testSubmitTicket() {
+      clearLog('result3');
+      log('result3', '🔄 Submitting ticket...', 'info');
+      
+      const payload = {
+        reporter_name: document.getElementById('reporter_name').value,
+        reporter_email: document.getElementById('reporter_email').value,
+        reporter_phone: document.getElementById('reporter_phone').value,
+        reporter_department: document.getElementById('reporter_department').value,
+        reporter_position: document.getElementById('reporter_position').value,
+        category: document.getElementById('category').value,
+        priority: document.getElementById('priority').value,
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        unit_id: document.getElementById('unit_id').value,
+        source: 'web'
+      };
+      
+      log('result3', `📤 Payload: ${JSON.stringify(payload, null, 2)}`, 'info');
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/public/internal-tickets`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        log('result3', `📥 Status: ${response.status} ${response.statusText}`, 'info');
+        log('result3', `📥 Content-Type: ${response.headers.get('content-type')}`, 'info');
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          log('result3', `❌ Response bukan JSON!`, 'error');
+          log('result3', `Response (first 500 chars): ${text.substring(0, 500)}`, 'error');
+          
+          // Cek apakah ini HTML error page
+          if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+            log('result3', `⚠️ Server mengembalikan HTML page, bukan JSON API response`, 'warning');
+            log('result3', `💡 Kemungkinan masalah:`, 'warning');
+            log('result3', `   1. Endpoint tidak ditemukan (404)`, 'warning');
+            log('result3', `   2. Routing Vercel tidak benar`, 'warning');
+            log('result3', `   3. File API tidak ter-deploy`, 'warning');
+          }
+          return;
+        }
+        
+        const result = await response.json();
+        log('result3', `📦 Response: ${JSON.stringify(result, null, 2)}`, 'info');
+        
+        if (response.ok && result.success) {
+          log('result3', `✅ Tiket berhasil dibuat!`, 'success');
+          log('result3', `🎫 Nomor Tiket: ${result.ticket_number}`, 'success');
+        } else {
+          log('result3', `❌ Gagal membuat tiket: ${result.error || 'Unknown error'}`, 'error');
+          if (result.details) {
+            log('result3', `Details: ${result.details}`, 'error');
+          }
+        }
+      } catch (error) {
+        log('result3', `❌ Error: ${error.message}`, 'error');
+        console.error('Submit ticket error:', error);
+      }
+    }
+
+    function showNetworkInfo() {
+      clearLog('result4');
+      log('result4', '📊 Network & Environment Info:', 'info');
+      log('result4', `🌐 Current URL: ${window.location.href}`, 'info');
+      log('result4', `🌐 Origin: ${window.location.origin}`, 'info');
+      log('result4', `🌐 Protocol: ${window.location.protocol}`, 'info');
+      log('result4', `🌐 Host: ${window.location.host}`, 'info');
+      log('result4', `📱 User Agent: ${navigator.userAgent}`, 'info');
+      log('result4', `🌍 Online: ${navigator.onLine}`, 'info');
+      log('result4', `🕐 Timestamp: ${new Date().toISOString()}`, 'info');
+      
+      log('result4', '\n🎯 API Endpoints yang akan ditest:', 'info');
+      log('result4', `   - OPTIONS: ${API_BASE}/api/public/internal-tickets`, 'info');
+      log('result4', `   - GET: ${API_BASE}/api/public/units`, 'info');
+      log('result4', `   - POST: ${API_BASE}/api/public/internal-tickets`, 'info');
+    }
+
+    // Auto-show network info on load
+    window.addEventListener('load', () => {
+      console.log('🚀 Test page loaded');
+      console.log('API Base:', API_BASE);
+    });
+  </script>
+</body>
+</html>

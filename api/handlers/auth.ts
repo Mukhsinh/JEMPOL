@@ -1,75 +1,166 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || '',
-  process.env.VITE_SUPABASE_ANON_KEY || ''
-);
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const path = req.url?.replace('/api/auth', '') || '/';
-  
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Content-Type', 'application/json');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).json({ success: true });
+  }
+
   try {
-    // POST /api/auth/login
-    if (req.method === 'POST' && path === '/login') {
-      const { email, password } = req.body;
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        return res.status(401).json({
+    const path = req.url?.replace('/api/auth', '') || '/';
+    
+    // Login endpoint
+    if (path === '/login' && req.method === 'POST') {
+      if (!supabase) {
+        return res.status(500).json({
           success: false,
-          error: 'Email atau password salah'
+          error: 'Database tidak tersedia'
         });
       }
 
-      const { data: userData } = await supabase
-        .from('users')
-        .select('*, units(name, code), roles(name, permissions)')
-        .eq('email', email)
+      const { username, password } = req.body;
+
+      if (!username || !password) {
+        return res.status(400).json({
+          success: false,
+          error: 'Username dan password harus diisi'
+        });
+      }
+
+      // Cari admin berdasarkan username
+      const { data: admin, error: adminError } = await supabase
+        .from('admins')
+        .select('*')
+        .eq('username', username)
+        .eq('is_active', true)
         .single();
 
-      return res.json({
+      if (adminError || !admin) {
+        return res.status(401).json({
+          success: false,
+          error: 'Username atau password salah'
+        });
+      }
+
+      // Verifikasi password
+      const isPasswordValid = await bcrypt.compare(password, admin.password_hash);
+
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          error: 'Username atau password salah'
+        });
+      }
+
+      // Generate JWT token
+      const token = jwt.sign(
+        {
+          id: admin.id,
+          username: admin.username,
+          role: admin.role,
+          unit_id: admin.unit_id
+        },
+        jwtSecret,
+        { expiresIn: '24h' }
+      );
+
+      // Update last login
+      await supabase
+        .from('admins')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', admin.id);
+
+      return res.status(200).json({
         success: true,
-        user: data.user,
-        session: data.session,
-        userData: userData || null
+        token,
+        user: {
+          id: admin.id,
+          username: admin.username,
+          full_name: admin.full_name,
+          email: admin.email,
+          role: admin.role,
+          unit_id: admin.unit_id
+        }
       });
     }
 
-    // GET /api/auth/me
-    if (req.method === 'GET' && path === '/me') {
+    // Verify token endpoint
+    if (path === '/verify' && req.method === 'GET') {
       const authHeader = req.headers.authorization;
-      if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ success: false, error: 'Unauthorized' });
+      const token = authHeader?.replace('Bearer ', '');
+
+      if (!token) {
+        return res.status(401).json({
+          success: false,
+          error: 'Token tidak ditemukan'
+        });
       }
 
-      const token = authHeader.substring(7);
-      const { data: { user }, error } = await supabase.auth.getUser(token);
+      try {
+        const decoded = jwt.verify(token, jwtSecret) as any;
+        
+        if (!supabase) {
+          return res.status(500).json({
+            success: false,
+            error: 'Database tidak tersedia'
+          });
+        }
 
-      if (error || !user) {
-        return res.status(401).json({ success: false, error: 'Invalid token' });
+        // Ambil data admin terbaru
+        const { data: admin, error } = await supabase
+          .from('admins')
+          .select('id, username, full_name, email, role, unit_id, is_active')
+          .eq('id', decoded.id)
+          .eq('is_active', true)
+          .single();
+
+        if (error || !admin) {
+          return res.status(401).json({
+            success: false,
+            error: 'Token tidak valid'
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          user: admin
+        });
+      } catch (error) {
+        return res.status(401).json({
+          success: false,
+          error: 'Token tidak valid atau sudah kadaluarsa'
+        });
       }
+    }
 
-      const { data: userData } = await supabase
-        .from('users')
-        .select('*, units(name, code), roles(name, permissions)')
-        .eq('id', user.id)
-        .single();
-
-      return res.json({
+    // Logout endpoint
+    if (path === '/logout' && req.method === 'POST') {
+      return res.status(200).json({
         success: true,
-        user,
-        userData: userData || null
+        message: 'Logout berhasil'
       });
     }
 
-    return res.status(404).json({ error: 'Endpoint not found' });
+    return res.status(404).json({
+      success: false,
+      error: 'Endpoint tidak ditemukan'
+    });
 
   } catch (error: any) {
+    console.error('Error in auth handler:', error);
     return res.status(500).json({
       success: false,
       error: error.message || 'Internal server error'

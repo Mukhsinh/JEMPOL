@@ -6,98 +6,10 @@
   "functions": {
     "api/**/*.ts": {
       "memory": 1024,
-      "maxDuration": 30
-    },
-    "api/index.ts": {
-      "memory": 3008,
-      "maxDuration": 30
+      "maxDuration": 10
     }
   },
   "rewrites": [
-    {
-      "source": "/api/health",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/auth/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/complaints/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/reports/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/users/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/master-data/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/roles/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/response-templates/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/qr-codes/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/escalation/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/escalation-rules/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/escalation-stats/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/ai-trust-settings/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/external-tickets/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/ai-escalation/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/app-settings/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/ebooks/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/notification-settings/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/ticket-actions/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/units/:path*",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/api/service-categories/:path*",
-      "destination": "/api/index"
-    },
     {
       "source": "/api/public/track-ticket",
       "destination": "/api/public/track-ticket"
@@ -108,7 +20,7 @@
     },
     {
       "source": "/api/public/:path*",
-      "destination": "/api/index"
+      "destination": "/api/public/:path*"
     },
     {
       "source": "/((?!api/).*)",
@@ -125,15 +37,11 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization, Accept"
-        },
-        {
-          "key": "Access-Control-Allow-Credentials",
-          "value": "true"
+          "value": "Content-Type, Authorization"
         }
       ]
     }

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { supabase } from '../../utils/supabaseClient';
 
 interface TicketInfo {
   ticket_number: string;
@@ -18,6 +17,59 @@ export default function TrackTicket() {
   const [error, setError] = useState('');
   const [ticketInfo, setTicketInfo] = useState<TicketInfo | null>(null);
 
+  const handleSearchWithTicket = async (ticket: string) => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3004';
+      const url = `${apiUrl}/api/public/track-ticket?ticket=${encodeURIComponent(ticket)}`;
+      
+      console.log('🔍 Fetching ticket from:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.log('❌ Response bukan JSON:', contentType);
+        const text = await response.text();
+        console.log('❌ Response text:', text);
+        throw new Error('Server mengembalikan response yang tidak valid. Silakan coba lagi.');
+      }
+
+      const data = await response.json();
+      console.log('✅ Response data:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Gagal melacak tiket');
+      }
+
+      if (data.success && data.data?.ticket) {
+        const ticketData = data.data.ticket;
+        setTicketInfo({
+          ticket_number: ticketData.ticket_number,
+          title: ticketData.title,
+          description: ticketData.description,
+          status: ticketData.status,
+          priority: ticketData.priority,
+          created_at: ticketData.created_at,
+          unit_name: ticketData.unit?.name,
+          category_name: ticketData.category?.name
+        });
+      } else {
+        throw new Error('Data tiket tidak valid');
+      }
+    } catch (err: any) {
+      console.error('❌ Error tracking ticket:', err);
+      throw err;
+    }
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -31,47 +83,9 @@ export default function TrackTicket() {
     setTicketInfo(null);
 
     try {
-      // Cari tiket berdasarkan nomor tiket
-      const { data, error: searchError } = await supabase
-        .from('complaints')
-        .select(`
-          id,
-          ticket_number,
-          title,
-          description,
-          status,
-          priority,
-          created_at,
-          units:unit_id (name),
-          service_categories:category_id (name)
-        `)
-        .eq('ticket_number', ticketNumber.trim())
-        .single();
-
-      if (searchError) {
-        if (searchError.code === 'PGRST116') {
-          setError('Tiket tidak ditemukan. Periksa kembali nomor tiket Anda.');
-        } else {
-          setError('Terjadi kesalahan saat mencari tiket.');
-        }
-        return;
-      }
-
-      if (data) {
-        setTicketInfo({
-          ticket_number: data.ticket_number,
-          title: data.title,
-          description: data.description,
-          status: data.status,
-          priority: data.priority,
-          created_at: data.created_at,
-          unit_name: data.units?.name,
-          category_name: data.service_categories?.name
-        });
-      }
-    } catch (err) {
-      console.error('Error searching ticket:', err);
-      setError('Terjadi kesalahan saat mencari tiket.');
+      await handleSearchWithTicket(ticketNumber.trim());
+    } catch (err: any) {
+      setError(err.message || 'Terjadi kesalahan saat mencari tiket.');
     } finally {
       setLoading(false);
     }

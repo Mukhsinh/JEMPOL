@@ -281,6 +281,11 @@ const DirectInternalTicketForm: React.FC = () => {
       const apiEndpoint = '/api/public/internal-tickets';
 
       console.log('🌐 API Endpoint:', apiEndpoint);
+      console.log('🌐 Request method: POST');
+      console.log('🌐 Request headers:', {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      });
 
       const response = await fetch(apiEndpoint, {
         method: 'POST',
@@ -292,13 +297,21 @@ const DirectInternalTicketForm: React.FC = () => {
       });
       
       console.log('📥 Response status:', response.status);
+      console.log('📥 Response statusText:', response.statusText);
       console.log('📥 Response headers:', response.headers.get('content-type'));
       
       // Cek apakah response adalah JSON
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        console.error('❌ Non-JSON response:', text.substring(0, 200));
+        console.error('❌ Non-JSON response:', text.substring(0, 500));
+        console.error('❌ Full response length:', text.length);
+        
+        // Coba parse sebagai HTML untuk mendapatkan error message
+        if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+          throw new Error('Server mengembalikan halaman HTML. Kemungkinan endpoint tidak ditemukan atau ada error routing.');
+        }
+        
         throw new Error('Server mengembalikan response yang tidak valid (bukan JSON)');
       }
       
@@ -306,32 +319,82 @@ const DirectInternalTicketForm: React.FC = () => {
       console.log('📥 Response data:', result);
 
       if (response.ok && result.success) {
+        console.log('✅ Tiket berhasil dibuat:', result.ticket_number);
         setTicketNumber(result.ticket_number || 'INT-' + Date.now());
         setSubmitted(true);
+        
+        // Tampilkan notifikasi sukses
+        if (window.alert) {
+          setTimeout(() => {
+            alert(`✅ Tiket berhasil dibuat!\n\nNomor Tiket: ${result.ticket_number}\n\nSimpan nomor ini untuk melacak status tiket Anda.`);
+          }, 500);
+        }
       } else {
-        setError(result.error || 'Gagal mengirim tiket');
+        const errorMsg = result.error || result.message || 'Gagal mengirim tiket';
+        console.error('❌ Server error:', errorMsg);
+        console.error('❌ Full error response:', result);
+        setError(errorMsg);
+        
+        // Tampilkan notifikasi error
+        if (window.alert) {
+          alert(`❌ Gagal membuat tiket\n\n${errorMsg}`);
+        }
       }
     } catch (err: any) {
       console.error('❌ Submit error:', err);
+      console.error('❌ Error type:', err.constructor.name);
+      console.error('❌ Error message:', err.message);
+      console.error('❌ Error stack:', err.stack);
       
       let errorMessage = 'Terjadi kesalahan saat mengirim tiket';
       if (err.message.includes('JSON')) {
-        errorMessage = 'Server mengembalikan response yang tidak valid. Silakan coba lagi.';
-      } else if (err.message.includes('Network')) {
+        errorMessage = 'Server mengembalikan response yang tidak valid. Silakan coba lagi atau hubungi administrator.';
+      } else if (err.message.includes('Network') || err.message.includes('Failed to fetch')) {
         errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+      } else if (err.message.includes('HTML') || err.message.includes('routing')) {
+        errorMessage = 'Endpoint API tidak ditemukan. Silakan hubungi administrator.';
       } else if (err.message) {
         errorMessage = err.message;
       }
       
       setError(errorMessage);
+      
+      // Tampilkan notifikasi error
+      if (window.alert) {
+        alert(`❌ Error\n\n${errorMessage}`);
+      }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    try {
+      await downloadInternalTicketPDF({
+        ticketNumber,
+        reporterName: formData.reporter_name,
+        reporterEmail: formData.reporter_email,
+        reporterPhone: formData.reporter_phone,
+        department: formData.reporter_department,
+        position: formData.reporter_position,
+        category: categories.find(c => c.value === formData.category)?.label || formData.category,
+        priority: formData.priority,
+        title: formData.title,
+        description: formData.description,
+        unitName: units.find(u => u.id === formData.unit_id)?.name || formData.reporter_department,
+        submittedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert('Gagal mengunduh PDF. Silakan coba lagi.');
     }
   };
 
   const resetForm = () => {
     setSubmitted(false);
     setCurrentStep(1);
+    setTicketNumber('');
+    setError('');
     setFormData({
       reporter_name: '',
       reporter_email: '',

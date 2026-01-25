@@ -36,26 +36,32 @@ async function generateTicketNumber(): Promise<string> {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CRITICAL: Set headers PERTAMA SEBELUM SEMUA LOGIC
-  try {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  } catch (headerError) {
-    console.error('❌ Failed to set headers:', headerError);
-  }
+  // Gunakan try-catch untuk setiap setHeader untuk menghindari error
+  const setHeaderSafe = (key: string, value: string) => {
+    try {
+      res.setHeader(key, value);
+    } catch (e) {
+      console.error(`Failed to set header ${key}:`, e);
+    }
+  };
+
+  setHeaderSafe('Access-Control-Allow-Origin', '*');
+  setHeaderSafe('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  setHeaderSafe('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  setHeaderSafe('Content-Type', 'application/json; charset=utf-8');
+  setHeaderSafe('Cache-Control', 'no-cache, no-store, must-revalidate');
   
   // PERBAIKAN: Wrapper try-catch untuk memastikan SELALU return JSON
   try {
     console.log('🎯 Vercel Function: /api/public/internal-tickets');
     console.log('📍 Method:', req.method);
     console.log('📍 URL:', req.url);
+    console.log('📍 Headers:', JSON.stringify(req.headers, null, 2));
     
-    // Handle OPTIONS request
+    // Handle OPTIONS request (CORS preflight)
     if (req.method === 'OPTIONS') {
       console.log('✅ OPTIONS request handled');
-      return res.status(200).json({ success: true });
+      return res.status(200).json({ success: true, message: 'CORS preflight OK' });
     }
 
     // Only allow POST
@@ -64,7 +70,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(405).json({
         success: false,
         error: `Method ${req.method} not allowed. Use POST method.`,
-        allowed_methods: ['POST', 'OPTIONS']
+        allowed_methods: ['POST', 'OPTIONS'],
+        received_method: req.method
       });
     }
 
@@ -348,20 +355,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('❌ Error name:', error.name);
     console.error('❌ Error message:', error.message);
     
-    // PERBAIKAN: Pastikan header JSON tetap di-set
+    // PERBAIKAN: Pastikan header JSON tetap di-set dengan safe method
     try {
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Access-Control-Allow-Origin', '*');
     } catch (headerError) {
       console.error('❌ Cannot set header:', headerError);
     }
     
     // Return JSON valid dengan informasi error lengkap
-    return res.status(500).json({
+    // Pastikan tidak ada HTML yang bocor
+    const errorResponse = {
       success: false,
       error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
       error_type: error.name || 'UnknownError',
-      details: error.stack?.split('\n').slice(0, 3).join('\n') || null,
-      timestamp: new Date().toISOString()
-    });
+      details: process.env.NODE_ENV === 'development' ? error.stack?.split('\n').slice(0, 3).join('\n') : null,
+      timestamp: new Date().toISOString(),
+      endpoint: '/api/public/internal-tickets'
+    };
+    
+    // Pastikan response adalah JSON murni
+    res.status(500);
+    res.json(errorResponse);
+    return;
   }
 }

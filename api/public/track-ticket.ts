@@ -47,7 +47,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
     
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    });
     console.log('✅ Supabase client initialized');
     
     // Fetch ticket dengan nomor tiket
@@ -72,8 +77,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('ticket_number', ticketNumber)
       .single();
 
-    if (ticketError || !ticket) {
-      console.error('❌ Tiket tidak ditemukan:', ticketError);
+    if (ticketError) {
+      console.error('❌ Error fetching ticket:', ticketError);
+      return res.status(404).json({
+        success: false,
+        error: 'Tiket tidak ditemukan'
+      });
+    }
+
+    if (!ticket) {
+      console.error('❌ Tiket tidak ditemukan');
       return res.status(404).json({
         success: false,
         error: 'Tiket tidak ditemukan'

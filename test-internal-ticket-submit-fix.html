@@ -3,300 +3,385 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Submit Tiket Internal - Fixed</title>
+    <title>Test Submit Internal Ticket - FIXED</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 800px;
             margin: 50px auto;
             padding: 20px;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
         .container {
             background: white;
             padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
         h1 {
-            color: #333;
-            border-bottom: 3px solid #4CAF50;
-            padding-bottom: 10px;
+            color: #667eea;
+            margin-bottom: 10px;
         }
-        .form-group {
-            margin-bottom: 20px;
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
         }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        textarea {
-            min-height: 100px;
-            resize: vertical;
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
         }
         button {
-            background: #4CAF50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 12px 30px;
             border: none;
-            border-radius: 5px;
+            padding: 12px 30px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
+            margin: 5px;
+            transition: transform 0.2s;
         }
         button:hover {
-            background: #45a049;
+            transform: translateY(-2px);
         }
         button:disabled {
-            background: #ccc;
+            opacity: 0.5;
             cursor: not-allowed;
-        }
-        .result {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 5px;
-            display: none;
         }
         .success {
             background: #d4edda;
-            border: 1px solid #c3e6cb;
+            border-left-color: #28a745;
             color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
         }
         .error {
             background: #f8d7da;
-            border: 1px solid #f5c6cb;
+            border-left-color: #dc3545;
             color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
         }
         .info {
             background: #d1ecf1;
-            border: 1px solid #bee5eb;
+            border-left-color: #17a2b8;
             color: #0c5460;
             padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            border-radius: 8px;
+            margin: 10px 0;
         }
         pre {
-            background: #f4f4f4;
-            padding: 10px;
-            border-radius: 5px;
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
             overflow-x: auto;
+            font-size: 13px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
             font-size: 12px;
         }
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
+        .log-success { border-left: 3px solid #28a745; }
+        .log-error { border-left: 3px solid #dc3545; }
+        .log-info { border-left: 3px solid #17a2b8; }
+        .log-warning { border-left: 3px solid #ffc107; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 15px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
         }
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #4CAF50;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        label {
+            font-weight: bold;
+            color: #333;
+            display: block;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎫 Test Submit Tiket Internal - Fixed</h1>
-        
-        <div class="info">
-            <strong>📋 Perbaikan yang Diterapkan:</strong>
-            <ul>
-                <li>✅ Validasi input yang lebih ketat</li>
-                <li>✅ Error handling yang lebih detail</li>
-                <li>✅ Logging yang lebih lengkap</li>
-                <li>✅ Response handling yang lebih baik</li>
-                <li>✅ Timeout 30 detik untuk request</li>
-                <li>✅ Adopsi pola dari external tickets yang berhasil</li>
-            </ul>
+        <h1>🔧 Test Submit Internal Ticket - FIXED</h1>
+        <p class="subtitle">Test endpoint /api/public/internal-tickets dengan perbaikan error handling</p>
+
+        <div class="test-section">
+            <h3>📝 Form Data</h3>
+            
+            <label>Nama Pelapor *</label>
+            <input type="text" id="reporter_name" value="Test User" required>
+            
+            <label>Email *</label>
+            <input type="email" id="reporter_email" value="test@example.com" required>
+            
+            <label>Telepon</label>
+            <input type="tel" id="reporter_phone" value="081234567890">
+            
+            <label>Unit ID * (UUID)</label>
+            <input type="text" id="unit_id" value="7bac7321-86e2-4dce-936d-2adde223c314" required>
+            <small style="color: #666;">Contoh: 7bac7321-86e2-4dce-936d-2adde223c314 (Jlamprang)</small>
+            
+            <label>Departemen</label>
+            <input type="text" id="reporter_department" value="Jlamprang">
+            
+            <label>Jabatan</label>
+            <input type="text" id="reporter_position" value="Perawat">
+            
+            <label>Kategori *</label>
+            <select id="category" required>
+                <option value="it_support">IT Support</option>
+                <option value="facility">Fasilitas</option>
+                <option value="equipment">Peralatan</option>
+                <option value="hr">SDM</option>
+                <option value="admin">Administrasi</option>
+                <option value="other">Lainnya</option>
+            </select>
+            
+            <label>Prioritas *</label>
+            <select id="priority" required>
+                <option value="low">Rendah</option>
+                <option value="medium" selected>Sedang</option>
+                <option value="high">Tinggi</option>
+                <option value="critical">Kritis</option>
+            </select>
+            
+            <label>Judul *</label>
+            <input type="text" id="title" value="Test Tiket Internal" required>
+            
+            <label>Deskripsi *</label>
+            <textarea id="description" rows="4" required>Ini adalah test tiket internal untuk memverifikasi endpoint API berfungsi dengan baik.</textarea>
+            
+            <label>QR Code (opsional)</label>
+            <input type="text" id="qr_code" value="" placeholder="QR-XXXXXXXX">
+            
+            <button onclick="testSubmit()" id="submitBtn">🚀 Submit Tiket</button>
+            <button onclick="testEndpoint()" style="background: #17a2b8;">🔍 Test Endpoint</button>
+            <button onclick="clearLogs()" style="background: #6c757d;">🗑️ Clear Logs</button>
         </div>
 
-        <form id="ticketForm">
-            <div class="form-group">
-                <label for="title">Judul Tiket *</label>
-                <input type="text" id="title" required placeholder="Masukkan judul tiket">
-            </div>
-
-            <div class="form-group">
-                <label for="description">Deskripsi *</label>
-                <textarea id="description" required placeholder="Jelaskan detail masalah"></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="category_id">Kategori ID *</label>
-                <input type="text" id="category_id" required placeholder="Masukkan category_id (UUID)">
-                <small style="color: #666;">Contoh: 123e4567-e89b-12d3-a456-426614174000</small>
-            </div>
-
-            <div class="form-group">
-                <label for="priority">Prioritas *</label>
-                <select id="priority" required>
-                    <option value="">Pilih prioritas</option>
-                    <option value="low">Rendah</option>
-                    <option value="medium" selected>Sedang</option>
-                    <option value="high">Tinggi</option>
-                    <option value="critical">Kritis</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="unit_id">Unit ID *</label>
-                <input type="text" id="unit_id" required placeholder="Masukkan unit_id (UUID)">
-                <small style="color: #666;">Contoh: 123e4567-e89b-12d3-a456-426614174000</small>
-            </div>
-
-            <div class="form-group">
-                <label for="reporter_name">Nama Pelapor</label>
-                <input type="text" id="reporter_name" value="Staff Internal" placeholder="Nama pelapor">
-            </div>
-
-            <div class="form-group">
-                <label for="reporter_email">Email Pelapor</label>
-                <input type="email" id="reporter_email" value="staff@internal.com" placeholder="Email pelapor">
-            </div>
-
-            <button type="submit">Kirim Tiket Internal</button>
-        </form>
-
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Mengirim tiket...</p>
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div id="results"></div>
         </div>
 
-        <div class="result" id="result"></div>
+        <div class="test-section">
+            <h3>📋 Logs</h3>
+            <div id="logs"></div>
+        </div>
     </div>
 
     <script>
-        const API_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:5000/api'
-            : '/api';
+        function addLog(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsDiv.insertBefore(logEntry, logsDiv.firstChild);
+        }
 
-        document.getElementById('ticketForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const resultDiv = document.getElementById('result');
-            const loadingDiv = document.getElementById('loading');
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            
-            // Reset
-            resultDiv.style.display = 'none';
-            resultDiv.className = 'result';
-            loadingDiv.style.display = 'block';
-            submitBtn.disabled = true;
-            
-            // Ambil data form
-            const data = {
-                title: document.getElementById('title').value,
-                description: document.getElementById('description').value,
-                category_id: document.getElementById('category_id').value,
-                priority: document.getElementById('priority').value,
-                unit_id: document.getElementById('unit_id').value,
-                reporter_name: document.getElementById('reporter_name').value || 'Staff Internal',
-                reporter_email: document.getElementById('reporter_email').value || 'staff@internal.com',
-                reporter_phone: '',
-                reporter_department: '',
-                reporter_position: '',
-                source: 'web'
-            };
-            
-            console.log('📤 Mengirim data:', data);
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
+            addLog('Logs cleared', 'info');
+        }
+
+        async function testEndpoint() {
+            addLog('Testing endpoint availability...', 'info');
+            const resultsDiv = document.getElementById('results');
             
             try {
-                const response = await fetch(`${API_URL}/public/internal-tickets`, {
+                // Test OPTIONS (CORS preflight)
+                addLog('Sending OPTIONS request...', 'info');
+                const optionsResponse = await fetch('/api/public/internal-tickets', {
+                    method: 'OPTIONS'
+                });
+                
+                addLog(`OPTIONS response: ${optionsResponse.status} ${optionsResponse.statusText}`, 
+                    optionsResponse.ok ? 'success' : 'error');
+                
+                // Test GET (should return 405)
+                addLog('Sending GET request (should fail with 405)...', 'info');
+                const getResponse = await fetch('/api/public/internal-tickets', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const contentType = getResponse.headers.get('content-type');
+                addLog(`GET response: ${getResponse.status} ${getResponse.statusText}`, 'warning');
+                addLog(`Content-Type: ${contentType}`, 'info');
+                
+                if (contentType && contentType.includes('application/json')) {
+                    const data = await getResponse.json();
+                    addLog(`GET response data: ${JSON.stringify(data)}`, 'info');
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="info">
+                            <strong>✅ Endpoint Accessible</strong><br>
+                            Status: ${getResponse.status}<br>
+                            Content-Type: ${contentType}<br>
+                            Response: <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    const text = await getResponse.text();
+                    addLog(`GET response is not JSON: ${text.substring(0, 200)}`, 'error');
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ Endpoint Returns HTML</strong><br>
+                            Status: ${getResponse.status}<br>
+                            Content-Type: ${contentType}<br>
+                            This indicates a routing problem!<br>
+                            <pre>${text.substring(0, 500)}</pre>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                addLog(`Error testing endpoint: ${error.message}`, 'error');
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ Error</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function testSubmit() {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Submitting...';
+            
+            addLog('Starting submit test...', 'info');
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                const payload = {
+                    reporter_name: document.getElementById('reporter_name').value,
+                    reporter_email: document.getElementById('reporter_email').value,
+                    reporter_phone: document.getElementById('reporter_phone').value,
+                    reporter_department: document.getElementById('reporter_department').value,
+                    reporter_position: document.getElementById('reporter_position').value,
+                    category: document.getElementById('category').value,
+                    priority: document.getElementById('priority').value,
+                    title: document.getElementById('title').value,
+                    description: document.getElementById('description').value,
+                    qr_code: document.getElementById('qr_code').value || undefined,
+                    unit_id: document.getElementById('unit_id').value,
+                    source: 'web'
+                };
+                
+                addLog('Payload prepared', 'info');
+                addLog(JSON.stringify(payload, null, 2), 'info');
+                
+                addLog('Sending POST request to /api/public/internal-tickets...', 'info');
+                
+                const response = await fetch('/api/public/internal-tickets', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(payload)
                 });
                 
-                console.log('📥 Response status:', response.status);
-                console.log('📥 Response headers:', [...response.headers.entries()]);
+                addLog(`Response status: ${response.status} ${response.statusText}`, 
+                    response.ok ? 'success' : 'error');
                 
-                // Cek apakah response memiliki content
                 const contentType = response.headers.get('content-type');
-                console.log('📥 Content-Type:', contentType);
+                addLog(`Content-Type: ${contentType}`, 'info');
                 
-                let result;
-                const responseText = await response.text();
-                console.log('📥 Response text:', responseText);
-                
-                if (responseText) {
-                    try {
-                        result = JSON.parse(responseText);
-                    } catch (parseError) {
-                        console.error('❌ Error parsing JSON:', parseError);
-                        throw new Error('Response bukan JSON valid: ' + responseText.substring(0, 100));
-                    }
-                } else {
-                    throw new Error('Response kosong dari server');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    addLog('Response is not JSON!', 'error');
+                    addLog(`Response text (first 500 chars): ${text.substring(0, 500)}`, 'error');
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ Server returned HTML instead of JSON</strong><br>
+                            Status: ${response.status}<br>
+                            Content-Type: ${contentType}<br>
+                            <strong>This indicates:</strong>
+                            <ul>
+                                <li>Endpoint routing issue in Vercel</li>
+                                <li>API function not deployed correctly</li>
+                                <li>Wrong endpoint path</li>
+                            </ul>
+                            <pre>${text.substring(0, 1000)}</pre>
+                        </div>
+                    `;
+                    return;
                 }
                 
-                console.log('✅ Parsed result:', result);
-                
-                loadingDiv.style.display = 'none';
-                resultDiv.style.display = 'block';
+                const result = await response.json();
+                addLog('Response parsed as JSON', 'success');
+                addLog(JSON.stringify(result, null, 2), 'info');
                 
                 if (response.ok && result.success) {
-                    resultDiv.className = 'result success';
-                    resultDiv.innerHTML = `
-                        <h3>✅ Tiket Berhasil Dibuat!</h3>
-                        <p><strong>Nomor Tiket:</strong> ${result.ticket_number || 'N/A'}</p>
-                        <p><strong>Message:</strong> ${result.message || 'Tiket berhasil dibuat'}</p>
-                        <details>
-                            <summary>Detail Response</summary>
+                    addLog(`✅ Ticket created: ${result.ticket_number}`, 'success');
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="success">
+                            <strong>✅ Tiket Berhasil Dibuat!</strong><br>
+                            Nomor Tiket: <strong>${result.ticket_number}</strong><br>
                             <pre>${JSON.stringify(result, null, 2)}</pre>
-                        </details>
+                        </div>
                     `;
                     
-                    // Reset form
-                    document.getElementById('ticketForm').reset();
+                    alert(`✅ Tiket berhasil dibuat!\n\nNomor Tiket: ${result.ticket_number}`);
                 } else {
-                    resultDiv.className = 'result error';
-                    resultDiv.innerHTML = `
-                        <h3>❌ Gagal Membuat Tiket</h3>
-                        <p><strong>Error:</strong> ${result.error || 'Unknown error'}</p>
-                        ${result.details ? `<p><strong>Details:</strong> ${result.details}</p>` : ''}
-                        ${result.error_code ? `<p><strong>Error Code:</strong> ${result.error_code}</p>` : ''}
-                        <details>
-                            <summary>Full Response</summary>
+                    addLog(`❌ Failed: ${result.error || 'Unknown error'}`, 'error');
+                    
+                    resultsDiv.innerHTML = `
+                        <div class="error">
+                            <strong>❌ Gagal Membuat Tiket</strong><br>
+                            Error: ${result.error || 'Unknown error'}<br>
                             <pre>${JSON.stringify(result, null, 2)}</pre>
-                        </details>
+                        </div>
                     `;
+                    
+                    alert(`❌ Gagal membuat tiket\n\n${result.error || 'Unknown error'}`);
                 }
+                
             } catch (error) {
-                console.error('❌ Error:', error);
-                loadingDiv.style.display = 'none';
-                resultDiv.style.display = 'block';
-                resultDiv.className = 'result error';
-                resultDiv.innerHTML = `
-                    <h3>❌ Terjadi Kesalahan</h3>
-                    <p><strong>Error:</strong> ${error.message}</p>
-                    <details>
-                        <summary>Error Details</summary>
-                        <pre>${error.stack || error.toString()}</pre>
-                    </details>
+                addLog(`❌ Exception: ${error.message}`, 'error');
+                addLog(`Error stack: ${error.stack}`, 'error');
+                
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <strong>❌ Exception Occurred</strong><br>
+                        ${error.message}<br>
+                        <pre>${error.stack}</pre>
+                    </div>
                 `;
+                
+                alert(`❌ Error\n\n${error.message}`);
             } finally {
                 submitBtn.disabled = false;
+                submitBtn.textContent = '🚀 Submit Tiket';
             }
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            addLog('Page loaded', 'success');
+            addLog('Ready to test', 'info');
         });
     </script>
 </body>
