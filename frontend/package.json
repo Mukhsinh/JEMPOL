@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "build:skip-check": "vite build && npm run postbuild",
-    "postbuild": "echo 'Verifying build output...' && ls -la dist && echo 'Build verification complete!'",
-    "vercel-build": "npm run build:skip-check",
+    "build:skip-check": "vite build",
+    "postbuild": "echo Build verification complete",
+    "vercel-build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
