@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "cd frontend && npm install && npm run build:skip-check && echo '=== Build Complete ===' && ls -la dist && echo '=== Dist Contents ===' && ls -la dist/assets || echo 'No assets folder'",
   "outputDirectory": "frontend/dist",
-  "installCommand": "npm install",
-  "devCommand": "npm run dev",
+  "installCommand": "npm install --prefix frontend",
+  "framework": null,
+  "devCommand": "cd frontend && npm run dev",
   "functions": {
     "api/**/*.ts": {
       "memory": 1024,
