@@ -30,6 +30,8 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     minify: 'esbuild',
     cssCodeSplit: true,
+    sourcemap: false,
+    reportCompressedSize: false,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -43,8 +45,6 @@ export default defineConfig({
         },
       },
     },
-    sourcemap: false,
-    reportCompressedSize: false,
   },
   esbuild: {
     drop: ['console', 'debugger'],
