@@ -369,31 +369,125 @@ const DirectSurveyForm: React.FC = () => {
 
       console.log('🌐 API Endpoint:', apiEndpoint);
 
-      const response = await fetch(apiEndpoint, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(surveyData)
-      });
-      
-      console.log('📥 Response status:', response.status);
-      console.log('📥 Response headers:', response.headers.get('content-type'));
-      
-      // Cek apakah response adalah JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('❌ Non-JSON response:', text);
-        throw new Error(`Server mengembalikan response yang tidak valid (${response.status}). Silakan coba lagi.`);
+      let result;
+      let usedFallback = false;
+
+      try {
+        const response = await fetch(apiEndpoint, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(surveyData)
+        });
+        
+        console.log('📥 Response status:', response.status);
+        
+        // Jika 404, gunakan fallback langsung ke Supabase
+        if (response.status === 404) {
+          console.log('⚠️ API endpoint tidak ditemukan (404), menggunakan fallback ke Supabase');
+          usedFallback = true;
+          
+          // Import dan gunakan fallback
+          const { submitSurveyDirectly } = await import('../../utils/surveyFallback');
+          
+          // Konversi format data untuk fallback
+          const fallbackData = {
+            unit_id: unitId,
+            visitor_name: formData.is_anonymous ? null : formData.full_name,
+            phone: formData.phone,
+            is_anonymous: formData.is_anonymous,
+            age: formData.age,
+            gender: formData.gender,
+            education: formData.education,
+            job: formData.job,
+            patient_type: formData.patient_type,
+            service_type: formData.service_type,
+            kota_kabupaten: formData.kota_kabupaten,
+            kecamatan: formData.kecamatan,
+            alamat_detail: formData.alamat_detail,
+            q1: formData.u1,
+            q2: formData.u2,
+            q3: formData.u3,
+            q4: formData.u4,
+            q5: formData.u5,
+            q6: formData.u6,
+            q7: formData.u7,
+            q8: formData.u8,
+            q9: formData.u9,
+            q10: formData.u10,
+            q11: formData.u11,
+            overall_satisfaction: formData.overall_satisfaction,
+            suggestions: formData.suggestions,
+            qr_code: qrCode
+          };
+          
+          result = await submitSurveyDirectly(fallbackData);
+        } else {
+          // Cek apakah response adalah JSON
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('❌ Non-JSON response:', text);
+            throw new Error(`Server mengembalikan response yang tidak valid (${response.status}). Silakan coba lagi.`);
+          }
+          
+          result = await response.json();
+          console.log('📥 Response data:', result);
+          
+          if (!response.ok) {
+            throw new Error(result.error || 'Gagal mengirim survei');
+          }
+        }
+      } catch (fetchError: any) {
+        console.error('❌ Fetch error:', fetchError);
+        
+        // Jika error network atau timeout, gunakan fallback
+        if (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError')) {
+          console.log('⚠️ Network error, menggunakan fallback ke Supabase');
+          usedFallback = true;
+          
+          const { submitSurveyDirectly } = await import('../../utils/surveyFallback');
+          
+          const fallbackData = {
+            unit_id: unitId,
+            visitor_name: formData.is_anonymous ? null : formData.full_name,
+            phone: formData.phone,
+            is_anonymous: formData.is_anonymous,
+            age: formData.age,
+            gender: formData.gender,
+            education: formData.education,
+            job: formData.job,
+            patient_type: formData.patient_type,
+            service_type: formData.service_type,
+            kota_kabupaten: formData.kota_kabupaten,
+            kecamatan: formData.kecamatan,
+            alamat_detail: formData.alamat_detail,
+            q1: formData.u1,
+            q2: formData.u2,
+            q3: formData.u3,
+            q4: formData.u4,
+            q5: formData.u5,
+            q6: formData.u6,
+            q7: formData.u7,
+            q8: formData.u8,
+            q9: formData.u9,
+            q10: formData.u10,
+            q11: formData.u11,
+            overall_satisfaction: formData.overall_satisfaction,
+            suggestions: formData.suggestions,
+            qr_code: qrCode
+          };
+          
+          result = await submitSurveyDirectly(fallbackData);
+        } else {
+          throw fetchError;
+        }
       }
       
-      const result = await response.json();
-      console.log('📥 Response data:', result);
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Gagal mengirim survei');
+      if (usedFallback) {
+        console.log('✅ Survey berhasil dikirim via fallback');
       }
       
       // Simpan data untuk PDF
