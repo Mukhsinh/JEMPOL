@@ -2,6 +2,6 @@
   "framework": null,
   "devCommand": null,
   "installCommand": "npm install",
-  "buildCommand": "cd frontend && npm install && npm run build:skip-check",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "frontend/dist"
 }
