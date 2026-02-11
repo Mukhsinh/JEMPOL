@@ -117,479 +117,715 @@ export interface AITrustSetting {
   updated_at: string;
 }
 
-// Helper function untuk fallback ke Supabase langsung
-const withSupabaseFallback = async <T>(
-  primaryEndpoint: string,
-  tableName: string,
-  defaultData: T[] = []
-): Promise<T[]> => {
-  // Di Vercel production, langsung gunakan Supabase dengan retry
-  if (isVercelProduction()) {
-    let retries = 3;
-    while (retries > 0) {
-      try {
-        console.log(`🔍 Fetching ${tableName} from Supabase (attempt ${4 - retries}/3)...`);
-        const { data, error } = await supabase
-          .from(tableName)
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error(`❌ Supabase error for ${tableName}:`, error.message);
-          throw error;
-        }
-        
-        console.log(`✅ ${tableName} fetched successfully:`, data?.length || 0, 'records');
-        return data || defaultData;
-      } catch (error: any) {
-        retries--;
-        console.error(`⚠️ Supabase direct ${tableName} failed (${retries} retries left):`, error.message);
-        if (retries > 0) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-    }
-    console.log(`📋 Using default data for ${tableName}:`, defaultData.length, 'records');
-    return defaultData;
-  }
-  
-  try {
-    console.log(`Trying primary endpoint: ${primaryEndpoint}`);
-    const response = await api.get(primaryEndpoint);
-    console.log(`Primary endpoint ${primaryEndpoint} success:`, response.data?.length || 0, 'records');
-    return response.data || [];
-  } catch (error: any) {
-    console.warn(`Primary endpoint ${primaryEndpoint} failed, trying Supabase direct...`, error.message);
-    try {
-      const { data, error: supaError } = await supabase
-        .from(tableName)
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (supaError) throw supaError;
-      console.log(`Supabase direct ${tableName} success:`, data?.length || 0, 'records');
-      return data || defaultData;
-    } catch (fallbackError: any) {
-      console.error(`Supabase direct ${tableName} also failed:`, fallbackError.message);
-      console.log(`Using default data for ${primaryEndpoint}:`, defaultData.length, 'records');
-      return defaultData;
-    }
-  }
-};
-
 // Unit Types
 export const getUnitTypes = async (): Promise<UnitType[]> => {
-  // Di Vercel production, langsung gunakan Supabase
-  if (isVercelProduction()) {
-    const result = await supabaseService.getUnitTypes();
-    return result.data || [];
+  try {
+    console.log('🔍 Fetching unit_types from Supabase...');
+    const { data, error } = await supabase
+      .from('unit_types')
+      .select('*')
+      .order('name');
+    
+    if (error) {
+      console.error('❌ Supabase error for unit_types:', error.message);
+      throw error;
+    }
+    
+    console.log('✅ unit_types fetched:', data?.length || 0, 'records');
+    return data || [];
+  } catch (error: any) {
+    console.error('⚠️ Failed to fetch unit_types:', error.message);
+    return [];
   }
-  
-  return withSupabaseFallback<UnitType>(
-    '/master-data/unit-types',
-    'unit_types',
-    [
-      {
-        id: '1',
-        name: 'Administratif',
-        code: 'ADM',
-        description: 'Unit Administratif',
-        icon: 'business',
-        color: '#6B7280',
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      },
-      {
-        id: '2',
-        name: 'Layanan Medis',
-        code: 'MED',
-        description: 'Unit Layanan Medis',
-        icon: 'local_hospital',
-        color: '#3B82F6',
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
-    ]
-  );
 };
 
 export const createUnitType = async (unitType: Omit<UnitType, 'id' | 'created_at' | 'updated_at'>): Promise<UnitType> => {
   try {
-    console.log('📤 Creating unit type via API:', unitType);
-    const response = await api.post('/master-data/unit-types', unitType);
-    console.log('✅ API create success:', response.data);
-    return response.data;
+    console.log('📤 Creating unit type:', unitType);
+    const { data, error } = await supabase
+      .from('unit_types')
+      .insert(unitType)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase create failed:', error);
+      throw error;
+    }
+    console.log('✅ Unit type created:', data);
+    return data;
   } catch (error: any) {
-    console.error('❌ API create failed:', error.message);
-    throw new Error(error.response?.data?.error || 'Gagal menambahkan tipe unit. Pastikan backend berjalan.');
+    console.error('❌ Error creating unit type:', error);
+    throw new Error(error.message || 'Gagal menambahkan tipe unit');
   }
 };
 
 export const updateUnitType = async (id: string, unitType: Partial<UnitType>): Promise<UnitType> => {
-  const response = await api.put(`/master-data/unit-types/${id}`, unitType);
-  return response.data;
+  try {
+    console.log('📤 Updating unit type:', id, unitType);
+    const { data, error } = await supabase
+      .from('unit_types')
+      .update({ ...unitType, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase update failed:', error);
+      throw error;
+    }
+    console.log('✅ Unit type updated:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating unit type:', error);
+    throw new Error(error.message || 'Gagal update tipe unit');
+  }
 };
 
 export const deleteUnitType = async (id: string): Promise<void> => {
-  await api.delete(`/master-data/unit-types/${id}`);
+  try {
+    console.log('🗑️ Deleting unit type:', id);
+    const { error } = await supabase
+      .from('unit_types')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('❌ Supabase delete failed:', error);
+      throw error;
+    }
+    console.log('✅ Unit type deleted');
+  } catch (error: any) {
+    console.error('❌ Error deleting unit type:', error);
+    throw new Error(error.message || 'Gagal hapus tipe unit');
+  }
 };
 
 // Service Categories
 export const getServiceCategories = async (): Promise<ServiceCategory[]> => {
-  // Di Vercel production, langsung gunakan Supabase
-  if (isVercelProduction()) {
-    const result = await supabaseService.getServiceCategories();
-    return result.data || [];
+  try {
+    console.log('🔍 Fetching service_categories from Supabase...');
+    const { data, error } = await supabase
+      .from('service_categories')
+      .select('*')
+      .order('name');
+    
+    if (error) {
+      console.error('❌ Supabase error for service_categories:', error.message);
+      throw error;
+    }
+    
+    console.log('✅ service_categories fetched:', data?.length || 0, 'records');
+    return data || [];
+  } catch (error: any) {
+    console.error('⚠️ Failed to fetch service_categories:', error.message);
+    return [];
   }
-  
-  return withSupabaseFallback<ServiceCategory>(
-    '/master-data/service-categories',
-    'service_categories'
-  );
 };
 
 export const createServiceCategory = async (category: Omit<ServiceCategory, 'id' | 'created_at' | 'updated_at'>): Promise<ServiceCategory> => {
-  const response = await api.post('/master-data/service-categories', category);
-  return response.data;
+  try {
+    console.log('📤 Creating service category:', category);
+    const { data, error } = await supabase
+      .from('service_categories')
+      .insert(category)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase create failed:', error);
+      throw error;
+    }
+    console.log('✅ Service category created:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error creating service category:', error);
+    throw new Error(error.message || 'Gagal menambahkan kategori layanan');
+  }
 };
 
 export const updateServiceCategory = async (id: string, category: Partial<ServiceCategory>): Promise<ServiceCategory> => {
-  const response = await api.put(`/master-data/service-categories/${id}`, category);
-  return response.data;
+  try {
+    console.log('📤 Updating service category:', id, category);
+    const { data, error } = await supabase
+      .from('service_categories')
+      .update({ ...category, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase update failed:', error);
+      throw error;
+    }
+    console.log('✅ Service category updated:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating service category:', error);
+    throw new Error(error.message || 'Gagal update kategori layanan');
+  }
 };
 
 export const deleteServiceCategory = async (id: string): Promise<void> => {
-  await api.delete(`/master-data/service-categories/${id}`);
+  try {
+    console.log('🗑️ Deleting service category:', id);
+    const { error } = await supabase
+      .from('service_categories')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('❌ Supabase delete failed:', error);
+      throw error;
+    }
+    console.log('✅ Service category deleted');
+  } catch (error: any) {
+    console.error('❌ Error deleting service category:', error);
+    throw new Error(error.message || 'Gagal hapus kategori layanan');
+  }
 };
 
 // Ticket Types
 export const getTicketTypes = async (): Promise<TicketType[]> => {
-  // Di Vercel production, langsung gunakan Supabase
-  if (isVercelProduction()) {
-    try {
-      console.log('🔍 Fetching ticket_types from Supabase...');
-      const { data, error } = await supabase
-        .from('ticket_types')
-        .select('*')
-        .order('name');
-      
-      if (error) {
-        console.error('❌ Supabase error for ticket_types:', error.message);
-        throw error;
-      }
-      
-      console.log('✅ ticket_types fetched successfully:', data?.length || 0, 'records');
-      return data || [];
-    } catch (error: any) {
-      console.error('⚠️ Failed to fetch ticket_types:', error.message);
-      return [];
+  try {
+    console.log('🔍 Fetching ticket_types from Supabase...');
+    const { data, error } = await supabase
+      .from('ticket_types')
+      .select('*')
+      .order('name');
+    
+    if (error) {
+      console.error('❌ Supabase error for ticket_types:', error.message);
+      throw error;
     }
+    
+    console.log('✅ ticket_types fetched:', data?.length || 0, 'records');
+    return data || [];
+  } catch (error: any) {
+    console.error('⚠️ Failed to fetch ticket_types:', error.message);
+    return [];
   }
-  
-  return withSupabaseFallback<TicketType>(
-    '/master-data/ticket-types',
-    'ticket_types'
-  );
 };
 
 export const createTicketType = async (ticketType: Omit<TicketType, 'id' | 'created_at' | 'updated_at'>): Promise<TicketType> => {
-  const response = await api.post('/master-data/ticket-types', ticketType);
-  return response.data;
+  try {
+    console.log('📤 Creating ticket type:', ticketType);
+    const { data, error } = await supabase
+      .from('ticket_types')
+      .insert(ticketType)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase create failed:', error);
+      throw error;
+    }
+    console.log('✅ Ticket type created:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error creating ticket type:', error);
+    throw new Error(error.message || 'Gagal menambahkan tipe tiket');
+  }
 };
 
 export const updateTicketType = async (id: string, ticketType: Partial<TicketType>): Promise<TicketType> => {
-  const response = await api.put(`/master-data/ticket-types/${id}`, ticketType);
-  return response.data;
+  try {
+    console.log('📤 Updating ticket type:', id, ticketType);
+    const { data, error } = await supabase
+      .from('ticket_types')
+      .update({ ...ticketType, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase update failed:', error);
+      throw error;
+    }
+    console.log('✅ Ticket type updated:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating ticket type:', error);
+    throw new Error(error.message || 'Gagal update tipe tiket');
+  }
 };
 
 export const deleteTicketType = async (id: string): Promise<void> => {
-  await api.delete(`/master-data/ticket-types/${id}`);
+  try {
+    console.log('🗑️ Deleting ticket type:', id);
+    const { error } = await supabase
+      .from('ticket_types')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('❌ Supabase delete failed:', error);
+      throw error;
+    }
+    console.log('✅ Ticket type deleted');
+  } catch (error: any) {
+    console.error('❌ Error deleting ticket type:', error);
+    throw new Error(error.message || 'Gagal hapus tipe tiket');
+  }
 };
 
 // Ticket Classifications
 export const getTicketClassifications = async (): Promise<TicketClassification[]> => {
-  // Di Vercel production, langsung gunakan Supabase
-  if (isVercelProduction()) {
-    try {
-      console.log('🔍 Fetching ticket_classifications from Supabase...');
-      const { data, error } = await supabase
-        .from('ticket_classifications')
-        .select('*')
-        .order('level', { ascending: true });
-      
-      if (error) throw error;
-      console.log('✅ ticket_classifications fetched:', data?.length || 0, 'records');
-      return data || [];
-    } catch (error: any) {
-      console.error('⚠️ Failed to fetch ticket_classifications:', error.message);
-      return [];
+  try {
+    console.log('🔍 Fetching ticket_classifications from Supabase...');
+    const { data, error } = await supabase
+      .from('ticket_classifications')
+      .select('*')
+      .order('level', { ascending: true });
+    
+    if (error) {
+      console.error('❌ Supabase error for ticket_classifications:', error.message);
+      throw error;
     }
+    console.log('✅ ticket_classifications fetched:', data?.length || 0, 'records');
+    return data || [];
+  } catch (error: any) {
+    console.error('⚠️ Failed to fetch ticket_classifications:', error.message);
+    return [];
   }
-  
-  return withSupabaseFallback<TicketClassification>(
-    '/master-data/ticket-classifications',
-    'ticket_classifications'
-  );
 };
 
 export const createTicketClassification = async (classification: Omit<TicketClassification, 'id' | 'created_at' | 'updated_at'>): Promise<TicketClassification> => {
-  const response = await api.post('/master-data/ticket-classifications', classification);
-  return response.data;
+  try {
+    console.log('📤 Creating ticket classification:', classification);
+    const { data, error } = await supabase
+      .from('ticket_classifications')
+      .insert(classification)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase create failed:', error);
+      throw error;
+    }
+    console.log('✅ Ticket classification created:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error creating ticket classification:', error);
+    throw new Error(error.message || 'Gagal menambahkan klasifikasi tiket');
+  }
 };
 
 export const updateTicketClassification = async (id: string, classification: Partial<TicketClassification>): Promise<TicketClassification> => {
-  const response = await api.put(`/master-data/ticket-classifications/${id}`, classification);
-  return response.data;
+  try {
+    console.log('📤 Updating ticket classification:', id, classification);
+    const { data, error } = await supabase
+      .from('ticket_classifications')
+      .update({ ...classification, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase update failed:', error);
+      throw error;
+    }
+    console.log('✅ Ticket classification updated:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating ticket classification:', error);
+    throw new Error(error.message || 'Gagal update klasifikasi tiket');
+  }
 };
 
 export const deleteTicketClassification = async (id: string): Promise<void> => {
-  await api.delete(`/master-data/ticket-classifications/${id}`);
+  try {
+    console.log('🗑️ Deleting ticket classification:', id);
+    const { error } = await supabase
+      .from('ticket_classifications')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('❌ Supabase delete failed:', error);
+      throw error;
+    }
+    console.log('✅ Ticket classification deleted');
+  } catch (error: any) {
+    console.error('❌ Error deleting ticket classification:', error);
+    throw new Error(error.message || 'Gagal hapus klasifikasi tiket');
+  }
 };
 
 // Ticket Statuses
 export const getTicketStatuses = async (): Promise<TicketStatus[]> => {
-  // Di Vercel production, langsung gunakan Supabase
-  if (isVercelProduction()) {
-    try {
-      console.log('🔍 Fetching ticket_statuses from Supabase...');
-      const { data, error } = await supabase
-        .from('ticket_statuses')
-        .select('*')
-        .order('display_order');
-      
-      if (error) throw error;
-      console.log('✅ ticket_statuses fetched:', data?.length || 0, 'records');
-      return data || [];
-    } catch (error: any) {
-      console.error('⚠️ Failed to fetch ticket_statuses:', error.message);
-      return [];
+  try {
+    console.log('🔍 Fetching ticket_statuses from Supabase...');
+    const { data, error } = await supabase
+      .from('ticket_statuses')
+      .select('*')
+      .order('display_order');
+    
+    if (error) {
+      console.error('❌ Supabase error for ticket_statuses:', error.message);
+      throw error;
     }
+    console.log('✅ ticket_statuses fetched:', data?.length || 0, 'records');
+    return data || [];
+  } catch (error: any) {
+    console.error('⚠️ Failed to fetch ticket_statuses:', error.message);
+    return [];
   }
-  
-  return withSupabaseFallback<TicketStatus>(
-    '/master-data/ticket-statuses',
-    'ticket_statuses'
-  );
 };
 
 export const createTicketStatus = async (status: Omit<TicketStatus, 'id' | 'created_at' | 'updated_at'>): Promise<TicketStatus> => {
-  const response = await api.post('/master-data/ticket-statuses', status);
-  return response.data;
+  try {
+    console.log('📤 Creating ticket status:', status);
+    const { data, error } = await supabase
+      .from('ticket_statuses')
+      .insert(status)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase create failed:', error);
+      throw error;
+    }
+    console.log('✅ Ticket status created:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error creating ticket status:', error);
+    throw new Error(error.message || 'Gagal menambahkan status tiket');
+  }
 };
 
 export const updateTicketStatus = async (id: string, status: Partial<TicketStatus>): Promise<TicketStatus> => {
-  const response = await api.put(`/master-data/ticket-statuses/${id}`, status);
-  return response.data;
+  try {
+    console.log('📤 Updating ticket status:', id, status);
+    const { data, error } = await supabase
+      .from('ticket_statuses')
+      .update({ ...status, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase update failed:', error);
+      throw error;
+    }
+    console.log('✅ Ticket status updated:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating ticket status:', error);
+    throw new Error(error.message || 'Gagal update status tiket');
+  }
 };
 
 export const deleteTicketStatus = async (id: string): Promise<void> => {
-  await api.delete(`/master-data/ticket-statuses/${id}`);
+  try {
+    console.log('🗑️ Deleting ticket status:', id);
+    const { error } = await supabase
+      .from('ticket_statuses')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('❌ Supabase delete failed:', error);
+      throw error;
+    }
+    console.log('✅ Ticket status deleted');
+  } catch (error: any) {
+    console.error('❌ Error deleting ticket status:', error);
+    throw new Error(error.message || 'Gagal hapus status tiket');
+  }
 };
 
 // Patient Types
 export const getPatientTypes = async (): Promise<PatientType[]> => {
-  // Di Vercel production, langsung gunakan Supabase
-  if (isVercelProduction()) {
-    try {
-      console.log('🔍 Fetching patient_types from Supabase...');
-      const { data, error } = await supabase
-        .from('patient_types')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      console.log('✅ patient_types fetched:', data?.length || 0, 'records');
-      return data || [];
-    } catch (error: any) {
-      console.error('⚠️ Failed to fetch patient_types:', error.message);
-      return [];
-    }
-  }
-  
   try {
-    console.log('🔍 Fetching patient types...');
-    const response = await api.get('/master-data/patient-types');
-    console.log('✅ Primary endpoint success:', response.data?.length || 0, 'records');
-    return Array.isArray(response.data) ? response.data : [];
+    console.log('🔍 Fetching patient_types from Supabase...');
+    const { data, error } = await supabase
+      .from('patient_types')
+      .select('*')
+      .order('name');
+    
+    if (error) {
+      console.error('❌ Supabase error for patient_types:', error.message);
+      throw error;
+    }
+    console.log('✅ patient_types fetched:', data?.length || 0, 'records');
+    return data || [];
   } catch (error: any) {
-    console.warn('⚠️  Primary endpoint failed:', error.message);
-    // Fallback ke Supabase langsung
-    const result = await supabaseService.getPatientTypes();
-    return result.data || [];
+    console.error('⚠️ Failed to fetch patient_types:', error.message);
+    return [];
   }
 };
 
 export const createPatientType = async (patientType: Omit<PatientType, 'id' | 'created_at' | 'updated_at'>): Promise<PatientType> => {
   try {
-    console.log('📤 Creating patient type via API:', patientType);
-    const response = await api.post('/master-data/patient-types', patientType);
-    console.log('✅ API create success:', response.data);
-    return response.data;
-  } catch (error: any) {
-    console.warn('⚠️ API create failed, trying Supabase direct...', error.message);
-    // Fallback ke Supabase langsung
-    const { data, error: supaError } = await supabase
+    console.log('📤 Creating patient type:', patientType);
+    const { data, error } = await supabase
       .from('patient_types')
       .insert(patientType)
       .select()
       .single();
     
-    if (supaError) {
-      console.error('❌ Supabase create failed:', supaError);
-      throw supaError;
+    if (error) {
+      console.error('❌ Supabase create failed:', error);
+      throw error;
     }
-    console.log('✅ Supabase create success:', data);
+    console.log('✅ Patient type created:', data);
     return data;
+  } catch (error: any) {
+    console.error('❌ Error creating patient type:', error);
+    throw new Error(error.message || 'Gagal menambahkan jenis pasien');
   }
 };
 
 export const updatePatientType = async (id: string, patientType: Partial<PatientType>): Promise<PatientType> => {
   try {
-    console.log('📤 Updating patient type via API:', id, patientType);
-    const response = await api.put(`/master-data/patient-types/${id}`, patientType);
-    console.log('✅ API update success:', response.data);
-    return response.data;
-  } catch (error: any) {
-    console.warn('⚠️ API update failed, trying Supabase direct...', error.message);
-    // Fallback ke Supabase langsung
-    const { data, error: supaError } = await supabase
+    console.log('📤 Updating patient type:', id, patientType);
+    const { data, error } = await supabase
       .from('patient_types')
       .update({ ...patientType, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
       .single();
     
-    if (supaError) {
-      console.error('❌ Supabase update failed:', supaError);
-      throw new Error(`Gagal update patient type: ${supaError.message}`);
+    if (error) {
+      console.error('❌ Supabase update failed:', error);
+      throw error;
     }
-    console.log('✅ Supabase update success:', data);
+    console.log('✅ Patient type updated:', data);
     return data;
+  } catch (error: any) {
+    console.error('❌ Error updating patient type:', error);
+    throw new Error(error.message || 'Gagal update jenis pasien');
   }
 };
 
 export const deletePatientType = async (id: string): Promise<void> => {
   try {
-    console.log('🗑️ Deleting patient type via API:', id);
-    await api.delete(`/master-data/patient-types/${id}`);
-    console.log('✅ API delete success');
-  } catch (error: any) {
-    console.warn('⚠️ API delete failed, trying Supabase direct...', error.message);
-    // Fallback ke Supabase langsung
-    const { error: supaError } = await supabase
+    console.log('🗑️ Deleting patient type:', id);
+    const { error } = await supabase
       .from('patient_types')
       .delete()
       .eq('id', id);
     
-    if (supaError) {
-      console.error('❌ Supabase delete failed:', supaError);
-      throw new Error(`Gagal hapus patient type: ${supaError.message}`);
+    if (error) {
+      console.error('❌ Supabase delete failed:', error);
+      throw error;
     }
-    console.log('✅ Supabase delete success');
+    console.log('✅ Patient type deleted');
+  } catch (error: any) {
+    console.error('❌ Error deleting patient type:', error);
+    throw new Error(error.message || 'Gagal hapus jenis pasien');
   }
 };
 
 // Roles
 export const getRoles = async (): Promise<Role[]> => {
-  // Di Vercel production, langsung gunakan Supabase
-  if (isVercelProduction()) {
-    try {
-      console.log('🔍 Fetching roles from Supabase...');
-      const { data, error } = await supabase
-        .from('roles')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      console.log('✅ roles fetched:', data?.length || 0, 'records');
-      return data || [];
-    } catch (error: any) {
-      console.error('⚠️ Failed to fetch roles:', error.message);
-      return [];
+  try {
+    console.log('🔍 Fetching roles from Supabase...');
+    const { data, error } = await supabase
+      .from('roles')
+      .select('*')
+      .order('name');
+    
+    if (error) {
+      console.error('❌ Supabase error for roles:', error.message);
+      throw error;
     }
+    console.log('✅ roles fetched:', data?.length || 0, 'records');
+    return data || [];
+  } catch (error: any) {
+    console.error('⚠️ Failed to fetch roles:', error.message);
+    return [];
   }
-  
-  return withSupabaseFallback<Role>(
-    '/master-data/roles',
-    'roles'
-  );
 };
 
 export const createRole = async (role: Omit<Role, 'id' | 'created_at' | 'updated_at'>): Promise<Role> => {
-  const response = await api.post('/master-data/roles', role);
-  return response.data;
+  try {
+    console.log('📤 Creating role:', role);
+    const { data, error } = await supabase
+      .from('roles')
+      .insert(role)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase create failed:', error);
+      throw error;
+    }
+    console.log('✅ Role created:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error creating role:', error);
+    throw new Error(error.message || 'Gagal menambahkan role');
+  }
 };
 
 export const updateRole = async (id: string, role: Partial<Role>): Promise<Role> => {
-  const response = await api.put(`/master-data/roles/${id}`, role);
-  return response.data;
+  try {
+    console.log('📤 Updating role:', id, role);
+    const { data, error } = await supabase
+      .from('roles')
+      .update({ ...role, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase update failed:', error);
+      throw error;
+    }
+    console.log('✅ Role updated:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating role:', error);
+    throw new Error(error.message || 'Gagal update role');
+  }
 };
 
 export const deleteRole = async (id: string): Promise<void> => {
-  await api.delete(`/master-data/roles/${id}`);
+  try {
+    console.log('🗑️ Deleting role:', id);
+    const { error } = await supabase
+      .from('roles')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('❌ Supabase delete failed:', error);
+      throw error;
+    }
+    console.log('✅ Role deleted');
+  } catch (error: any) {
+    console.error('❌ Error deleting role:', error);
+    throw new Error(error.message || 'Gagal hapus role');
+  }
 };
 
 // Response Templates
 export const getResponseTemplates = async (): Promise<ResponseTemplate[]> => {
-  // Di Vercel production, langsung gunakan Supabase
-  if (isVercelProduction()) {
-    try {
-      console.log('🔍 Fetching response_templates from Supabase...');
-      const { data, error } = await supabase
-        .from('response_templates')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-      
-      if (error) throw error;
-      console.log('✅ response_templates fetched:', data?.length || 0, 'records');
-      return data || [];
-    } catch (error: any) {
-      console.error('⚠️ Failed to fetch response_templates:', error.message);
-      return [];
-    }
-  }
-  
   try {
-    const response = await api.get('/master-data/response-templates');
-    return response.data || [];
-  } catch (error) {
-    console.warn('Failed to fetch response templates, trying Supabase direct...');
-    const result = await supabaseService.getResponseTemplates();
-    return result.data || [];
+    console.log('🔍 Fetching response_templates from Supabase...');
+    const { data, error } = await supabase
+      .from('response_templates')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+    
+    if (error) {
+      console.error('❌ Supabase error for response_templates:', error.message);
+      throw error;
+    }
+    console.log('✅ response_templates fetched:', data?.length || 0, 'records');
+    return data || [];
+  } catch (error: any) {
+    console.error('⚠️ Failed to fetch response_templates:', error.message);
+    return [];
   }
 };
 
 export const createResponseTemplate = async (template: Omit<ResponseTemplate, 'id' | 'created_at' | 'updated_at'>): Promise<ResponseTemplate> => {
-  const response = await api.post('/master-data/response-templates', template);
-  return response.data;
+  try {
+    console.log('📤 Creating response template:', template);
+    const { data, error } = await supabase
+      .from('response_templates')
+      .insert(template)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase create failed:', error);
+      throw error;
+    }
+    console.log('✅ Response template created:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error creating response template:', error);
+    throw new Error(error.message || 'Gagal menambahkan template respon');
+  }
 };
 
 export const updateResponseTemplate = async (id: string, template: Partial<ResponseTemplate>): Promise<ResponseTemplate> => {
-  const response = await api.put(`/master-data/response-templates/${id}`, template);
-  return response.data;
+  try {
+    console.log('📤 Updating response template:', id, template);
+    const { data, error } = await supabase
+      .from('response_templates')
+      .update({ ...template, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase update failed:', error);
+      throw error;
+    }
+    console.log('✅ Response template updated:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating response template:', error);
+    throw new Error(error.message || 'Gagal update template respon');
+  }
 };
 
 export const deleteResponseTemplate = async (id: string): Promise<void> => {
-  await api.delete(`/master-data/response-templates/${id}`);
+  try {
+    console.log('🗑️ Deleting response template:', id);
+    const { error } = await supabase
+      .from('response_templates')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('❌ Supabase delete failed:', error);
+      throw error;
+    }
+    console.log('✅ Response template deleted');
+  } catch (error: any) {
+    console.error('❌ Error deleting response template:', error);
+    throw new Error(error.message || 'Gagal hapus template respon');
+  }
 };
 
 // AI Trust Settings
 export const getAITrustSettings = async (): Promise<AITrustSetting[]> => {
   try {
-    const response = await api.get('/master-data/ai-trust-settings');
-    return response.data || [];
-  } catch (error) {
-    console.warn('Failed to fetch AI trust settings:', error);
+    console.log('🔍 Fetching ai_trust_settings from Supabase...');
+    const { data, error } = await supabase
+      .from('ai_trust_settings')
+      .select('*')
+      .order('setting_name');
+    
+    if (error) {
+      console.error('❌ Supabase error for ai_trust_settings:', error.message);
+      throw error;
+    }
+    console.log('✅ ai_trust_settings fetched:', data?.length || 0, 'records');
+    return data || [];
+  } catch (error: any) {
+    console.error('⚠️ Failed to fetch ai_trust_settings:', error.message);
     return [];
   }
 };
 
 export const updateAITrustSetting = async (id: string, setting: Partial<AITrustSetting>): Promise<AITrustSetting> => {
-  const response = await api.put(`/master-data/ai-trust-settings/${id}`, setting);
-  return response.data;
+  try {
+    console.log('📤 Updating AI trust setting:', id, setting);
+    const { data, error } = await supabase
+      .from('ai_trust_settings')
+      .update({ ...setting, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('❌ Supabase update failed:', error);
+      throw error;
+    }
+    console.log('✅ AI trust setting updated:', data);
+    return data;
+  } catch (error: any) {
+    console.error('❌ Error updating AI trust setting:', error);
+    throw new Error(error.message || 'Gagal update pengaturan AI trust');
+  }
 };
 
 export const masterDataService = {

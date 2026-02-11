@@ -47,12 +47,46 @@ const UserManagement = () => {
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const [usersData, unitsData] = await Promise.all([
-                userService.getUsers(),
-                userService.getUnits()
-            ]);
+            // Timeout untuk mencegah loading terlalu lama
+            const timeout = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timeout')), 5000)
+            );
 
-            const usersWithUnits: UserWithUnit[] = usersData.map(user => ({
+            const [usersData, unitsData] = await Promise.race([
+                Promise.all([
+                    userService.getUsers().catch(err => {
+                        console.warn('Failed to load users:', err);
+                        return [];
+                    }),
+                    userService.getUnits().catch(err => {
+                        console.warn('Failed to load units:', err);
+                        return [];
+                    })
+                ]),
+                timeout
+            ]) as any;
+
+            // Handle users response - bisa array langsung atau wrapped
+            let users: User[] = [];
+            if (Array.isArray(usersData)) {
+                users = usersData;
+            } else if (usersData?.data && Array.isArray(usersData.data)) {
+                users = usersData.data;
+            } else if (usersData?.users && Array.isArray(usersData.users)) {
+                users = usersData.users;
+            }
+
+            // Handle units response - bisa array langsung atau wrapped
+            let units: Unit[] = [];
+            if (Array.isArray(unitsData)) {
+                units = unitsData;
+            } else if (unitsData?.data && Array.isArray(unitsData.data)) {
+                units = unitsData.data;
+            } else if (unitsData?.units && Array.isArray(unitsData.units)) {
+                units = unitsData.units;
+            }
+
+            const usersWithUnits: UserWithUnit[] = users.map(user => ({
                 ...user,
                 units: user.units ? {
                     ...user.units,
@@ -61,10 +95,17 @@ const UserManagement = () => {
             }));
 
             setUsers(usersWithUnits);
-            setUnits(unitsData);
-        } catch (error) {
+            setUnits(units);
+        } catch (error: any) {
             console.error('Error fetching data:', error);
-            alert('Gagal memuat data pengguna.');
+            if (error.message === 'Request timeout') {
+                alert('Koneksi lambat. Silakan refresh halaman atau periksa koneksi internet Anda.');
+            } else {
+                alert('Gagal memuat data pengguna.');
+            }
+            // Set empty data on error
+            setUsers([]);
+            setUnits([]);
         } finally {
             setIsLoading(false);
         }

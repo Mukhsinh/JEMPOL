@@ -119,40 +119,94 @@ const SurveyReport: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch stats
-      const statsRes = await api.get('/public/surveys/stats', {
-        params: {
-          start_date: dateRange.start,
-          end_date: dateRange.end,
-          unit_id: filters.unit !== 'all' ? filters.unit : undefined
+      // Timeout untuk mencegah loading terlalu lama
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 5000)
+      );
+
+      // Fetch stats dengan timeout
+      try {
+        const statsRes = await Promise.race([
+          api.get('/public/surveys/stats', {
+            params: {
+              start_date: dateRange.start,
+              end_date: dateRange.end,
+              unit_id: filters.unit !== 'all' ? filters.unit : undefined
+            },
+            timeout: 5000
+          }),
+          timeout
+        ]) as any;
+        
+        if (statsRes.data?.success) {
+          setStats(statsRes.data.data);
+        } else if (statsRes.data) {
+          setStats(statsRes.data);
         }
-      });
-      if (statsRes.data?.success) {
-        setStats(statsRes.data.data);
+      } catch (err) {
+        console.warn('Stats fetch failed:', err);
+        // Set default stats jika gagal
+        setStats({
+          total_surveys: 0,
+          total_responses: responses.length,
+          average_completion_rate: 0,
+          active_surveys: 0,
+          ikm_score: 0,
+          nps_score: 0,
+          response_rate: 100
+        });
       }
 
-      // Fetch responses
-      const responsesRes = await api.get('/public/surveys/responses', {
-        params: {
-          start_date: dateRange.start,
-          end_date: dateRange.end,
-          unit_id: filters.unit !== 'all' ? filters.unit : undefined
+      // Fetch responses dengan timeout
+      try {
+        const responsesRes = await Promise.race([
+          api.get('/public/surveys/responses', {
+            params: {
+              start_date: dateRange.start,
+              end_date: dateRange.end,
+              unit_id: filters.unit !== 'all' ? filters.unit : undefined
+            },
+            timeout: 5000
+          }),
+          timeout
+        ]) as any;
+        
+        if (responsesRes.data?.success) {
+          setResponses(responsesRes.data.data || []);
+        } else if (Array.isArray(responsesRes.data)) {
+          setResponses(responsesRes.data);
+        } else if (responsesRes.data?.data && Array.isArray(responsesRes.data.data)) {
+          setResponses(responsesRes.data.data);
         }
-      });
-      if (responsesRes.data?.success) {
-        setResponses(responsesRes.data.data || []);
+      } catch (err) {
+        console.warn('Responses fetch failed:', err);
+        setResponses([]);
       }
 
-      // Fetch IKM by unit
-      const ikmRes = await api.get('/public/surveys/ikm-by-unit', {
-        params: {
-          start_date: dateRange.start,
-          end_date: dateRange.end,
-          unit_id: filters.unit !== 'all' ? filters.unit : undefined
+      // Fetch IKM by unit dengan timeout
+      try {
+        const ikmRes = await Promise.race([
+          api.get('/public/surveys/ikm-by-unit', {
+            params: {
+              start_date: dateRange.start,
+              end_date: dateRange.end,
+              unit_id: filters.unit !== 'all' ? filters.unit : undefined
+            },
+            timeout: 5000
+          }),
+          timeout
+        ]) as any;
+        
+        if (ikmRes.data?.success) {
+          setUnitIKM(ikmRes.data.data || []);
+        } else if (Array.isArray(ikmRes.data)) {
+          setUnitIKM(ikmRes.data);
+        } else if (ikmRes.data?.data && Array.isArray(ikmRes.data.data)) {
+          setUnitIKM(ikmRes.data.data);
         }
-      });
-      if (ikmRes.data?.success) {
-        setUnitIKM(ikmRes.data.data || []);
+      } catch (err) {
+        console.warn('IKM fetch failed:', err);
+        setUnitIKM([]);
       }
     } catch (err: any) {
       console.error('Error fetching survey data:', err);

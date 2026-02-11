@@ -21,18 +21,57 @@ const EscalationManagement: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const [rulesData, statsData] = await Promise.all([
-        escalationService.getRules(),
-        escalationService.getStats()
-      ]);
+      // Timeout untuk mencegah loading terlalu lama
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 5000)
+      );
+
+      const [rulesData, statsData] = await Promise.race([
+        Promise.all([
+          escalationService.getRules().catch(err => {
+            console.warn('Failed to load rules:', err);
+            return [];
+          }),
+          escalationService.getStats().catch(err => {
+            console.warn('Failed to load stats:', err);
+            return {
+              rules: { total: 0, active: 0, inactive: 0 },
+              executions: { total: 0, successful: 0, failed: 0, partial: 0, successRate: 0 },
+              tickets: { escalated: 0 },
+              period: '30 days'
+            };
+          })
+        ]),
+        timeout
+      ]) as any;
       
-      // Normalize data
-      const normalizedData = (rulesData || []).map(rule => normalizeRule(rule));
-      setRules(normalizedData);
+      // Normalize data - pastikan rulesData adalah array
+      let normalizedRules: EscalationRule[] = [];
+      if (Array.isArray(rulesData)) {
+        normalizedRules = rulesData.map(rule => normalizeRule(rule));
+      } else if (rulesData?.data && Array.isArray(rulesData.data)) {
+        normalizedRules = rulesData.data.map((rule: any) => normalizeRule(rule));
+      } else if (rulesData?.rules && Array.isArray(rulesData.rules)) {
+        normalizedRules = rulesData.rules.map((rule: any) => normalizeRule(rule));
+      }
+      
+      setRules(normalizedRules);
       setStats(statsData);
     } catch (err: any) {
       console.error('Error fetching data:', err);
-      setError(err.message || 'Gagal memuat data eskalasi');
+      if (err.message === 'Request timeout') {
+        setError('Koneksi lambat. Silakan refresh halaman atau periksa koneksi internet Anda.');
+      } else {
+        setError(err.message || 'Gagal memuat data eskalasi');
+      }
+      // Set empty data on error
+      setRules([]);
+      setStats({
+        rules: { total: 0, active: 0, inactive: 0 },
+        executions: { total: 0, successful: 0, failed: 0, partial: 0, successRate: 0 },
+        tickets: { escalated: 0 },
+        period: '30 days'
+      });
     } finally {
       setLoading(false);
     }

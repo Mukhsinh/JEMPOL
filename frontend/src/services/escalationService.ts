@@ -54,16 +54,29 @@ class EscalationService {
     try {
       // Coba endpoint dengan auth terlebih dahulu
       const response = await api.get('/escalation/rules');
-      return response.data || [];
+      // Handle berbagai format response
+      if (Array.isArray(response.data)) {
+        return response.data;
+      } else if (response.data?.data && Array.isArray(response.data.data)) {
+        return response.data.data;
+      } else if (response.data?.rules && Array.isArray(response.data.rules)) {
+        return response.data.rules;
+      }
+      return [];
     } catch (error: any) {
       console.warn('Auth endpoint failed, trying public endpoint:', error.message);
       try {
         // Fallback ke endpoint publik jika auth gagal
         const response = await api.get('/escalation/public/rules');
-        return response.data || [];
+        if (Array.isArray(response.data)) {
+          return response.data;
+        } else if (response.data?.data && Array.isArray(response.data.data)) {
+          return response.data.data;
+        }
+        return [];
       } catch (fallbackError) {
         console.error('Error fetching escalation rules:', fallbackError);
-        throw fallbackError;
+        return []; // Return empty array instead of throwing
       }
     }
   }

@@ -90,28 +90,50 @@ const QRManagement: React.FC = () => {
         setTimeout(() => reject(new Error('Request timeout')), 5000)
       );
 
-      const [unitsResponse, qrResponse] = await Promise.race([
-        Promise.all([
-          unitService.getUnits().catch(err => {
-            console.warn('Failed to load units:', err);
-            return { units: [] };
-          }),
-          qrCodeService.getQRCodes(params).catch(err => {
-            console.warn('Failed to load QR codes:', err);
-            return { qr_codes: [], pagination: { pages: 1 } };
-          })
-        ]),
-        timeoutPromise
-      ]) as any;
+      try {
+        const [unitsResponse, qrResponse] = await Promise.race([
+          Promise.all([
+            unitService.getUnits().catch(err => {
+              console.warn('Failed to load units:', err);
+              return { units: [] };
+            }),
+            qrCodeService.getQRCodes(params).catch(err => {
+              console.warn('Failed to load QR codes:', err);
+              return { qr_codes: [], pagination: { pages: 1 } };
+            })
+          ]),
+          timeoutPromise
+        ]) as any;
 
-      setUnits(unitsResponse.units || []);
-      setQrCodes(qrResponse.qr_codes || []);
-      setTotalPages(qrResponse.pagination?.pages || 1);
+        // Handle units response
+        if (Array.isArray(unitsResponse)) {
+          setUnits(unitsResponse);
+        } else if (unitsResponse?.units && Array.isArray(unitsResponse.units)) {
+          setUnits(unitsResponse.units);
+        } else {
+          setUnits([]);
+        }
+
+        // Handle QR codes response
+        if (Array.isArray(qrResponse)) {
+          setQrCodes(qrResponse);
+          setTotalPages(1);
+        } else if (qrResponse?.qr_codes && Array.isArray(qrResponse.qr_codes)) {
+          setQrCodes(qrResponse.qr_codes);
+          setTotalPages(qrResponse.pagination?.pages || 1);
+        } else {
+          setQrCodes([]);
+          setTotalPages(1);
+        }
+      } catch (timeoutError) {
+        console.error('Timeout loading data:', timeoutError);
+        alert('Koneksi lambat. Silakan refresh halaman atau periksa koneksi internet Anda.');
+        setUnits([]);
+        setQrCodes([]);
+        setTotalPages(1);
+      }
     } catch (error: any) {
       console.error('Error loading data:', error);
-      if (error.message === 'Request timeout') {
-        alert('Koneksi lambat. Silakan refresh halaman atau periksa koneksi internet Anda.');
-      }
       // Set data kosong jika error
       setUnits([]);
       setQrCodes([]);

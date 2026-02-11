@@ -65,21 +65,58 @@ const UnitsManagementDirect = ({ embedded = false }: UnitsManagementProps) => {
             setLoading(true);
             setError(null);
             
-            // Fetch units using service
-            const unitsResponse = await unitService.getUnits({
-                search: searchTerm,
-                type: typeFilter,
-                status: statusFilter
-            });
+            // Timeout untuk mencegah loading terlalu lama
+            const timeout = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timeout')), 5000)
+            );
 
-            // Fetch unit types using service
-            const unitTypesData = await unitService.getUnitTypes();
+            const [unitsResponse, unitTypesData] = await Promise.race([
+                Promise.all([
+                    unitService.getUnits({
+                        search: searchTerm,
+                        type: typeFilter,
+                        status: statusFilter
+                    }).catch(err => {
+                        console.warn('Failed to load units:', err);
+                        return { units: [] };
+                    }),
+                    unitService.getUnitTypes().catch(err => {
+                        console.warn('Failed to load unit types:', err);
+                        return [];
+                    })
+                ]),
+                timeout
+            ]) as any;
 
-            setUnits(unitsResponse.units || []);
-            setUnitTypes(unitTypesData || []);
+            // Handle units response - bisa berbagai format
+            if (Array.isArray(unitsResponse)) {
+                setUnits(unitsResponse);
+            } else if (unitsResponse?.units && Array.isArray(unitsResponse.units)) {
+                setUnits(unitsResponse.units);
+            } else if (unitsResponse?.data && Array.isArray(unitsResponse.data)) {
+                setUnits(unitsResponse.data);
+            } else {
+                setUnits([]);
+            }
+
+            // Handle unit types response
+            if (Array.isArray(unitTypesData)) {
+                setUnitTypes(unitTypesData);
+            } else if (unitTypesData?.data && Array.isArray(unitTypesData.data)) {
+                setUnitTypes(unitTypesData.data);
+            } else {
+                setUnitTypes([]);
+            }
         } catch (error: any) {
             console.error('Error fetching data:', error);
-            setError('Gagal memuat data. Silakan coba lagi.');
+            if (error.message === 'Request timeout') {
+                setError('Koneksi lambat. Silakan refresh halaman atau periksa koneksi internet Anda.');
+            } else {
+                setError('Gagal memuat data. Silakan coba lagi.');
+            }
+            // Set empty data on error
+            setUnits([]);
+            setUnitTypes([]);
         } finally {
             setLoading(false);
         }
@@ -87,17 +124,38 @@ const UnitsManagementDirect = ({ embedded = false }: UnitsManagementProps) => {
 
     const fetchUnits = async () => {
         try {
-            // Use service to fetch units with filters
-            const unitsResponse = await unitService.getUnits({
-                search: searchTerm,
-                type: typeFilter,
-                status: statusFilter
-            });
+            // Timeout untuk mencegah loading terlalu lama
+            const timeout = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Request timeout')), 5000)
+            );
+
+            const unitsResponse = await Promise.race([
+                unitService.getUnits({
+                    search: searchTerm,
+                    type: typeFilter,
+                    status: statusFilter
+                }),
+                timeout
+            ]) as any;
             
-            setUnits(unitsResponse.units || []);
+            // Handle berbagai format response
+            if (Array.isArray(unitsResponse)) {
+                setUnits(unitsResponse);
+            } else if (unitsResponse?.units && Array.isArray(unitsResponse.units)) {
+                setUnits(unitsResponse.units);
+            } else if (unitsResponse?.data && Array.isArray(unitsResponse.data)) {
+                setUnits(unitsResponse.data);
+            } else {
+                setUnits([]);
+            }
         } catch (error: any) {
             console.error('Error fetching units:', error);
-            setError('Gagal memuat data unit kerja.');
+            if (error.message === 'Request timeout') {
+                setError('Koneksi lambat. Silakan refresh halaman.');
+            } else {
+                setError('Gagal memuat data unit kerja.');
+            }
+            setUnits([]);
         }
     };
 
