@@ -15,25 +15,26 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS dan Content-Type headers PERTAMA KALI
+  // Set CORS headers PERTAMA KALI
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  
+  // Handle OPTIONS request (preflight)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // Set Content-Type untuk response JSON
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   
   // PERBAIKAN: Wrapper untuk memastikan SELALU return JSON
   try {
-    
-    // Handle OPTIONS request
-    if (req.method === 'OPTIONS') {
-      return res.status(200).json({ success: true });
-    }
-
     // Only allow POST
     if (req.method !== 'POST') {
       return res.status(405).json({
         success: false,
-        error: 'Method not allowed'
+        error: 'Method not allowed. Only POST is supported.'
       });
     }
 
@@ -64,9 +65,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       regency,
       district,
       address_detail,
-      // Skor 9 unsur (langsung tanpa indikator)
+      // Skor 11 unsur IKM (sesuai dengan form)
       u1_score, u2_score, u3_score, u4_score, u5_score,
-      u6_score, u7_score, u8_score, u9_score,
+      u6_score, u7_score, u8_score, u9_score, u10_score, u11_score,
       overall_score,
       comments,
       qr_code,
@@ -109,10 +110,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.log('✅ Unit verified:', unitData.name);
     }
 
-    // Hitung skor rata-rata dari 9 unsur jika ada
+    // Hitung skor rata-rata dari 11 unsur jika ada
     const scores = [
       u1_score, u2_score, u3_score, u4_score, u5_score,
-      u6_score, u7_score, u8_score, u9_score
+      u6_score, u7_score, u8_score, u9_score, u10_score, u11_score
     ].filter(s => s != null && s !== '').map(s => parseInt(s as string));
     
     const avgScore = scores.length > 0 
@@ -152,20 +153,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       education: education || null,
       job: job || null,
       patient_type: patient_type || null,
-      regency: regency || null,
-      district: district || null,
-      address_detail: address_detail || null,
+      kabupaten_kota: regency || null,
+      kecamatan: district || null,
+      alamat_jalan: address_detail || null,
       is_anonymous: is_anonymous || false,
-      // Skor 9 unsur (langsung tanpa indikator)
-      u1_score: u1_score ? parseInt(u1_score as string) : null,
-      u2_score: u2_score ? parseInt(u2_score as string) : null,
-      u3_score: u3_score ? parseInt(u3_score as string) : null,
-      u4_score: u4_score ? parseInt(u4_score as string) : null,
-      u5_score: u5_score ? parseInt(u5_score as string) : null,
-      u6_score: u6_score ? parseInt(u6_score as string) : null,
-      u7_score: u7_score ? parseInt(u7_score as string) : null,
-      u8_score: u8_score ? parseInt(u8_score as string) : null,
-      u9_score: u9_score ? parseInt(u9_score as string) : null,
+      // Skor 11 unsur IKM (mapping ke kolom q1_score - q11_score di database)
+      q1_score: u1_score ? parseInt(u1_score as string) : null,
+      q2_score: u2_score ? parseInt(u2_score as string) : null,
+      q3_score: u3_score ? parseInt(u3_score as string) : null,
+      q4_score: u4_score ? parseInt(u4_score as string) : null,
+      q5_score: u5_score ? parseInt(u5_score as string) : null,
+      q6_score: u6_score ? parseInt(u6_score as string) : null,
+      q7_score: u7_score ? parseInt(u7_score as string) : null,
+      q8_score: u8_score ? parseInt(u8_score as string) : null,
+      q9_score: u9_score ? parseInt(u9_score as string) : null,
+      q10_score: u10_score ? parseInt(u10_score as string) : null,
+      q11_score: u11_score ? parseInt(u11_score as string) : null,
       // Skor agregat
       overall_score: overall_score ? parseInt(overall_score as string) : null,
       comments: comments || null,
