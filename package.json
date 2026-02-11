@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Sistem Manajemen Keluhan dengan Supabase Backend",
   "private": true,
+  "type": "module",
   "workspaces": [
     "frontend"
   ],
