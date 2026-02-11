@@ -7,12 +7,13 @@ dist/
 frontend/dist/
 build/
 
-# Environment variables
+# Environment variables - JANGAN COMMIT CREDENTIALS
 .env
 .env.local
 .env.production
 frontend/.env
 frontend/.env.local
+frontend/.env.production
 # Note: .env.production.example is kept for reference
 
 # Logs
@@ -30,6 +31,10 @@ Thumbs.db
 .kiro/
 *.swp
 *.swo
+
+# Vercel
+.vercel/
+.vercel
 
 # Uploads
 uploads/
@@ -55,9 +60,10 @@ optimize-*.js
 identify-*.js
 tambah-*.js
 
-# Documentation files (kecuali README.md)
+# Documentation files (kecuali README.md dan DEPLOYMENT.md)
 *.md
 !README.md
+!DEPLOYMENT.md
 !.kiro/**/*.md
 
 # Temporary files

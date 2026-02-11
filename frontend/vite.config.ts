@@ -57,9 +57,4 @@ export default defineConfig({
       'lucide-react'
     ],
   },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './src/test/setup.ts',
-  },
 });

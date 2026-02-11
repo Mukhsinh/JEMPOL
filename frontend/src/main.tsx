@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import AppRefactored from './AppRefactored';
+import App from './App';
 import './index.css';
 
-console.log('🚀 Starting KISS Application with refactored configuration...');
+console.log('🚀 Starting KISS Application...');
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AppRefactored />
+    <App />
   </React.StrictMode>,
 );

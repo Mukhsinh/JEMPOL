@@ -1,7 +1,15 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
+
+// Loading component
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin h-8 w-8 border-b-2 border-blue-500 rounded-full"></div>
+  </div>
+);
 
 // Core Pages
 import Dashboard from './pages/Dashboard';
@@ -10,51 +18,26 @@ import Reports from './pages/Reports';
 import NotificationSettings from './pages/NotificationSettings';
 import BukuPetunjuk from './pages/BukuPetunjuk';
 
-// Ticket Management
-import TicketList from './pages/tickets/TicketList';
-import TicketDetail from './pages/tickets/TicketDetail';
-import TicketDetailView from './pages/tickets/TicketDetailView';
-import TicketTracker from './pages/tickets/TicketTracker';
-import TrackTicketAdmin from './pages/tickets/TrackTicket';
+// Ticket Management (lazy loaded to avoid HMR issues)
+const TicketList = lazy(() => import('./pages/tickets/TicketList'));
+const TicketDetail = lazy(() => import('./pages/tickets/TicketDetail'));
+const TicketDetailView = lazy(() => import('./pages/tickets/TicketDetailView'));
+const TiketInternal = lazy(() => import('./pages/tickets/TiketInternal'));
+const ExternalTicketForm = lazy(() => import('./pages/tickets/ExternalTicketForm'));
+const QRManagement = lazy(() => import('./pages/tickets/QRManagement'));
+const AIEscalationManagement = lazy(() => import('./pages/tickets/AIEscalationManagement'));
+const EscalationManagement = lazy(() => import('./pages/tickets/EscalationManagement'));
 
-import InternalTicketForm from './pages/tickets/InternalTicketForm';
-import TiketEksternal from './pages/tickets/TiketEksternal';
-import ExternalTicketForm from './pages/tickets/ExternalTicketForm';
-import QRManagement from './pages/tickets/QRManagement';
+// Survey Management (lazy loaded)
+const SurveyLanding = lazy(() => import('./pages/survey/SurveyLanding'));
+const SurveyReport = lazy(() => import('./pages/survey/SurveyReport'));
+const PublicSurveyForm = lazy(() => import('./pages/survey/PublicSurveyForm'));
 
-import EscalationManagement from './pages/tickets/EscalationManagement';
-
-// Survey Management
-import SurveyForm from './pages/survey/SurveyForm';
-import SurveyLanding from './pages/survey/SurveyLanding';
-import SurveyReport from './pages/survey/SurveyReport';
-import PublicSurveyForm from './pages/survey/PublicSurveyForm';
-
-// Public Pages (No Sidebar)
-import PublicExternalTicket from './pages/public/PublicExternalTicket';
-import PublicInternalTicket from './pages/public/PublicInternalTicket';
-import PublicSurvey from './pages/public/PublicSurvey';
-import PublicExternalTicketFullscreen from './pages/public/PublicExternalTicketFullscreen';
-import PublicSurveyFullscreen from './pages/public/PublicSurveyFullscreen';
-import FullscreenInternalTicket from './pages/public/FullscreenInternalTicket';
-import TrackTicket from './pages/public/TrackTicket';
-import TrackTicketMobile from './pages/public/TrackTicketMobile';
-import FormLacak from './pages/public/FormLacak';
-import FormLacakAdmin from './pages/tickets/FormLacakAdmin';
-
-// Mobile-First Public Forms (Clean & Modern UI)
-import MobileFormLanding from './pages/public/MobileFormLanding';
-import MobilePengaduanForm from './pages/public/MobilePengaduanForm';
-import MobileTiketInternalForm from './pages/public/MobileTiketInternalForm';
-import ModernSurveyForm from './pages/public/ModernSurveyForm';
-
-// Direct Form Views (Public, Tanpa Login, Mobile-First) - untuk QR Code per unit
-import DirectInternalTicketForm from './pages/public/DirectInternalTicketForm';
-import DirectExternalTicketForm from './pages/public/DirectExternalTicketForm';
-import DirectSurveyForm from './pages/public/DirectSurveyForm';
-
-// Standalone Form - Clean UI tanpa sidebar untuk QR Management redirect
-import StandaloneInternalTicketForm from './pages/public/StandaloneInternalTicketForm';
+// Public Pages
+const TrackTicket = lazy(() => import('./pages/public/TrackTicket'));
+const DirectInternalTicketForm = lazy(() => import('./pages/public/DirectInternalTicketForm'));
+const DirectExternalTicketForm = lazy(() => import('./pages/public/DirectExternalTicketForm'));
+const DirectSurveyForm = lazy(() => import('./pages/public/DirectSurveyForm'));
 
 // User Management
 import UserManagement from './pages/users/UserManagement';
@@ -76,15 +59,6 @@ import PatientTypesPage from './pages/master-data/PatientTypesPage';
 import SLASettingsPage from './pages/master-data/SLASettingsPage';
 import RolesPermissionsPage from './pages/master-data/RolesPermissionsPage';
 
-// Helper component for protected routes with MainLayout
-const ProtectedPage = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute requireAdmin={true}>
-    <MainLayout>
-      {children}
-    </MainLayout>
-  </ProtectedRoute>
-);
-
 function App() {
   return (
     <AuthProvider>
@@ -92,101 +66,79 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
-          
-          {/* Lacak Tiket - Public Access */}
-          <Route path="/lacak-tiket" element={<TrackTicket />} />
-          <Route path="/track-ticket" element={<TrackTicketMobile />} />
-          <Route path="/track-ticket-mobile" element={<TrackTicketMobile />} />
-          <Route path="/lacak" element={<FormLacak />} />
-          
-          {/* Form Lacak - Admin dengan Sidebar */}
-          <Route path="/form-lacak" element={<ProtectedPage><FormLacakAdmin /></ProtectedPage>} />
-          
-          {/* QR Code routes - redirect ke mobile fullscreen */}
-          <Route path="/qr/:code" element={<MobileFormLanding />} />
-          <Route path="/scan/:code" element={<MobileFormLanding />} />
-          <Route path="/tiket-eksternal" element={<ExternalTicketForm />} />
-          <Route path="/tiket-eksternal/:qrCode" element={<ExternalTicketForm />} />
-          <Route path="/survey/public" element={<PublicSurveyForm />} />
-          <Route path="/survey/public/:qrCode" element={<PublicSurveyForm />} />
+          <Route path="/lacak-tiket" element={<Suspense fallback={<LoadingSpinner />}><TrackTicket /></Suspense>} />
+          <Route path="/track-ticket" element={<Suspense fallback={<LoadingSpinner />}><TrackTicket /></Suspense>} />
+          <Route path="/tiket-eksternal" element={<Suspense fallback={<LoadingSpinner />}><ExternalTicketForm /></Suspense>} />
+          <Route path="/tiket-eksternal/:qrCode" element={<Suspense fallback={<LoadingSpinner />}><ExternalTicketForm /></Suspense>} />
+          <Route path="/survey/public" element={<Suspense fallback={<LoadingSpinner />}><PublicSurveyForm /></Suspense>} />
+          <Route path="/survey/public/:qrCode" element={<Suspense fallback={<LoadingSpinner />}><PublicSurveyForm /></Suspense>} />
           <Route path="/buku-petunjuk" element={<BukuPetunjuk />} />
-          <Route path="/public/tiket-eksternal" element={<PublicExternalTicket />} />
-          <Route path="/public/tiket-internal" element={<PublicInternalTicket />} />
-          <Route path="/public/survei" element={<PublicSurvey />} />
-          {/* Fullscreen Mobile Forms - untuk QR Code scan */}
-          <Route path="/public/form-pengaduan" element={<PublicExternalTicketFullscreen />} />
-          <Route path="/public/form-survei" element={<PublicSurveyFullscreen />} />
-          <Route path="/public/form-tiket-internal" element={<FullscreenInternalTicket />} />
           
-          {/* Mobile-First Forms - Tampilan Clean & Modern (Recommended) */}
-          <Route path="/m/:code" element={<MobileFormLanding />} />
-          <Route path="/m/pengaduan" element={<MobilePengaduanForm />} />
-          <Route path="/m/survei" element={<ModernSurveyForm />} />
-          <Route path="/m/tiket-internal" element={<MobileTiketInternalForm />} />
-          
-          {/* Modern Survey Form - Single Page */}
-          <Route path="/survey/modern" element={<ModernSurveyForm />} />
-
           {/* Direct Form Views - Public Access (Tanpa Login, Mobile-First) */}
-          {/* QR Code per unit menautkan langsung ke form ini */}
-          {/* ROUTE UTAMA - Akses publik tanpa login dan tanpa sidebar */}
-          <Route path="/form/internal" element={<DirectInternalTicketForm />} />
-          <Route path="/form/eksternal" element={<DirectExternalTicketForm />} />
-          <Route path="/form/survey" element={<DirectSurveyForm />} />
-          
-          {/* Standalone Form - Clean UI untuk QR Management redirect */}
-          <Route path="/standalone/internal-ticket" element={<StandaloneInternalTicketForm />} />
-          <Route path="/standalone/tiket-internal" element={<StandaloneInternalTicketForm />} />
+          {/* ROUTE UTAMA untuk QR Code - Akses publik tanpa login dan tanpa sidebar */}
+          <Route path="/form/internal" element={<Suspense fallback={<LoadingSpinner />}><DirectInternalTicketForm /></Suspense>} />
+          <Route path="/form/eksternal" element={<Suspense fallback={<LoadingSpinner />}><DirectExternalTicketForm /></Suspense>} />
+          <Route path="/form/survey" element={<Suspense fallback={<LoadingSpinner />}><DirectSurveyForm /></Suspense>} />
 
-          {/* Protected Admin Routes - Dashboard */}
-          <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
-          <Route path="/dashboard" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
+          {/* Protected Admin Routes */}
+          <Route path="/*" element={
+            <ProtectedRoute requireAdmin={true}>
+              <MainLayout>
+                <Routes>
+                  {/* Dashboard */}
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
 
-          {/* Ticket Management */}
-          <Route path="/tickets" element={<ProtectedPage><TicketList /></ProtectedPage>} />
-          <Route path="/track-ticket" element={<ProtectedPage><TrackTicketAdmin /></ProtectedPage>} />
-          <Route path="/tickets/:id" element={<ProtectedPage><TicketDetail /></ProtectedPage>} />
-          <Route path="/tickets/view" element={<ProtectedPage><TicketDetailView /></ProtectedPage>} />
-          {/* Route lama - redirect ke /form/* untuk backward compatibility */}
-          <Route path="/tickets/create/internal" element={<DirectInternalTicketForm />} />
-          <Route path="/tickets/internal-form" element={<DirectInternalTicketForm />} />
-          <Route path="/tickets/tiket-eksternal" element={<DirectExternalTicketForm />} />
-          <Route path="/tickets/qr-management" element={<ProtectedPage><QRManagement /></ProtectedPage>} />
-          <Route path="/qr-codes" element={<ProtectedPage><QRManagement /></ProtectedPage>} />
-          <Route path="/tickets/escalation" element={<ProtectedPage><EscalationManagement /></ProtectedPage>} />
+                  {/* Ticket Management */}
+                  <Route path="/tickets" element={<Suspense fallback={<LoadingSpinner />}><TicketList /></Suspense>} />
+                  <Route path="/tickets/:id" element={<Suspense fallback={<LoadingSpinner />}><TicketDetail /></Suspense>} />
+                  <Route path="/tickets/view" element={<Suspense fallback={<LoadingSpinner />}><TicketDetailView /></Suspense>} />
+                  {/* Route lama - redirect ke /form/* */}
+                  <Route path="/tickets/create/internal" element={<Suspense fallback={<LoadingSpinner />}><DirectInternalTicketForm /></Suspense>} />
+                  <Route path="/tickets/internal-form" element={<Suspense fallback={<LoadingSpinner />}><DirectInternalTicketForm /></Suspense>} />
+                  <Route path="/tickets/tiket-internal" element={<Suspense fallback={<LoadingSpinner />}><TiketInternal /></Suspense>} />
+                  <Route path="/tickets/tiket-eksternal" element={<Suspense fallback={<LoadingSpinner />}><DirectExternalTicketForm /></Suspense>} />
+                  <Route path="/tickets/qr-management" element={<Suspense fallback={<LoadingSpinner />}><QRManagement /></Suspense>} />
+                  <Route path="/qr-codes" element={<Suspense fallback={<LoadingSpinner />}><QRManagement /></Suspense>} />
+                  <Route path="/tickets/ai-escalation" element={<Suspense fallback={<LoadingSpinner />}><AIEscalationManagement /></Suspense>} />
+                  <Route path="/tickets/escalation" element={<Suspense fallback={<LoadingSpinner />}><EscalationManagement /></Suspense>} />
 
-          {/* Survey Management */}
-          {/* Route lama - redirect ke /form/survey untuk backward compatibility */}
-          <Route path="/survey" element={<DirectSurveyForm />} />
-          <Route path="/survey/admin" element={<ProtectedPage><SurveyLanding /></ProtectedPage>} />
-          <Route path="/survey/form" element={<DirectSurveyForm />} />
-          <Route path="/survey/report" element={<ProtectedPage><SurveyReport /></ProtectedPage>} />
+                  {/* Survey Management */}
+                  {/* Route lama - redirect ke /form/survey */}
+                  <Route path="/survey" element={<Suspense fallback={<LoadingSpinner />}><DirectSurveyForm /></Suspense>} />
+                  <Route path="/survey/admin" element={<Suspense fallback={<LoadingSpinner />}><SurveyLanding /></Suspense>} />
+                  <Route path="/survey/form" element={<Suspense fallback={<LoadingSpinner />}><DirectSurveyForm /></Suspense>} />
+                  <Route path="/survey/report" element={<Suspense fallback={<LoadingSpinner />}><SurveyReport /></Suspense>} />
 
-          {/* User Management */}
-          <Route path="/users" element={<ProtectedPage><UserManagement /></ProtectedPage>} />
-          <Route path="/users/profile" element={<ProtectedPage><UserProfile /></ProtectedPage>} />
+                  {/* User Management */}
+                  <Route path="/users" element={<UserManagement />} />
+                  <Route path="/users/profile" element={<UserProfile />} />
 
-          {/* Master Data Management */}
-          <Route path="/master-data" element={<ProtectedPage><MasterData /></ProtectedPage>} />
-          <Route path="/master-data/units" element={<ProtectedPage><UnitsPage /></ProtectedPage>} />
-          <Route path="/master-data/unit-types" element={<ProtectedPage><UnitTypesPage /></ProtectedPage>} />
-          <Route path="/master-data/service-categories" element={<ProtectedPage><ServiceCategoriesPage /></ProtectedPage>} />
-          <Route path="/master-data/ticket-types" element={<ProtectedPage><TicketTypesPage /></ProtectedPage>} />
-          <Route path="/master-data/ticket-classifications" element={<ProtectedPage><TicketClassificationsPage /></ProtectedPage>} />
-          <Route path="/master-data/ticket-statuses" element={<ProtectedPage><TicketStatusesPage /></ProtectedPage>} />
-          <Route path="/master-data/patient-types" element={<ProtectedPage><PatientTypesPage /></ProtectedPage>} />
-          <Route path="/master-data/roles-permissions" element={<ProtectedPage><RolesPermissionsPage /></ProtectedPage>} />
-          <Route path="/master-data/sla-settings" element={<ProtectedPage><SLASettingsPage /></ProtectedPage>} />
-          <Route path="/unified-master-data" element={<ProtectedPage><UnifiedMasterData /></ProtectedPage>} />
+                  {/* Master Data Management */}
+                  <Route path="/master-data" element={<MasterData />} />
+                  <Route path="/master-data/units" element={<UnitsPage />} />
+                  <Route path="/master-data/unit-types" element={<UnitTypesPage />} />
+                  <Route path="/master-data/service-categories" element={<ServiceCategoriesPage />} />
+                  <Route path="/master-data/ticket-types" element={<TicketTypesPage />} />
+                  <Route path="/master-data/ticket-classifications" element={<TicketClassificationsPage />} />
+                  <Route path="/master-data/ticket-statuses" element={<TicketStatusesPage />} />
+                  <Route path="/master-data/patient-types" element={<PatientTypesPage />} />
+                  <Route path="/master-data/roles-permissions" element={<RolesPermissionsPage />} />
+                  <Route path="/master-data/sla-settings" element={<SLASettingsPage />} />
+                  <Route path="/unified-master-data" element={<UnifiedMasterData />} />
 
-          {/* Settings */}
-          <Route path="/settings/*" element={<ProtectedPage><SettingsPage /></ProtectedPage>} />
+                  {/* Settings */}
+                  <Route path="/settings/*" element={<SettingsPage />} />
 
-          {/* Reports & Analytics */}
-          <Route path="/reports" element={<ProtectedPage><Reports /></ProtectedPage>} />
-
-          {/* Notifications */}
-          <Route path="/realtime-notification" element={<ProtectedPage><NotificationSettings /></ProtectedPage>} />
+                  {/* Reports & Analytics */}
+                  <Route path="/reports" element={<Reports />} />
+                  
+                  {/* Notifications */}
+                  <Route path="/realtime-notification" element={<NotificationSettings />} />
+                </Routes>
+              </MainLayout>
+            </ProtectedRoute>
+          } />
         </Routes>
       </Router>
     </AuthProvider>
