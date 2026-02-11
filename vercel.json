@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm ci && npm run build:skip-check && ls -la dist",
+  "buildCommand": "npm run vercel-build && node verify-build.js",
   "outputDirectory": "frontend/dist",
-  "installCommand": "npm ci",
+  "installCommand": "npm install",
   "framework": null,
   "functions": {
     "api/**/*.ts": {
