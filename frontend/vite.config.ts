@@ -10,7 +10,6 @@ export default defineConfig({
     },
     port: 3002,
     host: true,
-    historyApiFallback: true,
     headers: {
       'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*; connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com;"
     },
@@ -25,9 +24,6 @@ export default defineConfig({
   },
   build: {
     target: 'es2015',
-    esbuild: {
-      drop: ['console', 'debugger'],
-    },
     outDir: 'dist',
     emptyOutDir: true,
     chunkSizeWarningLimit: 1000,
@@ -47,6 +43,9 @@ export default defineConfig({
     },
     sourcemap: false,
     reportCompressedSize: false,
+  },
+  esbuild: {
+    drop: ['console', 'debugger'],
   },
   optimizeDeps: {
     include: [
