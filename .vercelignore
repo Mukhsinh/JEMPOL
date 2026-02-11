@@ -1,42 +1,11 @@
-# Dependencies
-node_modules/
-**/node_modules/
-
-# Environment files (local only)
+node_modules
+.git
 .env.local
-.env.development.local
-.env.test.local
-
-# Logs
+.env.*.local
 *.log
-
-# IDE
-.vscode/
-.idea/
-.kiro/
-
-# Build verification script should NOT be ignored
-# verify-build.js is needed for build process
-
-# Scripts and utilities (root level only)
-/*.bat
-/test-*.html
-/fix-*.js
-/create-*.js
-/diagnose-*.js
-/ensure-*.js
-/get-*.js
-/monitor-*.js
-/reset-*.js
-/update-*.js
-# /verify-*.js - COMMENTED OUT, verify-build.js is needed
-/scripts/
-/uploads/
-/backend/
-
-# Documentation (not needed in deployment)
-/DEPLOYMENT.md
-
-# IMPORTANT: Do NOT ignore dist folder
-!frontend/dist/
-!frontend/dist/**
+.DS_Store
+frontend/node_modules
+frontend/.env.local
+frontend/src
+frontend/public
+!frontend/dist
