@@ -10,7 +10,7 @@
     "dev": "npm run dev --workspace=frontend",
     "build": "npm run build --workspace=frontend",
     "build:skip-check": "npm run build:skip-check --workspace=frontend",
-    "vercel-build": "npm run vercel-build --workspace=frontend && node verify-build.js",
+    "vercel-build": "cd frontend && npm install && npm run vercel-build",
     "postbuild": "node verify-build.js",
     "test": "npm run test --workspace=frontend"
   },
