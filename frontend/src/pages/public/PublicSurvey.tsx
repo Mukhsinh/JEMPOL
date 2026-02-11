@@ -37,7 +37,7 @@ const PublicSurvey: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
-  const [appSettings, setAppSettings] = useState<AppSettings>({});
+  const [, setAppSettings] = useState<AppSettings>({});
 
   useEffect(() => {
     loadAppSettings();

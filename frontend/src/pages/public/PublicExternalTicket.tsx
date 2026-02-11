@@ -29,7 +29,7 @@ const PublicExternalTicket: React.FC = () => {
   const unitName = decodeURIComponent(searchParams.get('unit_name') || '');
   const autoFill = searchParams.get('auto_fill') === 'true';
 
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [ticketNumber, setTicketNumber] = useState('');

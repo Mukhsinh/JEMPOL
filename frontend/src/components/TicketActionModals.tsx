@@ -527,7 +527,7 @@ interface FeedbackModalProps {
   onSuccess: () => void;
 }
 
-export function FeedbackModal({ isOpen, onClose, ticketId, ticketNumber, responseId, onSuccess }: FeedbackModalProps) {
+export function FeedbackModal({ isOpen, onClose, ticketId, ticketNumber, responseId: _responseId, onSuccess }: FeedbackModalProps) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState('');

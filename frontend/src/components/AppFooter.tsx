@@ -35,7 +35,7 @@ const AppFooter: React.FC<AppFooterProps> = ({
     logo_url: '',
     website: ''
   });
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     fetchSettings();

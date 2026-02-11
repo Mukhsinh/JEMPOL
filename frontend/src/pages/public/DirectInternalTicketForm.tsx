@@ -78,7 +78,7 @@ const DirectInternalTicketForm: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [units, setUnits] = useState<Unit[]>([]);
   const [loadingUnits, setLoadingUnits] = useState(true);
-  const [appSettings, setAppSettings] = useState<AppSettings>({});
+  const [, setAppSettings] = useState<AppSettings>({});
   
   const [formData, setFormData] = useState<FormData>({
     reporter_name: '',

@@ -9,12 +9,12 @@ let backendAvailable: boolean | null = null;
 
 // Check if running in Vercel production or backend not available
 export const isVercelProduction = (): boolean => {
-  // Jika sudah dicek dan backend tidak tersedia, return true
+  // Jika sudah dicek dan backend tidak tersedia, return true (gunakan Supabase langsung)
   if (backendAvailable === false) return true;
   // Jika di production mode
   if (import.meta.env.PROD) return true;
-  // Jika VITE_API_URL tidak ada atau kosong
-  if (!import.meta.env.VITE_API_URL) return true;
+  // Jika VITE_API_URL tidak ada atau kosong, gunakan Supabase langsung
+  if (!import.meta.env.VITE_API_URL || import.meta.env.VITE_API_URL === '') return true;
   return false;
 };
 

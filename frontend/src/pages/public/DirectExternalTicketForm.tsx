@@ -70,7 +70,7 @@ const DirectExternalTicketForm: React.FC = () => {
   const [serviceCategories, setServiceCategories] = useState<any[]>([]);
   const [patientTypes, setPatientTypes] = useState<any[]>([]);
   const [loadingMasterData, setLoadingMasterData] = useState(false);
-  const [appSettings, setAppSettings] = useState<AppSettings>({});
+  const [, setAppSettings] = useState<AppSettings>({});
   
   const [formData, setFormData] = useState<FormData>({
     reporter_identity_type: 'personal',
