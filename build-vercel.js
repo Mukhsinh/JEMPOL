@@ -1,30 +1,46 @@
-import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+#!/usr/bin/env node
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 console.log('🚀 Starting Vercel build process...');
+console.log('📍 Current directory:', process.cwd());
+console.log('📍 __dirname:', __dirname);
 
 try {
+  // Ensure we're in the right directory
+  const rootDir = __dirname;
+  const frontendDir = path.join(rootDir, 'frontend');
+  
+  console.log('🔍 Checking frontend directory:', frontendDir);
+  if (!fs.existsSync(frontendDir)) {
+    console.error('❌ ERROR: frontend directory not found!');
+    process.exit(1);
+  }
+
   // Change to frontend directory and build
   console.log('🔨 Building frontend...');
-  process.chdir('frontend');
+  process.chdir(frontendDir);
+  console.log('📍 Changed to:', process.cwd());
+  
+  // Check if node_modules exists
+  const nodeModulesPath = path.join(process.cwd(), 'node_modules');
+  if (!fs.existsSync(nodeModulesPath)) {
+    console.log('📦 Installing dependencies...');
+    execSync('npm install --legacy-peer-deps', { stdio: 'inherit' });
+  }
   
   // Run vite build directly
+  console.log('🏗️ Running vite build...');
   execSync('npx vite build --outDir dist --emptyOutDir', { stdio: 'inherit' });
   
-  // Change back to root
-  process.chdir('..');
-
   // Verify build
   console.log('🔍 Verifying build output...');
-  const distPath = path.join(__dirname, 'frontend', 'dist');
+  const distPath = path.join(process.cwd(), 'dist');
   
   if (!fs.existsSync(distPath)) {
-    console.error('❌ ERROR: dist folder not found!');
+    console.error('❌ ERROR: dist folder not found at:', distPath);
     process.exit(1);
   }
 
@@ -37,9 +53,14 @@ try {
   console.log('✅ Build completed successfully!');
   const files = fs.readdirSync(distPath);
   console.log(`📁 Files in dist: ${files.length}`);
-  console.log('📄 Files:', files.join(', '));
+  console.log('📄 Sample files:', files.slice(0, 10).join(', '));
+  
+  // Change back to root
+  process.chdir(rootDir);
+  console.log('📍 Changed back to root:', process.cwd());
   
 } catch (error) {
   console.error('❌ Build failed:', error.message);
+  console.error('Stack trace:', error.stack);
   process.exit(1);
 }
