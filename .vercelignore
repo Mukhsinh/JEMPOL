@@ -1,23 +1,30 @@
-node_modules
-.git
-*.log
+# Dependencies
+**/node_modules
+
+# Environment files
 .env.local
 .env.development.local
 .env.test.local
-.env.production.local
-backend/node_modules
 backend/.env
-*.bat
-*.md
-test-*.html
-fix-*.js
-create-*.js
-diagnose-*.js
-ensure-*.js
-get-*.js
-monitor-*.js
-reset-*.js
-update-*.js
-verify-*.js
-scripts/
-uploads/
+
+# Logs
+*.log
+
+# Scripts and utilities (root level only)
+/*.bat
+/*.md
+/test-*.html
+/fix-*.js
+/create-*.js
+/diagnose-*.js
+/ensure-*.js
+/get-*.js
+/monitor-*.js
+/reset-*.js
+/update-*.js
+/verify-*.js
+/scripts/
+/uploads/
+
+# Keep README
+!README.md
