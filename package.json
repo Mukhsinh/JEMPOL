@@ -8,8 +8,9 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=frontend",
-    "build": "cd frontend && npm install && npm run build:skip-check && echo 'Build completed. Checking dist folder...' && ls -la frontend/dist",
-    "vercel-build": "npm run build",
+    "build": "npm run build:skip-check --workspace=frontend",
+    "build:skip-check": "npm run build:skip-check --workspace=frontend",
+    "vercel-build": "npm run build:skip-check --workspace=frontend",
     "test": "npm run test --workspace=frontend"
   },
   "devDependencies": {
