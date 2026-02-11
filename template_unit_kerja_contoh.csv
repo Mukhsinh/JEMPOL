@@ -1,8 +1,0 @@
-Nama Unit,Kode,Deskripsi,Tipe Unit (Kode),Unit Induk (Kode),Email Kontak,Telepon Kontak,SLA (Jam),Status (Aktif/Tidak Aktif)
-Bagian Administrasi,ADM,Bagian administrasi rumah sakit,ADM,,admin@rsud.com,021-12345678,24,Aktif
-Bagian IT dan Inovasi,IT,Bagian teknologi informasi,TEKNIS,,it@rsud.com,021-12345679,24,Aktif
-Bagian Keuangan,KFU,Bagian keuangan rumah sakit,ADM,,keuangan@rsud.com,021-12345680,48,Aktif
-Bagian Pelayanan Publik,YANPUB,Bagian pelayanan publik,LAYANAN,,yanpub@rsud.com,021-12345681,24,Aktif
-Direktur Utama,DIR,Direktur utama rumah sakit,ADM,,direktur@rsud.com,021-12345682,4,Aktif
-Sub Bagian Kepegawaian,KEPEG,Sub bagian kepegawaian,ADM,ADM,kepegawaian@rsud.com,021-12345683,24,Aktif
-Sub Bagian Umum,UMUM,Sub bagian umum,ADM,ADM,umum@rsud.com,021-12345684,24,Aktif

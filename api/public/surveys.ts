@@ -61,19 +61,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       education,
       job,
       patient_type,
-      // Skor pertanyaan (q1-q8)
-      q1_score, q2_score, q3_score, q4_score,
-      q5_score, q6_score, q7_score, q8_score,
-      // Skor indikator (9 unsur x 3 indikator)
-      u1_ind1_score, u1_ind2_score, u1_ind3_score,
-      u2_ind1_score, u2_ind2_score, u2_ind3_score,
-      u3_ind1_score, u3_ind2_score, u3_ind3_score,
-      u4_ind1_score, u4_ind2_score, u4_ind3_score,
-      u5_ind1_score, u5_ind2_score, u5_ind3_score,
-      u6_ind1_score, u6_ind2_score, u6_ind3_score,
-      u7_ind1_score, u7_ind2_score, u7_ind3_score,
-      u8_ind1_score, u8_ind2_score, u8_ind3_score,
-      u9_ind1_score, u9_ind2_score, u9_ind3_score,
+      regency,
+      district,
+      address_detail,
+      // Skor 9 unsur (langsung tanpa indikator)
+      u1_score, u2_score, u3_score, u4_score, u5_score,
+      u6_score, u7_score, u8_score, u9_score,
       overall_score,
       comments,
       qr_code,
@@ -113,14 +106,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
       unitData = data;
+      console.log('✅ Unit verified:', unitData.name);
     }
 
-    console.log('✅ Unit verified:', unitData.name);
-
-    // Hitung skor rata-rata dari q1-q8 jika ada
+    // Hitung skor rata-rata dari 9 unsur jika ada
     const scores = [
-      q1_score, q2_score, q3_score, q4_score,
-      q5_score, q6_score, q7_score, q8_score
+      u1_score, u2_score, u3_score, u4_score, u5_score,
+      u6_score, u7_score, u8_score, u9_score
     ].filter(s => s != null && s !== '').map(s => parseInt(s as string));
     
     const avgScore = scores.length > 0 
@@ -147,7 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Simpan ke tabel public_surveys - ADOPSI DARI EXTERNAL TICKETS
+    // Simpan ke tabel public_surveys
     const surveyData: any = {
       unit_id: unit_id,
       service_category_id: service_category_id || null,
@@ -160,54 +152,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       education: education || null,
       job: job || null,
       patient_type: patient_type || null,
+      regency: regency || null,
+      district: district || null,
+      address_detail: address_detail || null,
       is_anonymous: is_anonymous || false,
-      // Skor 8 pertanyaan
-      q1_score: q1_score ? parseInt(q1_score as string) : null,
-      q2_score: q2_score ? parseInt(q2_score as string) : null,
-      q3_score: q3_score ? parseInt(q3_score as string) : null,
-      q4_score: q4_score ? parseInt(q4_score as string) : null,
-      q5_score: q5_score ? parseInt(q5_score as string) : null,
-      q6_score: q6_score ? parseInt(q6_score as string) : null,
-      q7_score: q7_score ? parseInt(q7_score as string) : null,
-      q8_score: q8_score ? parseInt(q8_score as string) : null,
-      // Skor indikator (9 unsur x 3 indikator)
-      u1_ind1_score: u1_ind1_score ? parseInt(u1_ind1_score as string) : null,
-      u1_ind2_score: u1_ind2_score ? parseInt(u1_ind2_score as string) : null,
-      u1_ind3_score: u1_ind3_score ? parseInt(u1_ind3_score as string) : null,
-      u2_ind1_score: u2_ind1_score ? parseInt(u2_ind1_score as string) : null,
-      u2_ind2_score: u2_ind2_score ? parseInt(u2_ind2_score as string) : null,
-      u2_ind3_score: u2_ind3_score ? parseInt(u2_ind3_score as string) : null,
-      u3_ind1_score: u3_ind1_score ? parseInt(u3_ind1_score as string) : null,
-      u3_ind2_score: u3_ind2_score ? parseInt(u3_ind2_score as string) : null,
-      u3_ind3_score: u3_ind3_score ? parseInt(u3_ind3_score as string) : null,
-      u4_ind1_score: u4_ind1_score ? parseInt(u4_ind1_score as string) : null,
-      u4_ind2_score: u4_ind2_score ? parseInt(u4_ind2_score as string) : null,
-      u4_ind3_score: u4_ind3_score ? parseInt(u4_ind3_score as string) : null,
-      u5_ind1_score: u5_ind1_score ? parseInt(u5_ind1_score as string) : null,
-      u5_ind2_score: u5_ind2_score ? parseInt(u5_ind2_score as string) : null,
-      u5_ind3_score: u5_ind3_score ? parseInt(u5_ind3_score as string) : null,
-      u6_ind1_score: u6_ind1_score ? parseInt(u6_ind1_score as string) : null,
-      u6_ind2_score: u6_ind2_score ? parseInt(u6_ind2_score as string) : null,
-      u6_ind3_score: u6_ind3_score ? parseInt(u6_ind3_score as string) : null,
-      u7_ind1_score: u7_ind1_score ? parseInt(u7_ind1_score as string) : null,
-      u7_ind2_score: u7_ind2_score ? parseInt(u7_ind2_score as string) : null,
-      u7_ind3_score: u7_ind3_score ? parseInt(u7_ind3_score as string) : null,
-      u8_ind1_score: u8_ind1_score ? parseInt(u8_ind1_score as string) : null,
-      u8_ind2_score: u8_ind2_score ? parseInt(u8_ind2_score as string) : null,
-      u8_ind3_score: u8_ind3_score ? parseInt(u8_ind3_score as string) : null,
-      u9_ind1_score: u9_ind1_score ? parseInt(u9_ind1_score as string) : null,
-      u9_ind2_score: u9_ind2_score ? parseInt(u9_ind2_score as string) : null,
-      u9_ind3_score: u9_ind3_score ? parseInt(u9_ind3_score as string) : null,
+      // Skor 9 unsur (langsung tanpa indikator)
+      u1_score: u1_score ? parseInt(u1_score as string) : null,
+      u2_score: u2_score ? parseInt(u2_score as string) : null,
+      u3_score: u3_score ? parseInt(u3_score as string) : null,
+      u4_score: u4_score ? parseInt(u4_score as string) : null,
+      u5_score: u5_score ? parseInt(u5_score as string) : null,
+      u6_score: u6_score ? parseInt(u6_score as string) : null,
+      u7_score: u7_score ? parseInt(u7_score as string) : null,
+      u8_score: u8_score ? parseInt(u8_score as string) : null,
+      u9_score: u9_score ? parseInt(u9_score as string) : null,
       // Skor agregat
-      overall_score: overall_score ? parseInt(overall_score as string) : avgScore,
-      response_time_score: q3_score ? parseInt(q3_score as string) : null,
-      solution_quality_score: q5_score ? parseInt(q5_score as string) : null,
-      staff_courtesy_score: q7_score ? parseInt(q7_score as string) : null,
+      overall_score: overall_score ? parseInt(overall_score as string) : null,
       comments: comments || null,
-      qr_code: qr_code || null, // PERBAIKAN: Gunakan qr_code seperti external tickets
+      qr_code: qr_code || null,
       source: finalSource,
-      ip_address: null, // PERBAIKAN: Tambahkan field seperti external tickets
-      user_agent: null // PERBAIKAN: Tambahkan field seperti external tickets
+      ip_address: null,
+      user_agent: null
     };
     
     console.log('📤 Inserting survey data:', {

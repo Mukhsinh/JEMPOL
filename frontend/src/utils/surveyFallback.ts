@@ -20,10 +20,12 @@ export const submitSurveyDirectly = async (surveyData: any) => {
       throw new Error('Unit tidak valid atau tidak aktif');
     }
 
-    // Hitung skor rata-rata dari q1-q8 jika ada
+    // Hitung skor rata-rata dari semua pertanyaan yang tersedia
     const scores = [
+      // Format standar: 11 unsur survei IKM
       surveyData.q1, surveyData.q2, surveyData.q3, surveyData.q4,
-      surveyData.q5, surveyData.q6, surveyData.q7, surveyData.q8
+      surveyData.q5, surveyData.q6, surveyData.q7, surveyData.q8,
+      surveyData.q9, surveyData.q10, surveyData.q11
     ].filter(s => s != null && s !== '').map(s => parseInt(s as string));
     
     const avgScore = scores.length > 0 
@@ -63,7 +65,13 @@ export const submitSurveyDirectly = async (surveyData: any) => {
       job: surveyData.job || null,
       patient_type: surveyData.patient_type || null,
       is_anonymous: surveyData.is_anonymous || false,
-      // Skor 8 pertanyaan
+      // Alamat
+      provinsi: surveyData.provinsi || null,
+      kabupaten_kota: surveyData.kota_kabupaten || surveyData.kabupaten_kota || null,
+      kecamatan: surveyData.kecamatan || null,
+      kelurahan: surveyData.kelurahan || null,
+      alamat_jalan: surveyData.alamat_detail || surveyData.alamat_jalan || null,
+      // Skor 11 pertanyaan survei IKM
       q1_score: surveyData.q1 ? parseInt(surveyData.q1 as string) : null,
       q2_score: surveyData.q2 ? parseInt(surveyData.q2 as string) : null,
       q3_score: surveyData.q3 ? parseInt(surveyData.q3 as string) : null,
@@ -72,6 +80,9 @@ export const submitSurveyDirectly = async (surveyData: any) => {
       q6_score: surveyData.q6 ? parseInt(surveyData.q6 as string) : null,
       q7_score: surveyData.q7 ? parseInt(surveyData.q7 as string) : null,
       q8_score: surveyData.q8 ? parseInt(surveyData.q8 as string) : null,
+      q9_score: surveyData.q9 ? parseInt(surveyData.q9 as string) : null,
+      q10_score: surveyData.q10 ? parseInt(surveyData.q10 as string) : null,
+      q11_score: surveyData.q11 ? parseInt(surveyData.q11 as string) : null,
       // Skor agregat
       overall_score: surveyData.overall_satisfaction ? parseInt(surveyData.overall_satisfaction as string) : avgScore,
       response_time_score: surveyData.q3 ? parseInt(surveyData.q3 as string) : null,

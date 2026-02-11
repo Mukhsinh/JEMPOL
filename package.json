@@ -1,38 +1,22 @@
 {
-  "name": "innovation-landing-page",
+  "name": "complaint-management-system",
   "version": "1.0.0",
-  "description": "Innovation Landing Page with Visitor Registration, Gallery, and Interactive Game",
+  "description": "Sistem Manajemen Keluhan dengan Supabase Backend",
   "private": true,
   "workspaces": [
-    "frontend",
-    "backend"
+    "frontend"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
-    "dev:frontend": "npm run dev --workspace=frontend",
-    "dev:backend": "npm run dev --workspace=backend",
+    "dev": "npm run dev --workspace=frontend",
     "build": "npm run build --workspace=frontend",
-    "build:frontend": "npm run build --workspace=frontend",
     "vercel-build": "npm run build --workspace=frontend",
-    "test": "npm run test --workspaces",
-    "test:frontend": "npm run test --workspace=frontend",
-    "test:backend": "npm run test --workspace=backend",
-    "convert-ebooks": "node scripts/convert-to-pdf.js",
-    "generate-pdfs": "node scripts/generate-pdfs.js",
-    "generate-ebook-pdfs": "node scripts/generate-ebook-pdfs.js",
-    "generate-qr-form-lacak": "node scripts/generate-form-lacak-qr.js"
+    "test": "npm run test --workspace=frontend"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "puppeteer": "^24.34.0"
+    "concurrently": "^8.2.2"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
-    "@vercel/node": "^3.0.12",
-    "bcrypt": "^6.0.0",
-    "cloudinary": "2.8.0",
-    "node-fetch": "^3.3.2",
-    "qrcode": "^1.5.3",
-    "vite": "7.3.0"
+    "@vercel/node": "^3.0.12"
   }
 }

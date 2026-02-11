@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import AppFooter from '../../components/AppFooter';
-import { wilayahIndonesia, getKecamatanByKabupaten } from '../../data/wilayahIndonesia';
+import { wilayahIndonesia } from '../../data/wilayahIndonesia';
 import { downloadSurveyPDF } from '../../utils/pdfGenerator';
 
 interface FormData {
@@ -18,27 +17,20 @@ interface FormData {
   kota_kabupaten: string;
   kecamatan: string;
   alamat_detail: string;
-  // 9 Unsur x 3 Indikator = 27 field
-  u1_ind1: string; u1_ind2: string; u1_ind3: string;
-  u2_ind1: string; u2_ind2: string; u2_ind3: string;
-  u3_ind1: string; u3_ind2: string; u3_ind3: string;
-  u4_ind1: string; u4_ind2: string; u4_ind3: string;
-  u5_ind1: string; u5_ind2: string; u5_ind3: string;
-  u6_ind1: string; u6_ind2: string; u6_ind3: string;
-  u7_ind1: string; u7_ind2: string; u7_ind3: string;
-  u8_ind1: string; u8_ind2: string; u8_ind3: string;
-  u9_ind1: string; u9_ind2: string; u9_ind3: string;
+  // 11 Unsur IKM
+  u1: string;
+  u2: string;
+  u3: string;
+  u4: string;
+  u5: string;
+  u6: string;
+  u7: string;
+  u8: string;
+  u9: string;
+  u10: string;
+  u11: string;
   overall_satisfaction: string;
   suggestions: string;
-}
-
-interface AppSettings {
-  institution_name?: string;
-  institution_address?: string;
-  contact_phone?: string;
-  contact_email?: string;
-  website?: string;
-  app_footer?: string;
 }
 
 // Direct Form View - Survei Kepuasan (Public, Tanpa Login, Mobile-First)
@@ -72,33 +64,12 @@ const DirectSurveyForm: React.FC = () => {
     };
   }, []);
 
-  // Load app settings untuk footer
-  useEffect(() => {
-    const fetchAppSettings = async () => {
-      try {
-        const response = await fetch('/api/public/app-settings');
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            setAppSettings(result.data);
-            console.log('✅ App settings loaded:', result.data);
-          }
-        }
-      } catch (err) {
-        console.error('❌ Error loading app settings:', err);
-      }
-    };
-    
-    fetchAppSettings();
-  }, []);
-
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [surveyId, setSurveyId] = useState('');
   const [submittedSurveyData, setSubmittedSurveyData] = useState<any>(null);
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
-  const [appSettings, setAppSettings] = useState<AppSettings>({});
   
   const [formData, setFormData] = useState<FormData>({
     service_type: '', // Tetap ada di state tapi tidak ditampilkan
@@ -113,15 +84,7 @@ const DirectSurveyForm: React.FC = () => {
     kota_kabupaten: '',
     kecamatan: '',
     alamat_detail: '',
-    u1_ind1: '', u1_ind2: '', u1_ind3: '',
-    u2_ind1: '', u2_ind2: '', u2_ind3: '',
-    u3_ind1: '', u3_ind2: '', u3_ind3: '',
-    u4_ind1: '', u4_ind2: '', u4_ind3: '',
-    u5_ind1: '', u5_ind2: '', u5_ind3: '',
-    u6_ind1: '', u6_ind2: '', u6_ind3: '',
-    u7_ind1: '', u7_ind2: '', u7_ind3: '',
-    u8_ind1: '', u8_ind2: '', u8_ind3: '',
-    u9_ind1: '', u9_ind2: '', u9_ind3: '',
+    u1: '', u2: '', u3: '', u4: '', u5: '', u6: '', u7: '', u8: '', u9: '', u10: '', u11: '',
     overall_satisfaction: '',
     suggestions: ''
   });
@@ -131,16 +94,18 @@ const DirectSurveyForm: React.FC = () => {
   const totalSteps = 2; // Step 1: Identitas, Step 2: Penilaian
   const progress = (currentStep / totalSteps) * 100;
 
-  const questions = [
+  const surveyQuestions = [
     { 
       id: 'u1', 
       code: 'U1', 
       title: 'Persyaratan', 
       icon: '📋',
-      indicators: [
-        { id: 'u1_ind1', text: 'Persyaratan pelayanan yang diinformasikan jelas dan mudah dipahami' },
-        { id: 'u1_ind2', text: 'Persyaratan pelayanan mudah dipenuhi oleh pengguna layanan' },
-        { id: 'u1_ind3', text: 'Persyaratan pelayanan sesuai dengan jenis layanan yang diberikan' }
+      question: 'Bagaimana pendapat Saudara tentang kesesuaian persyaratan pelayanan dengan jenis pelayanannya?',
+      options: [
+        { value: '1', label: 'Tidak Sesuai', emoji: '😞' },
+        { value: '2', label: 'Kurang Sesuai', emoji: '😕' },
+        { value: '3', label: 'Sesuai', emoji: '🙂' },
+        { value: '4', label: 'Sangat Sesuai', emoji: '😊' }
       ]
     },
     { 
@@ -148,10 +113,12 @@ const DirectSurveyForm: React.FC = () => {
       code: 'U2', 
       title: 'Prosedur', 
       icon: '📝',
-      indicators: [
-        { id: 'u2_ind1', text: 'Prosedur atau alur pelayanan diinformasikan dengan jelas' },
-        { id: 'u2_ind2', text: 'Prosedur pelayanan mudah diikuti oleh pengguna layanan' },
-        { id: 'u2_ind3', text: 'Pelaksanaan pelayanan sesuai dengan prosedur yang telah ditetapkan' }
+      question: 'Bagaimana pemahaman Saudara tentang kemudahan prosedur pelayanan di unit ini?',
+      options: [
+        { value: '1', label: 'Tidak Mudah', emoji: '😞' },
+        { value: '2', label: 'Kurang Mudah', emoji: '😕' },
+        { value: '3', label: 'Mudah', emoji: '🙂' },
+        { value: '4', label: 'Sangat Mudah', emoji: '😊' }
       ]
     },
     { 
@@ -159,32 +126,38 @@ const DirectSurveyForm: React.FC = () => {
       code: 'U3', 
       title: 'Waktu Pelayanan', 
       icon: '⏱️',
-      indicators: [
-        { id: 'u3_ind1', text: 'Informasi mengenai jangka waktu pelayanan disampaikan dengan jelas' },
-        { id: 'u3_ind2', text: 'Pelayanan diselesaikan sesuai dengan standar waktu pelayanan' },
-        { id: 'u3_ind3', text: 'Tidak terdapat keterlambatan pelayanan tanpa alasan yang jelas' }
+      question: 'Bagaimana pendapat Saudara tentang kecepatan waktu dalam memberikan pelayanan?',
+      options: [
+        { value: '1', label: 'Tidak Cepat', emoji: '😞' },
+        { value: '2', label: 'Kurang Cepat', emoji: '😕' },
+        { value: '3', label: 'Cepat', emoji: '🙂' },
+        { value: '4', label: 'Sangat Cepat', emoji: '😊' }
       ]
     },
     { 
       id: 'u4', 
       code: 'U4', 
       title: 'Biaya/Tarif', 
-      icon: '💰',
-      indicators: [
-        { id: 'u4_ind1', text: 'Informasi biaya atau tarif pelayanan disampaikan secara jelas' },
-        { id: 'u4_ind2', text: 'Biaya yang dibayarkan sesuai dengan ketentuan yang berlaku' },
-        { id: 'u4_ind3', text: 'Tidak terdapat pungutan di luar biaya/tarif resmi' }
+      icon: '🏷️',
+      question: 'Bagaimana pendapat Saudara tentang kewajaran biaya/tarif dalam pelayanan?',
+      options: [
+        { value: '1', label: 'Sangat Mahal', emoji: '😞' },
+        { value: '2', label: 'Cukup Mahal', emoji: '😕' },
+        { value: '3', label: 'Murah', emoji: '🙂' },
+        { value: '4', label: 'Gratis', emoji: '😊' }
       ]
     },
     { 
       id: 'u5', 
       code: 'U5', 
-      title: 'Produk Layanan', 
+      title: 'Produk Spesifikasi Jenis Layanan', 
       icon: '📦',
-      indicators: [
-        { id: 'u5_ind1', text: 'Hasil pelayanan yang diterima sesuai dengan ketentuan yang ditetapkan' },
-        { id: 'u5_ind2', text: 'Produk pelayanan diterima secara lengkap dan benar' },
-        { id: 'u5_ind3', text: 'Kualitas produk pelayanan sesuai standar pelayanan' }
+      question: 'Bagaimana pendapat Saudara tentang kesesuaian produk pelayanan antara yang tercantum dalam standar pelayanan dengan hasil yang diberikan?',
+      options: [
+        { value: '1', label: 'Tidak Sesuai', emoji: '😞' },
+        { value: '2', label: 'Kurang Sesuai', emoji: '😕' },
+        { value: '3', label: 'Sesuai', emoji: '🙂' },
+        { value: '4', label: 'Sangat Sesuai', emoji: '😊' }
       ]
     },
     { 
@@ -192,10 +165,12 @@ const DirectSurveyForm: React.FC = () => {
       code: 'U6', 
       title: 'Kompetensi Pelaksana', 
       icon: '👨‍⚕️',
-      indicators: [
-        { id: 'u6_ind1', text: 'Petugas memiliki pengetahuan yang memadai dalam memberikan pelayanan' },
-        { id: 'u6_ind2', text: 'Petugas memiliki keterampilan yang baik dalam melayani pengguna' },
-        { id: 'u6_ind3', text: 'Petugas mampu memberikan pelayanan secara profesional' }
+      question: 'Bagaimana pendapat Saudara tentang kompetensi/kemampuan petugas dalam pelayanan?',
+      options: [
+        { value: '1', label: 'Tidak Kompeten', emoji: '😞' },
+        { value: '2', label: 'Kurang Kompeten', emoji: '😕' },
+        { value: '3', label: 'Kompeten', emoji: '🙂' },
+        { value: '4', label: 'Sangat Kompeten', emoji: '😊' }
       ]
     },
     { 
@@ -203,10 +178,12 @@ const DirectSurveyForm: React.FC = () => {
       code: 'U7', 
       title: 'Perilaku Pelaksana', 
       icon: '😊',
-      indicators: [
-        { id: 'u7_ind1', text: 'Petugas bersikap sopan dan ramah dalam memberikan pelayanan' },
-        { id: 'u7_ind2', text: 'Petugas memberikan pelayanan dengan sikap membantu' },
-        { id: 'u7_ind3', text: 'Petugas melayani tanpa membedakan latar belakang pengguna' }
+      question: 'Bagaimana pendapat Saudara perilaku petugas dalam pelayanan terkait kesopanan dan keramahan?',
+      options: [
+        { value: '1', label: 'Tidak Sopan dan Ramah', emoji: '😞' },
+        { value: '2', label: 'Kurang Sopan dan Ramah', emoji: '😕' },
+        { value: '3', label: 'Sopan dan Ramah', emoji: '🙂' },
+        { value: '4', label: 'Sangat Sopan dan Ramah', emoji: '😊' }
       ]
     },
     { 
@@ -214,10 +191,12 @@ const DirectSurveyForm: React.FC = () => {
       code: 'U8', 
       title: 'Sarana dan Prasarana', 
       icon: '🏥',
-      indicators: [
-        { id: 'u8_ind1', text: 'Sarana dan prasarana pelayanan tersedia dengan memadai' },
-        { id: 'u8_ind2', text: 'Sarana dan prasarana pelayanan dalam kondisi baik dan layak digunakan' },
-        { id: 'u8_ind3', text: 'Lingkungan pelayanan bersih, nyaman, dan aman' }
+      question: 'Bagaimana pendapat Saudara tentang kualitas sarana dan prasarana?',
+      options: [
+        { value: '1', label: 'Buruk', emoji: '😞' },
+        { value: '2', label: 'Cukup Baik', emoji: '😕' },
+        { value: '3', label: 'Baik', emoji: '🙂' },
+        { value: '4', label: 'Sangat Baik', emoji: '😊' }
       ]
     },
     { 
@@ -225,20 +204,47 @@ const DirectSurveyForm: React.FC = () => {
       code: 'U9', 
       title: 'Penanganan Pengaduan', 
       icon: '📞',
-      indicators: [
-        { id: 'u9_ind1', text: 'Tersedia sarana pengaduan yang mudah diakses pengguna layanan' },
-        { id: 'u9_ind2', text: 'Pengaduan ditindaklanjuti dengan cepat dan jelas' },
-        { id: 'u9_ind3', text: 'Pengguna mendapatkan informasi hasil penanganan pengaduan' }
+      question: 'Bagaimana pendapat Saudara tentang penanganan pengaduan pengguna layanan?',
+      options: [
+        { value: '1', label: 'Tidak Ada', emoji: '😞' },
+        { value: '2', label: 'Ada Tetapi Tidak Berfungsi', emoji: '😕' },
+        { value: '3', label: 'Berfungsi Kurang Maksimal', emoji: '🙂' },
+        { value: '4', label: 'Dikelola dengan Baik', emoji: '😊' }
+      ]
+    },
+    { 
+      id: 'u10', 
+      code: 'U10', 
+      title: 'Transparansi Pelayanan', 
+      icon: '🔍',
+      question: 'Bagaimana pendapat Saudara tentang transparansi pelayanan yang diberikan? (kecukupan informasi mengenai persyaratan, biaya, waktu pelayanan, prosedur dan sebagainya)',
+      options: [
+        { value: '1', label: 'Tidak Transparan', emoji: '😞' },
+        { value: '2', label: 'Kurang Transparan', emoji: '😕' },
+        { value: '3', label: 'Transparan', emoji: '🙂' },
+        { value: '4', label: 'Sangat Transparan', emoji: '😊' }
+      ]
+    },
+    { 
+      id: 'u11', 
+      code: 'U11', 
+      title: 'Integritas Petugas Pelayanan', 
+      icon: '🛡️',
+      question: 'Bagaimana pendapat Saudara tentang integritas petugas pelayanan? (terkait suap, pungutan liar, gratifikasi, dan sebagainya)',
+      options: [
+        { value: '1', label: 'Petugas Tidak Berintegritas', emoji: '😞' },
+        { value: '2', label: 'Petugas Kurang Berintegritas', emoji: '😕' },
+        { value: '3', label: 'Petugas Berintegritas', emoji: '🙂' },
+        { value: '4', label: 'Petugas Sangat Berintegritas', emoji: '😊' }
       ]
     }
   ];
 
   const ratingOptions = [
-    { value: '1', label: 'Sangat Tidak Puas', emoji: '😞', color: 'from-red-500 to-red-600', bgColor: 'bg-red-500', desc: 'Sangat buruk' },
-    { value: '2', label: 'Tidak Puas', emoji: '😕', color: 'from-orange-500 to-orange-600', bgColor: 'bg-orange-500', desc: 'Kurang baik' },
-    { value: '3', label: 'Cukup Puas', emoji: '😐', color: 'from-yellow-500 to-yellow-600', bgColor: 'bg-yellow-500', desc: 'Cukup' },
-    { value: '4', label: 'Puas', emoji: '🙂', color: 'from-lime-500 to-lime-600', bgColor: 'bg-lime-500', desc: 'Baik' },
-    { value: '5', label: 'Sangat Puas', emoji: '😊', color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-500', desc: 'Sangat baik' }
+    { value: '1', label: 'Pilihan 1', emoji: '😞', color: 'from-red-500 to-red-600', bgColor: 'bg-red-500', desc: 'Nilai 1' },
+    { value: '2', label: 'Pilihan 2', emoji: '😕', color: 'from-orange-500 to-orange-600', bgColor: 'bg-orange-500', desc: 'Nilai 2' },
+    { value: '3', label: 'Pilihan 3', emoji: '🙂', color: 'from-lime-500 to-lime-600', bgColor: 'bg-lime-500', desc: 'Nilai 3' },
+    { value: '4', label: 'Pilihan 4', emoji: '😊', color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-500', desc: 'Nilai 4' }
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -322,7 +328,7 @@ const DirectSurveyForm: React.FC = () => {
         return;
       }
 
-      // Siapkan data survey dengan format yang benar
+      // Siapkan data survey dengan format yang benar (11 unsur)
       const surveyData = {
         unit_id: unitId,
         visitor_name: formData.is_anonymous ? null : formData.full_name,
@@ -337,34 +343,18 @@ const DirectSurveyForm: React.FC = () => {
         regency: formData.kota_kabupaten || null,
         district: formData.kecamatan || null,
         address_detail: formData.alamat_detail || null,
-        // Skor indikator (9 unsur x 3 indikator)
-        u1_ind1_score: formData.u1_ind1 ? parseInt(formData.u1_ind1) : null,
-        u1_ind2_score: formData.u1_ind2 ? parseInt(formData.u1_ind2) : null,
-        u1_ind3_score: formData.u1_ind3 ? parseInt(formData.u1_ind3) : null,
-        u2_ind1_score: formData.u2_ind1 ? parseInt(formData.u2_ind1) : null,
-        u2_ind2_score: formData.u2_ind2 ? parseInt(formData.u2_ind2) : null,
-        u2_ind3_score: formData.u2_ind3 ? parseInt(formData.u2_ind3) : null,
-        u3_ind1_score: formData.u3_ind1 ? parseInt(formData.u3_ind1) : null,
-        u3_ind2_score: formData.u3_ind2 ? parseInt(formData.u3_ind2) : null,
-        u3_ind3_score: formData.u3_ind3 ? parseInt(formData.u3_ind3) : null,
-        u4_ind1_score: formData.u4_ind1 ? parseInt(formData.u4_ind1) : null,
-        u4_ind2_score: formData.u4_ind2 ? parseInt(formData.u4_ind2) : null,
-        u4_ind3_score: formData.u4_ind3 ? parseInt(formData.u4_ind3) : null,
-        u5_ind1_score: formData.u5_ind1 ? parseInt(formData.u5_ind1) : null,
-        u5_ind2_score: formData.u5_ind2 ? parseInt(formData.u5_ind2) : null,
-        u5_ind3_score: formData.u5_ind3 ? parseInt(formData.u5_ind3) : null,
-        u6_ind1_score: formData.u6_ind1 ? parseInt(formData.u6_ind1) : null,
-        u6_ind2_score: formData.u6_ind2 ? parseInt(formData.u6_ind2) : null,
-        u6_ind3_score: formData.u6_ind3 ? parseInt(formData.u6_ind3) : null,
-        u7_ind1_score: formData.u7_ind1 ? parseInt(formData.u7_ind1) : null,
-        u7_ind2_score: formData.u7_ind2 ? parseInt(formData.u7_ind2) : null,
-        u7_ind3_score: formData.u7_ind3 ? parseInt(formData.u7_ind3) : null,
-        u8_ind1_score: formData.u8_ind1 ? parseInt(formData.u8_ind1) : null,
-        u8_ind2_score: formData.u8_ind2 ? parseInt(formData.u8_ind2) : null,
-        u8_ind3_score: formData.u8_ind3 ? parseInt(formData.u8_ind3) : null,
-        u9_ind1_score: formData.u9_ind1 ? parseInt(formData.u9_ind1) : null,
-        u9_ind2_score: formData.u9_ind2 ? parseInt(formData.u9_ind2) : null,
-        u9_ind3_score: formData.u9_ind3 ? parseInt(formData.u9_ind3) : null,
+        // Skor 11 unsur
+        u1_score: formData.u1 ? parseInt(formData.u1) : null,
+        u2_score: formData.u2 ? parseInt(formData.u2) : null,
+        u3_score: formData.u3 ? parseInt(formData.u3) : null,
+        u4_score: formData.u4 ? parseInt(formData.u4) : null,
+        u5_score: formData.u5 ? parseInt(formData.u5) : null,
+        u6_score: formData.u6 ? parseInt(formData.u6) : null,
+        u7_score: formData.u7 ? parseInt(formData.u7) : null,
+        u8_score: formData.u8 ? parseInt(formData.u8) : null,
+        u9_score: formData.u9 ? parseInt(formData.u9) : null,
+        u10_score: formData.u10 ? parseInt(formData.u10) : null,
+        u11_score: formData.u11 ? parseInt(formData.u11) : null,
         overall_score: formData.overall_satisfaction ? parseInt(formData.overall_satisfaction) : null,
         comments: formData.suggestions || null,
         qr_code: qrCode || null,
@@ -415,15 +405,17 @@ const DirectSurveyForm: React.FC = () => {
         unit_name: unitName || 'Unit Umum',
         visit_date: new Date().toISOString(),
         responses: {
-          q1: parseInt(formData.u1_ind1) || 0,
-          q2: parseInt(formData.u2_ind1) || 0,
-          q3: parseInt(formData.u3_ind1) || 0,
-          q4: parseInt(formData.u4_ind1) || 0,
-          q5: parseInt(formData.u5_ind1) || 0,
-          q6: parseInt(formData.u6_ind1) || 0,
-          q7: parseInt(formData.u7_ind1) || 0,
-          q8: parseInt(formData.u8_ind1) || 0,
-          q9: parseInt(formData.u9_ind1) || 0
+          q1: parseInt(formData.u1) || 0,
+          q2: parseInt(formData.u2) || 0,
+          q3: parseInt(formData.u3) || 0,
+          q4: parseInt(formData.u4) || 0,
+          q5: parseInt(formData.u5) || 0,
+          q6: parseInt(formData.u6) || 0,
+          q7: parseInt(formData.u7) || 0,
+          q8: parseInt(formData.u8) || 0,
+          q9: parseInt(formData.u9) || 0,
+          q10: parseInt(formData.u10) || 0,
+          q11: parseInt(formData.u11) || 0
         },
         suggestions: formData.suggestions,
         created_at: new Date().toISOString(),
@@ -464,15 +456,7 @@ const DirectSurveyForm: React.FC = () => {
       kota_kabupaten: '', 
       kecamatan: '', 
       alamat_detail: '',
-      u1_ind1: '', u1_ind2: '', u1_ind3: '',
-      u2_ind1: '', u2_ind2: '', u2_ind3: '',
-      u3_ind1: '', u3_ind2: '', u3_ind3: '',
-      u4_ind1: '', u4_ind2: '', u4_ind3: '',
-      u5_ind1: '', u5_ind2: '', u5_ind3: '',
-      u6_ind1: '', u6_ind2: '', u6_ind3: '',
-      u7_ind1: '', u7_ind2: '', u7_ind3: '',
-      u8_ind1: '', u8_ind2: '', u8_ind3: '',
-      u9_ind1: '', u9_ind2: '', u9_ind3: '',
+      u1: '', u2: '', u3: '', u4: '', u5: '', u6: '', u7: '', u8: '', u9: '', u10: '', u11: '',
       overall_satisfaction: '', 
       suggestions: ''
     });
@@ -778,78 +762,65 @@ const DirectSurveyForm: React.FC = () => {
                 <div className="space-y-6 animate-slideUp">
                   <div>
                     <h2 className="text-xl font-bold text-gray-800 mb-2">Penilaian Layanan</h2>
-                    <p className="text-gray-500 text-sm">Berikan penilaian untuk setiap indikator</p>
+                    <p className="text-gray-500 text-sm">Berikan penilaian untuk setiap pertanyaan</p>
                   </div>
 
-                  {/* Rating Legend */}
-                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-5 mb-4 sticky top-0 z-10 border-2 border-amber-200 shadow-lg">
-                    <p className="text-center text-sm font-extrabold text-amber-800 mb-4 uppercase tracking-wider">Panduan Penilaian</p>
-                    <div className="grid grid-cols-5 gap-2">
-                      {ratingOptions.map((opt) => (
-                        <div key={opt.value} className="flex flex-col items-center gap-1.5">
-                          <div className={`w-14 h-14 rounded-2xl ${opt.bgColor} flex items-center justify-center shadow-lg border-2 border-white`}>
-                            <span className="text-3xl">{opt.emoji}</span>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-sm font-extrabold text-gray-800 mb-0.5">{opt.value}</p>
-                            <p className="text-[10px] font-semibold text-gray-700 leading-tight">{opt.label}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
 
-                  {/* Questions - 9 Unsur */}
-                  <div className="space-y-4">
-                    {questions.map((q) => (
-                      <div key={q.id} className="bg-white rounded-2xl p-4 border-2 border-gray-100 shadow-sm">
-                        <div className="flex items-start gap-3 mb-4 pb-3 border-b border-gray-100">
-                          <span className="text-3xl">{q.icon}</span>
+
+                  {/* Questions - 11 Unsur IKM */}
+                  <div className="space-y-5">
+                    {surveyQuestions.map((q, index) => (
+                      <div key={q.id} className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 border-2 border-gray-200 shadow-md hover:shadow-lg transition-shadow">
+                        <div className="flex items-start gap-4 mb-5">
+                          <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                            <span className="text-3xl">{q.icon}</span>
+                          </div>
                           <div className="flex-1">
-                            <h4 className="font-bold text-gray-800 text-base">{q.code} - {q.title}</h4>
-                            <p className="text-xs text-gray-500">Nilai setiap indikator di bawah ini</p>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">{q.code}</span>
+                              <h4 className="font-bold text-gray-900 text-lg">{q.title}</h4>
+                            </div>
+                            <p className="text-sm text-gray-700 font-medium leading-relaxed">{q.question}</p>
                           </div>
                         </div>
                         
-                        {/* 3 Indikator per Unsur */}
-                        <div className="space-y-3">
-                          {q.indicators.map((ind, idx) => (
-                            <div key={ind.id} className="bg-gray-50 rounded-xl p-3">
-                              <p className="text-xs text-gray-600 mb-2 font-medium">
-                                <span className="inline-block w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center mr-1">{idx + 1}</span>
-                                {ind.text}
-                              </p>
-                              <div className="flex gap-1.5">
-                                {ratingOptions.map((opt) => (
-                                  <button 
-                                    key={opt.value} 
-                                    type="button" 
-                                    onClick={() => handleRadioChange(ind.id, opt.value)}
-                                    className={`flex-1 py-3.5 rounded-2xl transition-all relative flex flex-col items-center gap-1.5 ${
-                                      formData[ind.id as keyof FormData] === opt.value 
-                                        ? `${opt.bgColor} shadow-2xl scale-110 border-3` 
-                                        : 'bg-white border-2 border-gray-200 hover:border-gray-300 hover:shadow-md'
-                                    }`}
-                                    style={{
-                                      borderWidth: formData[ind.id as keyof FormData] === opt.value ? '3px' : '2px',
-                                      borderColor: formData[ind.id as keyof FormData] === opt.value ? 'white' : undefined
-                                    }}
-                                  >
-                                    <div className="text-4xl">{opt.emoji}</div>
-                                    <div className={`text-[10px] font-extrabold leading-tight text-center ${
-                                      formData[ind.id as keyof FormData] === opt.value ? 'text-white' : 'text-gray-700'
-                                    }`}>{opt.label}</div>
-                                    {formData[ind.id as keyof FormData] === opt.value && (
-                                      <div className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-green-500">
-                                        <span className="text-green-500 text-sm font-bold">✓</span>
-                                      </div>
-                                    )}
-                                  </button>
-                                ))}
+                        {/* Rating Options - 4 Pilihan dengan Label Spesifik */}
+                        <div className="grid grid-cols-2 gap-3">
+                          {q.options.map((opt) => (
+                            <button 
+                              key={opt.value} 
+                              type="button" 
+                              onClick={() => handleRadioChange(q.id, opt.value)}
+                              className={`relative py-4 px-3 rounded-2xl transition-all duration-200 flex items-center gap-3 ${
+                                formData[q.id as keyof FormData] === opt.value 
+                                  ? 'bg-gradient-to-br from-emerald-500 to-teal-500 shadow-2xl scale-105 border-3 border-white ring-4 ring-emerald-500/30' 
+                                  : 'bg-white border-2 border-gray-200 hover:border-gray-400 hover:shadow-lg hover:scale-102'
+                              }`}
+                            >
+                              <div className={`text-4xl flex-shrink-0 transition-transform ${
+                                formData[q.id as keyof FormData] === opt.value ? 'scale-110' : ''
+                              }`}>{opt.emoji}</div>
+                              <div className="text-left flex-1">
+                                <div className={`text-sm font-bold leading-tight ${
+                                  formData[q.id as keyof FormData] === opt.value ? 'text-white' : 'text-gray-900'
+                                }`}>{opt.label}</div>
                               </div>
-                            </div>
+                              {formData[q.id as keyof FormData] === opt.value && (
+                                <div className="absolute -top-2 -right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-xl border-3 border-green-500 animate-bounce">
+                                  <span className="text-green-600 text-lg font-black">✓</span>
+                                </div>
+                              )}
+                            </button>
                           ))}
                         </div>
+                        
+                        {/* Progress Indicator per Question */}
+                        {formData[q.id as keyof FormData] && (
+                          <div className="mt-4 flex items-center gap-2 text-sm text-green-600 font-semibold animate-slideUp">
+                            <span className="material-symbols-outlined text-base">check_circle</span>
+                            <span>Pertanyaan {index + 1} dari {surveyQuestions.length} terjawab</span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -958,8 +929,29 @@ const DirectSurveyForm: React.FC = () => {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
         .animate-slideUp { animation: slideUp 0.4s ease-out; }
+        .animate-bounce { animation: bounce 1s ease-in-out infinite; }
         .safe-area-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+        
+        /* Custom scrollbar untuk area form */
+        .overflow-y-auto::-webkit-scrollbar {
+          width: 8px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+          background: linear-gradient(to bottom, #10b981, #14b8a6);
+          border-radius: 10px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(to bottom, #059669, #0d9488);
+        }
       `}</style>
     </div>
   );

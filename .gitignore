@@ -1,18 +1,19 @@
 # Dependencies
 node_modules/
 frontend/node_modules/
-backend/node_modules/
 
 # Build outputs
 dist/
 frontend/dist/
-backend/dist/
 build/
 
 # Environment variables
 .env
 .env.local
-# Note: .env.production is included for Vercel deployment
+.env.production
+frontend/.env
+frontend/.env.local
+# Note: .env.production.example is kept for reference
 
 # Logs
 logs/
@@ -26,16 +27,43 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+.kiro/
 *.swp
 *.swo
 
 # Uploads
-backend/uploads/
 uploads/
 
-# Files with sensitive data
-PUSH_SETELAH_BUAT_REPO.bat
-SOLUSI_PUSH_GITHUB.md
+# Backend folder (tidak digunakan, menggunakan Supabase)
+backend/
+
+# Test files
+*.bat
+*.html
+test-*.js
+fix-*.js
+diagnose-*.js
+verify-*.js
+ensure-*.js
+create-*.js
+reset-*.js
+update-*.js
+get-*.js
+monitor-*.js
+check-*.js
+optimize-*.js
+identify-*.js
+tambah-*.js
+
+# Documentation files (kecuali README.md)
+*.md
+!README.md
+!.kiro/**/*.md
+
+# Temporary files
+*.tmp
+*.temp
+*.ps1
 
 # Test coverage
 coverage/

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import reportService, { FullReportData, ReportFilters, TrendData, RiskAnalysis, DetailedReport } from '../services/reportService';
+import reportService, { FullReportData, ReportFilters, DetailedReport } from '../services/reportService';
 
 const Reports = () => {
     const [reportData, setReportData] = useState<FullReportData | null>(null);
@@ -110,16 +110,6 @@ const Reports = () => {
         }
     };
 
-    const getRiskColor = (level: string) => {
-        switch (level) {
-            case 'critical': return 'bg-red-500';
-            case 'high': return 'bg-orange-500';
-            case 'medium': return 'bg-yellow-500';
-            case 'low': return 'bg-primary';
-            default: return 'bg-gray-500';
-        }
-    };
-
     if (loading && !reportData) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -144,7 +134,6 @@ const Reports = () => {
         );
     }
 
-    const maxTrendValue = reportData?.trends?.length ? Math.max(...reportData.trends.map((t: TrendData) => t.complaints), 1) : 10;
     const totalPages = reportData ? Math.ceil(reportData.totalReports / 10) : 1;
 
     return (
@@ -228,99 +217,356 @@ const Reports = () => {
             {/* KPI Cards */}
             {reportData && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Total Pengaduan */}
                     <div className="bg-white p-5 rounded-xl border border-[#e7edf3] shadow-sm flex flex-col gap-2">
                         <div className="flex justify-between items-start">
-                            <div className="bg-blue-50 text-primary p-2 rounded-lg"><span className="material-symbols-outlined">inbox</span></div>
+                            <div className="bg-red-50 text-red-600 p-2 rounded-lg"><span className="material-symbols-outlined">report_problem</span></div>
                             <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${reportData.kpi.totalComplaintsChange >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                                 <span className="material-symbols-outlined text-[14px]">{reportData.kpi.totalComplaintsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>{Math.abs(reportData.kpi.totalComplaintsChange)}%
                             </span>
                         </div>
-                        <p className="text-[#4c739a] text-sm font-medium">Total Komplain</p>
+                        <p className="text-[#4c739a] text-sm font-medium">Total Pengaduan</p>
                         <h3 className="text-[#0d141b] text-2xl font-bold">{reportData.kpi.totalComplaints}</h3>
                     </div>
+                    {/* Total Saran */}
                     <div className="bg-white p-5 rounded-xl border border-[#e7edf3] shadow-sm flex flex-col gap-2">
                         <div className="flex justify-between items-start">
-                            <div className="bg-green-50 text-green-600 p-2 rounded-lg"><span className="material-symbols-outlined">check_circle</span></div>
-                            <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${reportData.kpi.resolvedComplaintsChange >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                <span className="material-symbols-outlined text-[14px]">{reportData.kpi.resolvedComplaintsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>{Math.abs(reportData.kpi.resolvedComplaintsChange)}%
+                            <div className="bg-purple-50 text-purple-600 p-2 rounded-lg"><span className="material-symbols-outlined">lightbulb</span></div>
+                            <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${reportData.kpi.totalSuggestionsChange >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                <span className="material-symbols-outlined text-[14px]">{reportData.kpi.totalSuggestionsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>{Math.abs(reportData.kpi.totalSuggestionsChange)}%
                             </span>
                         </div>
-                        <p className="text-[#4c739a] text-sm font-medium">Diselesaikan</p>
-                        <h3 className="text-[#0d141b] text-2xl font-bold">{reportData.kpi.resolvedComplaints}</h3>
+                        <p className="text-[#4c739a] text-sm font-medium">Total Saran</p>
+                        <h3 className="text-[#0d141b] text-2xl font-bold">{reportData.kpi.totalSuggestions}</h3>
                     </div>
+                    {/* Total Permintaan Informasi */}
                     <div className="bg-white p-5 rounded-xl border border-[#e7edf3] shadow-sm flex flex-col gap-2">
                         <div className="flex justify-between items-start">
-                            <div className="bg-orange-50 text-orange-600 p-2 rounded-lg"><span className="material-symbols-outlined">timer</span></div>
-                            <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${reportData.kpi.averageResponseTimeChange <= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                <span className="material-symbols-outlined text-[14px]">{reportData.kpi.averageResponseTimeChange <= 0 ? 'arrow_downward' : 'arrow_upward'}</span>{Math.abs(reportData.kpi.averageResponseTimeChange)}m
+                            <div className="bg-blue-50 text-blue-600 p-2 rounded-lg"><span className="material-symbols-outlined">info</span></div>
+                            <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${reportData.kpi.totalRequestsChange >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                <span className="material-symbols-outlined text-[14px]">{reportData.kpi.totalRequestsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>{Math.abs(reportData.kpi.totalRequestsChange)}%
                             </span>
                         </div>
-                        <p className="text-[#4c739a] text-sm font-medium">Rata-rata Respon</p>
-                        <h3 className="text-[#0d141b] text-2xl font-bold">{reportData.kpi.averageResponseTime} Menit</h3>
+                        <p className="text-[#4c739a] text-sm font-medium">Total Permintaan Informasi</p>
+                        <h3 className="text-[#0d141b] text-2xl font-bold">{reportData.kpi.totalRequests}</h3>
                     </div>
-                    <div className="bg-gradient-to-br from-primary/5 to-white p-5 rounded-xl border border-primary/20 shadow-sm flex flex-col gap-2 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-2 opacity-10"><span className="material-symbols-outlined text-6xl text-primary">auto_awesome</span></div>
-                        <div className="flex justify-between items-start relative z-10">
-                            <div className="bg-primary/10 text-primary p-2 rounded-lg"><span className="material-symbols-outlined">trending_up</span></div>
-                            <span className="text-xs font-bold px-2 py-1 rounded-full border border-primary/20 text-primary bg-white">Prediksi AI</span>
+                    {/* Total Survey */}
+                    <div className="bg-white p-5 rounded-xl border border-[#e7edf3] shadow-sm flex flex-col gap-2">
+                        <div className="flex justify-between items-start">
+                            <div className="bg-emerald-50 text-emerald-600 p-2 rounded-lg"><span className="material-symbols-outlined">poll</span></div>
+                            <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1 ${reportData.kpi.totalSurveysChange >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                <span className="material-symbols-outlined text-[14px]">{reportData.kpi.totalSurveysChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>{Math.abs(reportData.kpi.totalSurveysChange)}%
+                            </span>
                         </div>
-                        <p className="text-[#4c739a] text-sm font-medium relative z-10">Proyeksi Minggu Depan</p>
-                        <h3 className="text-[#0d141b] text-2xl font-bold relative z-10">~{reportData.kpi.projectedNextWeek} <span className="text-sm font-normal text-gray-500">Kasus</span></h3>
+                        <p className="text-[#4c739a] text-sm font-medium">Total Survey</p>
+                        <h3 className="text-[#0d141b] text-2xl font-bold">{reportData.kpi.totalSurveys}</h3>
                     </div>
                 </div>
             )}
 
-            {/* Charts */}
+            {/* Charts - Grafik Analitik Modern dengan Visualisasi Menarik */}
             {reportData && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-[#e7edf3] shadow-sm flex flex-col gap-4">
-                        <div className="flex justify-between items-center">
-                            <h3 className="text-[#0d141b] text-lg font-bold">Tren Komplain (7 Hari)</h3>
-                            <span className="text-primary text-sm font-medium">Data Real-time</span>
+                    {/* Grafik Pengaduan */}
+                    <div className="bg-gradient-to-br from-white via-red-50 to-red-100 p-6 rounded-2xl border-2 border-red-200 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col gap-4 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-red-200 rounded-full -mr-16 -mt-16 opacity-30"></div>
+                        <div className="flex justify-between items-center relative z-10">
+                            <h3 className="text-[#0d141b] text-lg font-bold flex items-center gap-2">
+                                <span className="material-symbols-outlined text-red-600 text-2xl">report_problem</span>
+                                Pengaduan
+                            </h3>
+                            <div className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold">{reportData.kpi.totalComplaints}</div>
                         </div>
-                        <div className="w-full h-64 flex flex-col justify-end relative pl-8 pb-6">
-                            <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-400 pb-6 pr-2">
-                                <span>{maxTrendValue}</span><span>{Math.round(maxTrendValue * 0.75)}</span><span>{Math.round(maxTrendValue * 0.5)}</span><span>{Math.round(maxTrendValue * 0.25)}</span><span>0</span>
-                            </div>
-                            <div className="absolute bottom-6 left-8 right-0 border-b border-gray-200"></div>
-                            <div className="w-full h-full flex items-end justify-between gap-2 z-10 pt-2">
-                                {reportData.trends?.length ? reportData.trends.map((trend: TrendData, i: number) => {
-                                    const h = maxTrendValue > 0 ? (trend.complaints / maxTrendValue) * 100 : 0;
-                                    return (
-                                        <div key={i} className="flex flex-col items-center flex-1 group relative">
-                                            <div className="w-full bg-primary rounded-t-sm min-h-[4px] hover:bg-blue-600" style={{ height: `${Math.max(h, 2)}%` }} title={`${trend.complaints} komplain`}></div>
-                                            <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs px-2 py-1 rounded z-20">{trend.complaints} komplain</div>
-                                        </div>
-                                    );
-                                }) : <div className="w-full h-full flex items-center justify-center text-gray-400">Tidak ada data tren</div>}
-                            </div>
-                            <div className="absolute bottom-0 left-8 right-0 flex justify-between text-xs text-gray-400 pt-2">
-                                {reportData.trends?.map((t: TrendData, i: number) => <span key={i} className="text-center flex-1 truncate">{t.date}</span>)}
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white p-6 rounded-xl border border-[#e7edf3] shadow-sm flex flex-col gap-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className="material-symbols-outlined text-orange-500">warning</span>
-                            <h3 className="text-[#0d141b] text-lg font-bold">Risiko Tinggi</h3>
-                        </div>
-                        <div className="flex flex-col gap-4 flex-1 justify-center">
-                            {reportData.riskAnalysis?.length ? reportData.riskAnalysis.map((risk: RiskAnalysis, i: number) => (
-                                <div key={i} className="flex flex-col gap-1">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="font-medium text-gray-700">{risk.unitName}</span>
-                                        <span className={`font-bold ${risk.riskLevel === 'critical' ? 'text-red-600' : risk.riskLevel === 'high' ? 'text-orange-500' : risk.riskLevel === 'medium' ? 'text-yellow-500' : 'text-primary'}`}>{risk.riskPercentage}%</span>
-                                    </div>
-                                    <div className="w-full bg-gray-100 rounded-full h-2.5">
-                                        <div className={`h-2.5 rounded-full ${getRiskColor(risk.riskLevel)}`} style={{ width: `${risk.riskPercentage}%` }}></div>
+                        <div className="w-full h-72 flex items-end justify-center px-8 py-4 border-l-4 border-b-4 border-red-300 rounded-bl-lg relative bg-white/50 backdrop-blur-sm">
+                            <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-red-100/30 to-transparent"></div>
+                            <div className="flex-1 max-w-[140px] flex flex-col items-center gap-3 relative z-10 group">
+                                <div className="bg-white px-4 py-2 rounded-lg shadow-md border-2 border-red-200 group-hover:scale-110 transition-transform">
+                                    <span className="text-2xl font-black text-red-600">{reportData.kpi.totalComplaints}</span>
+                                </div>
+                                <div 
+                                    className="w-full bg-gradient-to-t from-red-700 via-red-500 to-red-400 hover:from-red-800 hover:via-red-600 hover:to-red-500 rounded-t-xl transition-all cursor-pointer shadow-2xl relative group-hover:scale-105"
+                                    style={{ height: `${Math.max((reportData.kpi.totalComplaints / Math.max(reportData.kpi.totalComplaints, reportData.kpi.totalSuggestions, reportData.kpi.totalRequests, 1)) * 220, 40)}px` }}
+                                    title={`${reportData.kpi.totalComplaints} pengaduan`}
+                                >
+                                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-xl"></div>
+                                    <div className="absolute top-2 left-1/2 -translate-x-1/2 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {Math.round((reportData.kpi.totalComplaints / Math.max(reportData.kpi.totalComplaints + reportData.kpi.totalSuggestions + reportData.kpi.totalRequests, 1)) * 100)}%
                                     </div>
                                 </div>
-                            )) : <div className="text-center text-gray-400 py-4"><span className="material-symbols-outlined text-4xl mb-2">check_circle</span><p>Tidak ada unit dengan risiko tinggi</p></div>}
+                                <span className="text-sm font-bold text-red-700 mt-2 bg-white px-3 py-1 rounded-full shadow-sm">Total Pengaduan</span>
+                            </div>
                         </div>
-                        <div className="mt-2 bg-blue-50 p-3 rounded-lg text-xs text-[#4c739a] flex gap-2 items-start">
-                            <span className="material-symbols-outlined text-[16px] text-primary mt-0.5">info</span>
-                            <p>Prediksi risiko berdasarkan volume komplain dan waktu respon lambat.</p>
+                        <div className="flex justify-between items-center text-xs text-red-600 bg-white/70 p-2 rounded-lg">
+                            <span>Perubahan:</span>
+                            <span className="font-bold flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[14px]">{reportData.kpi.totalComplaintsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>
+                                {Math.abs(reportData.kpi.totalComplaintsChange)}%
+                            </span>
                         </div>
+                    </div>
+
+                    {/* Grafik Permintaan Informasi */}
+                    <div className="bg-gradient-to-br from-white via-blue-50 to-blue-100 p-6 rounded-2xl border-2 border-blue-200 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col gap-4 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200 rounded-full -mr-16 -mt-16 opacity-30"></div>
+                        <div className="flex justify-between items-center relative z-10">
+                            <h3 className="text-[#0d141b] text-lg font-bold flex items-center gap-2">
+                                <span className="material-symbols-outlined text-blue-600 text-2xl">info</span>
+                                Permintaan
+                            </h3>
+                            <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold">{reportData.kpi.totalRequests}</div>
+                        </div>
+                        <div className="w-full h-72 flex items-end justify-center px-8 py-4 border-l-4 border-b-4 border-blue-300 rounded-bl-lg relative bg-white/50 backdrop-blur-sm">
+                            <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-blue-100/30 to-transparent"></div>
+                            <div className="flex-1 max-w-[140px] flex flex-col items-center gap-3 relative z-10 group">
+                                <div className="bg-white px-4 py-2 rounded-lg shadow-md border-2 border-blue-200 group-hover:scale-110 transition-transform">
+                                    <span className="text-2xl font-black text-blue-600">{reportData.kpi.totalRequests}</span>
+                                </div>
+                                <div 
+                                    className="w-full bg-gradient-to-t from-blue-700 via-blue-500 to-blue-400 hover:from-blue-800 hover:via-blue-600 hover:to-blue-500 rounded-t-xl transition-all cursor-pointer shadow-2xl relative group-hover:scale-105"
+                                    style={{ height: `${Math.max((reportData.kpi.totalRequests / Math.max(reportData.kpi.totalComplaints, reportData.kpi.totalSuggestions, reportData.kpi.totalRequests, 1)) * 220, 40)}px` }}
+                                    title={`${reportData.kpi.totalRequests} permintaan`}
+                                >
+                                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-xl"></div>
+                                    <div className="absolute top-2 left-1/2 -translate-x-1/2 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {Math.round((reportData.kpi.totalRequests / Math.max(reportData.kpi.totalComplaints + reportData.kpi.totalSuggestions + reportData.kpi.totalRequests, 1)) * 100)}%
+                                    </div>
+                                </div>
+                                <span className="text-sm font-bold text-blue-700 mt-2 bg-white px-3 py-1 rounded-full shadow-sm">Total Permintaan</span>
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-blue-600 bg-white/70 p-2 rounded-lg">
+                            <span>Perubahan:</span>
+                            <span className="font-bold flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[14px]">{reportData.kpi.totalRequestsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>
+                                {Math.abs(reportData.kpi.totalRequestsChange)}%
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Grafik Saran */}
+                    <div className="bg-gradient-to-br from-white via-purple-50 to-purple-100 p-6 rounded-2xl border-2 border-purple-200 shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col gap-4 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-200 rounded-full -mr-16 -mt-16 opacity-30"></div>
+                        <div className="flex justify-between items-center relative z-10">
+                            <h3 className="text-[#0d141b] text-lg font-bold flex items-center gap-2">
+                                <span className="material-symbols-outlined text-purple-600 text-2xl">lightbulb</span>
+                                Saran
+                            </h3>
+                            <div className="bg-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold">{reportData.kpi.totalSuggestions}</div>
+                        </div>
+                        <div className="w-full h-72 flex items-end justify-center px-8 py-4 border-l-4 border-b-4 border-purple-300 rounded-bl-lg relative bg-white/50 backdrop-blur-sm">
+                            <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-purple-100/30 to-transparent"></div>
+                            <div className="flex-1 max-w-[140px] flex flex-col items-center gap-3 relative z-10 group">
+                                <div className="bg-white px-4 py-2 rounded-lg shadow-md border-2 border-purple-200 group-hover:scale-110 transition-transform">
+                                    <span className="text-2xl font-black text-purple-600">{reportData.kpi.totalSuggestions}</span>
+                                </div>
+                                <div 
+                                    className="w-full bg-gradient-to-t from-purple-700 via-purple-500 to-purple-400 hover:from-purple-800 hover:via-purple-600 hover:to-purple-500 rounded-t-xl transition-all cursor-pointer shadow-2xl relative group-hover:scale-105"
+                                    style={{ height: `${Math.max((reportData.kpi.totalSuggestions / Math.max(reportData.kpi.totalComplaints, reportData.kpi.totalSuggestions, reportData.kpi.totalRequests, 1)) * 220, 40)}px` }}
+                                    title={`${reportData.kpi.totalSuggestions} saran`}
+                                >
+                                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-xl"></div>
+                                    <div className="absolute top-2 left-1/2 -translate-x-1/2 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {Math.round((reportData.kpi.totalSuggestions / Math.max(reportData.kpi.totalComplaints + reportData.kpi.totalSuggestions + reportData.kpi.totalRequests, 1)) * 100)}%
+                                    </div>
+                                </div>
+                                <span className="text-sm font-bold text-purple-700 mt-2 bg-white px-3 py-1 rounded-full shadow-sm">Total Saran</span>
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-purple-600 bg-white/70 p-2 rounded-lg">
+                            <span>Perubahan:</span>
+                            <span className="font-bold flex items-center gap-1">
+                                <span className="material-symbols-outlined text-[14px]">{reportData.kpi.totalSuggestionsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>
+                                {Math.abs(reportData.kpi.totalSuggestionsChange)}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Grafik Tren Komplain Per Kategori */}
+            {reportData && reportData.categoryTrends && reportData.categoryTrends.length > 0 && (
+                <div className="bg-white rounded-xl border border-[#e7edf3] shadow-sm p-6">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-[#0d141b] text-xl font-bold flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary text-2xl">bar_chart</span>
+                            Tren Komplain Per Kategori
+                        </h3>
+                        <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                            Total: {reportData.categoryTrends.reduce((sum, cat) => sum + cat.count, 0)} tiket
+                        </span>
+                    </div>
+                    <div className="space-y-4">
+                        {reportData.categoryTrends.map((category, index) => {
+                            const maxCount = Math.max(...reportData.categoryTrends.map(c => c.count));
+                            const barWidth = (category.count / maxCount) * 100;
+                            const colors = [
+                                'from-blue-600 to-blue-400',
+                                'from-purple-600 to-purple-400',
+                                'from-pink-600 to-pink-400',
+                                'from-red-600 to-red-400',
+                                'from-orange-600 to-orange-400',
+                                'from-yellow-600 to-yellow-400',
+                                'from-green-600 to-green-400',
+                                'from-teal-600 to-teal-400',
+                                'from-cyan-600 to-cyan-400',
+                                'from-indigo-600 to-indigo-400'
+                            ];
+                            const colorClass = colors[index % colors.length];
+                            
+                            return (
+                                <div key={index} className="group">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2 flex-1">
+                                            <span className="text-sm font-semibold text-gray-700 min-w-[200px]">
+                                                {category.categoryName}
+                                            </span>
+                                            <div className="flex-1 bg-gray-100 rounded-full h-10 relative overflow-hidden shadow-inner">
+                                                <div 
+                                                    className={`h-full bg-gradient-to-r ${colorClass} rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-3 group-hover:shadow-lg`}
+                                                    style={{ width: `${barWidth}%` }}
+                                                >
+                                                    <span className="text-white text-xs font-bold">
+                                                        {category.count}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 ml-4">
+                                            <span className="text-sm font-bold text-gray-600 min-w-[60px] text-right">
+                                                {category.count} tiket
+                                            </span>
+                                            <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded-full min-w-[50px] text-center">
+                                                {category.percentage}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Grafik Komparasi Jenis Pasien */}
+            {reportData && reportData.patientTypeTrends && reportData.patientTypeTrends.length > 0 && (
+                <div className="bg-white rounded-xl border border-[#e7edf3] shadow-sm p-6">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-[#0d141b] text-xl font-bold flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-2xl">groups</span>
+                            Komparasi Jenis Pasien
+                        </h3>
+                        <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                            Total: {reportData.patientTypeTrends?.reduce((sum, pt) => sum + pt.count, 0) || 0} tiket eksternal
+                        </span>
+                    </div>
+                    <div className="space-y-4">
+                        {reportData.patientTypeTrends?.map((patientType, index) => {
+                            const maxCount = Math.max(...(reportData.patientTypeTrends?.map(pt => pt.count) || [1]));
+                            const barWidth = (patientType.count / maxCount) * 100;
+                            const colors = [
+                                'from-emerald-600 to-emerald-400',
+                                'from-teal-600 to-teal-400',
+                                'from-cyan-600 to-cyan-400',
+                                'from-sky-600 to-sky-400',
+                                'from-blue-600 to-blue-400',
+                                'from-indigo-600 to-indigo-400',
+                                'from-violet-600 to-violet-400',
+                                'from-purple-600 to-purple-400'
+                            ];
+                            const colorClass = colors[index % colors.length];
+                            
+                            return (
+                                <div key={index} className="group">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2 flex-1">
+                                            <span className="text-sm font-semibold text-gray-700 min-w-[200px]">
+                                                {patientType.patientTypeName}
+                                            </span>
+                                            <div className="flex-1 bg-gray-100 rounded-full h-10 relative overflow-hidden shadow-inner">
+                                                <div 
+                                                    className={`h-full bg-gradient-to-r ${colorClass} rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-3 group-hover:shadow-lg`}
+                                                    style={{ width: `${barWidth}%` }}
+                                                >
+                                                    <span className="text-white text-xs font-bold">
+                                                        {patientType.count}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 ml-4">
+                                            <span className="text-sm font-bold text-gray-600 min-w-[60px] text-right">
+                                                {patientType.count} tiket
+                                            </span>
+                                            <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full min-w-[50px] text-center">
+                                                {patientType.percentage}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Grafik Komparasi Jenis Pasien */}
+            {reportData && reportData.patientTypeTrends && reportData.patientTypeTrends.length > 0 && (
+                <div className="bg-white rounded-xl border border-[#e7edf3] shadow-sm p-6">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-[#0d141b] text-xl font-bold flex items-center gap-2">
+                            <span className="material-symbols-outlined text-emerald-600 text-2xl">groups</span>
+                            Komparasi Jenis Pasien
+                        </h3>
+                        <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                            Total: {reportData.patientTypeTrends?.reduce((sum, pt) => sum + pt.count, 0) || 0} tiket
+                        </span>
+                    </div>
+                    <div className="space-y-4">
+                        {reportData.patientTypeTrends?.map((patientType, index) => {
+                            const maxCount = Math.max(...(reportData.patientTypeTrends?.map(pt => pt.count) || [1]));
+                            const barWidth = (patientType.count / maxCount) * 100;
+                            const colors = [
+                                'from-emerald-600 to-emerald-400',
+                                'from-teal-600 to-teal-400',
+                                'from-cyan-600 to-cyan-400',
+                                'from-sky-600 to-sky-400',
+                                'from-blue-600 to-blue-400',
+                                'from-indigo-600 to-indigo-400',
+                                'from-violet-600 to-violet-400',
+                                'from-purple-600 to-purple-400'
+                            ];
+                            const colorClass = colors[index % colors.length];
+                            
+                            return (
+                                <div key={index} className="group">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2 flex-1">
+                                            <span className="text-sm font-semibold text-gray-700 min-w-[200px]">
+                                                {patientType.patientTypeName}
+                                            </span>
+                                            <div className="flex-1 bg-gray-100 rounded-full h-10 relative overflow-hidden shadow-inner">
+                                                <div 
+                                                    className={`h-full bg-gradient-to-r ${colorClass} rounded-full transition-all duration-700 ease-out flex items-center justify-end pr-3 group-hover:shadow-lg`}
+                                                    style={{ width: `${barWidth}%` }}
+                                                >
+                                                    <span className="text-white text-xs font-bold">
+                                                        {patientType.count}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3 ml-4">
+                                            <span className="text-sm font-bold text-gray-600 min-w-[60px] text-right">
+                                                {patientType.count} tiket
+                                            </span>
+                                            <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full min-w-[50px] text-center">
+                                                {patientType.percentage}%
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             )}
@@ -340,6 +586,7 @@ const Reports = () => {
                                     <th className="px-6 py-4">Tanggal</th>
                                     <th className="px-6 py-4">Unit Kerja</th>
                                     <th className="px-6 py-4">Kategori</th>
+                                    <th className="px-6 py-4">Jenis Pasien</th>
                                     <th className="px-6 py-4">Status</th>
                                     <th className="px-6 py-4">Waktu Respon</th>
                                 </tr>
@@ -351,10 +598,11 @@ const Reports = () => {
                                         <td className="px-6 py-4 text-[#4c739a]">{r.date}</td>
                                         <td className="px-6 py-4">{r.unitName}</td>
                                         <td className="px-6 py-4">{r.categoryName}</td>
+                                        <td className="px-6 py-4">{r.patientTypeName}</td>
                                         <td className="px-6 py-4"><span className={`px-2 py-1 rounded text-xs font-bold ${getStatusColor(r.status)}`}>{getStatusLabel(r.status)}</span></td>
                                         <td className="px-6 py-4">{r.responseTime !== null ? <span className={`font-medium ${r.responseTime > 60 ? 'text-red-600' : 'text-green-600'}`}>{r.responseTime} Menit {r.responseTime > 60 ? '(Lambat)' : ''}</span> : <span className="text-[#4c739a]">-</span>}</td>
                                     </tr>
-                                )) : <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">Tidak ada data laporan</td></tr>}
+                                )) : <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-400">Tidak ada data laporan</td></tr>}
                             </tbody>
                         </table>
                     </div>

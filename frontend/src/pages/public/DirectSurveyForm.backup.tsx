@@ -12,7 +12,7 @@ interface FormData {
   education: string;
   job: string;
   patient_type: string;
-  // 9 Unsur x 3 Indikator = 27 field
+  // 9 Unsur x 3 Pertanyaan = 27 field
   u1_ind1: string; u1_ind2: string; u1_ind3: string;
   u2_ind1: string; u2_ind2: string; u2_ind3: string;
   u3_ind1: string; u3_ind2: string; u3_ind3: string;
@@ -125,9 +125,9 @@ const DirectSurveyForm: React.FC = () => {
       title: 'Persyaratan', 
       icon: '📋',
       indicators: [
-        { id: 'u1_ind1', text: 'Persyaratan pelayanan yang diinformasikan jelas dan mudah dipahami' },
-        { id: 'u1_ind2', text: 'Persyaratan pelayanan mudah dipenuhi oleh pengguna layanan' },
-        { id: 'u1_ind3', text: 'Persyaratan pelayanan sesuai dengan jenis layanan yang diberikan' }
+        { id: 'u1_ind1', text: 'Apakah persyaratan pelayanan mudah dipahami dan dipenuhi?' },
+        { id: 'u1_ind2', text: 'Apakah persyaratan yang diminta sudah sesuai dengan jenis layanan?' },
+        { id: 'u1_ind3', text: 'Apakah informasi persyaratan disampaikan dengan jelas?' }
       ]
     },
     { 
@@ -136,9 +136,9 @@ const DirectSurveyForm: React.FC = () => {
       title: 'Prosedur', 
       icon: '📝',
       indicators: [
-        { id: 'u2_ind1', text: 'Prosedur atau alur pelayanan diinformasikan dengan jelas' },
-        { id: 'u2_ind2', text: 'Prosedur pelayanan mudah diikuti oleh pengguna layanan' },
-        { id: 'u2_ind3', text: 'Pelaksanaan pelayanan sesuai dengan prosedur yang telah ditetapkan' }
+        { id: 'u2_ind1', text: 'Apakah alur pelayanan mudah diikuti?' },
+        { id: 'u2_ind2', text: 'Apakah prosedur pelayanan dilaksanakan dengan tertib?' },
+        { id: 'u2_ind3', text: 'Apakah informasi prosedur disampaikan dengan jelas?' }
       ]
     },
     { 
@@ -147,20 +147,20 @@ const DirectSurveyForm: React.FC = () => {
       title: 'Waktu Pelayanan', 
       icon: '⏱️',
       indicators: [
-        { id: 'u3_ind1', text: 'Informasi mengenai jangka waktu pelayanan disampaikan dengan jelas' },
-        { id: 'u3_ind2', text: 'Pelayanan diselesaikan sesuai dengan standar waktu pelayanan' },
-        { id: 'u3_ind3', text: 'Tidak terdapat keterlambatan pelayanan tanpa alasan yang jelas' }
+        { id: 'u3_ind1', text: 'Apakah pelayanan selesai tepat waktu?' },
+        { id: 'u3_ind2', text: 'Apakah waktu tunggu pelayanan tidak terlalu lama?' },
+        { id: 'u3_ind3', text: 'Apakah informasi waktu pelayanan disampaikan dengan jelas?' }
       ]
     },
     { 
       id: 'u4', 
       code: 'U4', 
       title: 'Biaya/Tarif', 
-      icon: '💰',
+      icon: '🏷️',
       indicators: [
-        { id: 'u4_ind1', text: 'Informasi biaya atau tarif pelayanan disampaikan secara jelas' },
-        { id: 'u4_ind2', text: 'Biaya yang dibayarkan sesuai dengan ketentuan yang berlaku' },
-        { id: 'u4_ind3', text: 'Tidak terdapat pungutan di luar biaya/tarif resmi' }
+        { id: 'u4_ind1', text: 'Apakah biaya pelayanan terjangkau dan sesuai?' },
+        { id: 'u4_ind2', text: 'Apakah tidak ada pungutan liar atau biaya tambahan?' },
+        { id: 'u4_ind3', text: 'Apakah informasi biaya disampaikan dengan jelas?' }
       ]
     },
     { 
@@ -169,9 +169,9 @@ const DirectSurveyForm: React.FC = () => {
       title: 'Produk Layanan', 
       icon: '📦',
       indicators: [
-        { id: 'u5_ind1', text: 'Hasil pelayanan yang diterima sesuai dengan ketentuan yang ditetapkan' },
-        { id: 'u5_ind2', text: 'Produk pelayanan diterima secara lengkap dan benar' },
-        { id: 'u5_ind3', text: 'Kualitas produk pelayanan sesuai standar pelayanan' }
+        { id: 'u5_ind1', text: 'Apakah hasil layanan sesuai dengan yang dijanjikan?' },
+        { id: 'u5_ind2', text: 'Apakah kualitas hasil layanan memuaskan?' },
+        { id: 'u5_ind3', text: 'Apakah hasil layanan diterima dengan lengkap dan benar?' }
       ]
     },
     { 
@@ -180,9 +180,9 @@ const DirectSurveyForm: React.FC = () => {
       title: 'Kompetensi Pelaksana', 
       icon: '👨‍⚕️',
       indicators: [
-        { id: 'u6_ind1', text: 'Petugas memiliki pengetahuan yang memadai dalam memberikan pelayanan' },
-        { id: 'u6_ind2', text: 'Petugas memiliki keterampilan yang baik dalam melayani pengguna' },
-        { id: 'u6_ind3', text: 'Petugas mampu memberikan pelayanan secara profesional' }
+        { id: 'u6_ind1', text: 'Apakah petugas memiliki pengetahuan yang baik?' },
+        { id: 'u6_ind2', text: 'Apakah petugas terampil dalam melayani?' },
+        { id: 'u6_ind3', text: 'Apakah petugas bekerja secara profesional?' }
       ]
     },
     { 
@@ -191,9 +191,9 @@ const DirectSurveyForm: React.FC = () => {
       title: 'Perilaku Pelaksana', 
       icon: '😊',
       indicators: [
-        { id: 'u7_ind1', text: 'Petugas bersikap sopan dan ramah dalam memberikan pelayanan' },
-        { id: 'u7_ind2', text: 'Petugas memberikan pelayanan dengan sikap membantu' },
-        { id: 'u7_ind3', text: 'Petugas melayani tanpa membedakan latar belakang pengguna' }
+        { id: 'u7_ind1', text: 'Apakah petugas bersikap sopan dan ramah?' },
+        { id: 'u7_ind2', text: 'Apakah petugas melayani dengan sikap membantu?' },
+        { id: 'u7_ind3', text: 'Apakah petugas melayani tanpa diskriminasi?' }
       ]
     },
     { 
@@ -202,9 +202,9 @@ const DirectSurveyForm: React.FC = () => {
       title: 'Sarana dan Prasarana', 
       icon: '🏥',
       indicators: [
-        { id: 'u8_ind1', text: 'Sarana dan prasarana pelayanan tersedia dengan memadai' },
-        { id: 'u8_ind2', text: 'Sarana dan prasarana pelayanan dalam kondisi baik dan layak digunakan' },
-        { id: 'u8_ind3', text: 'Lingkungan pelayanan bersih, nyaman, dan aman' }
+        { id: 'u8_ind1', text: 'Apakah fasilitas pelayanan tersedia dan memadai?' },
+        { id: 'u8_ind2', text: 'Apakah fasilitas dalam kondisi baik dan layak?' },
+        { id: 'u8_ind3', text: 'Apakah lingkungan pelayanan bersih, nyaman, dan aman?' }
       ]
     },
     { 
@@ -213,9 +213,9 @@ const DirectSurveyForm: React.FC = () => {
       title: 'Penanganan Pengaduan', 
       icon: '📞',
       indicators: [
-        { id: 'u9_ind1', text: 'Tersedia sarana pengaduan yang mudah diakses pengguna layanan' },
-        { id: 'u9_ind2', text: 'Pengaduan ditindaklanjuti dengan cepat dan jelas' },
-        { id: 'u9_ind3', text: 'Pengguna mendapatkan informasi hasil penanganan pengaduan' }
+        { id: 'u9_ind1', text: 'Apakah sarana pengaduan mudah diakses?' },
+        { id: 'u9_ind2', text: 'Apakah pengaduan ditindaklanjuti dengan cepat?' },
+        { id: 'u9_ind3', text: 'Apakah Anda mendapat informasi hasil penanganan pengaduan?' }
       ]
     }
   ];
@@ -270,7 +270,7 @@ const DirectSurveyForm: React.FC = () => {
         job: formData.job || null,
         patient_type: formData.patient_type || null,
         service_type: formData.service_type || null,
-        // Skor indikator (9 unsur x 3 indikator)
+        // Skor pertanyaan (9 unsur x 3 pertanyaan)
         u1_ind1_score: formData.u1_ind1 ? parseInt(formData.u1_ind1) : null,
         u1_ind2_score: formData.u1_ind2 ? parseInt(formData.u1_ind2) : null,
         u1_ind3_score: formData.u1_ind3 ? parseInt(formData.u1_ind3) : null,
@@ -642,12 +642,12 @@ const DirectSurveyForm: React.FC = () => {
                 </div>
               )}
 
-              {/* Step 3: Survey Questions - 9 Unsur dengan Indikator */}
+              {/* Step 3: Survey Questions - 9 Unsur dengan Pertanyaan */}
               {currentStep === 3 && (
                 <div className="space-y-6 animate-slideUp">
                   <div>
                     <h2 className="text-xl font-bold text-gray-800 mb-2">Penilaian Layanan</h2>
-                    <p className="text-gray-500 text-sm">Berikan penilaian untuk setiap indikator</p>
+                    <p className="text-gray-500 text-sm">Berikan penilaian untuk setiap pertanyaan</p>
                   </div>
 
                   {/* Rating Legend */}
@@ -676,11 +676,11 @@ const DirectSurveyForm: React.FC = () => {
                           <span className="text-3xl">{q.icon}</span>
                           <div className="flex-1">
                             <h4 className="font-bold text-gray-800 text-base">{q.code} - {q.title}</h4>
-                            <p className="text-xs text-gray-500">Nilai setiap indikator di bawah ini</p>
+                            <p className="text-xs text-gray-500">Berikan penilaian untuk setiap pertanyaan</p>
                           </div>
                         </div>
                         
-                        {/* 3 Indikator per Unsur */}
+                        {/* 3 Pertanyaan per Unsur */}
                         <div className="space-y-3">
                           {q.indicators.map((ind, idx) => (
                             <div key={ind.id} className="bg-gray-50 rounded-xl p-3">

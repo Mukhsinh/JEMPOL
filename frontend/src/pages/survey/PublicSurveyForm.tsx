@@ -43,16 +43,18 @@ const PublicSurveyForm = () => {
         alamat_detail: '',
         age: '',
         gender: '',
-        // 9 Unsur dengan 3 indikator masing-masing (27 indikator total)
-        u1_i1: '', u1_i2: '', u1_i3: '', // Persyaratan
-        u2_i1: '', u2_i2: '', u2_i3: '', // Prosedur
-        u3_i1: '', u3_i2: '', u3_i3: '', // Waktu Pelayanan
-        u4_i1: '', u4_i2: '', u4_i3: '', // Biaya/Tarif
-        u5_i1: '', u5_i2: '', u5_i3: '', // Produk Layanan
-        u6_i1: '', u6_i2: '', u6_i3: '', // Kompetensi Pelaksana
-        u7_i1: '', u7_i2: '', u7_i3: '', // Perilaku Pelaksana
-        u8_i1: '', u8_i2: '', u8_i3: '', // Sarana dan Prasarana
-        u9_i1: '', u9_i2: '', u9_i3: '', // Penanganan Pengaduan
+        // 11 Unsur Survei IKM (1 pertanyaan per unsur)
+        q1: '', // U1 - Persyaratan
+        q2: '', // U2 - Prosedur
+        q3: '', // U3 - Waktu Pelayanan
+        q4: '', // U4 - Biaya/Tarif
+        q5: '', // U5 - Produk Layanan
+        q6: '', // U6 - Kompetensi Pelaksana
+        q7: '', // U7 - Perilaku Pelaksana
+        q8: '', // U8 - Sarana dan Prasarana
+        q9: '', // U9 - Penanganan Pengaduan
+        q10: '', // U10 - Transparansi
+        q11: '', // U11 - Integritas
         overall_satisfaction: '',
         suggestions: '',
         date: new Date().toISOString().split('T')[0]
@@ -278,7 +280,9 @@ const PublicSurveyForm = () => {
                                     job: '',
                                     age: '',
                                     gender: '',
-                                    q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: '',
+                                    // Reset 11 pertanyaan survei
+                                    q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', 
+                                    q7: '', q8: '', q9: '', q10: '', q11: '',
                                     overall_satisfaction: '',
                                     suggestions: ''
                                 }));
@@ -300,105 +304,160 @@ const PublicSurveyForm = () => {
         );
     }
 
-    // 9 Unsur Layanan dengan 3 Indikator masing-masing
+    // 11 Unsur Survei IKM (1 pertanyaan per unsur) - 4 Alternatif Jawaban dengan Label Spesifik
     const serviceElements = [
         {
-            id: 'u1',
+            id: 'q1',
             code: 'U1',
             title: 'Persyaratan',
             icon: '📋',
-            indicators: [
-                { id: 'u1_i1', text: 'Persyaratan pelayanan yang diinformasikan jelas dan mudah dipahami' },
-                { id: 'u1_i2', text: 'Persyaratan pelayanan mudah dipenuhi oleh pengguna layanan' },
-                { id: 'u1_i3', text: 'Persyaratan pelayanan sesuai dengan jenis layanan yang diberikan' }
+            emoji: ['😞', '😕', '🙂', '😊'],
+            text: 'Bagaimana pendapat Saudara tentang kesesuaian persyaratan pelayanan dengan jenis pelayanannya?',
+            options: [
+                { value: 1, label: 'Tidak Sesuai', emoji: '😞' },
+                { value: 2, label: 'Kurang Sesuai', emoji: '😕' },
+                { value: 3, label: 'Sesuai', emoji: '🙂' },
+                { value: 4, label: 'Sangat Sesuai', emoji: '😊' }
             ]
         },
         {
-            id: 'u2',
+            id: 'q2',
             code: 'U2',
             title: 'Prosedur',
             icon: '📝',
-            indicators: [
-                { id: 'u2_i1', text: 'Prosedur atau alur pelayanan diinformasikan dengan jelas' },
-                { id: 'u2_i2', text: 'Prosedur pelayanan mudah diikuti oleh pengguna layanan' },
-                { id: 'u2_i3', text: 'Pelaksanaan pelayanan sesuai dengan prosedur yang telah ditetapkan' }
+            emoji: ['😞', '😕', '🙂', '😊'],
+            text: 'Bagaimana pemahaman Saudara tentang kemudahan prosedur pelayanan di unit ini?',
+            options: [
+                { value: 1, label: 'Tidak Mudah', emoji: '😞' },
+                { value: 2, label: 'Kurang Mudah', emoji: '😕' },
+                { value: 3, label: 'Mudah', emoji: '🙂' },
+                { value: 4, label: 'Sangat Mudah', emoji: '😊' }
             ]
         },
         {
-            id: 'u3',
+            id: 'q3',
             code: 'U3',
             title: 'Waktu Pelayanan',
             icon: '⏱️',
-            indicators: [
-                { id: 'u3_i1', text: 'Informasi mengenai jangka waktu pelayanan disampaikan dengan jelas' },
-                { id: 'u3_i2', text: 'Pelayanan diselesaikan sesuai dengan standar waktu pelayanan' },
-                { id: 'u3_i3', text: 'Tidak terdapat keterlambatan pelayanan tanpa alasan yang jelas' }
+            emoji: ['😞', '😕', '🙂', '😊'],
+            text: 'Bagaimana pendapat Saudara tentang kecepatan waktu dalam memberikan pelayanan?',
+            options: [
+                { value: 1, label: 'Tidak Cepat', emoji: '😞' },
+                { value: 2, label: 'Kurang Cepat', emoji: '😕' },
+                { value: 3, label: 'Cepat', emoji: '🙂' },
+                { value: 4, label: 'Sangat Cepat', emoji: '😊' }
             ]
         },
         {
-            id: 'u4',
+            id: 'q4',
             code: 'U4',
             title: 'Biaya/Tarif',
-            icon: 'Rp',
-            indicators: [
-                { id: 'u4_i1', text: 'Informasi biaya atau tarif pelayanan disampaikan secara jelas' },
-                { id: 'u4_i2', text: 'Biaya yang dibayarkan sesuai dengan ketentuan yang berlaku' },
-                { id: 'u4_i3', text: 'Tidak terdapat pungutan di luar biaya/tarif resmi' }
+            icon: '🏷️',
+            emoji: ['😞', '😕', '🙂', '😊'],
+            text: 'Bagaimana pendapat Saudara tentang kewajaran biaya/tarif dalam pelayanan?',
+            options: [
+                { value: 1, label: 'Sangat Mahal', emoji: '😞' },
+                { value: 2, label: 'Cukup Mahal', emoji: '😕' },
+                { value: 3, label: 'Murah', emoji: '🙂' },
+                { value: 4, label: 'Gratis', emoji: '😊' }
             ]
         },
         {
-            id: 'u5',
+            id: 'q5',
             code: 'U5',
-            title: 'Produk Layanan',
+            title: 'Produk Spesifikasi Jenis Layanan',
             icon: '📦',
-            indicators: [
-                { id: 'u5_i1', text: 'Hasil pelayanan yang diterima sesuai dengan ketentuan yang ditetapkan' },
-                { id: 'u5_i2', text: 'Produk pelayanan diterima secara lengkap dan benar' },
-                { id: 'u5_i3', text: 'Kualitas produk pelayanan sesuai standar pelayanan' }
+            emoji: ['😞', '😕', '🙂', '😊'],
+            text: 'Bagaimana pendapat Saudara tentang kesesuaian produk pelayanan antara yang tercantum dalam standar pelayanan dengan hasil yang diberikan?',
+            options: [
+                { value: 1, label: 'Tidak Sesuai', emoji: '😞' },
+                { value: 2, label: 'Kurang Sesuai', emoji: '😕' },
+                { value: 3, label: 'Sesuai', emoji: '🙂' },
+                { value: 4, label: 'Sangat Sesuai', emoji: '😊' }
             ]
         },
         {
-            id: 'u6',
+            id: 'q6',
             code: 'U6',
             title: 'Kompetensi Pelaksana',
             icon: '👨‍⚕️',
-            indicators: [
-                { id: 'u6_i1', text: 'Petugas memiliki pengetahuan yang memadai dalam memberikan pelayanan' },
-                { id: 'u6_i2', text: 'Petugas memiliki keterampilan yang baik dalam melayani pengguna' },
-                { id: 'u6_i3', text: 'Petugas mampu memberikan pelayanan secara profesional' }
+            emoji: ['😞', '😕', '🙂', '😊'],
+            text: 'Bagaimana pendapat Saudara tentang kompetensi/kemampuan petugas dalam pelayanan?',
+            options: [
+                { value: 1, label: 'Tidak Kompeten', emoji: '😞' },
+                { value: 2, label: 'Kurang Kompeten', emoji: '😕' },
+                { value: 3, label: 'Kompeten', emoji: '🙂' },
+                { value: 4, label: 'Sangat Kompeten', emoji: '😊' }
             ]
         },
         {
-            id: 'u7',
+            id: 'q7',
             code: 'U7',
             title: 'Perilaku Pelaksana',
             icon: '😊',
-            indicators: [
-                { id: 'u7_i1', text: 'Petugas bersikap sopan dan ramah dalam memberikan pelayanan' },
-                { id: 'u7_i2', text: 'Petugas memberikan pelayanan dengan sikap membantu' },
-                { id: 'u7_i3', text: 'Petugas melayani tanpa membedakan latar belakang pengguna' }
+            emoji: ['😞', '😕', '🙂', '😊'],
+            text: 'Bagaimana pendapat Saudara perilaku petugas dalam pelayanan terkait kesopanan dan keramahan?',
+            options: [
+                { value: 1, label: 'Tidak Sopan dan Ramah', emoji: '😞' },
+                { value: 2, label: 'Kurang Sopan dan Ramah', emoji: '😕' },
+                { value: 3, label: 'Sopan dan Ramah', emoji: '🙂' },
+                { value: 4, label: 'Sangat Sopan dan Ramah', emoji: '😊' }
             ]
         },
         {
-            id: 'u8',
+            id: 'q8',
             code: 'U8',
             title: 'Sarana dan Prasarana',
             icon: '🏥',
-            indicators: [
-                { id: 'u8_i1', text: 'Sarana dan prasarana pelayanan tersedia dengan memadai' },
-                { id: 'u8_i2', text: 'Sarana dan prasarana pelayanan dalam kondisi baik dan layak digunakan' },
-                { id: 'u8_i3', text: 'Lingkungan pelayanan bersih, nyaman, dan aman' }
+            emoji: ['😞', '😕', '🙂', '😊'],
+            text: 'Bagaimana pendapat Saudara tentang kualitas sarana dan prasarana?',
+            options: [
+                { value: 1, label: 'Buruk', emoji: '😞' },
+                { value: 2, label: 'Cukup Baik', emoji: '😕' },
+                { value: 3, label: 'Baik', emoji: '🙂' },
+                { value: 4, label: 'Sangat Baik', emoji: '😊' }
             ]
         },
         {
-            id: 'u9',
+            id: 'q9',
             code: 'U9',
             title: 'Penanganan Pengaduan',
             icon: '📞',
-            indicators: [
-                { id: 'u9_i1', text: 'Tersedia sarana pengaduan yang mudah diakses pengguna layanan' },
-                { id: 'u9_i2', text: 'Pengaduan ditindaklanjuti dengan cepat dan jelas' },
-                { id: 'u9_i3', text: 'Pengguna mendapatkan informasi hasil penanganan pengaduan' }
+            emoji: ['😞', '😕', '🙂', '😊'],
+            text: 'Bagaimana pendapat Saudara tentang penanganan pengaduan pengguna layanan?',
+            options: [
+                { value: 1, label: 'Tidak Ada', emoji: '😞' },
+                { value: 2, label: 'Ada Tetapi Tidak Berfungsi', emoji: '😕' },
+                { value: 3, label: 'Berfungsi Kurang Maksimal', emoji: '🙂' },
+                { value: 4, label: 'Dikelola dengan Baik', emoji: '😊' }
+            ]
+        },
+        {
+            id: 'q10',
+            code: 'U10',
+            title: 'Transparansi Pelayanan',
+            icon: '🔍',
+            emoji: ['😞', '😕', '🙂', '😊'],
+            text: 'Bagaimana pendapat Saudara tentang transparansi pelayanan yang diberikan? (kecukupan informasi mengenai persyaratan, biaya, waktu pelayanan, prosedur dan sebagainya)',
+            options: [
+                { value: 1, label: 'Tidak Transparan', emoji: '😞' },
+                { value: 2, label: 'Kurang Transparan', emoji: '😕' },
+                { value: 3, label: 'Transparan', emoji: '🙂' },
+                { value: 4, label: 'Sangat Transparan', emoji: '😊' }
+            ]
+        },
+        {
+            id: 'q11',
+            code: 'U11',
+            title: 'Integritas Petugas Pelayanan',
+            icon: '✅',
+            emoji: ['😞', '😕', '🙂', '😊'],
+            text: 'Bagaimana pendapat Saudara tentang integritas petugas pelayanan? (terkait suap, pungutan liar, gratifikasi, dan sebagainya)',
+            options: [
+                { value: 1, label: 'Petugas Tidak Berintegritas', emoji: '😞' },
+                { value: 2, label: 'Petugas Kurang Berintegritas', emoji: '😕' },
+                { value: 3, label: 'Petugas Berintegritas', emoji: '🙂' },
+                { value: 4, label: 'Petugas Sangat Berintegritas', emoji: '😊' }
             ]
         }
     ];
@@ -870,80 +929,61 @@ const PublicSurveyForm = () => {
                                     <span className="material-symbols-outlined text-white text-xl">analytics</span>
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Penilaian Unsur Layanan</h3>
-                                    <p className="text-xs text-gray-500">Beri penilaian untuk setiap indikator dari 1 (Sangat Tidak Setuju) hingga 5 (Sangat Setuju)</p>
+                                    <h3 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">Penilaian 11 Unsur Layanan IKM</h3>
+                                    <p className="text-xs text-gray-500">Pilih salah satu jawaban untuk setiap pertanyaan (U1 - U11)</p>
                                 </div>
                             </div>
                         </div>
                         <div className="divide-y divide-gray-100/50">
                             {serviceElements.map((element, idx) => (
                                 <div key={element.id} className="p-6 hover:bg-gradient-to-br hover:from-emerald-50/30 hover:to-teal-50/30 transition-all">
-                                    <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-gray-100">
-                                        <div className="flex items-center gap-3 flex-1">
-                                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center text-2xl">
-                                                {element.icon}
+                                    <div className="flex items-start gap-3 mb-4 pb-3 border-b border-gray-100">
+                                        <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center">
+                                                <span className="text-lg font-bold text-emerald-600">{idx + 1}</span>
                                             </div>
-                                            <div className="flex-1">
-                                                <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">{element.code}</span>
-                                                <h4 className="text-lg font-bold text-gray-800">{element.title}</h4>
-                                            </div>
+                                            <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider">{element.code}</span>
                                         </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                // Isi semua indikator unsur ini dengan nilai 5 (Sangat Setuju)
-                                                const updates: any = {};
-                                                element.indicators.forEach(indicator => {
-                                                    updates[indicator.id] = '5';
-                                                });
-                                                setFormData(prev => ({ ...prev, ...updates }));
-                                            }}
-                                            className="px-4 py-2 text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors flex items-center gap-1.5 flex-shrink-0 shadow-sm"
-                                            title="Isi semua indikator dengan nilai tertinggi"
-                                        >
-                                            <span className="material-symbols-outlined text-base">done_all</span>
-                                            <span className="hidden sm:inline">Sangat Setuju Semua</span>
-                                            <span className="sm:hidden">All</span>
-                                        </button>
+                                        <div className="flex-1">
+                                            <h4 className="text-base font-bold text-gray-800 mb-1">{element.title}</h4>
+                                            <p className="text-sm text-gray-600 leading-relaxed">{element.text}</p>
+                                        </div>
                                     </div>
                                     
-                                    <div className="space-y-4">
-                                        {element.indicators.map((indicator, indicatorIdx) => (
-                                            <div key={indicator.id} className="bg-gray-50/50 rounded-xl p-4">
-                                                <p className="text-sm font-medium text-gray-700 mb-3 leading-relaxed">
-                                                    <span className="inline-block w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 text-xs font-bold flex items-center justify-center mr-2">{indicatorIdx + 1}</span>
-                                                    {indicator.text}
-                                                </p>
-                                                <div className="flex items-center justify-between gap-2">
-                                                    {[1, 2, 3, 4, 5].map((val) => {
-                                                        const colors = ['text-rose-600', 'text-orange-500', 'text-amber-400', 'text-emerald-500', 'text-teal-600'];
-                                                        const bgColors = ['bg-rose-50', 'bg-orange-50', 'bg-amber-50', 'bg-emerald-50', 'bg-teal-50'];
-                                                        const borderColors = ['border-rose-500', 'border-orange-500', 'border-amber-400', 'border-emerald-500', 'border-teal-600'];
-                                                        const shadowColors = ['shadow-rose-500/30', 'shadow-orange-500/30', 'shadow-amber-400/30', 'shadow-emerald-500/30', 'shadow-teal-600/30'];
-                                                        const icons = ['sentiment_very_dissatisfied', 'sentiment_dissatisfied', 'sentiment_neutral', 'sentiment_satisfied', 'sentiment_very_satisfied'];
+                                    <div className="pl-14">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {element.options.map((option) => {
+                                                const isChecked = (formData as any)[element.id] === option.value.toString();
 
-                                                        const isChecked = (formData as any)[indicator.id] === val.toString();
-
-                                                        return (
-                                                            <label key={val} className="cursor-pointer group relative flex flex-col items-center flex-1">
-                                                                <input
-                                                                    type="radio"
-                                                                    name={indicator.id}
-                                                                    value={val}
-                                                                    checked={isChecked}
-                                                                    onChange={(e) => handleRadioChange(indicator.id, e.target.value)}
-                                                                    className="rating-input sr-only"
-                                                                />
-                                                                <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${isChecked ? `${borderColors[val - 1]} ${bgColors[val - 1]} ${colors[val - 1]} shadow-lg ${shadowColors[val - 1]}` : 'border-gray-200 bg-white text-gray-300 group-hover:bg-gray-50 group-hover:border-gray-300'}`}>
-                                                                    <span className={`rating-icon material-symbols-outlined text-2xl transition-transform duration-200 ${isChecked ? 'scale-110' : ''}`}>{icons[val - 1]}</span>
-                                                                </div>
-                                                                <span className={`text-[10px] font-medium mt-1 ${isChecked ? colors[val - 1] : 'text-gray-400'}`}>{val}</span>
-                                                            </label>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        ))}
+                                                return (
+                                                    <label key={option.value} className="cursor-pointer">
+                                                        <input
+                                                            type="radio"
+                                                            name={element.id}
+                                                            value={option.value}
+                                                            checked={isChecked}
+                                                            onChange={(e) => handleRadioChange(element.id, e.target.value)}
+                                                            required
+                                                            className="sr-only peer"
+                                                        />
+                                                        <div className={`flex items-center gap-3 px-3 py-3 rounded-xl border-2 transition-all ${
+                                                            isChecked 
+                                                                ? 'border-emerald-500 bg-emerald-50 scale-[1.02] shadow-lg' 
+                                                                : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+                                                        }`}>
+                                                            <span className="text-3xl flex-shrink-0">{option.emoji}</span>
+                                                            <span className={`text-xs font-bold leading-tight text-left flex-1 ${
+                                                                isChecked
+                                                                    ? 'text-emerald-700'
+                                                                    : 'text-gray-700'
+                                                            }`}>
+                                                                {option.label}
+                                                            </span>
+                                                        </div>
+                                                    </label>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
