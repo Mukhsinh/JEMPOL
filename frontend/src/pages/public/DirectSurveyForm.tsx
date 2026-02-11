@@ -240,13 +240,6 @@ const DirectSurveyForm: React.FC = () => {
     }
   ];
 
-  const ratingOptions = [
-    { value: '1', label: 'Pilihan 1', emoji: '😞', color: 'from-red-500 to-red-600', bgColor: 'bg-red-500', desc: 'Nilai 1' },
-    { value: '2', label: 'Pilihan 2', emoji: '😕', color: 'from-orange-500 to-orange-600', bgColor: 'bg-orange-500', desc: 'Nilai 2' },
-    { value: '3', label: 'Pilihan 3', emoji: '🙂', color: 'from-lime-500 to-lime-600', bgColor: 'bg-lime-500', desc: 'Nilai 3' },
-    { value: '4', label: 'Pilihan 4', emoji: '😊', color: 'from-emerald-500 to-green-600', bgColor: 'bg-emerald-500', desc: 'Nilai 4' }
-  ];
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;

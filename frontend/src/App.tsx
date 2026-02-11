@@ -38,6 +38,7 @@ const TrackTicket = lazy(() => import('./pages/public/TrackTicket'));
 const DirectInternalTicketForm = lazy(() => import('./pages/public/DirectInternalTicketForm'));
 const DirectExternalTicketForm = lazy(() => import('./pages/public/DirectExternalTicketForm'));
 const DirectSurveyForm = lazy(() => import('./pages/public/DirectSurveyForm'));
+const QRLanding = lazy(() => import('./pages/tickets/QRLanding'));
 
 // User Management
 import UserManagement from './pages/users/UserManagement';
@@ -79,6 +80,12 @@ function App() {
           <Route path="/form/internal" element={<Suspense fallback={<LoadingSpinner />}><DirectInternalTicketForm /></Suspense>} />
           <Route path="/form/eksternal" element={<Suspense fallback={<LoadingSpinner />}><DirectExternalTicketForm /></Suspense>} />
           <Route path="/form/survey" element={<Suspense fallback={<LoadingSpinner />}><DirectSurveyForm /></Suspense>} />
+          
+          {/* QR Code Landing Page - Public Access */}
+          <Route path="/m/:code" element={<Suspense fallback={<LoadingSpinner />}><QRLanding /></Suspense>} />
+          
+          {/* Legacy Routes - Redirect ke /form/* untuk backward compatibility */}
+          <Route path="/survey" element={<Suspense fallback={<LoadingSpinner />}><DirectSurveyForm /></Suspense>} />
 
           {/* Protected Admin Routes */}
           <Route path="/*" element={
@@ -104,8 +111,6 @@ function App() {
                   <Route path="/tickets/escalation" element={<Suspense fallback={<LoadingSpinner />}><EscalationManagement /></Suspense>} />
 
                   {/* Survey Management */}
-                  {/* Route lama - redirect ke /form/survey */}
-                  <Route path="/survey" element={<Suspense fallback={<LoadingSpinner />}><DirectSurveyForm /></Suspense>} />
                   <Route path="/survey/admin" element={<Suspense fallback={<LoadingSpinner />}><SurveyLanding /></Suspense>} />
                   <Route path="/survey/form" element={<Suspense fallback={<LoadingSpinner />}><DirectSurveyForm /></Suspense>} />
                   <Route path="/survey/report" element={<Suspense fallback={<LoadingSpinner />}><SurveyReport /></Suspense>} />
