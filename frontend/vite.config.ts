@@ -29,6 +29,7 @@ export default defineConfig({
       drop: ['console', 'debugger'],
     },
     outDir: 'dist',
+    emptyOutDir: true,
     chunkSizeWarningLimit: 1000,
     minify: 'esbuild',
     rollupOptions: {
