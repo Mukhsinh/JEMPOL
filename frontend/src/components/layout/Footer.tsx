@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Lightbulb, Phone, MapPin, User, Mail, Globe } from 'lucide-react';
+import { Lightbulb, MapPin, User, Mail, Globe } from 'lucide-react';
 import { supabase } from '../../utils/supabaseClient';
 
 interface AppSettings {

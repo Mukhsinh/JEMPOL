@@ -1,24 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
-interface EscalationRule {
-    id: string;
-    name: string;
-    description: string;
-    is_active: boolean;
-    trigger_conditions: {
-        priority?: string[];
-        status?: string[];
-        time_threshold?: number;
-        sentiment_threshold?: number;
-    };
-    actions: Array<{
-        type: string;
-        target?: string;
-        message?: string;
-    }>;
-    created_at: string;
-    updated_at: string;
-}
+import type { EscalationRule } from '../services/escalationService';
 
 interface EscalationRuleModalProps {
     isOpen: boolean;
@@ -38,7 +19,7 @@ interface RuleFormData {
         sentiment_threshold?: number;
     };
     actions: Array<{
-        type: string;
+        type: 'notify_manager' | 'notify_assignee' | 'bump_priority' | 'flag_review' | 'escalate_to_role';
         target?: string;
         message?: string;
     }>;

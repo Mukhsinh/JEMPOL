@@ -243,21 +243,20 @@ const TiketInternal: React.FC = () => {
 
   const handleDownloadPDF = () => {
     if (submittedTicketData) {
-      generateInternalTicketPDF(
-        submittedTicketData.ticket_number,
-        {
-          reporter_name: submittedTicketData.reporter_name,
-          reporter_email: submittedTicketData.reporter_email || '-',
-          reporter_phone: submittedTicketData.reporter_phone || '-',
-          reporter_department: submittedTicketData.unit_name,
-          reporter_position: '-',
-          category: submittedTicketData.category,
-          priority: submittedTicketData.priority,
-          title: submittedTicketData.title,
-          description: submittedTicketData.description
-        },
-        submittedTicketData.unit_name
-      );
+      downloadInternalTicketPDF({
+        ticket_number: submittedTicketData.ticket_number,
+        reporter_name: submittedTicketData.reporter_name,
+        reporter_email: submittedTicketData.reporter_email || '-',
+        reporter_phone: submittedTicketData.reporter_phone || '-',
+        reporter_address: submittedTicketData.unit_name,
+        category: submittedTicketData.category,
+        priority: submittedTicketData.priority,
+        title: submittedTicketData.title,
+        description: submittedTicketData.description,
+        unit_name: submittedTicketData.unit_name,
+        created_at: submittedTicketData.created_at || new Date().toISOString(),
+        type: 'internal'
+      });
     }
   };
 

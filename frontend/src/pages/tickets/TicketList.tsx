@@ -118,11 +118,10 @@ export default function TicketList() {
     const filteredTickets = tickets.filter(ticket => {
         // Filter berdasarkan unit kerja - hanya admin/superadmin yang bisa lihat semua
         const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
-        const matchesUnit = isAdmin || ticket.unit_id === user?.unit_id;
         
         // Filter tiket yang masuk langsung atau eskalasi ke unit ini
-        const isDirectTicket = ticket.unit_id === user?.unit_id;
-        const isEscalatedToUnit = ticket.status === 'escalated' && ticket.escalated_to_unit_id === user?.unit_id;
+        const isDirectTicket = ticket.unit_id === (user as any)?.unit_id;
+        const isEscalatedToUnit = ticket.status === 'escalated' && ticket.escalated_to_unit_id === (user as any)?.unit_id;
         const matchesTicketAccess = isAdmin || isDirectTicket || isEscalatedToUnit;
         
         const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;

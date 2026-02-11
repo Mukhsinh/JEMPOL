@@ -324,7 +324,7 @@ const DirectInternalTicketForm: React.FC = () => {
         setSubmitted(true);
         
         // Tampilkan notifikasi sukses
-        if (window.alert) {
+        if (typeof window !== 'undefined' && typeof window.alert === 'function') {
           setTimeout(() => {
             alert(`✅ Tiket berhasil dibuat!\n\nNomor Tiket: ${result.ticket_number}\n\nSimpan nomor ini untuk melacak status tiket Anda.`);
           }, 500);
@@ -336,7 +336,7 @@ const DirectInternalTicketForm: React.FC = () => {
         setError(errorMsg);
         
         // Tampilkan notifikasi error
-        if (window.alert) {
+        if (typeof window !== 'undefined' && typeof window.alert === 'function') {
           alert(`❌ Gagal membuat tiket\n\n${errorMsg}`);
         }
       }
@@ -360,7 +360,7 @@ const DirectInternalTicketForm: React.FC = () => {
       setError(errorMessage);
       
       // Tampilkan notifikasi error
-      if (window.alert) {
+      if (typeof window !== 'undefined' && typeof window.alert === 'function') {
         alert(`❌ Error\n\n${errorMessage}`);
       }
     } finally {
@@ -371,18 +371,18 @@ const DirectInternalTicketForm: React.FC = () => {
   const handleDownloadPDF = async () => {
     try {
       await downloadInternalTicketPDF({
-        ticketNumber,
-        reporterName: formData.reporter_name,
-        reporterEmail: formData.reporter_email,
-        reporterPhone: formData.reporter_phone,
-        department: formData.reporter_department,
-        position: formData.reporter_position,
+        ticket_number: ticketNumber,
+        reporter_name: formData.reporter_name,
+        reporter_email: formData.reporter_email,
+        reporter_phone: formData.reporter_phone,
+        reporter_department: formData.reporter_department,
+        reporter_position: formData.reporter_position,
         category: categories.find(c => c.value === formData.category)?.label || formData.category,
         priority: formData.priority,
         title: formData.title,
         description: formData.description,
-        unitName: units.find(u => u.id === formData.unit_id)?.name || formData.reporter_department,
-        submittedAt: new Date().toISOString()
+        unit_name: units.find(u => u.id === formData.unit_id)?.name || formData.reporter_department,
+        created_at: new Date().toISOString()
       });
     } catch (error) {
       console.error('Error downloading PDF:', error);

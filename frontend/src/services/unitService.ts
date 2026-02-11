@@ -382,7 +382,7 @@ class UnitService {
   }
 
   // Import units from file
-  async importUnits(file: File): Promise<{ success: boolean; imported: number; message?: string }> {
+  async importUnits(file: File): Promise<{ success: boolean; imported: number; total?: number; errors?: string[]; message?: string }> {
     try {
       const formData = new FormData();
       formData.append('file', file);

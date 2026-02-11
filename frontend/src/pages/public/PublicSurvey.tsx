@@ -5,6 +5,7 @@ interface FormData {
   service_type: string;
   full_name: string;
   is_anonymous: boolean;
+  phone: string;
   email: string;
   age: string;
   gender: string;
@@ -64,6 +65,7 @@ const PublicSurvey: React.FC = () => {
     service_type: '',
     full_name: '',
     is_anonymous: false,
+    phone: '',
     email: '',
     age: '',
     gender: '',

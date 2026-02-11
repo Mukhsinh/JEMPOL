@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { escalationService, EscalationRule, EscalationStats } from '../../services/escalationService';
+import { escalationService, EscalationStats } from '../../services/escalationService';
+import type { EscalationRule } from '../../services/escalationService';
 import EscalationRuleModal from '../../components/EscalationRuleModal';
 
 const EscalationManagement: React.FC = () => {

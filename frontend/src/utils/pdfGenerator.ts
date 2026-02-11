@@ -1,14 +1,13 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-// Extend jsPDF type untuk autoTable
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-    lastAutoTable?: {
-      finalY: number;
-    };
-  }
+// Type untuk jsPDF dengan autoTable
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: (options: any) => jsPDF;
+  lastAutoTable?: {
+    finalY: number;
+  };
+  getCurrentPageInfo(): { pageNumber: number };
 }
 
 interface TicketData {
@@ -50,14 +49,14 @@ interface SurveyData {
 }
 
 export class PDFGenerator {
-  private doc: jsPDF;
+  private doc: jsPDFWithAutoTable;
   private pageWidth: number;
   private pageHeight: number;
   private margin: number = 20;
   private currentY: number = 20;
 
   constructor() {
-    this.doc = new jsPDF();
+    this.doc = new jsPDF() as jsPDFWithAutoTable;
     this.pageWidth = this.doc.internal.pageSize.getWidth();
     this.pageHeight = this.doc.internal.pageSize.getHeight();
   }
