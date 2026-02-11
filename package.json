@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=frontend",
-    "build": "npm run build:skip-check --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
     "build:skip-check": "npm run build:skip-check --workspace=frontend",
     "vercel-build": "cd frontend && npm install && npm run build:skip-check",
     "test": "npm run test --workspace=frontend"
