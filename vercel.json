@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd frontend && npm ci && npm run vercel-build && node verify-build.js",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install",
   "framework": null,
