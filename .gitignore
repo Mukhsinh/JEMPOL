@@ -60,10 +60,9 @@ optimize-*.js
 identify-*.js
 tambah-*.js
 
-# Documentation files (kecuali README.md dan DEPLOYMENT.md)
+# Documentation files (kecuali README.md)
 *.md
 !README.md
-!DEPLOYMENT.md
 !.kiro/**/*.md
 
 # Temporary files
