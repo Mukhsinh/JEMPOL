@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "build:skip-check": "vite build",
-    "postbuild": "echo Build verification complete",
-    "vercel-build": "vite build",
+    "build:skip-check": "vite build --outDir dist",
+    "postbuild": "node verify-build.js",
+    "vercel-build": "vite build --outDir dist",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

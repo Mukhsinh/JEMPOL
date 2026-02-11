@@ -2,7 +2,7 @@
 node_modules/
 **/node_modules/
 
-# Environment files
+# Environment files (local only)
 .env.local
 .env.development.local
 .env.test.local
@@ -15,6 +15,9 @@ node_modules/
 .idea/
 .kiro/
 
+# Build verification script should NOT be ignored
+# verify-build.js is needed for build process
+
 # Scripts and utilities (root level only)
 /*.bat
 /test-*.html
@@ -26,7 +29,14 @@ node_modules/
 /monitor-*.js
 /reset-*.js
 /update-*.js
-/verify-*.js
+# /verify-*.js - COMMENTED OUT, verify-build.js is needed
 /scripts/
 /uploads/
 /backend/
+
+# Documentation (not needed in deployment)
+/DEPLOYMENT.md
+
+# IMPORTANT: Do NOT ignore dist folder
+!frontend/dist/
+!frontend/dist/**
