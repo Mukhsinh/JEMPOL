@@ -1,18 +1,22 @@
 # Dependencies
-**/node_modules
+node_modules/
+**/node_modules/
 
 # Environment files
 .env.local
 .env.development.local
 .env.test.local
-backend/.env
 
 # Logs
 *.log
 
+# IDE
+.vscode/
+.idea/
+.kiro/
+
 # Scripts and utilities (root level only)
 /*.bat
-/*.md
 /test-*.html
 /fix-*.js
 /create-*.js
@@ -25,6 +29,4 @@ backend/.env
 /verify-*.js
 /scripts/
 /uploads/
-
-# Keep README
-!README.md
+/backend/
