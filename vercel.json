@@ -3,7 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install",
-  "framework": null,
+  "devCommand": "npm run dev",
   "functions": {
     "api/**/*.ts": {
       "memory": 1024,
