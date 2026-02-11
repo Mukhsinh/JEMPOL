@@ -1,7 +1,7 @@
 {
   "version": 2,
   "buildCommand": "npm run build:skip-check",
-  "outputDirectory": "dist",
+  "outputDirectory": "frontend/dist",
   "installCommand": "npm install",
   "framework": null,
   "devCommand": "npm run dev",
@@ -15,6 +15,30 @@
     {
       "source": "/api/:path*",
       "destination": "/api/:path*"
+    },
+    {
+      "source": "/form/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/m/:code",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/survey/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/lacak-tiket",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/track-ticket",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/tiket-eksternal/:path*",
+      "destination": "/index.html"
     },
     {
       "source": "/(.*)",
