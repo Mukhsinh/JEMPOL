@@ -4,18 +4,38 @@
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install",
   "functions": {
-    "api/**/*.ts": {
+    "api/public/*.ts": {
       "memory": 1024,
       "maxDuration": 10
     }
   },
   "rewrites": [
     {
-      "source": "/api/public/:path*",
-      "destination": "/api/public/:path*"
+      "source": "/api/public/surveys",
+      "destination": "/api/public/surveys"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/api/public/external-tickets",
+      "destination": "/api/public/external-tickets"
+    },
+    {
+      "source": "/api/public/internal-tickets",
+      "destination": "/api/public/internal-tickets"
+    },
+    {
+      "source": "/api/public/track-ticket",
+      "destination": "/api/public/track-ticket"
+    },
+    {
+      "source": "/api/public/units",
+      "destination": "/api/public/units"
+    },
+    {
+      "source": "/api/public/app-settings",
+      "destination": "/api/public/app-settings"
+    },
+    {
+      "source": "/((?!api).*)",
       "destination": "/index.html"
     }
   ],
