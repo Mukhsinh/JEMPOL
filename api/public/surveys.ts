@@ -32,11 +32,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   console.log('🎯 POST /api/public/surveys dipanggil');
   console.log('📍 Request method:', req.method);
   console.log('📍 Request URL:', req.url);
+  console.log('📍 Request headers:', JSON.stringify(req.headers, null, 2));
+  console.log('📍 Request body type:', typeof req.body);
+  console.log('📍 Request body:', JSON.stringify(req.body, null, 2));
   
   // PERBAIKAN: Wrapper untuk memastikan SELALU return JSON
   try {
     // Only allow POST
     if (req.method !== 'POST') {
+      console.log('❌ Method not allowed:', req.method);
       return res.status(405).json({
         success: false,
         error: 'Method not allowed. Only POST is supported.'
@@ -50,6 +54,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         success: false,
         error: 'Konfigurasi server tidak lengkap. Hubungi administrator.',
         details: 'Supabase credentials not configured'
+      });
+    }
+    
+    // Validasi request body
+    if (!req.body || typeof req.body !== 'object') {
+      console.error('❌ Invalid request body:', req.body);
+      return res.status(400).json({
+        success: false,
+        error: 'Request body tidak valid',
+        details: 'Body harus berupa JSON object'
       });
     }
     
