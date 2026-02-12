@@ -77,45 +77,91 @@ const PublicInternalTicket: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validasi unit_id - CRITICAL
+    if (!unitId || unitId.trim() === '' || unitId === 'null' || unitId === 'undefined') {
+      setError('Unit tujuan tidak valid. Silakan scan QR code ulang.');
+      console.error('❌ Unit ID tidak valid:', unitId);
+      return;
+    }
+
+    // Validasi format UUID untuk unit_id
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(unitId)) {
+      setError('Format Unit ID tidak valid. Silakan scan QR code ulang.');
+      console.error('❌ Unit ID format tidak valid:', unitId);
+      return;
+    }
+
     setSubmitting(true);
     setError('');
 
     try {
-      // Kirim sebagai JSON
+      // Kirim sebagai JSON dengan field lengkap
       const submitData = {
-        reporter_name: formData.reporter_name,
-        reporter_email: formData.reporter_email,
-        reporter_phone: formData.reporter_phone,
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
+        reporter_name: formData.reporter_name?.trim() || null,
+        reporter_email: formData.reporter_email?.trim() || null,
+        reporter_phone: formData.reporter_phone?.trim() || null,
+        reporter_department: formData.reporter_department?.trim() || null,
+        reporter_position: formData.reporter_position?.trim() || null,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        category: formData.category || null,
         priority: formData.priority,
-        qr_code: qrCode,
+        qr_code: qrCode || null,
         unit_id: unitId,
-        source: 'qr_code',
-        ticket_type: 'internal'
+        source: qrCode ? 'qr_code' : 'web'
       };
+
+      console.log('📤 Submitting internal ticket:', submitData);
+      console.log('📤 Unit ID:', unitId);
 
       const response = await fetch('/api/public/internal-tickets', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify(submitData)
       });
 
+      console.log('📊 Response status:', response.status);
+      console.log('📊 Response headers:', Object.fromEntries(response.headers.entries()));
+
+      // Cek apakah response adalah HTML (error 404 atau 500)
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ Response is not JSON:', text.substring(0, 200));
+        
+        // Jika 404, kemungkinan endpoint tidak ditemukan
+        if (response.status === 404) {
+          setError('Endpoint API tidak ditemukan. Silakan hubungi administrator.');
+          console.error('❌ API endpoint /api/public/internal-tickets tidak ditemukan (404)');
+        } else {
+          setError('Server mengembalikan response yang tidak valid. Silakan coba lagi.');
+        }
+        return;
+      }
+
       const result = await response.json();
+      console.log('📊 Response data:', result);
 
       if (response.ok && result.success) {
         setTicketNumber(result.ticket_number);
         setSubmitted(true);
         window.scrollTo(0, 0);
       } else {
-        setError(result.error || 'Gagal mengirim tiket');
+        const errorMsg = result.error || 'Gagal mengirim tiket';
+        const errorDetails = result.details ? ` (${result.details})` : '';
+        const debugInfo = result.debug_info ? `\nDebug: ${JSON.stringify(result.debug_info)}` : '';
+        setError(errorMsg + errorDetails);
+        console.error('❌ Submit failed:', result);
+        console.error('❌ Error details:', errorMsg + errorDetails + debugInfo);
       }
     } catch (err: any) {
-      console.error('Error submitting ticket:', err);
-      setError('Terjadi kesalahan saat mengirim tiket');
+      console.error('❌ Error submitting ticket:', err);
+      setError('Terjadi kesalahan saat mengirim tiket: ' + err.message);
     } finally {
       setSubmitting(false);
     }

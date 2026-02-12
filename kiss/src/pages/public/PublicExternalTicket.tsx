@@ -115,48 +115,112 @@ const PublicExternalTicket: React.FC = () => {
       return;
     }
 
+    // Validasi field wajib
+    if (!formData.service_type) {
+      setError('Jenis layanan harus diisi');
+      return;
+    }
+
+    if (!formData.title || formData.title.trim() === '') {
+      setError('Judul laporan harus diisi');
+      return;
+    }
+
+    if (!formData.description || formData.description.trim() === '') {
+      setError('Deskripsi harus diisi');
+      return;
+    }
+
+    // Validasi unit_id - CRITICAL
+    if (!unitId || unitId.trim() === '' || unitId === 'null' || unitId === 'undefined') {
+      setError('Unit tujuan tidak valid. Silakan scan QR code ulang atau pilih unit dari daftar.');
+      console.error('❌ Unit ID tidak valid:', unitId);
+      return;
+    }
+
+    // Validasi format UUID untuk unit_id
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(unitId)) {
+      setError('Format Unit ID tidak valid. Silakan scan QR code ulang.');
+      console.error('❌ Unit ID format tidak valid:', unitId);
+      return;
+    }
+
     setSubmitting(true);
     setError('');
 
     try {
       // Kirim sebagai JSON, bukan FormData
+      // Pastikan field opsional dikirim sebagai null (bukan string kosong)
       const submitData = {
         reporter_identity_type: formData.reporter_identity_type,
-        reporter_name: formData.reporter_name,
-        reporter_email: formData.reporter_email,
-        reporter_phone: formData.reporter_phone,
-        reporter_address: formData.reporter_address,
+        reporter_name: formData.reporter_name?.trim() || null,
+        reporter_email: formData.reporter_email?.trim() || null,
+        reporter_phone: formData.reporter_phone?.trim() || null,
+        reporter_address: formData.reporter_address?.trim() || null,
         service_type: formData.service_type,
-        service_category_id: formData.service_category_id || null,
-        patient_type_id: formData.patient_type_id || null,
-        category: formData.category,
-        title: formData.title,
-        description: formData.description,
-        qr_code: qrCode,
+        // Pastikan ID dikirim sebagai null jika kosong, bukan string kosong
+        service_category_id: formData.service_category_id && formData.service_category_id !== '' ? formData.service_category_id : null,
+        patient_type_id: formData.patient_type_id && formData.patient_type_id !== '' ? formData.patient_type_id : null,
+        category: formData.category?.trim() || null,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        qr_code: qrCode || null,
         unit_id: unitId,
-        source: 'qr_code'
+        source: qrCode ? 'qr_code' : 'web'
       };
+
+      console.log('📤 Submitting external ticket:', submitData);
+      console.log('📤 Unit ID:', unitId);
+      console.log('📤 Service Category ID:', submitData.service_category_id);
+      console.log('📤 Patient Type ID:', submitData.patient_type_id);
 
       const response = await fetch('/api/public/external-tickets', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify(submitData)
       });
 
+      console.log('📊 Response status:', response.status);
+      console.log('📊 Response headers:', Object.fromEntries(response.headers.entries()));
+
+      // Cek apakah response adalah HTML (error 404 atau 500)
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ Response is not JSON:', text.substring(0, 200));
+        
+        // Jika 404, kemungkinan endpoint tidak ditemukan
+        if (response.status === 404) {
+          setError('Endpoint API tidak ditemukan. Silakan hubungi administrator.');
+          console.error('❌ API endpoint /api/public/external-tickets tidak ditemukan (404)');
+        } else {
+          setError('Server mengembalikan response yang tidak valid. Silakan coba lagi.');
+        }
+        return;
+      }
+
       const result = await response.json();
+      console.log('📊 Response data:', result);
 
       if (response.ok && result.success) {
         setTicketNumber(result.ticket_number);
         setSubmitted(true);
         window.scrollTo(0, 0);
       } else {
-        setError(result.error || 'Gagal mengirim laporan');
+        const errorMsg = result.error || 'Gagal mengirim laporan';
+        const errorDetails = result.details ? ` (${result.details})` : '';
+        const debugInfo = result.debug_info ? `\nDebug: ${JSON.stringify(result.debug_info)}` : '';
+        setError(errorMsg + errorDetails);
+        console.error('❌ Submit failed:', result);
+        console.error('❌ Error details:', errorMsg + errorDetails + debugInfo);
       }
     } catch (err: any) {
-      console.error('Error submitting ticket:', err);
-      setError('Terjadi kesalahan saat mengirim laporan');
+      console.error('❌ Error submitting ticket:', err);
+      setError('Terjadi kesalahan saat mengirim laporan: ' + err.message);
     } finally {
       setSubmitting(false);
     }
@@ -414,7 +478,7 @@ const PublicExternalTicket: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Kategori Layanan <span className="text-red-500">*</span>
+                    Kategori Layanan
                   </label>
                   {loadingMasterData ? (
                     <div className="flex items-center justify-center py-3">
@@ -426,10 +490,9 @@ const PublicExternalTicket: React.FC = () => {
                       name="service_category_id"
                       value={formData.service_category_id}
                       onChange={handleInputChange}
-                      required
                       className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
-                      <option value="">Pilih kategori...</option>
+                      <option value="">Pilih kategori (opsional)...</option>
                       {serviceCategories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.name}
@@ -443,7 +506,7 @@ const PublicExternalTicket: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Jenis Pasien <span className="text-red-500">*</span>
+                    Jenis Pasien
                   </label>
                   {loadingMasterData ? (
                     <div className="flex items-center justify-center py-3">
@@ -455,10 +518,9 @@ const PublicExternalTicket: React.FC = () => {
                       name="patient_type_id"
                       value={formData.patient_type_id}
                       onChange={handleInputChange}
-                      required
                       className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     >
-                      <option value="">Pilih jenis pasien...</option>
+                      <option value="">Pilih jenis pasien (opsional)...</option>
                       {patientTypes.map((type) => (
                         <option key={type.id} value={type.id}>
                           {type.name}

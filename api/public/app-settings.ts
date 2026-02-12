@@ -37,16 +37,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     console.log('🎯 GET /api/public/app-settings dipanggil');
     
-    // PERBAIKAN: Hardcode credentials untuk development/testing
-    // Ini akan diganti dengan environment variables di production
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://jxxzbdivafzzwqhagwrf.supabase.co';
-    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
+    // Initialize Supabase client dengan validasi
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
     
     console.log('📍 Environment check:', {
       hasSupabaseUrl: !!supabaseUrl,
       hasSupabaseKey: !!supabaseKey,
       supabaseUrlPrefix: supabaseUrl?.substring(0, 30) + '...'
     });
+    
+    // Jika credentials tidak ada, return default settings
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('⚠️ Supabase credentials not configured, using default settings');
+      return res.status(200).json({
+        success: true,
+        data: DEFAULT_SETTINGS,
+        warning: 'Using default settings - Supabase credentials not configured'
+      });
+    }
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     console.log('✅ Supabase client initialized');

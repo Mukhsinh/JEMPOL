@@ -7,6 +7,8 @@ interface FormData {
   reporter_email: string;
   reporter_phone: string;
   service_type: string;
+  service_category_id: string;
+  patient_type_id: string;
   title: string;
   description: string;
   attachments: File[];
@@ -33,6 +35,8 @@ const PublicExternalTicketFullscreen: React.FC = () => {
     reporter_email: '',
     reporter_phone: '',
     service_type: '',
+    service_category_id: '',
+    patient_type_id: '',
     title: '',
     description: '',
     attachments: []
@@ -72,6 +76,8 @@ const PublicExternalTicketFullscreen: React.FC = () => {
           reporter_email: formData.reporter_email,
           reporter_phone: formData.reporter_phone,
           service_type: formData.service_type,
+          service_category_id: formData.service_category_id, // WAJIB
+          patient_type_id: formData.patient_type_id, // WAJIB
           title: formData.title,
           description: formData.description,
           qr_code: qrCode,
@@ -103,6 +109,8 @@ const PublicExternalTicketFullscreen: React.FC = () => {
       reporter_email: '',
       reporter_phone: '',
       service_type: '',
+      service_category_id: '',
+      patient_type_id: '',
       title: '',
       description: '',
       attachments: []

@@ -8,24 +8,40 @@ export const submitSurveyDirectly = async (surveyData: any) => {
   try {
     console.log('📝 Submitting survey directly to Supabase:', surveyData);
 
-    // Verifikasi unit exists dan aktif
-    const { data: unitData, error: unitCheckError } = await supabase
-      .from('units')
-      .select('id, name')
-      .eq('id', surveyData.unit_id)
-      .eq('is_active', true)
-      .single();
+    // Verifikasi unit exists dan aktif (OPTIONAL - unit_id boleh null)
+    let finalUnitId = null;
+    if (surveyData.unit_id && surveyData.unit_id.trim() !== '') {
+      const { data: unitData, error: unitCheckError } = await supabase
+        .from('units')
+        .select('id, name')
+        .eq('id', surveyData.unit_id)
+        .eq('is_active', true)
+        .single();
 
-    if (unitCheckError || !unitData) {
-      throw new Error('Unit tidak valid atau tidak aktif');
+      if (unitCheckError || !unitData) {
+        console.warn('⚠️ Unit tidak valid atau tidak aktif, akan di-set null:', surveyData.unit_id);
+        finalUnitId = null;
+      } else {
+        finalUnitId = surveyData.unit_id;
+        console.log('✅ Unit verified:', unitData.name);
+      }
     }
 
     // Hitung skor rata-rata dari semua pertanyaan yang tersedia
+    // PERBAIKAN: Cek kedua format (q1-q11 dan u1-u11)
     const scores = [
       // Format standar: 11 unsur survei IKM
-      surveyData.q1, surveyData.q2, surveyData.q3, surveyData.q4,
-      surveyData.q5, surveyData.q6, surveyData.q7, surveyData.q8,
-      surveyData.q9, surveyData.q10, surveyData.q11
+      surveyData.q1 || surveyData.u1, 
+      surveyData.q2 || surveyData.u2, 
+      surveyData.q3 || surveyData.u3, 
+      surveyData.q4 || surveyData.u4,
+      surveyData.q5 || surveyData.u5, 
+      surveyData.q6 || surveyData.u6, 
+      surveyData.q7 || surveyData.u7, 
+      surveyData.q8 || surveyData.u8,
+      surveyData.q9 || surveyData.u9, 
+      surveyData.q10 || surveyData.u10, 
+      surveyData.q11 || surveyData.u11
     ].filter(s => s != null && s !== '').map(s => parseInt(s as string));
     
     const avgScore = scores.length > 0 
@@ -53,7 +69,7 @@ export const submitSurveyDirectly = async (surveyData: any) => {
 
     // Prepare data untuk insert
     const insertData: any = {
-      unit_id: surveyData.unit_id,
+      unit_id: finalUnitId, // PERBAIKAN: Gunakan finalUnitId yang sudah divalidasi
       service_category_id: surveyData.service_category_id || null,
       visitor_name: surveyData.is_anonymous ? null : (surveyData.visitor_name || surveyData.full_name),
       visitor_email: surveyData.is_anonymous ? null : surveyData.email,
@@ -71,26 +87,26 @@ export const submitSurveyDirectly = async (surveyData: any) => {
       kecamatan: surveyData.kecamatan || null,
       kelurahan: surveyData.kelurahan || null,
       alamat_jalan: surveyData.alamat_detail || surveyData.alamat_jalan || null,
-      // Skor 11 pertanyaan survei IKM
-      q1_score: surveyData.q1 ? parseInt(surveyData.q1 as string) : null,
-      q2_score: surveyData.q2 ? parseInt(surveyData.q2 as string) : null,
-      q3_score: surveyData.q3 ? parseInt(surveyData.q3 as string) : null,
-      q4_score: surveyData.q4 ? parseInt(surveyData.q4 as string) : null,
-      q5_score: surveyData.q5 ? parseInt(surveyData.q5 as string) : null,
-      q6_score: surveyData.q6 ? parseInt(surveyData.q6 as string) : null,
-      q7_score: surveyData.q7 ? parseInt(surveyData.q7 as string) : null,
-      q8_score: surveyData.q8 ? parseInt(surveyData.q8 as string) : null,
-      q9_score: surveyData.q9 ? parseInt(surveyData.q9 as string) : null,
-      q10_score: surveyData.q10 ? parseInt(surveyData.q10 as string) : null,
-      q11_score: surveyData.q11 ? parseInt(surveyData.q11 as string) : null,
+      // Skor 11 pertanyaan survei IKM - PERBAIKAN: Cek kedua format
+      q1_score: (surveyData.q1 || surveyData.u1) ? parseInt((surveyData.q1 || surveyData.u1) as string) : null,
+      q2_score: (surveyData.q2 || surveyData.u2) ? parseInt((surveyData.q2 || surveyData.u2) as string) : null,
+      q3_score: (surveyData.q3 || surveyData.u3) ? parseInt((surveyData.q3 || surveyData.u3) as string) : null,
+      q4_score: (surveyData.q4 || surveyData.u4) ? parseInt((surveyData.q4 || surveyData.u4) as string) : null,
+      q5_score: (surveyData.q5 || surveyData.u5) ? parseInt((surveyData.q5 || surveyData.u5) as string) : null,
+      q6_score: (surveyData.q6 || surveyData.u6) ? parseInt((surveyData.q6 || surveyData.u6) as string) : null,
+      q7_score: (surveyData.q7 || surveyData.u7) ? parseInt((surveyData.q7 || surveyData.u7) as string) : null,
+      q8_score: (surveyData.q8 || surveyData.u8) ? parseInt((surveyData.q8 || surveyData.u8) as string) : null,
+      q9_score: (surveyData.q9 || surveyData.u9) ? parseInt((surveyData.q9 || surveyData.u9) as string) : null,
+      q10_score: (surveyData.q10 || surveyData.u10) ? parseInt((surveyData.q10 || surveyData.u10) as string) : null,
+      q11_score: (surveyData.q11 || surveyData.u11) ? parseInt((surveyData.q11 || surveyData.u11) as string) : null,
       // Skor agregat
       overall_score: surveyData.overall_satisfaction ? parseInt(surveyData.overall_satisfaction as string) : avgScore,
-      response_time_score: surveyData.q3 ? parseInt(surveyData.q3 as string) : null,
-      solution_quality_score: surveyData.q5 ? parseInt(surveyData.q5 as string) : null,
-      staff_courtesy_score: surveyData.q7 ? parseInt(surveyData.q7 as string) : null,
+      response_time_score: (surveyData.q3 || surveyData.u3) ? parseInt((surveyData.q3 || surveyData.u3) as string) : null,
+      solution_quality_score: (surveyData.q5 || surveyData.u5) ? parseInt((surveyData.q5 || surveyData.u5) as string) : null,
+      staff_courtesy_score: (surveyData.q7 || surveyData.u7) ? parseInt((surveyData.q7 || surveyData.u7) as string) : null,
       comments: surveyData.suggestions || surveyData.comments || null,
       qr_code: surveyData.qr_code || null,
-      source: 'public_survey'
+      source: surveyData.source || 'public_survey'
     };
 
     // Insert ke tabel public_surveys

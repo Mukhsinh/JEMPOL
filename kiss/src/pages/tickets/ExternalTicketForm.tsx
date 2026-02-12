@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AppFooter from '../../components/AppFooter';
 import { getServiceCategories, getPatientTypes } from '../../services/masterDataService';
+import { supabase } from '../../utils/supabaseClient';
 
 interface Unit {
   id: string;
@@ -48,25 +49,63 @@ const ExternalTicketForm: React.FC = () => {
   const [characterCount, setCharacterCount] = useState(0);
 
   useEffect(() => {
-    if (qrCode) {
-      fetchQRCodeData();
-    } else {
-      // Jika tidak ada QR code, gunakan unit default
-      setQrData({
-        id: 'default',
-        unit_id: 'default-unit',
-        code: 'DEFAULT',
-        name: 'Formulir Umum',
-        unit: {
-          id: 'default-unit',
-          name: 'Instalasi Gawat Darurat (IGD)',
-          code: 'IGD',
-          description: 'Unit default untuk pengaduan umum'
+    const loadDefaultUnit = async () => {
+      if (qrCode) {
+        fetchQRCodeData();
+      } else {
+        // Jika tidak ada QR code, ambil unit default dari database
+        try {
+          console.log('🔍 Loading default unit...');
+          const { data: units, error } = await supabase
+            .from('units')
+            .select('id, name, code, description')
+            .eq('is_active', true)
+            .order('name')
+            .limit(1);
+
+          if (error) {
+            console.error('❌ Error loading default unit:', error);
+            // Fallback ke unit hardcoded
+            setQrData({
+              id: 'default',
+              unit_id: 'default-unit',
+              code: 'DEFAULT',
+              name: 'Formulir Umum',
+              unit: {
+                id: 'default-unit',
+                name: 'Unit Umum',
+                code: 'UMUM',
+                description: 'Unit default untuk pengaduan umum'
+              }
+            });
+          } else if (units && units.length > 0) {
+            const defaultUnit = units[0];
+            console.log('✅ Default unit loaded:', defaultUnit);
+            setQrData({
+              id: 'default',
+              unit_id: defaultUnit.id,
+              code: 'DEFAULT',
+              name: 'Formulir Umum',
+              unit: defaultUnit
+            });
+          } else {
+            console.warn('⚠️ No active units found');
+            alert('Tidak ada unit aktif. Silakan hubungi administrator.');
+            navigate('/');
+            return;
+          }
+        } catch (err) {
+          console.error('❌ Error loading default unit:', err);
+          alert('Gagal memuat data unit. Silakan coba lagi.');
+          navigate('/');
+          return;
         }
-      });
-      setLoading(false);
-    }
-  }, [qrCode]);
+        setLoading(false);
+      }
+    };
+
+    loadDefaultUnit();
+  }, [qrCode, navigate]);
 
   // Load master data
   useEffect(() => {
@@ -138,39 +177,87 @@ const ExternalTicketForm: React.FC = () => {
       return;
     }
 
+    // Validasi form
+    if (!formData.service_type) {
+      alert('Silakan pilih jenis layanan');
+      return;
+    }
+
+    if (!formData.service_category_id || formData.service_category_id === '') {
+      alert('Silakan pilih kategori layanan');
+      return;
+    }
+
+    if (!formData.patient_type_id || formData.patient_type_id === '') {
+      alert('Silakan pilih jenis pasien');
+      return;
+    }
+
+    if (!formData.title || formData.title.trim() === '') {
+      alert('Silakan isi judul laporan');
+      return;
+    }
+
+    if (!formData.description || formData.description.trim() === '') {
+      alert('Silakan isi deskripsi laporan');
+      return;
+    }
+
+    if (!qrData?.unit_id || qrData.unit_id === '') {
+      alert('Unit tidak valid. Silakan refresh halaman dan coba lagi.');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      // Kirim sebagai JSON
+      // Kirim sebagai JSON dengan validasi data
       const submitData = {
         reporter_identity_type: formData.reporter_identity_type,
-        reporter_name: formData.reporter_name,
-        reporter_email: formData.reporter_email,
-        reporter_phone: formData.reporter_phone,
-        reporter_address: formData.reporter_address,
+        reporter_name: formData.reporter_identity_type === 'personal' ? (formData.reporter_name || null) : null,
+        reporter_email: formData.reporter_identity_type === 'personal' ? (formData.reporter_email || null) : null,
+        reporter_phone: formData.reporter_identity_type === 'personal' ? (formData.reporter_phone || null) : null,
+        reporter_address: formData.reporter_identity_type === 'personal' ? (formData.reporter_address || null) : null,
         service_type: formData.service_type,
-        service_category_id: formData.service_category_id || null,
-        patient_type_id: formData.patient_type_id || null,
-        category: formData.category,
-        title: formData.title,
-        description: formData.description,
+        service_category_id: formData.service_category_id, // WAJIB
+        patient_type_id: formData.patient_type_id, // WAJIB
+        category: formData.category || null,
+        title: formData.title.trim(),
+        description: formData.description.trim(),
         qr_code_id: qrData?.id !== 'default' ? qrData?.id : null,
-        unit_id: qrData?.unit_id,
+        unit_id: qrData?.unit_id, // WAJIB
         source: qrCode ? 'qr_code' : 'web'
       };
+
+      console.log('📤 Submitting ticket:', submitData);
 
       const response = await fetch('/api/public/external-tickets', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
         body: JSON.stringify(submitData)
       });
 
-      const result = await response.json();
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response headers:', Object.fromEntries(response.headers.entries()));
+
+      let result;
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json();
+      } else {
+        const text = await response.text();
+        console.error('❌ Response bukan JSON:', text.substring(0, 200));
+        throw new Error('Server mengembalikan response yang tidak valid');
+      }
+
+      console.log('📥 Response data:', result);
 
       if (response.ok && result.success) {
-        alert(`Laporan berhasil dikirim! Nomor tiket: ${result.ticket_number}`);
+        alert(`Laporan berhasil dikirim! Nomor tiket: ${result.ticket_number}\n\nSimpan nomor tiket ini untuk melacak status laporan Anda.`);
         // Reset form
         setFormData({
           reporter_identity_type: 'personal',
@@ -187,12 +274,17 @@ const ExternalTicketForm: React.FC = () => {
           attachments: []
         });
         setCharacterCount(0);
+        setCaptchaVerified(false);
       } else {
-        alert(`Error: ${result.error || 'Gagal mengirim laporan'}`);
+        const errorMsg = result.error || 'Gagal mengirim laporan';
+        const errorDetails = result.details ? `\n\nDetail: ${result.details}` : '';
+        const debugInfo = result.debug_info ? `\n\nInfo Debug:\n- Unit ID: ${result.debug_info.unit_id}\n- Kategori: ${result.debug_info.category_id}\n- Jenis Pasien: ${result.debug_info.patient_type_id}` : '';
+        alert(`Error: ${errorMsg}${errorDetails}${debugInfo}`);
+        console.error('❌ Error response:', result);
       }
-    } catch (error) {
-      console.error('Error submitting ticket:', error);
-      alert('Terjadi kesalahan saat mengirim laporan');
+    } catch (error: any) {
+      console.error('❌ Error submitting ticket:', error);
+      alert(`Terjadi kesalahan saat mengirim laporan: ${error.message || 'Unknown error'}`);
     } finally {
       setSubmitting(false);
     }

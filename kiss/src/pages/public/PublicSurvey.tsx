@@ -115,20 +115,53 @@ const PublicSurvey: React.FC = () => {
     setSubmitting(true);
 
     try {
+      // Mapping form data ke format yang diharapkan backend
+      const submitData = {
+        unit_id: unitId || null,
+        service_type: formData.service_type,
+        service_category_id: null, // Opsional
+        visitor_name: formData.is_anonymous ? null : formData.full_name,
+        visitor_email: formData.email || null,
+        visitor_phone: formData.phone || null,
+        is_anonymous: formData.is_anonymous,
+        age_range: formData.age || null,
+        gender: formData.gender || null,
+        education: null,
+        job: null,
+        patient_type: null,
+        regency: null,
+        district: null,
+        address_detail: null,
+        // Mapping skor dari q1-q8 ke u1_score-u8_score
+        u1_score: formData.q1 ? parseInt(formData.q1) : null,
+        u2_score: formData.q2 ? parseInt(formData.q2) : null,
+        u3_score: formData.q3 ? parseInt(formData.q3) : null,
+        u4_score: formData.q4 ? parseInt(formData.q4) : null,
+        u5_score: formData.q5 ? parseInt(formData.q5) : null,
+        u6_score: formData.q6 ? parseInt(formData.q6) : null,
+        u7_score: formData.q7 ? parseInt(formData.q7) : null,
+        u8_score: formData.q8 ? parseInt(formData.q8) : null,
+        u9_score: null,
+        u10_score: null,
+        u11_score: null,
+        overall_score: formData.overall_satisfaction ? parseInt(formData.overall_satisfaction) : null,
+        comments: formData.suggestions || null,
+        qr_code: qrCode || null,
+        source: qrCode ? 'qr_code' : 'web'
+      };
+
+      console.log('📤 Submitting survey:', submitData);
+
       const response = await fetch('/api/public/surveys', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify({
-          ...formData,
-          qr_code: qrCode,
-          unit_id: unitId,
-          unit_name: unitName,
-          source: 'qr_code'
-        })
+        body: JSON.stringify(submitData)
       });
+
+      console.log('📊 Response status:', response.status);
 
       // Validasi content-type response
       const contentType = response.headers.get('content-type');
@@ -139,16 +172,19 @@ const PublicSurvey: React.FC = () => {
       }
 
       const result = await response.json();
+      console.log('📊 Response data:', result);
 
       if (!response.ok) {
-        throw new Error(result.error || 'Gagal mengirim survei');
+        const errorMsg = result.error || 'Gagal mengirim survei';
+        const errorDetails = result.details ? ` (${result.details})` : '';
+        throw new Error(errorMsg + errorDetails);
       }
 
       setSubmitted(true);
       window.scrollTo(0, 0);
 
     } catch (err: any) {
-      console.error('Error submitting survey:', err);
+      console.error('❌ Error submitting survey:', err);
       setError(err.message || 'Terjadi kesalahan saat mengirim survei');
     } finally {
       setSubmitting(false);

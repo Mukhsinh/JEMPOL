@@ -8,6 +8,8 @@ interface FormData {
   reporter_phone: string;
   reporter_address: string;
   service_type: string;
+  service_category_id: string;
+  patient_type_id: string;
   category: string;
   title: string;
   description: string;
@@ -37,6 +39,8 @@ const FullscreenExternalTicket: React.FC = () => {
     reporter_phone: '',
     reporter_address: '',
     service_type: '',
+    service_category_id: '',
+    patient_type_id: '',
     category: '',
     title: '',
     description: '',
@@ -80,6 +84,8 @@ const FullscreenExternalTicket: React.FC = () => {
         reporter_phone: formData.reporter_phone,
         reporter_address: formData.reporter_address,
         service_type: formData.service_type,
+        service_category_id: formData.service_category_id, // WAJIB
+        patient_type_id: formData.patient_type_id, // WAJIB
         category: formData.category,
         title: formData.title,
         description: formData.description,
@@ -116,7 +122,7 @@ const FullscreenExternalTicket: React.FC = () => {
     setFormData({
       reporter_identity_type: 'personal',
       reporter_name: '', reporter_email: '', reporter_phone: '', reporter_address: '',
-      service_type: '', category: '', title: '', description: '', attachments: []
+      service_type: '', service_category_id: '', patient_type_id: '', category: '', title: '', description: '', attachments: []
     });
     setCaptchaVerified(false);
   };

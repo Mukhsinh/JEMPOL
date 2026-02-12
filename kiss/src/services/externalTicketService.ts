@@ -51,6 +51,8 @@ export interface CreateExternalTicketData {
   reporter_address?: string;
   service_type: string;
   category?: string;
+  service_category_id?: string;
+  patient_type_id?: string;
   title: string;
   description: string;
   attachments?: File[];
@@ -91,6 +93,8 @@ export const externalTicketService = {
           reporter_address: data.reporter_address,
           service_type: data.service_type,
           category: data.category,
+          service_category_id: data.service_category_id,
+          patient_type_id: data.patient_type_id,
           title: data.title,
           description: data.description,
           qr_code: data.qr_code_id,

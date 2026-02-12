@@ -35,19 +35,29 @@ async function generateTicketNumber(): Promise<string> {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CRITICAL: Set headers PERTAMA
-  try {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-  } catch (headerError) {
-    console.error('❌ Failed to set headers:', headerError);
-  }
+  const setHeaderSafe = (key: string, value: string) => {
+    try {
+      if (!res.headersSent) {
+        res.setHeader(key, value);
+      }
+    } catch (headerError) {
+      console.error('❌ Failed to set headers:', headerError);
+    }
+  };
+  
+  setHeaderSafe('Access-Control-Allow-Origin', '*');
+  setHeaderSafe('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  setHeaderSafe('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  setHeaderSafe('Content-Type', 'application/json; charset=utf-8');
+  setHeaderSafe('Cache-Control', 'no-cache, no-store, must-revalidate');
+  setHeaderSafe('X-Content-Type-Options', 'nosniff');
   
   try {
     console.log('🎯 Vercel Function: /api/public/external-tickets');
     console.log('📍 Method:', req.method);
+    console.log('📍 Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('📍 Body type:', typeof req.body);
+    console.log('📍 Body:', JSON.stringify(req.body, null, 2));
     
     // Handle OPTIONS request
     if (req.method === 'OPTIONS') {
@@ -101,24 +111,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       service_category_id,
       patient_type_id,
       title,
-      source
+      source,
+      body_keys: Object.keys(req.body)
     });
 
-    // Validasi unit_id - HARUS ADA
-    if (!unit_id) {
-      console.error('❌ Unit ID tidak ada');
+    // Validasi unit_id - HARUS ADA dan tidak boleh kosong
+    if (!unit_id || unit_id === '' || unit_id === 'null' || unit_id === 'undefined') {
+      console.error('❌ Unit ID tidak valid:', unit_id);
       return res.status(400).json({
         success: false,
-        error: 'Unit ID harus diisi'
+        error: 'Unit ID harus diisi dan valid'
+      });
+    }
+
+    // Validasi format UUID untuk unit_id
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(unit_id)) {
+      console.error('❌ Unit ID format tidak valid (bukan UUID):', unit_id);
+      return res.status(400).json({
+        success: false,
+        error: 'Format Unit ID tidak valid. Harus berupa UUID.',
+        received_unit_id: unit_id
       });
     }
 
     // Validasi field wajib
-    if (!title || !description) {
-      console.error('❌ Field wajib tidak lengkap');
+    if (!title || title.trim() === '') {
+      console.error('❌ Judul tidak boleh kosong');
       return res.status(400).json({
         success: false,
-        error: 'Judul dan deskripsi harus diisi'
+        error: 'Judul harus diisi'
+      });
+    }
+
+    if (!description || description.trim() === '') {
+      console.error('❌ Deskripsi tidak boleh kosong');
+      return res.status(400).json({
+        success: false,
+        error: 'Deskripsi harus diisi'
       });
     }
 
@@ -134,26 +164,98 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Validasi service_category_id - OPSIONAL (bisa kosong atau null)
+    let finalServiceCategoryId = null;
+    if (service_category_id && service_category_id !== '' && service_category_id !== 'null' && service_category_id !== 'undefined') {
+      // Validasi format UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(service_category_id)) {
+        // Validasi bahwa category exists di database
+        const { data: categoryCheck } = await supabase
+          .from('service_categories')
+          .select('id')
+          .eq('id', service_category_id)
+          .eq('is_active', true)
+          .single();
+        
+        if (categoryCheck) {
+          finalServiceCategoryId = service_category_id;
+          console.log('✅ Using service_category_id:', finalServiceCategoryId);
+        } else {
+          console.log('⚠️ service_category_id tidak ditemukan di database, akan di-set null');
+        }
+      } else {
+        console.log('⚠️ service_category_id bukan UUID yang valid, akan di-set null');
+      }
+    } else {
+      console.log('⚠️ service_category_id tidak diisi (opsional)');
+    }
+
+    // Validasi patient_type_id - OPSIONAL (bisa kosong atau null)
+    let finalPatientTypeId = null;
+    if (patient_type_id && patient_type_id !== '' && patient_type_id !== 'null' && patient_type_id !== 'undefined') {
+      // Validasi format UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(patient_type_id)) {
+        // Validasi bahwa patient_type exists di database
+        const { data: patientTypeCheck } = await supabase
+          .from('patient_types')
+          .select('id')
+          .eq('id', patient_type_id)
+          .eq('is_active', true)
+          .single();
+        
+        if (patientTypeCheck) {
+          finalPatientTypeId = patient_type_id;
+          console.log('✅ Using patient_type_id:', finalPatientTypeId);
+        } else {
+          console.log('⚠️ patient_type_id tidak ditemukan di database, akan di-set null');
+        }
+      } else {
+        console.log('⚠️ patient_type_id bukan UUID yang valid, akan di-set null');
+      }
+    } else {
+      console.log('⚠️ patient_type_id tidak diisi (opsional)');
+    }
+
     // Validasi source
     const validSources = ['web', 'qr_code', 'mobile', 'email', 'phone'];
     const finalSource = validSources.includes(source) ? source : 'web';
     console.log('✅ Using source:', finalSource);
 
     // Verifikasi unit_id exists dan aktif
+    console.log('🔍 Verifying unit_id:', unit_id);
     const { data: unitData, error: unitCheckError } = await supabase
       .from('units')
-      .select('id, name')
+      .select('id, name, is_active')
       .eq('id', unit_id)
-      .eq('is_active', true)
       .single();
 
-    if (unitCheckError || !unitData) {
-      console.error('❌ Unit tidak valid atau tidak aktif:', unit_id);
+    if (unitCheckError) {
+      console.error('❌ Error checking unit:', unitCheckError);
       return res.status(400).json({
         success: false,
-        error: 'Unit tidak valid atau tidak aktif',
+        error: 'Unit tidak ditemukan',
         unit_id: unit_id,
         details: unitCheckError?.message
+      });
+    }
+
+    if (!unitData) {
+      console.error('❌ Unit tidak ditemukan:', unit_id);
+      return res.status(400).json({
+        success: false,
+        error: 'Unit tidak ditemukan',
+        unit_id: unit_id
+      });
+    }
+
+    if (!unitData.is_active) {
+      console.error('❌ Unit tidak aktif:', unit_id);
+      return res.status(400).json({
+        success: false,
+        error: 'Unit tidak aktif',
+        unit_id: unit_id
       });
     }
 
@@ -223,29 +325,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       title: title,
       description: description,
       unit_id: unit_id,
-      qr_code_id: qr_code_id,
       priority: priority,
       status: 'open',
       sla_deadline: slaDeadline.toISOString(),
       source: finalSource,
       is_anonymous: isAnonymous,
-      submitter_name: isAnonymous ? null : reporter_name,
-      submitter_email: isAnonymous ? null : reporter_email,
-      submitter_phone: isAnonymous ? null : reporter_phone,
-      submitter_address: isAnonymous ? null : reporter_address
+      submitter_name: isAnonymous ? null : (reporter_name || null),
+      submitter_email: isAnonymous ? null : (reporter_email || null),
+      submitter_phone: isAnonymous ? null : (reporter_phone || null),
+      submitter_address: isAnonymous ? null : (reporter_address || null)
     };
 
-    // Add category_id if provided
-    const finalCategoryId = service_category_id || category || null;
-    if (finalCategoryId) {
-      ticketData.category_id = finalCategoryId;
-      console.log('✅ Using category_id:', finalCategoryId);
+    // Add qr_code_id only if it exists
+    if (qr_code_id) {
+      ticketData.qr_code_id = qr_code_id;
+      console.log('✅ Using qr_code_id:', qr_code_id);
+    }
+
+    // Add category_id - OPSIONAL (hanya jika ada dan valid)
+    if (finalServiceCategoryId) {
+      ticketData.category_id = finalServiceCategoryId;
+      console.log('✅ Using category_id:', finalServiceCategoryId);
+    } else {
+      console.log('⚠️ category_id tidak diisi (opsional)');
     }
     
-    // Add patient_type_id if provided
-    if (patient_type_id) {
-      ticketData.patient_type_id = patient_type_id;
-      console.log('✅ Using patient_type_id:', patient_type_id);
+    // Add patient_type_id - OPSIONAL (hanya jika ada dan valid)
+    if (finalPatientTypeId) {
+      ticketData.patient_type_id = finalPatientTypeId;
+      console.log('✅ Using patient_type_id:', finalPatientTypeId);
+    } else {
+      console.log('⚠️ patient_type_id tidak diisi (opsional)');
     }
 
     console.log('📤 Inserting ticket data:', {
@@ -257,7 +367,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       status: ticketData.status,
       source: ticketData.source,
       is_anonymous: ticketData.is_anonymous,
-      category_id: ticketData.category_id || 'null'
+      category_id: ticketData.category_id || 'null',
+      patient_type_id: ticketData.patient_type_id || 'null',
+      qr_code_id: ticketData.qr_code_id || 'null',
+      has_submitter_name: !!ticketData.submitter_name,
+      has_submitter_email: !!ticketData.submitter_email
     });
 
     const { data: ticket, error } = await supabase
@@ -265,29 +379,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .insert(ticketData)
       .select(`
         *,
-        units:unit_id(name, code)
+        units:unit_id(name, code),
+        service_categories:category_id(name),
+        patient_types:patient_type_id(name)
       `)
       .single();
 
     if (error) {
       console.error('❌ Error creating external ticket:', error);
+      console.error('❌ Error code:', error.code);
+      console.error('❌ Error details:', error.details);
+      console.error('❌ Error hint:', error.hint);
+      console.error('❌ Error message:', error.message);
       
       let errorMessage = 'Gagal membuat tiket';
+      let errorDetails = null;
+      
       if (error.code === '23503') {
-        errorMessage = 'Data referensi tidak valid (unit_id atau category_id tidak ditemukan)';
+        // Foreign key violation
+        if (error.message.includes('unit_id')) {
+          errorMessage = 'Unit tidak valid atau tidak ditemukan';
+        } else if (error.message.includes('category_id')) {
+          errorMessage = 'Kategori layanan tidak valid';
+          errorDetails = 'Silakan pilih kategori layanan yang valid';
+        } else if (error.message.includes('patient_type_id')) {
+          errorMessage = 'Jenis pasien tidak valid';
+          errorDetails = 'Silakan pilih jenis pasien yang valid';
+        } else {
+          errorMessage = 'Data referensi tidak valid';
+          errorDetails = error.details || error.hint;
+        }
       } else if (error.code === '23505') {
         errorMessage = 'Nomor tiket sudah ada, silakan coba lagi';
       } else if (error.code === '23514') {
         errorMessage = `Tipe tiket tidak valid. Diterima: ${ticketData.type}. Harus salah satu dari: information, complaint, suggestion, satisfaction`;
+      } else if (error.code === '23502') {
+        // Not null violation
+        errorMessage = 'Field wajib tidak boleh kosong';
+        errorDetails = error.message;
       } else if (error.message) {
         errorMessage = error.message;
+        errorDetails = error.details || error.hint;
       }
       
       return res.status(500).json({
         success: false,
         error: errorMessage,
-        details: error.details || error.hint || null,
-        error_code: error.code
+        details: errorDetails,
+        error_code: error.code,
+        debug_info: {
+          type: ticketData.type,
+          unit_id: ticketData.unit_id,
+          category_id: ticketData.category_id || 'not provided',
+          patient_type_id: ticketData.patient_type_id || 'not provided'
+        }
       });
     }
 
@@ -330,18 +475,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // PERBAIKAN: Pastikan header JSON tetap di-set
     try {
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      if (!res.headersSent) {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+      }
     } catch (headerError) {
       console.error('❌ Cannot set header:', headerError);
     }
     
     // Return JSON valid dengan informasi error lengkap
-    return res.status(500).json({
+    const errorResponse = {
       success: false,
       error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
       error_type: error.name || 'UnknownError',
       details: error.stack?.split('\n').slice(0, 3).join('\n') || null,
-      timestamp: new Date().toISOString()
-    });
+      timestamp: new Date().toISOString(),
+      endpoint: '/api/public/external-tickets'
+    };
+    
+    if (!res.headersSent) {
+      res.status(500);
+      res.json(errorResponse);
+    }
+    return;
   }
 }

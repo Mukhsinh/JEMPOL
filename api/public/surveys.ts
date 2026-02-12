@@ -22,18 +22,28 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers PERTAMA KALI
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  // Set CORS headers PERTAMA KALI dengan safe method
+  const setHeaderSafe = (key: string, value: string) => {
+    try {
+      if (!res.headersSent) {
+        res.setHeader(key, value);
+      }
+    } catch (e) {
+      console.error(`Failed to set header ${key}:`, e);
+    }
+  };
+  
+  setHeaderSafe('Access-Control-Allow-Origin', '*');
+  setHeaderSafe('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  setHeaderSafe('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
+  setHeaderSafe('Content-Type', 'application/json; charset=utf-8');
+  setHeaderSafe('Cache-Control', 'no-cache, no-store, must-revalidate');
+  setHeaderSafe('X-Content-Type-Options', 'nosniff');
   
   // Handle OPTIONS request (preflight)
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return res.status(200).json({ success: true, message: 'CORS preflight OK' });
   }
-
-  // Set Content-Type untuk response JSON
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
   
   console.log('🎯 POST /api/public/surveys dipanggil');
   console.log('📍 Request method:', req.method);
@@ -349,17 +359,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // PERBAIKAN: Pastikan header JSON di-set ulang
     try {
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      if (!res.headersSent) {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+      }
     } catch (headerError) {
       console.error('❌ Cannot set header:', headerError);
     }
     
-    return res.status(500).json({
+    const errorResponse = {
       success: false,
       error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
       error_type: error.name || 'UnknownError',
       details: error.stack?.split('\n').slice(0, 3).join('\n') || null,
-      timestamp: new Date().toISOString()
-    });
+      timestamp: new Date().toISOString(),
+      endpoint: '/api/public/surveys'
+    };
+    
+    if (!res.headersSent) {
+      res.status(500);
+      res.json(errorResponse);
+    }
+    return;
   }
 }

@@ -36,20 +36,24 @@ async function generateTicketNumber(): Promise<string> {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CRITICAL: Set headers PERTAMA SEBELUM SEMUA LOGIC
-  // Gunakan try-catch untuk setiap setHeader untuk menghindari error
+  // Pastikan SEMUA response adalah JSON, tidak ada HTML yang bocor
   const setHeaderSafe = (key: string, value: string) => {
     try {
-      res.setHeader(key, value);
+      if (!res.headersSent) {
+        res.setHeader(key, value);
+      }
     } catch (e) {
       console.error(`Failed to set header ${key}:`, e);
     }
   };
 
+  // Set headers di awal
   setHeaderSafe('Access-Control-Allow-Origin', '*');
   setHeaderSafe('Access-Control-Allow-Methods', 'POST, OPTIONS');
   setHeaderSafe('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
   setHeaderSafe('Content-Type', 'application/json; charset=utf-8');
   setHeaderSafe('Cache-Control', 'no-cache, no-store, must-revalidate');
+  setHeaderSafe('X-Content-Type-Options', 'nosniff');
   
   // PERBAIKAN: Wrapper try-catch untuk memastikan SELALU return JSON
   try {
@@ -119,12 +123,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       source
     });
 
-    // Validasi unit_id - HARUS ADA
+    // Validasi unit_id - HARUS ADA dan harus UUID yang valid
     if (!unit_id) {
       console.error('❌ Unit ID tidak ada');
       return res.status(400).json({
         success: false,
         error: 'Unit ID harus diisi'
+      });
+    }
+
+    // Validasi format UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(unit_id)) {
+      console.error('❌ Unit ID format tidak valid:', unit_id);
+      return res.status(400).json({
+        success: false,
+        error: 'Format Unit ID tidak valid. Harus berupa UUID.',
+        received_unit_id: unit_id
       });
     }
 
@@ -229,13 +244,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       user_agent: req.headers['user-agent'] || null
     };
 
-    // Add category_id if provided
+    // Add category_id if provided - dengan validasi UUID
     const finalCategoryId = category_id || category || null;
     if (finalCategoryId) {
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(finalCategoryId);
       if (isUUID) {
-        ticketData.category_id = finalCategoryId;
-        console.log('✅ Using category_id (UUID):', finalCategoryId);
+        // Validasi bahwa category_id exists di database
+        const { data: categoryCheck } = await supabase
+          .from('service_categories')
+          .select('id')
+          .eq('id', finalCategoryId)
+          .eq('is_active', true)
+          .single();
+        
+        if (categoryCheck) {
+          ticketData.category_id = finalCategoryId;
+          console.log('✅ Using category_id (UUID):', finalCategoryId);
+        } else {
+          console.log('⚠️ Category ID tidak ditemukan di database, akan di-set null');
+        }
       } else {
         try {
           const categoryMap: { [key: string]: string } = {
@@ -357,8 +384,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     // PERBAIKAN: Pastikan header JSON tetap di-set dengan safe method
     try {
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
-      res.setHeader('Access-Control-Allow-Origin', '*');
+      if (!res.headersSent) {
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+      }
     } catch (headerError) {
       console.error('❌ Cannot set header:', headerError);
     }
@@ -375,8 +405,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
     
     // Pastikan response adalah JSON murni
-    res.status(500);
-    res.json(errorResponse);
+    if (!res.headersSent) {
+      res.status(500);
+      res.json(errorResponse);
+    }
     return;
   }
 }

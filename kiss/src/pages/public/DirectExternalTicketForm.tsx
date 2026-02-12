@@ -223,6 +223,8 @@ const DirectExternalTicketForm: React.FC = () => {
         reporter_phone: formData.reporter_identity_type === 'personal' ? formData.reporter_phone : undefined,
         service_type: formData.service_type,
         category: formData.service_category_id || undefined,
+        service_category_id: formData.service_category_id || undefined,
+        patient_type_id: formData.patient_type_id || undefined,
         title: formData.title,
         description: formData.description,
         qr_code_id: qrCode || undefined,
