@@ -12,7 +12,7 @@
     "dev:full": "concurrently \"npm run dev:api\" \"npm run dev --workspace=kiss\"",
     "build": "npm run build --workspace=kiss",
     "build:skip-check": "npm run build:skip-check --workspace=kiss",
-    "vercel-build": "cd kiss && npm install --legacy-peer-deps && npm run vercel-build",
+    "vercel-build": "npm run vercel-build --workspace=kiss",
     "postbuild": "node verify-build.js",
     "test": "npm run test --workspace=kiss"
   },
