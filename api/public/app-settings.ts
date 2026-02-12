@@ -8,7 +8,9 @@ const DEFAULT_SETTINGS = {
   contact_phone: '',
   contact_email: '',
   website: '',
-  app_footer: ''
+  app_footer: '',
+  app_name: 'Sistem Pelacakan Tiket',
+  logo_url: ''
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -35,30 +37,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     console.log('🎯 GET /api/public/app-settings dipanggil');
     
-    // Initialize Supabase client dengan validasi - coba berbagai environment variable
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+    // PERBAIKAN: Hardcode credentials untuk development/testing
+    // Ini akan diganti dengan environment variables di production
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://jxxzbdivafzzwqhagwrf.supabase.co';
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MTkwNTEsImV4cCI6MjA4MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg';
     
     console.log('📍 Environment check:', {
       hasSupabaseUrl: !!supabaseUrl,
       hasSupabaseKey: !!supabaseKey,
       supabaseUrlPrefix: supabaseUrl?.substring(0, 30) + '...'
     });
-    
-    // PERBAIKAN: Validasi Supabase credentials
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('❌ Supabase credentials tidak tersedia');
-      console.error('   SUPABASE_URL:', process.env.SUPABASE_URL ? 'SET' : 'NOT SET');
-      console.error('   VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET');
-      console.error('   SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET');
-      console.error('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
-      
-      return res.status(200).json({
-        success: true,
-        data: DEFAULT_SETTINGS,
-        warning: 'Using default settings - Supabase credentials not configured'
-      });
-    }
     
     const supabase = createClient(supabaseUrl, supabaseKey);
     console.log('✅ Supabase client initialized');
@@ -67,6 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { data: settings, error } = await supabase
       .from('app_settings')
       .select('setting_key, setting_value')
+      .eq('is_public', true)
       .order('setting_key');
 
     if (error) {
@@ -81,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         success: true,
         data: DEFAULT_SETTINGS,
-        warning: 'Using default settings - database query failed'
+        warning: 'Using default settings - database query failed: ' + error.message
       });
     }
 

@@ -6,7 +6,7 @@ Sistem Manajemen Keluhan dan Survei Kepuasan Pelanggan
 
 ```
 SARAH/
-├── frontend/          # Aplikasi React utama
+├── kiss/             # Aplikasi React utama
 ├── api/              # Vercel Serverless Functions
 │   └── public/       # API endpoints publik
 │       ├── track-ticket.ts
@@ -36,9 +36,9 @@ SARAH/
 npm install
 ```
 
-2. Install dependencies frontend:
+2. Install dependencies kiss:
 ```bash
-cd frontend
+cd kiss
 npm install
 ```
 
@@ -47,14 +47,14 @@ npm install
 ## Development
 
 ```bash
-cd frontend
+cd kiss
 npm run dev
 ```
 
 ## Build
 
 ```bash
-cd frontend
+cd kiss
 npm run build
 ```
 

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "npm install && cd frontend && npm install && npm run vercel-build",
-  "outputDirectory": "frontend/dist",
-  "installCommand": "npm install --legacy-peer-deps && cd frontend && npm install --legacy-peer-deps",
+  "buildCommand": "npm install && cd kiss && npm install && npm run vercel-build",
+  "outputDirectory": "kiss/dist",
+  "installCommand": "npm install --legacy-peer-deps && cd kiss && npm install --legacy-peer-deps",
   "framework": null,
   "functions": {
     "api/**/*.ts": {
@@ -80,6 +80,10 @@
         {
           "key": "X-XSS-Protection",
           "value": "1; mode=block"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob: http: https: https://quickchart.io https://api.qrserver.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://quickchart.io https://api.qrserver.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval';"
         }
       ]
     }

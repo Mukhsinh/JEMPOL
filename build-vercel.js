@@ -11,17 +11,17 @@ console.log('📍 __dirname:', __dirname);
 try {
   // Ensure we're in the right directory
   const rootDir = __dirname;
-  const frontendDir = path.join(rootDir, 'frontend');
+  const kissDir = path.join(rootDir, 'kiss');
   
-  console.log('🔍 Checking frontend directory:', frontendDir);
-  if (!fs.existsSync(frontendDir)) {
-    console.error('❌ ERROR: frontend directory not found!');
+  console.log('🔍 Checking kiss directory:', kissDir);
+  if (!fs.existsSync(kissDir)) {
+    console.error('❌ ERROR: kiss directory not found!');
     process.exit(1);
   }
 
-  // Change to frontend directory and build
-  console.log('🔨 Building frontend...');
-  process.chdir(frontendDir);
+  // Change to kiss directory and build
+  console.log('🔨 Building kiss...');
+  process.chdir(kissDir);
   console.log('📍 Changed to:', process.cwd());
   
   // Check if node_modules exists

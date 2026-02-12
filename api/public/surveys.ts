@@ -1,16 +1,16 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client - gunakan variable yang benar (tanpa VITE_ prefix untuk backend)
+// Initialize Supabase client
 // Vercel akan inject environment variables dari dashboard
-// PERBAIKAN: Prioritaskan VITE_ prefix karena itu yang ada di .env.production
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+// Gunakan ANON KEY untuk public operations (RLS policy sudah allow INSERT untuk semua)
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Missing Supabase credentials. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel environment variables.');
+  console.error('❌ Missing Supabase credentials.');
   console.error('   SUPABASE_URL:', supabaseUrl ? 'SET' : 'NOT SET');
-  console.error('   SUPABASE_KEY:', supabaseKey ? 'SET' : 'NOT SET');
+  console.error('   SUPABASE_KEY:', supabaseKey ? 'SET (length: ' + supabaseKey.length + ')' : 'NOT SET');
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -53,6 +53,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
     
+    // Log raw body untuk debugging
+    console.log('📥 Raw request body keys:', Object.keys(req.body || {}));
+    console.log('📥 Body sample:', JSON.stringify(req.body || {}).substring(0, 500));
+    
     const {
       unit_id,
       service_type,
@@ -69,7 +73,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       regency,
       district,
       address_detail,
-      // Skor 11 unsur IKM (sesuai dengan form)
+      // Skor 11 unsur IKM (sesuai dengan form - frontend mengirim u1_score, u2_score, dst)
       u1_score, u2_score, u3_score, u4_score, u5_score,
       u6_score, u7_score, u8_score, u9_score, u10_score, u11_score,
       overall_score,
@@ -83,7 +87,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       visitor_phone,
       is_anonymous,
       service_type,
-      source
+      source,
+      has_scores: !!(u1_score || u2_score || u3_score || u4_score || u5_score || u6_score || u7_score || u8_score || u9_score || u10_score || u11_score)
     });
 
     // Validasi source
@@ -91,27 +96,69 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const finalSource = validSources.includes(source) ? source : 'public_survey';
     console.log('✅ Using source:', finalSource);
 
-    // Validasi unit (optional - hanya jika unit_id diberikan)
+    // Validasi unit (optional - hanya jika unit_id diberikan dan bukan string kosong)
     let unitData = null;
-    if (unit_id) {
-      const { data, error: unitCheckError } = await supabase
-        .from('units')
-        .select('id, name')
-        .eq('id', unit_id)
-        .eq('is_active', true)
-        .single();
+    let finalUnitId = null;
+    
+    if (unit_id && unit_id.trim() !== '') {
+      try {
+        // Cek apakah unit_id adalah UUID yang valid
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(unit_id)) {
+          console.warn('⚠️ Unit ID bukan UUID yang valid, akan di-set null:', unit_id);
+          finalUnitId = null;
+        } else {
+          const { data, error: unitCheckError } = await supabase
+            .from('units')
+            .select('id, name')
+            .eq('id', unit_id)
+            .eq('is_active', true)
+            .single();
 
-      if (unitCheckError || !data) {
-        console.error('❌ Unit tidak valid atau tidak aktif:', unit_id);
-        return res.status(400).json({
-          success: false,
-          error: 'Unit tidak valid atau tidak aktif',
-          unit_id: unit_id,
-          details: unitCheckError?.message
-        });
+          if (unitCheckError || !data) {
+            console.warn('⚠️ Unit tidak ditemukan atau tidak aktif, akan di-set null:', unit_id, unitCheckError?.message);
+            finalUnitId = null;
+          } else {
+            unitData = data;
+            finalUnitId = unit_id;
+            console.log('✅ Unit verified:', unitData.name);
+          }
+        }
+      } catch (unitError: any) {
+        console.warn('⚠️ Error validating unit, akan di-set null:', unitError.message);
+        finalUnitId = null;
       }
-      unitData = data;
-      console.log('✅ Unit verified:', unitData.name);
+    }
+
+    // Validasi service_category_id (optional - hanya jika diberikan dan bukan string kosong)
+    let finalServiceCategoryId = null;
+    
+    if (service_category_id && service_category_id.trim() !== '') {
+      try {
+        // Cek apakah service_category_id adalah UUID yang valid
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(service_category_id)) {
+          console.warn('⚠️ Service Category ID bukan UUID yang valid, akan di-set null:', service_category_id);
+          finalServiceCategoryId = null;
+        } else {
+          const { data, error: categoryCheckError } = await supabase
+            .from('service_categories')
+            .select('id, name')
+            .eq('id', service_category_id)
+            .single();
+
+          if (categoryCheckError || !data) {
+            console.warn('⚠️ Service Category tidak ditemukan, akan di-set null:', service_category_id, categoryCheckError?.message);
+            finalServiceCategoryId = null;
+          } else {
+            finalServiceCategoryId = service_category_id;
+            console.log('✅ Service Category verified:', data.name);
+          }
+        }
+      } catch (categoryError: any) {
+        console.warn('⚠️ Error validating service category, akan di-set null:', categoryError.message);
+        finalServiceCategoryId = null;
+      }
     }
 
     // Hitung skor rata-rata dari 11 unsur jika ada
@@ -146,8 +193,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Simpan ke tabel public_surveys
     const surveyData: any = {
-      unit_id: unit_id,
-      service_category_id: service_category_id || null,
+      unit_id: finalUnitId, // Gunakan finalUnitId yang sudah divalidasi
+      service_category_id: finalServiceCategoryId, // Gunakan finalServiceCategoryId yang sudah divalidasi
       visitor_name: is_anonymous ? null : visitor_name,
       visitor_email: is_anonymous ? null : visitor_email,
       visitor_phone: visitor_phone,
@@ -162,19 +209,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       alamat_jalan: address_detail || null,
       is_anonymous: is_anonymous || false,
       // Skor 11 unsur IKM (mapping ke kolom q1_score - q11_score di database)
-      q1_score: u1_score ? parseInt(u1_score as string) : null,
-      q2_score: u2_score ? parseInt(u2_score as string) : null,
-      q3_score: u3_score ? parseInt(u3_score as string) : null,
-      q4_score: u4_score ? parseInt(u4_score as string) : null,
-      q5_score: u5_score ? parseInt(u5_score as string) : null,
-      q6_score: u6_score ? parseInt(u6_score as string) : null,
-      q7_score: u7_score ? parseInt(u7_score as string) : null,
-      q8_score: u8_score ? parseInt(u8_score as string) : null,
-      q9_score: u9_score ? parseInt(u9_score as string) : null,
-      q10_score: u10_score ? parseInt(u10_score as string) : null,
-      q11_score: u11_score ? parseInt(u11_score as string) : null,
+      q1_score: u1_score ? (typeof u1_score === 'number' ? u1_score : parseInt(u1_score as string)) : null,
+      q2_score: u2_score ? (typeof u2_score === 'number' ? u2_score : parseInt(u2_score as string)) : null,
+      q3_score: u3_score ? (typeof u3_score === 'number' ? u3_score : parseInt(u3_score as string)) : null,
+      q4_score: u4_score ? (typeof u4_score === 'number' ? u4_score : parseInt(u4_score as string)) : null,
+      q5_score: u5_score ? (typeof u5_score === 'number' ? u5_score : parseInt(u5_score as string)) : null,
+      q6_score: u6_score ? (typeof u6_score === 'number' ? u6_score : parseInt(u6_score as string)) : null,
+      q7_score: u7_score ? (typeof u7_score === 'number' ? u7_score : parseInt(u7_score as string)) : null,
+      q8_score: u8_score ? (typeof u8_score === 'number' ? u8_score : parseInt(u8_score as string)) : null,
+      q9_score: u9_score ? (typeof u9_score === 'number' ? u9_score : parseInt(u9_score as string)) : null,
+      q10_score: u10_score ? (typeof u10_score === 'number' ? u10_score : parseInt(u10_score as string)) : null,
+      q11_score: u11_score ? (typeof u11_score === 'number' ? u11_score : parseInt(u11_score as string)) : null,
       // Skor agregat
-      overall_score: overall_score ? parseInt(overall_score as string) : null,
+      overall_score: overall_score ? (typeof overall_score === 'number' ? overall_score : parseInt(overall_score as string)) : null,
       comments: comments || null,
       qr_code: qr_code || null,
       source: finalSource,
@@ -184,10 +231,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     console.log('📤 Inserting survey data:', {
       unit_id: surveyData.unit_id,
+      service_category_id: surveyData.service_category_id,
       visitor_phone: surveyData.visitor_phone,
       is_anonymous: surveyData.is_anonymous,
       has_scores: scores.length > 0,
-      source: surveyData.source
+      source: surveyData.source,
+      has_address: !!(surveyData.kabupaten_kota && surveyData.kecamatan),
+      has_demographics: !!(surveyData.age_range && surveyData.gender && surveyData.education && surveyData.job)
     });
 
     const { data: survey, error: surveyError } = await supabase
@@ -198,19 +248,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (surveyError) {
       console.error('❌ Error inserting survey:', surveyError);
+      console.error('❌ Error code:', surveyError.code);
+      console.error('❌ Error message:', surveyError.message);
+      console.error('❌ Error details:', surveyError.details);
+      console.error('❌ Error hint:', surveyError.hint);
+      console.error('❌ Survey data yang gagal:', JSON.stringify(surveyData, null, 2));
       
       let errorMessage = 'Gagal menyimpan survei';
+      let errorDetails = null;
+      
       if (surveyError.code === '23503') {
-        errorMessage = 'Data referensi tidak valid (unit_id tidak ditemukan)';
+        // Foreign key violation
+        errorMessage = 'Data referensi tidak valid';
+        errorDetails = 'Unit atau kategori layanan tidak ditemukan di database';
+      } else if (surveyError.code === '23502') {
+        // Not null violation
+        errorMessage = 'Ada kolom wajib yang belum diisi';
+        errorDetails = surveyError.message;
+      } else if (surveyError.code === '22P02') {
+        // Invalid text representation
+        errorMessage = 'Format data tidak valid';
+        errorDetails = 'UUID atau tipe data salah';
+      } else if (surveyError.code === '42703') {
+        // Undefined column
+        errorMessage = 'Kolom database tidak ditemukan';
+        errorDetails = surveyError.message;
       } else if (surveyError.message) {
         errorMessage = surveyError.message;
+        errorDetails = surveyError.details || surveyError.hint;
       }
       
       return res.status(500).json({
         success: false,
         error: errorMessage,
-        details: surveyError.details || surveyError.hint || null,
-        error_code: surveyError.code
+        details: errorDetails,
+        error_code: surveyError.code,
+        error_message: surveyError.message,
+        debug_info: {
+          unit_id: surveyData.unit_id,
+          service_category_id: surveyData.service_category_id,
+          has_phone: !!surveyData.visitor_phone
+        }
       });
     }
 
