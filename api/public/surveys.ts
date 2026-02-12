@@ -3,14 +3,20 @@ import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
 // Vercel akan inject environment variables dari dashboard
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+// Prioritas: SUPABASE_URL > VITE_SUPABASE_URL (untuk Vercel Functions)
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 // Gunakan ANON KEY untuk public operations (RLS policy sudah allow INSERT untuk semua)
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+
+console.log('🔧 Environment check:');
+console.log('   SUPABASE_URL:', supabaseUrl ? `SET (${supabaseUrl.substring(0, 30)}...)` : 'NOT SET');
+console.log('   SUPABASE_ANON_KEY:', supabaseKey ? `SET (length: ${supabaseKey.length})` : 'NOT SET');
+console.log('   process.env.SUPABASE_URL:', process.env.SUPABASE_URL ? 'EXISTS' : 'MISSING');
+console.log('   process.env.VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'EXISTS' : 'MISSING');
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing Supabase credentials.');
-  console.error('   SUPABASE_URL:', supabaseUrl ? 'SET' : 'NOT SET');
-  console.error('   SUPABASE_KEY:', supabaseKey ? 'SET (length: ' + supabaseKey.length + ')' : 'NOT SET');
+  console.error('   Available env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
