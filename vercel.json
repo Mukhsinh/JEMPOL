@@ -18,31 +18,31 @@
     },
     {
       "source": "/form/:path*",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/m/:code",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/survey/:path*",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/lacak-tiket",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/track-ticket",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/tiket-eksternal/:path*",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ],
   "headers": [
