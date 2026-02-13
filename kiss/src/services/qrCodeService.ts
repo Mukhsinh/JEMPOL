@@ -341,24 +341,18 @@ export const qrCodeService = {
   generateQRUrl(code: string, redirectType?: string, unitId?: string, unitName?: string, autoFillUnit?: boolean): string {
     const baseUrl = window.location.origin;
     
-    // Jika ada redirect_type spesifik (bukan 'selection'), langsung ke form
     if (redirectType && redirectType !== 'selection') {
       const params = new URLSearchParams();
-      
-      // Selalu tambahkan QR code untuk tracking
       params.append('qr', code);
       
-      // Auto-fill unit jika diaktifkan (default true)
       if (autoFillUnit !== false) {
         if (unitId) params.append('unit_id', unitId);
-        if (unitName) params.append('unit_name', encodeURIComponent(unitName));
+        if (unitName) params.append('unit_name', unitName);
         params.append('auto_fill', 'true');
       }
       
       const queryString = params.toString();
       
-      // REDIRECT LANGSUNG KE FORM TANPA LOGIN DAN TANPA SIDEBAR
-      // Pastikan path sesuai dengan route yang ada di App.tsx
       switch (redirectType) {
         case 'internal_ticket':
           return `${baseUrl}/form/internal${queryString ? '?' + queryString : ''}`;
@@ -371,7 +365,6 @@ export const qrCodeService = {
       }
     }
     
-    // Default: gunakan route /m/:code untuk tampilan selection menu
     return `${baseUrl}/m/${code}`;
   },
 
@@ -387,15 +380,6 @@ export const qrCodeService = {
     autoFillUnit?: boolean
   ): string {
     const url = this.generateQRUrl(code, redirectType, unitId, unitName, autoFillUnit);
-    
-    // Gunakan API yang lebih reliable dengan error correction level H (high)
-    // Primary: quickchart.io (lebih stabil dan cepat)
-    // Fallback: api.qrserver.com
-    
-    // Format quickchart: https://quickchart.io/qr?text=URL&size=SIZE&margin=1&ecLevel=H
-    // Format qrserver: https://api.qrserver.com/v1/create-qr-code/?size=SIZExSIZE&data=URL
-    
-    // Gunakan quickchart sebagai primary karena lebih cepat dan reliable
     return `https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=${size}&margin=1&ecLevel=H`;
   },
   
@@ -412,11 +396,9 @@ export const qrCodeService = {
     const url = this.generateQRUrl(code, redirectType, unitId, unitName, autoFillUnit);
     
     if (useFallback) {
-      // Fallback ke qrserver.com
       return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}&ecc=H`;
     }
     
-    // Primary: quickchart.io
     return `https://quickchart.io/qr?text=${encodeURIComponent(url)}&size=${size}&margin=1&ecLevel=H`;
   },
 };
