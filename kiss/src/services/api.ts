@@ -46,11 +46,17 @@ const getApiBaseUrl = (): string => {
     return cachedApiBaseUrl;
   }
 
-  // Jika VITE_API_URL kosong, gunakan Supabase langsung (tidak ada backend)
-  // Set backend tidak tersedia
+  // Jika VITE_API_URL kosong, asumsikan kita menggunakan local proxy/plugin
+  // Default ke /api agar request ditangani oleh Vite API plugin atau proxy
+  if (import.meta.env.DEV) {
+    cachedApiBaseUrl = '/api';
+    console.log('🔧 Development mode: VITE_API_URL kosong, menggunakan default /api');
+    return cachedApiBaseUrl;
+  }
+
+  // Fallback terakhir (tidak mungkin tercapai jika di dev diset /api)
   setBackendAvailable(false);
   cachedApiBaseUrl = '';
-  console.log('🔧 Development mode: VITE_API_URL kosong, menggunakan Supabase langsung');
   return cachedApiBaseUrl;
 };
 
@@ -77,12 +83,12 @@ const api = axios.create({
         data: null
       };
     }
-    
+
     // Jika sudah object, return langsung
     if (typeof data === 'object') {
       return data;
     }
-    
+
     // Cek apakah response adalah HTML (error page)
     if (typeof data === 'string' && data.trim().startsWith('<!')) {
       console.error('❌ Server mengembalikan HTML bukan JSON');
@@ -94,7 +100,7 @@ const api = axios.create({
         isHtmlError: true
       };
     }
-    
+
     // Coba parse JSON
     try {
       return JSON.parse(data);
@@ -133,19 +139,19 @@ api.interceptors.response.use(
   },
   async (error) => {
     const config = error.config;
-    
+
     // Jika belum ada retry count, set ke 0
     if (!config.__retryCount) {
       config.__retryCount = 0;
     }
-    
+
     // Jika connection refused, set backend tidak tersedia dan jangan retry
     if (error.code === 'ERR_CONNECTION_REFUSED') {
       console.log('⚠️ Backend tidak tersedia, menggunakan Supabase langsung');
       setBackendAvailable(false);
       return Promise.reject(error);
     }
-    
+
     // Retry maksimal 2 kali untuk error timeout atau network (bukan connection refused)
     if (
       config.__retryCount < 2 &&
@@ -153,13 +159,13 @@ api.interceptors.response.use(
     ) {
       config.__retryCount += 1;
       console.log(`🔄 Retrying request (${config.__retryCount}/2): ${config.url}`);
-      
+
       // Delay sebelum retry
       await new Promise(resolve => setTimeout(resolve, 500 * config.__retryCount));
-      
+
       return api(config);
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -169,7 +175,7 @@ api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
       const now = Date.now();
-      
+
       // Gunakan cached token jika masih valid
       if (cachedToken && (now - tokenCacheTime) < TOKEN_CACHE_DURATION) {
         config.headers.Authorization = `Bearer ${cachedToken}`;
@@ -179,7 +185,7 @@ api.interceptors.request.use(
       // Import authService dinamis untuk menghindari circular dependency
       const { authService } = await import('./authService');
       const token = await authService.getToken();
-      
+
       if (token) {
         cachedToken = token;
         tokenCacheTime = now;
@@ -219,7 +225,7 @@ api.interceptors.response.use(
           // Clear cached token
           cachedToken = null;
           tokenCacheTime = 0;
-          
+
           try {
             const { authService } = await import('./authService');
             await authService.logout();
@@ -230,7 +236,7 @@ api.interceptors.response.use(
               window.location.pathname.startsWith('/m/') ||
               window.location.pathname.startsWith('/public/') ||
               window.location.pathname.startsWith('/login');
-            
+
             const isProtectedPage =
               !isPublicPage && (
                 window.location.pathname.startsWith('/admin') ||

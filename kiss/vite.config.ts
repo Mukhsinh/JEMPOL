@@ -1,8 +1,12 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { viteApiPlugin } from './vite-api-plugin';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    viteApiPlugin(), // Handle /api/* requests locally without needing vercel dev
+  ],
   base: '/',
   server: {
     hmr: {
@@ -13,23 +17,8 @@ export default defineConfig({
     headers: {
       'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*; img-src 'self' data: blob: http: https: http://localhost:* https://localhost:* https://quickchart.io https://api.qrserver.com; connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com;"
     },
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3004', // Port untuk vercel dev
-        changeOrigin: true,
-        timeout: 30000,
-        proxyTimeout: 30000,
-        configure: (proxy, options) => {
-          proxy.on('error', (err, req, res) => {
-            console.log('❌ Proxy error:', err.message);
-            console.log('⚠️ Pastikan backend berjalan dengan: npm run dev:api atau npm run dev:full');
-          });
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('🔄 Proxying:', req.method, req.url, '→', options.target);
-          });
-        },
-      },
-    },
+    // NOTE: Proxy ke localhost:3004 dihapus karena API sekarang ditangani langsung
+    // oleh viteApiPlugin tanpa perlu menjalankan vercel dev terpisah
   },
   build: {
     target: 'es2015',

@@ -82,7 +82,7 @@ export const externalTicketService = {
   async createTicket(data: CreateExternalTicketData): Promise<any> {
     try {
       console.log('📤 Creating external ticket:', data);
-      
+
       // Coba gunakan backend API terlebih dahulu
       try {
         const response = await api.post('/public/external-tickets', {
@@ -101,16 +101,28 @@ export const externalTicketService = {
           unit_id: data.unit_id,
           source: 'web'
         });
-        
-        console.log('✅ External ticket created via backend:', response.data);
+
+        // Jika response sukses, kembalikan data
+        if (response.data && response.data.success) {
+          console.log('✅ External ticket created via backend:', response.data);
+          return response.data;
+        }
+
+        // Jika response gagal, cek apakah error server/infrastruktur
+        const errorMsg = response.data?.error || '';
+        if (!response.data || errorMsg.includes('Server') || errorMsg.includes('HTML') || errorMsg.includes('kosong')) {
+          throw new Error(errorMsg || 'Backend response invalid');
+        }
+
+        // Untuk error validasi (misal input tidak lengkap), kembalikan response error ke frontend
         return response.data;
       } catch (backendError: any) {
         console.warn('⚠️ Backend tidak tersedia, menggunakan Supabase langsung:', backendError.message);
-        
+
         // Fallback: Gunakan Supabase client langsung
         // Generate ticket number
         const ticketNumber = await generateTicketNumber();
-        
+
         // Mapping service_type ke type yang valid di database
         const serviceTypeMapping: { [key: string]: string } = {
           'complaint': 'complaint',
@@ -118,9 +130,9 @@ export const externalTicketService = {
           'suggestion': 'suggestion',
           'survey': 'satisfaction'
         };
-        
+
         const mappedType = serviceTypeMapping[data.service_type] || 'complaint';
-        
+
         // Calculate SLA deadline
         const slaDeadline = new Date();
         if (data.service_type === 'complaint') {
@@ -130,7 +142,7 @@ export const externalTicketService = {
         } else {
           slaDeadline.setHours(slaDeadline.getHours() + 72);
         }
-        
+
         // Determine priority
         let priority = 'medium';
         if (data.service_type === 'complaint') {
@@ -140,9 +152,9 @@ export const externalTicketService = {
         } else {
           priority = 'low';
         }
-        
+
         const isAnonymous = data.reporter_identity_type === 'anonymous';
-        
+
         // Insert ticket langsung ke Supabase
         const ticketData: any = {
           ticket_number: ticketNumber,
@@ -160,12 +172,12 @@ export const externalTicketService = {
           submitter_phone: isAnonymous ? null : data.reporter_phone,
           submitter_address: isAnonymous ? null : data.reporter_address
         };
-        
+
         // Tambahkan category_id jika ada
         if (data.category) {
           ticketData.category_id = data.category;
         }
-        
+
         const { data: ticket, error } = await supabase
           .from('tickets')
           .insert(ticketData)
@@ -174,14 +186,14 @@ export const externalTicketService = {
             units:unit_id(name, code)
           `)
           .single();
-        
+
         if (error) {
           console.error('❌ Error creating ticket via Supabase:', error);
           throw new Error(`Gagal membuat tiket: ${error.message}`);
         }
-        
+
         console.log('✅ External ticket created via Supabase:', ticket);
-        
+
         return {
           success: true,
           ticket_number: ticket.ticket_number,
@@ -217,7 +229,7 @@ export const externalTicketService = {
 
   // Update external ticket status (admin only)
   async updateTicketStatus(
-    id: string, 
+    id: string,
     data: {
       status: string;
       response_message?: string;
