@@ -235,6 +235,12 @@ api.interceptors.response.use(
             const isPublicPage =
               window.location.pathname.startsWith('/m/') ||
               window.location.pathname.startsWith('/public/') ||
+              window.location.pathname.startsWith('/form/') ||
+              window.location.pathname.startsWith('/survey') ||
+              window.location.pathname.startsWith('/lacak-tiket') ||
+              window.location.pathname.startsWith('/track-ticket') ||
+              window.location.pathname.startsWith('/tiket-eksternal') ||
+              window.location.pathname.startsWith('/buku-petunjuk') ||
               window.location.pathname.startsWith('/login');
 
             const isProtectedPage =
