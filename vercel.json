@@ -4,7 +4,7 @@
   "outputDirectory": "dist",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": null,
-  "cleanUrls": true,
+  "cleanUrls": false,
   "functions": {
     "api/**/*.ts": {
       "memory": 1024,
@@ -18,31 +18,31 @@
     },
     {
       "source": "/form/:path*",
-      "destination": "/index"
+      "destination": "/index.html"
     },
     {
       "source": "/m/:code",
-      "destination": "/index"
+      "destination": "/index.html"
     },
     {
       "source": "/survey/:path*",
-      "destination": "/index"
+      "destination": "/index.html"
     },
     {
       "source": "/lacak-tiket",
-      "destination": "/index"
+      "destination": "/index.html"
     },
     {
       "source": "/track-ticket",
-      "destination": "/index"
+      "destination": "/index.html"
     },
     {
       "source": "/tiket-eksternal/:path*",
-      "destination": "/index"
+      "destination": "/index.html"
     },
     {
       "source": "/(.*)",
-      "destination": "/index"
+      "destination": "/index.html"
     }
   ],
   "headers": [
