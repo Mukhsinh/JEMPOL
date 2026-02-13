@@ -14,23 +14,11 @@
   },
   "rewrites": [
     {
-      "source": "/api/:match*",
-      "destination": "/api/:match*"
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
     },
     {
-      "source": "/form/:match*",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/survey/:match*",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/m/:match*",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/:match*",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],
