@@ -4,6 +4,8 @@
   "outputDirectory": "dist",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": null,
+  "cleanUrls": false,
+  "trailingSlash": false,
   "functions": {
     "api/**/*.ts": {
       "memory": 1024,
@@ -14,6 +16,18 @@
     {
       "source": "/api/:match*",
       "destination": "/api/:match*"
+    },
+    {
+      "source": "/form/:match*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/survey/:match*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/m/:match*",
+      "destination": "/index.html"
     },
     {
       "source": "/:match*",
