@@ -4,7 +4,6 @@
   "outputDirectory": "dist",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": null,
-  "cleanUrls": false,
   "functions": {
     "api/**/*.ts": {
       "memory": 1024,
@@ -13,36 +12,12 @@
   },
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
+      "source": "/api/:match*",
+      "destination": "/api/:match*"
     },
     {
-      "source": "/form/:path*",
-      "destination": "/"
-    },
-    {
-      "source": "/m/:code",
-      "destination": "/"
-    },
-    {
-      "source": "/survey/:path*",
-      "destination": "/"
-    },
-    {
-      "source": "/lacak-tiket",
-      "destination": "/"
-    },
-    {
-      "source": "/track-ticket",
-      "destination": "/"
-    },
-    {
-      "source": "/tiket-eksternal/:path*",
-      "destination": "/"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/"
+      "source": "/:match*",
+      "destination": "/index.html"
     }
   ],
   "headers": [
@@ -60,10 +35,6 @@
         {
           "key": "Access-Control-Allow-Headers",
           "value": "Content-Type, Authorization, Accept"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "no-cache, no-store, must-revalidate"
         }
       ]
     },
@@ -81,10 +52,6 @@
         {
           "key": "X-XSS-Protection",
           "value": "1; mode=block"
-        },
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob: http: https: https://quickchart.io https://api.qrserver.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://quickchart.io https://api.qrserver.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval';"
         }
       ]
     }
