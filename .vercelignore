@@ -54,8 +54,17 @@ kiss/src/**/*.spec.tsx
 /QUICK_DEPLOY.md
 /QUICK_FIX_SUMMARY.md
 /README_PERBAIKAN_QR_FORMS.md
+/ANALISIS_PERBAIKAN_QR_URL_404.md
+/PERBAIKAN_QR_URL_404.md
+/QUICK_FIX_QR_404.md
+/PERBAIKAN_QR_404_VERCEL.md
+/PERBAIKAN_404_QR_CODE_VERCEL.md
+/RINGKASAN_PERBAIKAN_404.md
+/PERBAIKAN_ERROR_404_VERCEL.md
+/RINGKASAN_PERBAIKAN_404_QR.md
+/DEPLOY_NOTES.md
 
-# Test files di root
+# Script files di root
 /test-*.js
 /test-*.html
 /diagnose-*.js
@@ -63,8 +72,15 @@ kiss/src/**/*.spec.tsx
 /build-vercel.js
 /build-vercel.sh
 /check-env.js
+/deploy-*.sh
+/deploy-*.ps1
+/fix-*.sh
+/fix-*.ps1
+/install-*.ps1
+/TEST_REPO_CONNECTION.txt
 
-# PENTING: JANGAN ignore folder api - ini harus di-deploy!
-# Vercel butuh folder api untuk serverless functions
+# PENTING: Pastikan folder kiss dan api tidak di-ignore!
+!/kiss
+!/kiss/**
 !/api
 !/api/**/*.ts
