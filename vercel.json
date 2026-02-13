@@ -12,6 +12,14 @@
       "destination": "/api/:path*"
     },
     {
+      "source": "/form/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/m/:path*",
+      "destination": "/index.html"
+    },
+    {
       "source": "/:path*",
       "destination": "/index.html"
     }
@@ -35,6 +43,14 @@
     {
       "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json))",
       "dest": "/$1"
+    },
+    {
+      "src": "/form/(.*)",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/m/(.*)",
+      "dest": "/index.html"
     },
     {
       "src": "/(.*)",
