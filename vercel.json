@@ -1,8 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd kiss && npm install --legacy-peer-deps && npx vite build --outDir ../dist --emptyOutDir",
+  "buildCommand": "npm install --legacy-peer-deps --workspaces && npm run vercel-build",
   "outputDirectory": "dist",
-  "installCommand": "npm install --legacy-peer-deps",
   "framework": null,
   "cleanUrls": false,
   "trailingSlash": false,

@@ -1,9 +1,9 @@
-# PENTING: Jangan ignore folder api/ karena berisi Vercel Serverless Functions!
-# Folder api/ HARUS di-deploy ke Vercel
+# PENTING: Jangan ignore folder api/ dan kiss/ - keduanya harus di-deploy!
 
-# Node modules
+# Node modules - tapi biarkan package.json
 node_modules
-**/node_modules
+kiss/node_modules
+api/node_modules
 
 # Git
 .git
@@ -28,6 +28,7 @@ kiss/src/**/*.test.ts
 kiss/src/**/*.test.tsx
 kiss/src/**/*.spec.ts
 kiss/src/**/*.spec.tsx
+kiss/src/test
 
 # Dokumentasi di root (kecuali README.md)
 /ANALISIS_DAN_SOLUSI_FORM_SUBMISSION.md
