@@ -8,27 +8,27 @@ const OPTION_CONFIG = {
     title: 'Buat Tiket Internal',
     description: 'Sampaikan keluhan atau permintaan untuk ditangani oleh unit terkait',
     color: 'from-violet-400 to-purple-500',
-    path: '/public/form-tiket-internal'
+    path: '/form/internal'
   },
   external_ticket: {
     icon: '💬',
     title: 'Buat Pengaduan',
     description: 'Sampaikan pengaduan, saran, atau permintaan informasi',
     color: 'from-orange-400 to-amber-500',
-    path: '/public/form-pengaduan'
+    path: '/form/eksternal'
   },
   survey: {
     icon: '⭐',
     title: 'Isi Survei Kepuasan',
     description: 'Berikan penilaian terhadap layanan yang telah Anda terima',
     color: 'from-emerald-400 to-green-500',
-    path: '/public/form-survei'
+    path: '/form/survey'
   }
 };
 
 const QRLanding: React.FC = () => {
   const { code } = useParams<{ code: string }>();
-  
+
   const [qrData, setQrData] = useState<QRCode | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +45,7 @@ const QRLanding: React.FC = () => {
       setError(null);
       const data = await qrCodeService.getByCode(code!);
       setQrData(data);
-      
+
       if (data.redirect_type && data.redirect_type !== 'selection') {
         handleRedirect(data.redirect_type, data);
       }
@@ -62,29 +62,29 @@ const QRLanding: React.FC = () => {
 
     const params = new URLSearchParams();
     const unitName = qr.units?.name || '';
-    
+
     params.append('qr', qr.code);
     params.append('unit_id', qr.unit_id);
     params.append('unit_name', encodeURIComponent(unitName));
     params.append('auto_fill', qr.auto_fill_unit !== false ? 'true' : 'false');
-    
+
     window.location.href = `${config.path}?${params.toString()}`;
   };
 
   const handleOptionClick = (optionType: string) => {
     if (!qrData) return;
-    
+
     const config = OPTION_CONFIG[optionType as keyof typeof OPTION_CONFIG];
     if (!config) return;
 
     const params = new URLSearchParams();
     const unitName = qrData.units?.name || '';
-    
+
     params.append('qr', qrData.code);
     params.append('unit_id', qrData.unit_id);
     params.append('unit_name', encodeURIComponent(unitName));
     params.append('auto_fill', qrData.auto_fill_unit !== false ? 'true' : 'false');
-    
+
     window.location.href = `${config.path}?${params.toString()}`;
   };
 
@@ -165,7 +165,7 @@ const QRLanding: React.FC = () => {
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-6">
         <div className="max-w-lg w-full space-y-5">
-          
+
           {/* Unit Card */}
           {qrData?.units && (
             <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6">
