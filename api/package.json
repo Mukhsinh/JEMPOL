@@ -1,0 +1,13 @@
+{
+  "name": "api-functions",
+  "version": "1.0.0",
+  "description": "Vercel Serverless Functions untuk KISS",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "@vercel/node": "^3.0.12"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}

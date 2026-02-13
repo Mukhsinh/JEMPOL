@@ -1,3 +1,6 @@
+# PENTING: Jangan ignore folder api/ karena berisi Vercel Serverless Functions!
+# Folder api/ HARUS di-deploy ke Vercel
+
 # Node modules
 node_modules
 **/node_modules
@@ -60,3 +63,8 @@ kiss/src/**/*.spec.tsx
 /build-vercel.js
 /build-vercel.sh
 /check-env.js
+
+# PENTING: JANGAN ignore folder api - ini harus di-deploy!
+# Vercel butuh folder api untuk serverless functions
+!/api
+!/api/**/*.ts
