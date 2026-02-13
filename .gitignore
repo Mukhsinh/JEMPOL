@@ -45,6 +45,8 @@ backend/
 # Test files
 *.bat
 *.html
+!index.html
+!kiss/index.html
 test-*.js
 fix-*.js
 diagnose-*.js
