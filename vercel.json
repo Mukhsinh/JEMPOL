@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd kiss && npm install --legacy-peer-deps && npx vite build --outDir ../dist --emptyOutDir",
+  "buildCommand": "npm install --legacy-peer-deps && cd kiss && npm install --legacy-peer-deps && npx vite build --outDir ../dist --emptyOutDir",
   "outputDirectory": "dist",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": null,
