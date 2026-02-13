@@ -1,7 +1,7 @@
 {
   "version": 2,
   "buildCommand": "npm run vercel-build",
-  "outputDirectory": "kiss/dist",
+  "outputDirectory": "dist",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": null,
   "cleanUrls": true,
