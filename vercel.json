@@ -4,15 +4,11 @@
   "buildCommand": "npm install --legacy-peer-deps --workspaces && npm run vercel-build",
   "outputDirectory": "dist",
   "framework": null,
-  "cleanUrls": false,
+  "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
-    {
-      "source": "/(.*)",
+      "source": "/((?!api/|assets/|.*\\..*).*)",
       "destination": "/index.html"
     }
   ],
@@ -38,10 +34,6 @@
         {
           "key": "Access-Control-Allow-Headers",
           "value": "Content-Type, Authorization, Accept"
-        },
-        {
-          "key": "Content-Type",
-          "value": "application/json; charset=utf-8"
         }
       ]
     },

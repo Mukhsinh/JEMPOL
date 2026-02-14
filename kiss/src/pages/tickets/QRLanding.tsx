@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { qrCodeService, QRCode } from '../../services/qrCodeService';
 
 const OPTION_CONFIG = {
@@ -28,6 +28,7 @@ const OPTION_CONFIG = {
 
 const QRLanding: React.FC = () => {
   const { code } = useParams<{ code: string }>();
+  const navigate = useNavigate();
 
   const [qrData, setQrData] = useState<QRCode | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,7 +69,7 @@ const QRLanding: React.FC = () => {
     params.append('unit_name', encodeURIComponent(unitName));
     params.append('auto_fill', qr.auto_fill_unit !== false ? 'true' : 'false');
 
-    window.location.href = `${config.path}?${params.toString()}`;
+    navigate(`${config.path}?${params.toString()}`);
   };
 
   const handleOptionClick = (optionType: string) => {
@@ -85,7 +86,7 @@ const QRLanding: React.FC = () => {
     params.append('unit_name', encodeURIComponent(unitName));
     params.append('auto_fill', qrData.auto_fill_unit !== false ? 'true' : 'false');
 
-    window.location.href = `${config.path}?${params.toString()}`;
+    navigate(`${config.path}?${params.toString()}`);
   };
 
   if (loading) {
