@@ -3,17 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "description": "KISS - Keluhan Informasi Saran Sistem",
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
-    "install:all": "cd kiss && npm install --legacy-peer-deps && cd ../api && npm install",
-    "dev": "cd kiss && npm run dev",
-    "build": "cd kiss && npm run build",
-    "preview": "cd kiss && npm run preview",
-    "test": "cd kiss && npm test",
+    "install:all": "npm --prefix kiss install --legacy-peer-deps && npm --prefix api install",
+    "dev": "npm --prefix kiss run dev",
+    "build": "npm --prefix kiss run build",
+    "preview": "npm --prefix kiss run preview",
+    "test": "npm --prefix kiss test",
     "deploy": "vercel --prod",
     "deploy:preview": "vercel"
-  },
-  "workspaces": [
-    "kiss",
-    "api"
-  ]
+  }
 }
