@@ -6,10 +6,9 @@
   "framework": null,
   "cleanUrls": true,
   "trailingSlash": false,
-  "nodeVersion": "20.x",
   "functions": {
     "api/**/*.ts": {
-      "runtime": "@vercel/node@3.0.12",
+      "runtime": "nodejs20.x",
       "maxDuration": 10
     }
   },
