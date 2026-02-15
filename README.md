@@ -5,7 +5,7 @@ Sistem Manajemen Keluhan dan Survei Kepuasan Pelanggan
 ## Struktur Proyek
 
 ```
-SARAH/
+JEMPOL/
 ├── kiss/             # Aplikasi React utama
 ├── api/              # Vercel Serverless Functions
 │   └── public/       # API endpoints publik
