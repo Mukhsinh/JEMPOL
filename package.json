@@ -4,15 +4,16 @@
   "private": true,
   "description": "KISS - Keluhan Informasi Saran Sistem",
   "engines": {
-    "node": "20.x"
+    "node": "20.x",
+    "npm": "10.x"
   },
   "packageManager": "npm@10.2.4",
   "dependencies": {},
   "devDependencies": {},
   "scripts": {
-    "install:all": "npm --prefix kiss install --legacy-peer-deps",
+    "install:all": "cd kiss && npm install --legacy-peer-deps",
     "dev": "npm --prefix kiss run dev",
-    "build": "npm --prefix kiss run build",
+    "build": "cd kiss && npm run build",
     "preview": "npm --prefix kiss run preview",
     "test": "npm --prefix kiss test",
     "deploy": "vercel --prod",
