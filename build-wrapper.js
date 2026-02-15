@@ -14,13 +14,21 @@ console.log(`Root Directory: ${rootDir}`);
 console.log(`Kiss Directory: ${kissDir}`);
 
 try {
-    // 1. Jalankan build di workspace kiss
-    console.log('\n>>> Running build in kiss workspace...');
-    // install dependency dulu takutnya perlu
-    // tapi biasanya vercel udah install di root.
-    // langsung build aja.
+    // 1. Install dependencies di kiss workspace dulu
+    console.log('\n>>> Installing dependencies in kiss workspace...');
+    console.log('>>> This may take a few minutes...');
+    execSync('npm install --legacy-peer-deps', {
+        cwd: kissDir,
+        stdio: 'inherit',
+        env: { ...process.env }
+    });
 
-    execSync('npm run vercel-build', {
+    console.log('\n>>> Dependencies installed successfully!');
+
+    // 2. Jalankan build di workspace kiss
+    console.log('\n>>> Running build in kiss workspace...');
+    console.log('>>> Building with Vite...');
+    execSync('npm run build:deploy', {
         cwd: kissDir,
         stdio: 'inherit',
         env: { ...process.env }
@@ -28,7 +36,7 @@ try {
 
     console.log('\n>>> Build completed successfully.');
 
-    // 2. Pindahkan hasil build ke root dist
+    // 3. Pindahkan hasil build ke root dist
     console.log('\n>>> Moving artifacts to root dist...');
 
     // Hapus dist lama di root jika ada
