@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "installCommand": "npm install --legacy-peer-deps && cd kiss && npm install --legacy-peer-deps",
-  "buildCommand": "node build-wrapper.js",
+  "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "npm run vercel-build",
   "outputDirectory": "dist",
   "framework": null,
   "cleanUrls": true,
