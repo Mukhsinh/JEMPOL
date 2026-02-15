@@ -40,6 +40,4 @@ kiss/tests
 **/docs
 kiss/docs
 
-# Build artifacts (akan di-generate ulang)
-kiss/dist
-dist
+# Build artifacts (jangan ignore dist karena dibutuhkan untuk deployment)

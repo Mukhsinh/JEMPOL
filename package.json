@@ -6,7 +6,9 @@
   "engines": {
     "node": "20.x"
   },
+  "packageManager": "npm@10.2.4",
   "scripts": {
+    "postinstall": "cd kiss && npm install --legacy-peer-deps",
     "install:all": "cd kiss && npm install --legacy-peer-deps",
     "dev": "cd kiss && npm run dev",
     "build": "cd kiss && npm run build",
