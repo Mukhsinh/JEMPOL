@@ -1,9 +1,0 @@
-export { default as UnitsPage } from './UnitsPage';
-export { default as UnitTypesPage } from './UnitTypesPage';
-export { default as ServiceCategoriesPage } from './ServiceCategoriesPage';
-export { default as TicketTypesPage } from './TicketTypesPage';
-export { default as TicketClassificationsPage } from './TicketClassificationsPage';
-export { default as TicketStatusesPage } from './TicketStatusesPage';
-export { default as PatientTypesPage } from './PatientTypesPage';
-export { default as SLASettingsPage } from './SLASettingsPage';
-export { default as RolesPermissionsPage } from './RolesPermissionsPage';
