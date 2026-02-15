@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build --outDir ../dist --emptyOutDir",
     "build:skip-check": "vite build --outDir ../dist --emptyOutDir",
-    "vercel-build": "vite build",
+    "build:deploy": "vite build --outDir ../dist --emptyOutDir",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
