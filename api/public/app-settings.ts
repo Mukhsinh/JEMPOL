@@ -34,90 +34,123 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         error: 'Method not allowed. Use GET method.'
       });
     }
-    
-    console.log('🎯 GET /api/public/app-settings dipanggil');
-    
-    // Initialize Supabase client dengan validasi
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
-    
-    console.log('📍 Environment check:', {
-      hasSupabaseUrl: !!supabaseUrl,
-      hasSupabaseKey: !!supabaseKey,
-      supabaseUrlPrefix: supabaseUrl?.substring(0, 30) + '...'
-    });
-    
-    // Jika credentials tidak ada, return default settings
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('⚠️ Supabase credentials not configured, using default settings');
-      return res.status(200).json({
-        success: true,
-        data: DEFAULT_SETTINGS,
-        warning: 'Using default settings - Supabase credentials not configured'
-      });
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('✅ Supabase client initialized');
-    
-    // Fetch app settings - return as array
-    const { data: settings, error } = await supabase
-      .from('app_settings')
-      .select('setting_key, setting_value')
-      .eq('is_public', true)
-      .order('setting_key');
 
-    if (error) {
-      console.error('❌ Error fetching app settings:', {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code
-      });
-      
-      // Return default settings jika error
-      return res.status(200).json({
-        success: true,
-        data: DEFAULT_SETTINGS,
-        warning: 'Using default settings - database query failed: ' + error.message
-      });
+    const { type } = req.query;
+
+    // Route ke units jika type=units
+    if (type === 'units') {
+      return handleUnits(req, res);
     }
 
-    console.log('✅ App settings fetched successfully:', settings?.length || 0, 'items');
-
-    // Convert array to object format yang diharapkan frontend
-    const settingsObject: any = {};
-    if (settings && settings.length > 0) {
-      settings.forEach((item: any) => {
-        settingsObject[item.setting_key] = item.setting_value;
-      });
-    }
-
-    // Merge dengan default settings
-    const finalSettings = {
-      ...DEFAULT_SETTINGS,
-      ...settingsObject
-    };
-
-    return res.status(200).json({
-      success: true,
-      data: finalSettings
-    });
+    // Default: return app settings
+    return handleAppSettings(req, res);
+    
   } catch (error: any) {
-    console.error('❌ Unexpected error in get app settings:', {
-      message: error.message,
-      stack: error.stack?.substring(0, 200)
-    });
+    console.error('❌ Unexpected error:', error);
     
-    // PERBAIKAN: Return default settings jika exception dengan JSON valid
     return res.status(200).json({
-      success: true,
-      data: DEFAULT_SETTINGS,
-      error: 'Server error: ' + (error.message || 'Unknown error'),
+      success: false,
+      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
+      data: [],
       debug: {
         errorType: error.constructor.name,
         timestamp: new Date().toISOString()
       }
     });
   }
+}
+
+// Handler untuk units
+async function handleUnits(req: VercelRequest, res: VercelResponse) {
+  console.log('🎯 GET /api/public/app-settings?type=units - Vercel Function');
+  
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ Missing Supabase credentials');
+    return res.status(200).json({
+      success: false,
+      error: 'Konfigurasi Supabase tidak lengkap',
+      data: []
+    });
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
+  const { data: units, error } = await supabase
+    .from('units')
+    .select('id, name, code, description, is_active')
+    .eq('is_active', true)
+    .order('name', { ascending: true });
+
+  if (error) {
+    console.error('❌ Supabase error fetching units:', error);
+    return res.status(200).json({
+      success: false,
+      error: 'Gagal mengambil data unit',
+      details: error.message,
+      data: []
+    });
+  }
+
+  console.log(`✅ Successfully fetched ${units?.length || 0} active units`);
+
+  return res.status(200).json({
+    success: true,
+    data: units || [],
+    count: units?.length || 0,
+    timestamp: new Date().toISOString()
+  });
+}
+
+// Handler untuk app settings
+async function handleAppSettings(req: VercelRequest, res: VercelResponse) {
+  console.log('🎯 GET /api/public/app-settings');
+  
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('⚠️ Supabase credentials not configured, using default settings');
+    return res.status(200).json({
+      success: true,
+      data: DEFAULT_SETTINGS,
+      warning: 'Using default settings'
+    });
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
+  const { data: settings, error } = await supabase
+    .from('app_settings')
+    .select('setting_key, setting_value')
+    .eq('is_public', true)
+    .order('setting_key');
+
+  if (error) {
+    console.error('❌ Error fetching app settings:', error);
+    return res.status(200).json({
+      success: true,
+      data: DEFAULT_SETTINGS,
+      warning: 'Using default settings - database query failed'
+    });
+  }
+
+  const settingsObject: any = {};
+  if (settings && settings.length > 0) {
+    settings.forEach((item: any) => {
+      settingsObject[item.setting_key] = item.setting_value;
+    });
+  }
+
+  const finalSettings = {
+    ...DEFAULT_SETTINGS,
+    ...settingsObject
+  };
+
+  return res.status(200).json({
+    success: true,
+    data: finalSettings
+  });
 }

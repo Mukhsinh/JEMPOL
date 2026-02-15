@@ -17,15 +17,14 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 /**
- * GET /api/public/qr-codes - Get all QR codes with pagination and filters
- * POST /api/public/qr-codes - Create new QR code
- * Query params:
- * - page: number (default: 1)
- * - limit: number (default: 10)
- * - unit_id: string (optional)
- * - is_active: boolean (optional)
- * - search: string (optional)
- * - include_analytics: boolean (optional, default: false)
+ * Unified QR Codes API Handler
+ * Routes:
+ * - GET /api/public/qr-codes - Get all QR codes
+ * - POST /api/public/qr-codes - Create QR code
+ * - GET /api/public/qr-codes?id=xxx - Get by ID
+ * - PATCH /api/public/qr-codes?id=xxx - Update by ID
+ * - DELETE /api/public/qr-codes?id=xxx - Delete by ID
+ * - GET /api/public/qr-codes?scan=xxx - Scan by code
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
@@ -43,13 +42,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  // Handle GET and POST methods
-  if (req.method === 'GET') {
-    return handleGet(req, res);
-  } else if (req.method === 'POST') {
-    return handlePost(req, res);
+  // Route based on query parameters
+  const { id, scan } = req.query;
+
+  if (scan) {
+    // Handle scan by code
+    return handleScan(req, res, scan as string);
+  } else if (id) {
+    // Handle operations by ID
+    if (req.method === 'GET') {
+      return handleGetById(req, res, id as string);
+    } else if (req.method === 'PATCH') {
+      return handlePatchById(req, res, id as string);
+    } else if (req.method === 'DELETE') {
+      return handleDeleteById(req, res, id as string);
+    } else {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
   } else {
-    return res.status(405).json({ error: 'Method not allowed' });
+    // Handle list and create operations
+    if (req.method === 'GET') {
+      return handleGet(req, res);
+    } else if (req.method === 'POST') {
+      return handlePost(req, res);
+    } else {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
   }
 }
 
@@ -208,6 +226,210 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
     console.log('✅ QR code created successfully:', data);
 
     return res.status(201).json(data);
+
+  } catch (error: any) {
+    console.error('❌ Unexpected error:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+}
+
+/**
+ * Handle GET by ID - Get QR code by ID
+ */
+async function handleGetById(req: VercelRequest, res: VercelResponse, id: string) {
+  try {
+    const { data, error } = await supabase
+      .from('qr_codes')
+      .select(`
+        *,
+        units:unit_id (
+          id,
+          name,
+          code,
+          description
+        )
+      `)
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'QR code not found' });
+      }
+      console.error('❌ Error fetching QR code:', error);
+      return res.status(500).json({ 
+        error: 'Failed to fetch QR code',
+        details: error.message 
+      });
+    }
+
+    return res.status(200).json(data);
+
+  } catch (error: any) {
+    console.error('❌ Unexpected error:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+}
+
+/**
+ * Handle PATCH by ID - Update QR code
+ */
+async function handlePatchById(req: VercelRequest, res: VercelResponse, id: string) {
+  try {
+    const { name, description, is_active, redirect_type, auto_fill_unit, show_options } = req.body;
+
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (is_active !== undefined) updateData.is_active = is_active;
+    if (redirect_type !== undefined) updateData.redirect_type = redirect_type;
+    if (auto_fill_unit !== undefined) updateData.auto_fill_unit = auto_fill_unit;
+    if (show_options !== undefined) updateData.show_options = show_options;
+
+    const { data, error } = await supabase
+      .from('qr_codes')
+      .update(updateData)
+      .eq('id', id)
+      .select(`
+        *,
+        units:unit_id (
+          id,
+          name,
+          code,
+          description
+        )
+      `)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'QR code not found' });
+      }
+      console.error('❌ Error updating QR code:', error);
+      return res.status(500).json({ 
+        error: 'Failed to update QR code',
+        details: error.message 
+      });
+    }
+
+    return res.status(200).json(data);
+
+  } catch (error: any) {
+    console.error('❌ Unexpected error:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+}
+
+/**
+ * Handle DELETE by ID - Delete QR code
+ */
+async function handleDeleteById(req: VercelRequest, res: VercelResponse, id: string) {
+  try {
+    console.log(`🔄 Deleting QR code ${id}...`);
+    
+    const { data: existingQR, error: checkError } = await supabase
+      .from('qr_codes')
+      .select('id, name')
+      .eq('id', id)
+      .single();
+
+    if (checkError) {
+      if (checkError.code === 'PGRST116') {
+        return res.status(404).json({ error: 'QR code not found' });
+      }
+      console.error('❌ Error checking QR code:', checkError);
+      return res.status(500).json({ 
+        error: 'Failed to check QR code',
+        details: checkError.message 
+      });
+    }
+
+    const { error: deleteError } = await supabase
+      .from('qr_codes')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) {
+      console.error('❌ Error deleting QR code:', deleteError);
+      return res.status(500).json({ 
+        error: 'Failed to delete QR code',
+        details: deleteError.message 
+      });
+    }
+
+    console.log(`✅ QR code "${existingQR.name}" deleted successfully`);
+
+    return res.status(200).json({ 
+      success: true,
+      message: `QR code "${existingQR.name}" deleted successfully` 
+    });
+
+  } catch (error: any) {
+    console.error('❌ Unexpected error:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
+}
+
+/**
+ * Handle scan - Get QR code by code (for scanning)
+ */
+async function handleScan(req: VercelRequest, res: VercelResponse, code: string) {
+  try {
+    if (!code) {
+      return res.status(400).json({ error: 'Invalid QR code' });
+    }
+
+    const { data, error } = await supabase
+      .from('qr_codes')
+      .select(`
+        *,
+        units:unit_id (
+          id,
+          name,
+          code,
+          description
+        )
+      `)
+      .eq('code', code)
+      .eq('is_active', true)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ error: 'QR code not found or inactive' });
+      }
+      console.error('❌ Error fetching QR code:', error);
+      return res.status(500).json({ 
+        error: 'Failed to fetch QR code',
+        details: error.message 
+      });
+    }
+
+    // Increment usage count
+    await supabase
+      .from('qr_codes')
+      .update({ 
+        usage_count: (data.usage_count || 0) + 1,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', data.id);
+
+    return res.status(200).json(data);
 
   } catch (error: any) {
     console.error('❌ Unexpected error:', error);

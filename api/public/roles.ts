@@ -32,21 +32,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  // Validasi environment variables
-  if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing Supabase credentials:', { 
-      hasUrl: !!supabaseUrl, 
-      hasKey: !!supabaseKey,
-      env: process.env.NODE_ENV 
-    });
-    return res.status(500).json({
-      success: false,
-      message: 'Server configuration error: Missing Supabase credentials'
-    });
-  }
-
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const roleId = req.query.id as string;
+    const action = req.query.action as string;
+
+    // GET users by role ID
+    if (req.method === 'GET' && roleId && action === 'users') {
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('id, full_name, email, role')
+        .eq('role', roleId)
+        .order('full_name', { ascending: true });
+
+      if (error) {
+        return res.status(200).json({
+          success: false,
+          error: 'Gagal mengambil data pengguna',
+          details: error.message,
+          data: []
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: users || [],
+        count: users?.length || 0
+      });
+    }
+
+    // GET single role by ID
+    if (req.method === 'GET' && roleId) {
+      const { data: role, error } = await supabase
+        .from('roles')
+        .select('*')
+        .eq('id', roleId)
+        .single();
+
+      if (error) {
+        return res.status(404).json({
+          success: false,
+          error: 'Peran tidak ditemukan',
+          details: error.message
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: role
+      });
+    }
 
     // GET - Fetch all roles
     if (req.method === 'GET') {
@@ -93,6 +128,77 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         success: true,
         message: 'Peran berhasil dibuat',
         data
+      });
+    }
+
+    // PUT - Update role
+    if (req.method === 'PUT' && roleId) {
+      const roleData = req.body;
+      
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      };
+      
+      if (roleData.name !== undefined) updateData.name = roleData.name;
+      if (roleData.code !== undefined) updateData.code = roleData.code;
+      if (roleData.description !== undefined) updateData.description = roleData.description;
+      if (roleData.permissions !== undefined) updateData.permissions = roleData.permissions;
+      if (roleData.is_active !== undefined) updateData.is_active = roleData.is_active;
+      
+      const { data: updatedRole, error } = await supabase
+        .from('roles')
+        .update(updateData)
+        .eq('id', roleId)
+        .select()
+        .single();
+
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          error: 'Gagal mengupdate peran',
+          details: error.message
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: updatedRole,
+        message: 'Peran berhasil diupdate'
+      });
+    }
+
+    // DELETE - Delete role
+    if (req.method === 'DELETE' && roleId) {
+      // Check if role is system role
+      const { data: role } = await supabase
+        .from('roles')
+        .select('is_system_role')
+        .eq('id', roleId)
+        .single();
+      
+      if (role?.is_system_role) {
+        return res.status(400).json({
+          success: false,
+          error: 'Peran sistem tidak dapat dihapus'
+        });
+      }
+      
+      const { error } = await supabase
+        .from('roles')
+        .delete()
+        .eq('id', roleId);
+
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          error: 'Gagal menghapus peran',
+          details: error.message
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Peran berhasil dihapus'
       });
     }
 

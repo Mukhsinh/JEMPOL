@@ -21,6 +21,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseKey);
+    const templateId = req.query.id as string;
+
+    // GET single template by ID
+    if (req.method === 'GET' && templateId) {
+      const { data: template, error } = await supabase
+        .from('response_templates')
+        .select('*')
+        .eq('id', templateId)
+        .single();
+
+      if (error) {
+        return res.status(404).json({
+          success: false,
+          error: 'Template tidak ditemukan',
+          details: error.message
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: template
+      });
+    }
 
     // GET - Fetch all templates
     if (req.method === 'GET') {
@@ -60,6 +83,64 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         success: true,
         message: 'Template berhasil dibuat',
         data
+      });
+    }
+
+    // PUT - Update template
+    if (req.method === 'PUT' && templateId) {
+      const templateData = req.body;
+      
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      };
+      
+      if (templateData.name !== undefined) updateData.name = templateData.name;
+      if (templateData.subject !== undefined) updateData.subject = templateData.subject;
+      if (templateData.content !== undefined) updateData.content = templateData.content;
+      if (templateData.category !== undefined) updateData.category = templateData.category;
+      if (templateData.variables !== undefined) updateData.variables = templateData.variables;
+      if (templateData.is_active !== undefined) updateData.is_active = templateData.is_active;
+      
+      const { data: updatedTemplate, error } = await supabase
+        .from('response_templates')
+        .update(updateData)
+        .eq('id', templateId)
+        .select()
+        .single();
+
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          error: 'Gagal mengupdate template',
+          details: error.message
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: updatedTemplate,
+        message: 'Template berhasil diupdate'
+      });
+    }
+
+    // DELETE - Delete template
+    if (req.method === 'DELETE' && templateId) {
+      const { error } = await supabase
+        .from('response_templates')
+        .delete()
+        .eq('id', templateId);
+
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          error: 'Gagal menghapus template',
+          details: error.message
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'Template berhasil dihapus'
       });
     }
 
