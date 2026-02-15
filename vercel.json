@@ -1,9 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "cd kiss && npm install --legacy-peer-deps && npm run build -- --outDir ../dist",
-  "outputDirectory": "dist",
   "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "cd kiss && npx vite build --outDir ../dist --emptyOutDir",
+  "outputDirectory": "dist",
   "framework": null,
   "cleanUrls": true,
   "trailingSlash": false,
