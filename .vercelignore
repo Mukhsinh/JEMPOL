@@ -26,3 +26,6 @@ kiss/tests
 
 # Documentation
 kiss/docs
+
+# Keep api folder at root for Vercel serverless functions
+!api
