@@ -724,7 +724,7 @@ class SupabaseService {
 
       // Hitung analytics untuk setiap QR code dari data tiket
       const qrCodesWithAnalytics = await Promise.all(
-        (data || []).map(async (qr) => {
+        (data || []).map(async (qr: any) => {
           try {
             // Hitung total scan dari usage_count
             const scans_30d = qr.usage_count || 0;
