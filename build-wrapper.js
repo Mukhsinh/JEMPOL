@@ -14,16 +14,17 @@ console.log(`Root Directory: ${rootDir}`);
 console.log(`Kiss Directory: ${kissDir}`);
 
 try {
-    // 1. Install dependencies di kiss workspace dulu
-    console.log('\n>>> Installing dependencies in kiss workspace...');
-    console.log('>>> This may take a few minutes...');
-    execSync('npm install --legacy-peer-deps', {
-        cwd: kissDir,
-        stdio: 'inherit',
-        env: { ...process.env }
-    });
-
-    console.log('\n>>> Dependencies installed successfully!');
+    // 1. Verifikasi dependencies sudah terinstall
+    console.log('\n>>> Verifying dependencies...');
+    const kissNodeModules = path.join(kissDir, 'node_modules');
+    
+    if (!fs.existsSync(kissNodeModules)) {
+        console.error('❌ Error: kiss/node_modules not found!');
+        console.error('Dependencies should be installed by Vercel installCommand.');
+        process.exit(1);
+    }
+    
+    console.log('✅ Dependencies verified!');
 
     // 2. Jalankan build di workspace kiss
     console.log('\n>>> Running build in kiss workspace...');
