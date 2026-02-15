@@ -41,11 +41,17 @@ export default defineConfig({
           'supabase': ['@supabase/supabase-js'],
           'socket': ['socket.io-client']
         },
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
       },
     },
   },
   esbuild: {
-    drop: ['console', 'debugger'],
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
+  },
+  esbuild: {
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
   },
   optimizeDeps: {
     include: [

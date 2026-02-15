@@ -2,102 +2,55 @@
 
 Sistem Manajemen Keluhan dan Survei Kepuasan Pelanggan
 
-## Struktur Proyek
+## Quick Start
 
-```
-JEMPOL/
-├── kiss/             # Aplikasi React utama
-├── api/              # Vercel Serverless Functions
-│   └── public/       # API endpoints publik
-│       ├── track-ticket.ts
-│       ├── app-settings.ts
-│       ├── surveys.ts
-│       ├── external-tickets.ts
-│       ├── internal-tickets.ts
-│       └── units.ts
-├── .git/             # Version control
-├── .kiro/            # Konfigurasi Kiro
-├── vercel.json       # Konfigurasi Vercel
-├── package.json      # Dependencies root
-└── .env.production   # Environment variables
-```
-
-## Teknologi
-
-- **Frontend**: React + TypeScript + Vite + TailwindCSS
-- **Backend**: Supabase (Database + Auth)
-- **Deployment**: Vercel (Serverless Functions)
-- **State Management**: React Context API
-
-## Instalasi
-
-1. Install dependencies root:
-```bash
-npm install
-```
-
-2. Install dependencies kiss:
+### Development
 ```bash
 cd kiss
-npm install
-```
-
-3. Setup environment variables di `.env.production`
-
-## Development
-
-```bash
-cd kiss
+npm install --legacy-peer-deps
 npm run dev
 ```
 
-## Build
-
+### Build Production
 ```bash
 cd kiss
 npm run build
 ```
 
-## Deploy ke Vercel
-
+### Deploy ke Vercel
 ```bash
 vercel --prod
 ```
 
-## Fitur Utama
+## Environment Variables (Vercel Dashboard)
 
-- Dashboard Admin
-- Manajemen Tiket Internal & Eksternal
-- QR Code untuk Form Publik
-- Survei Kepuasan (IKM)
-- Tracking Tiket Real-time
-- Manajemen User & Roles
-- Laporan & Export PDF/Excel
-- Notifikasi Real-time
-- SLA Management
-- Eskalasi Otomatis
+Set di Vercel Dashboard → Settings → Environment Variables:
 
-## Database
+```
+VITE_SUPABASE_URL=https://jxxzbdivafzzwqhagwrf.supabase.co
+VITE_SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_URL=https://jxxzbdivafzzwqhagwrf.supabase.co
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+VITE_API_URL=/api
+NODE_ENV=production
+```
 
-Menggunakan Supabase dengan tabel:
-- users
-- tickets (internal & external)
-- surveys
-- units
-- patient_types
-- ticket_classifications
-- service_categories
-- sla_settings
-- response_templates
-- escalation_rules
-- qr_codes
+## Struktur Proyek
 
-## API Endpoints
+```
+/
+├── api/              # Vercel Serverless Functions
+│   └── public/       # Public API endpoints
+├── kiss/             # React Frontend
+│   ├── src/          # Source code
+│   └── dist/         # Build output (auto-generated)
+├── vercel.json       # Vercel configuration
+└── package.json      # Root package.json
+```
 
-Semua API ada di folder `api/public/`:
-- `/api/public/track-ticket` - Tracking tiket publik
-- `/api/public/app-settings` - Pengaturan aplikasi
-- `/api/public/surveys` - Submit survei
-- `/api/public/external-tickets` - Tiket eksternal
-- `/api/public/internal-tickets` - Tiket internal
-- `/api/public/units` - Data unit kerja
+## Teknologi
+
+- Frontend: React + TypeScript + Vite + TailwindCSS
+- Backend: Supabase + Vercel Serverless Functions
+- Deployment: Vercel

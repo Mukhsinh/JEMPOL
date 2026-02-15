@@ -1,0 +1,19 @@
+{
+  "name": "kiss-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "KISS - Keluhan Informasi Saran Sistem",
+  "scripts": {
+    "install:all": "cd kiss && npm install --legacy-peer-deps && cd ../api && npm install",
+    "dev": "cd kiss && npm run dev",
+    "build": "cd kiss && npm run build",
+    "preview": "cd kiss && npm run preview",
+    "test": "cd kiss && npm test",
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel"
+  },
+  "workspaces": [
+    "kiss",
+    "api"
+  ]
+}

@@ -5,15 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "build:skip-check": "vite build",
-    "build:deploy": "vite build",
+    "build": "vite build",
     "vercel-build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "dev:fast": "vite --host 0.0.0.0 --port 3002 --open --force",
-    "build:fast": "vite build --mode production --minify false"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",

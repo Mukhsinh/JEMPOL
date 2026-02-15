@@ -1,39 +1,45 @@
-# PENTING: Hanya folder kiss/ yang di-deploy!
-
-# Node modules - tapi biarkan package.json
+# Node modules
 node_modules
-kiss/node_modules
-kiss/api/node_modules
+**/node_modules
 
 # Git
 .git
+.gitignore
 
-# Environment files
+# Environment files (local only)
 .env.local
 .env.*.local
-kiss/.env.local
+**/.env.local
 
 # Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # OS files
 .DS_Store
+Thumbs.db
 
 # IDE
 .vscode
+.idea
 .kiro
 
-# Test files di folder kiss
-kiss/src/**/*.test.ts
-kiss/src/**/*.test.tsx
-kiss/src/**/*.spec.ts
-kiss/src/**/*.spec.tsx
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+**/test
+**/tests
 kiss/src/test
 kiss/tests
+
+# Documentation
+**/docs
 kiss/docs
 
-# PENTING: Pastikan folder kiss tidak di-ignore!
-!/kiss
-!/kiss/**
-!/kiss/api
-!/kiss/api/**/*.ts
+# Build artifacts (akan di-generate ulang)
+kiss/dist
+dist
