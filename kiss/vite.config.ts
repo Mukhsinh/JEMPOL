@@ -22,7 +22,7 @@ export default defineConfig({
   },
   build: {
     target: 'es2015',
-    outDir: '../dist',
+    outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
     chunkSizeWarningLimit: 1000,
