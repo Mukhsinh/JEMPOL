@@ -7,11 +7,11 @@
     "node": "20.x"
   },
   "scripts": {
-    "install:all": "npm --prefix kiss install --legacy-peer-deps && npm --prefix api install",
-    "dev": "npm --prefix kiss run dev",
-    "build": "npm --prefix kiss run build",
-    "preview": "npm --prefix kiss run preview",
-    "test": "npm --prefix kiss test",
+    "install:all": "cd kiss && npm install --legacy-peer-deps",
+    "dev": "cd kiss && npm run dev",
+    "build": "cd kiss && npm run build",
+    "preview": "cd kiss && npm run preview",
+    "test": "cd kiss && npm test",
     "deploy": "vercel --prod",
     "deploy:preview": "vercel"
   }
