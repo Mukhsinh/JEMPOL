@@ -266,7 +266,7 @@ const TrackTicket: React.FC = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg shadow-blue-500/30 mb-3">
                 <Search className="w-8 h-8 text-white" />
               </div>
-              <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
+              <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
                 Cek Status Laporan
               </h2>
               <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs mx-auto">

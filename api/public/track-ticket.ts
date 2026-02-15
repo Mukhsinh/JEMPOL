@@ -55,8 +55,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
     console.log('✅ Supabase client initialized');
     
-    // Fetch ticket dengan nomor tiket
-    const { data: ticket, error: ticketError } = await supabase
+    // Fetch ticket dengan nomor tiket - coba dulu tanpa .single() untuk debugging
+    console.log('🔍 Mencari tiket dengan nomor:', ticketNumber);
+    const { data: tickets, error: ticketError } = await supabase
       .from('tickets')
       .select(`
         id,
@@ -70,29 +71,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         resolved_at,
         first_response_at,
         sla_deadline,
-        reporter_name,
         units:unit_id(name, code),
         service_categories:category_id(name)
       `)
-      .eq('ticket_number', ticketNumber)
-      .single();
+      .eq('ticket_number', ticketNumber);
 
     if (ticketError) {
       console.error('❌ Error fetching ticket:', ticketError);
       return res.status(404).json({
         success: false,
-        error: 'Tiket tidak ditemukan'
+        error: 'Tiket tidak ditemukan',
+        debug: {
+          errorMessage: ticketError.message,
+          errorCode: ticketError.code
+        }
       });
     }
 
-    if (!ticket) {
-      console.error('❌ Tiket tidak ditemukan');
+    console.log('📊 Hasil query tickets:', tickets ? tickets.length : 0, 'tiket ditemukan');
+
+    if (!tickets || tickets.length === 0) {
+      console.error('❌ Tiket tidak ditemukan di database');
       return res.status(404).json({
         success: false,
-        error: 'Tiket tidak ditemukan'
+        error: 'Tiket tidak ditemukan. Pastikan nomor tiket yang Anda masukkan benar.',
+        debug: {
+          searchedTicketNumber: ticketNumber,
+          ticketsFound: 0
+        }
       });
     }
 
+    const ticket = tickets[0];
     console.log('✅ Tiket ditemukan:', ticket.ticket_number);
 
     // Fetch responses (hanya yang tidak internal)
@@ -117,6 +127,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         reason,
         created_at,
         resolved_at
+      `)
+      .eq('ticket_id', ticket.id)
+      .order('created_at', { ascending: true });
+
+    // Fetch escalation units
+    const { data: escalationUnits } = await supabase
+      .from('ticket_escalation_units')
+      .select(`
+        id,
+        status,
+        is_primary,
+        is_cc,
+        created_at,
+        units:unit_id(name, code)
       `)
       .eq('ticket_id', ticket.id)
       .order('created_at', { ascending: true });
@@ -216,11 +240,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           updated_at: ticket.updated_at,
           resolved_at: ticket.resolved_at,
           sla_deadline: ticket.sla_deadline,
-          reporter_name: ticket.reporter_name,
           unit: ticket.units,
           category: ticket.service_categories
         },
         timeline,
+        escalationUnits: escalationUnits || [],
         stats: {
           totalResponses: responses?.length || 0,
           totalEscalations: escalations?.length || 0,

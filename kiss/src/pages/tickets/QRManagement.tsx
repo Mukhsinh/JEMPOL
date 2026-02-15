@@ -157,26 +157,107 @@ const QRManagement: React.FC = () => {
 
   const handleCreateQRCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validasi form
+    if (!formData.unit_id && !editingQR) {
+      alert('Silakan pilih unit terlebih dahulu');
+      return;
+    }
+    
+    if (!formData.name || formData.name.trim() === '') {
+      alert('Nama QR Code tidak boleh kosong');
+      return;
+    }
+    
+    if (formData.redirect_type === 'selection' && (!formData.show_options || formData.show_options.length === 0)) {
+      alert('Silakan pilih minimal satu opsi yang akan ditampilkan');
+      return;
+    }
+    
     try {
+      console.log('🔄 [handleCreateQRCode] Menyimpan QR Code...', formData);
+      
       if (editingQR) {
         // Update existing QR code
-        await qrCodeService.updateQRCode(editingQR.id, {
+        console.log('🔄 [handleCreateQRCode] Mode: UPDATE');
+        const result = await qrCodeService.updateQRCode(editingQR.id, {
           name: formData.name,
           description: formData.description,
           redirect_type: formData.redirect_type,
           auto_fill_unit: formData.auto_fill_unit,
           show_options: formData.show_options
         });
+        
+        console.log('✅ [handleCreateQRCode] QR Code berhasil diupdate:', result);
+        alert('✅ QR Code berhasil diperbarui!');
+        
+        // Tutup modal dan reset form
+        setShowModal(false);
+        resetForm();
+        
+        // Reload data untuk menampilkan perubahan
+        console.log('🔄 [handleCreateQRCode] Memuat ulang data setelah update...');
+        await loadData();
+        console.log('✅ [handleCreateQRCode] Data berhasil dimuat ulang setelah update');
       } else {
         // Create new QR code
-        await qrCodeService.createQRCode(formData);
+        console.log('🔄 [handleCreateQRCode] Mode: CREATE');
+        console.log('📝 [handleCreateQRCode] Data yang akan dikirim:', formData);
+        
+        // Simpan jumlah QR code sebelum create untuk verifikasi
+        const countBefore = qrCodes.length;
+        console.log(`📊 [handleCreateQRCode] Jumlah QR Code sebelum create: ${countBefore}`);
+        
+        // Panggil service untuk membuat QR code baru - LANGSUNG KE SUPABASE
+        const result = await qrCodeService.createQRCode(formData);
+        console.log('✅ [handleCreateQRCode] QR Code berhasil dibuat:', result);
+        console.log('📊 [handleCreateQRCode] QR Code baru - ID:', result.id, 'Code:', result.code);
+        
+        // Tampilkan notifikasi sukses dengan detail
+        const unitName = units.find(u => u.id === formData.unit_id)?.name || 'Unknown';
+        alert(`✅ QR CODE BERHASIL DIBUAT!\n\nNama: ${formData.name}\nUnit: ${unitName}\nCode: ${result.code}\n\nQR Code baru akan muncul di daftar.`);
+        
+        // Tutup modal dan reset form
+        setShowModal(false);
+        resetForm();
+        
+        // Reload data untuk menampilkan QR code baru dari database
+        console.log('🔄 [handleCreateQRCode] Memuat ulang data QR Code dari database...');
+        await loadData();
+        
+        // Verifikasi QR code baru sudah muncul
+        const countAfter = qrCodes.length;
+        console.log(`📊 [handleCreateQRCode] Jumlah QR Code setelah reload: ${countAfter}`);
+        
+        if (countAfter > countBefore) {
+          console.log('✅ [handleCreateQRCode] QR Code baru berhasil ditambahkan ke daftar');
+        } else {
+          console.warn('⚠️ [handleCreateQRCode] QR Code baru belum muncul di daftar, mencoba reload sekali lagi...');
+          // Tunggu sebentar dan reload lagi untuk memastikan
+          setTimeout(async () => {
+            await loadData();
+            const finalCount = qrCodes.length;
+            console.log(`✅ [handleCreateQRCode] Reload kedua selesai, jumlah: ${finalCount}`);
+            if (finalCount > countBefore) {
+              console.log('✅ [handleCreateQRCode] QR Code baru berhasil muncul setelah reload kedua');
+            } else {
+              console.error('❌ [handleCreateQRCode] QR Code baru masih belum muncul setelah 2x reload');
+              alert('⚠️ QR Code berhasil dibuat di database, tetapi belum muncul di daftar.\n\nSilakan refresh halaman secara manual (F5) untuk melihat QR Code baru.');
+            }
+          }, 1500);
+        }
       }
-      setShowModal(false);
-      resetForm();
-      loadData();
-    } catch (error) {
-      console.error('Error saving QR code:', error);
-      alert('Gagal menyimpan QR Code. Silakan coba lagi.');
+    } catch (error: any) {
+      console.error('❌ [handleCreateQRCode] Error saving QR code:', error);
+      console.error('❌ [handleCreateQRCode] Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack
+      });
+      
+      const errorMessage = error.message || error.response?.data?.error || error.response?.data?.details || 'Gagal menyimpan QR Code';
+      alert(`❌ GAGAL MENYIMPAN QR CODE!\n\nError: ${errorMessage}\n\nSilakan coba lagi atau hubungi administrator.`);
     }
   };
 
@@ -210,18 +291,89 @@ const QRManagement: React.FC = () => {
   };
 
   const handleDeleteQRCode = async (id: string, name: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus QR Code "${name}"? Tindakan ini tidak dapat dibatalkan.`)) {
+    // Konfirmasi penghapusan dengan detail
+    const confirmDelete = confirm(
+      `⚠️ KONFIRMASI PENGHAPUSAN\n\n` +
+      `Apakah Anda yakin ingin menghapus QR Code berikut?\n\n` +
+      `Nama: ${name}\n` +
+      `ID: ${id}\n\n` +
+      `⚠️ PERINGATAN:\n` +
+      `- Tindakan ini TIDAK DAPAT dibatalkan\n` +
+      `- Semua data terkait QR Code ini akan dihapus\n` +
+      `- QR Code yang sudah dicetak tidak akan berfungsi lagi\n\n` +
+      `Klik OK untuk melanjutkan penghapusan.`
+    );
+
+    if (!confirmDelete) {
+      console.log('❌ Penghapusan dibatalkan oleh user');
       return;
     }
 
     try {
-      await qrCodeService.deleteQRCode(id);
-      alert('QR Code berhasil dihapus');
-      loadData();
+      console.log(`🔄 [handleDeleteQRCode] Memulai proses penghapusan QR Code...`);
+      console.log(`   ID: ${id}`);
+      console.log(`   Nama: ${name}`);
+      
+      // Simpan jumlah QR code sebelum delete untuk verifikasi
+      const countBefore = qrCodes.length;
+      console.log(`📊 Jumlah QR Code sebelum delete: ${countBefore}`);
+      
+      // Panggil service untuk menghapus - LANGSUNG KE SUPABASE
+      const result = await qrCodeService.deleteQRCode(id);
+      console.log('✅ [handleDeleteQRCode] Response dari service:', result);
+      
+      // Verifikasi hasil penghapusan
+      if (!result.success) {
+        throw new Error(result.error || 'Gagal menghapus QR code');
+      }
+      
+      // Tampilkan notifikasi sukses
+      alert(`✅ BERHASIL DIHAPUS!\n\nQR Code "${name}" telah berhasil dihapus dari database.\n\nDaftar akan diperbarui otomatis.`);
+      
+      // Reload data dari server untuk memastikan sinkronisasi
+      console.log('🔄 [handleDeleteQRCode] Memuat ulang daftar QR Code dari database...');
+      await loadData();
+      
+      // Verifikasi QR code sudah terhapus
+      const countAfter = qrCodes.length;
+      console.log(`📊 Jumlah QR Code setelah reload: ${countAfter}`);
+      
+      if (countAfter < countBefore) {
+        console.log('✅ [handleDeleteQRCode] QR Code berhasil dihapus dan daftar sudah diperbarui');
+      } else {
+        console.warn('⚠️ [handleDeleteQRCode] QR Code mungkin belum terhapus dari daftar, mencoba reload sekali lagi...');
+        // Tunggu sebentar dan reload lagi
+        setTimeout(async () => {
+          await loadData();
+          console.log('✅ [handleDeleteQRCode] Reload kedua selesai');
+        }, 1000);
+      }
+      
     } catch (error: any) {
-      console.error('Error deleting QR code:', error);
-      const errorMessage = error.response?.data?.error || 'Gagal menghapus QR Code';
-      alert(errorMessage);
+      console.error('❌ [handleDeleteQRCode] Error saat menghapus QR code:', error);
+      console.error('❌ [handleDeleteQRCode] Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack
+      });
+      
+      const errorMessage = error.message || error.response?.data?.error || error.response?.data?.details || 'Terjadi kesalahan saat menghapus QR Code';
+      
+      alert(
+        `❌ GAGAL MENGHAPUS QR CODE!\n\n` +
+        `QR Code: ${name}\n` +
+        `Error: ${errorMessage}\n\n` +
+        `Kemungkinan penyebab:\n` +
+        `- Koneksi internet bermasalah\n` +
+        `- Tidak memiliki izin untuk menghapus\n` +
+        `- QR Code tidak ditemukan di database\n\n` +
+        `Silakan coba lagi atau hubungi administrator.`
+      );
+      
+      // Reload data untuk memastikan state konsisten dengan database
+      console.log('🔄 [handleDeleteQRCode] Reload data setelah error...');
+      await loadData();
     }
   };
 

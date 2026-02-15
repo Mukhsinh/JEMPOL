@@ -8,7 +8,7 @@ class FallbackService {
   // Fallback untuk mendapatkan tickets tanpa autentikasi
   async getPublicTickets(params: any = {}) {
     try {
-      const response = await api.get('/complaints/public/tickets', { params });
+      const response = await api.get('/public/tickets', { params });
       return response.data;
     } catch (error) {
       console.error('Fallback getPublicTickets error:', error);
@@ -67,16 +67,16 @@ class FallbackService {
     }
   }
 
-  // Test endpoint complaints
+  // Test endpoint tickets
   async testComplaints() {
     try {
-      const response = await api.get('/complaints/test');
+      const response = await api.get('/public/health');
       return response.data;
     } catch (error) {
-      console.error('Complaints test failed:', error);
+      console.error('Health check failed:', error);
       return {
         success: false,
-        error: 'Tidak dapat mengakses endpoint complaints'
+        error: 'Tidak dapat mengakses endpoint health check'
       };
     }
   }

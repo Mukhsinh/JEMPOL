@@ -17,13 +17,17 @@
     "test": "npm run test --workspace=kiss",
     "verify-deployment": "node verify-deployment.js",
     "check-env": "node check-env.js",
-    "test-build": "node test-build.js"
+    "test-build": "node test-build.js",
+    "verify-vercel": "node verify-vercel-ready.js",
+    "test-build-vercel": "node test-build-vercel.js",
+    "predeploy": "npm run verify-vercel"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
-    "@vercel/node": "^3.0.12"
+    "@vercel/node": "^3.0.12",
+    "dotenv": "^17.3.1"
   }
 }

@@ -92,42 +92,21 @@ export const qrCodeService = {
 
   // Create QR code (admin only)
   async createQRCode(data: CreateQRCodeData): Promise<any> {
-    // Di Vercel production, gunakan Supabase langsung
-    if (isVercelProduction()) {
-      try {
-        console.log('🔄 Creating QR code via Supabase...');
-        const result = await supabaseService.createQRCode(data);
-        if (!result.success) {
-          throw new Error(result.error || 'Gagal membuat QR code');
-        }
-        console.log('✅ QR code created successfully via Supabase');
-        return result.data;
-      } catch (error: any) {
-        console.error('❌ Supabase create failed:', error.message);
-        throw error;
-      }
-    }
-
+    console.log('🔄 [qrCodeService] Creating QR code...', data);
+    
+    // GUNAKAN SUPABASE SERVICE dengan database function yang bypass RLS
     try {
-      console.log('🔄 Creating QR code...');
-      const response = await api.post('/qr-codes', data);
-      console.log('✅ QR code created successfully');
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ Failed to create QR code:', error.message);
-      // Fallback ke Supabase
-      try {
-        console.log('🔄 Trying Supabase fallback...');
-        const result = await supabaseService.createQRCode(data);
-        if (!result.success) {
-          throw new Error(result.error || 'Gagal membuat QR code');
-        }
-        console.log('✅ QR code created via Supabase fallback');
-        return result.data;
-      } catch (supaError: any) {
-        console.error('❌ Supabase fallback also failed:', supaError.message);
-        throw error;
+      console.log('🔄 [qrCodeService] Using Supabase service with database function');
+      const result = await supabaseService.createQRCode(data);
+      if (!result.success) {
+        console.error('❌ [qrCodeService] Supabase create failed:', result.error);
+        throw new Error(result.error || 'Gagal membuat QR code');
       }
+      console.log('✅ [qrCodeService] QR code created successfully:', result.data);
+      return result.data;
+    } catch (error: any) {
+      console.error('❌ [qrCodeService] Create error:', error.message);
+      throw error;
     }
   },
 
@@ -140,79 +119,32 @@ export const qrCodeService = {
     search?: string;
     include_analytics?: boolean;
   }): Promise<{ qr_codes: QRCode[]; pagination: any }> {
-    // Timeout promise untuk mencegah hanging - dikurangi jadi 3 detik untuk lebih responsif
-    const timeoutPromise = new Promise<never>((_, reject) => 
-      setTimeout(() => reject(new Error('Request timeout after 3 seconds')), 3000)
-    );
-
-    // Di Vercel production, gunakan Supabase langsung
-    if (isVercelProduction()) {
-      try {
-        const result = await Promise.race([
-          supabaseService.getQRCodes(),
-          timeoutPromise
-        ]);
-        return {
-          qr_codes: result.data || [],
-          pagination: {
-            page: params?.page || 1,
-            limit: params?.limit || 10,
-            total: result.data?.length || 0,
-            pages: Math.ceil((result.data?.length || 0) / (params?.limit || 10))
-          }
-        };
-      } catch (error: any) {
-        console.error('❌ Supabase direct failed:', error.message);
-        return {
-          qr_codes: [],
-          pagination: { page: 1, limit: 10, total: 0, pages: 0 }
-        };
-      }
-    }
-    
+    // GUNAKAN SUPABASE SERVICE untuk operasi GET
     try {
-      console.log('🔄 Fetching QR codes with timeout...');
-      const response = await Promise.race([
-        api.get('/qr-codes', { params, timeout: 3000 }),
-        timeoutPromise
-      ]);
-      console.log('✅ QR codes fetched successfully');
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ Failed to fetch QR codes:', error.message);
+      console.log('🔄 Fetching QR codes from Supabase...');
+      const result = await supabaseService.getQRCodes();
       
-      // Jika timeout atau network error, langsung return empty tanpa fallback
-      if (error.message.includes('timeout') || error.code === 'ECONNABORTED') {
-        console.warn('⚠️ Request timeout, returning empty data');
+      if (!result.success) {
+        console.error('❌ Failed to fetch QR codes:', result.error);
         return {
           qr_codes: [],
           pagination: { page: 1, limit: 10, total: 0, pages: 0 }
         };
       }
       
-      // Fallback ke Supabase hanya untuk error lain - dengan timeout lebih pendek
-      try {
-        console.log('🔄 Trying Supabase fallback...');
-        const quickTimeoutPromise = new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Fallback timeout')), 2000)
-        );
-        const result = await Promise.race([
-          supabaseService.getQRCodes(),
-          quickTimeoutPromise
-        ]);
-        return {
-          qr_codes: result.data || [],
-          pagination: {
-            page: params?.page || 1,
-            limit: params?.limit || 10,
-            total: result.data?.length || 0,
-            pages: Math.ceil((result.data?.length || 0) / (params?.limit || 10))
-          }
-        };
-      } catch (supaError: any) {
-        console.error('❌ Supabase fallback also failed:', supaError.message);
-      }
+      console.log(`✅ QR codes fetched successfully: ${result.data?.length || 0} items`);
       
+      return {
+        qr_codes: result.data || [],
+        pagination: {
+          page: params?.page || 1,
+          limit: params?.limit || 10,
+          total: result.data?.length || 0,
+          pages: Math.ceil((result.data?.length || 0) / (params?.limit || 10))
+        }
+      };
+    } catch (error: any) {
+      console.error('❌ Error fetching QR codes:', error.message);
       return {
         qr_codes: [],
         pagination: { page: 1, limit: 10, total: 0, pages: 0 }
@@ -279,42 +211,21 @@ export const qrCodeService = {
 
   // Delete QR code (admin only)
   async deleteQRCode(id: string): Promise<any> {
-    // Di Vercel production, gunakan Supabase langsung
-    if (isVercelProduction()) {
-      try {
-        console.log(`🔄 Deleting QR code ${id} via Supabase...`);
-        const result = await supabaseService.deleteQRCode(id);
-        if (!result.success) {
-          throw new Error(result.error || 'Gagal menghapus QR code');
-        }
-        console.log('✅ QR code deleted successfully via Supabase');
-        return result;
-      } catch (error: any) {
-        console.error('❌ Supabase delete failed:', error.message);
-        throw error;
-      }
-    }
-
+    console.log(`🔄 [qrCodeService] Deleting QR code ${id}...`);
+    
+    // GUNAKAN SUPABASE SERVICE dengan database function yang bypass RLS
     try {
-      console.log(`🔄 Deleting QR code ${id}...`);
-      const response = await api.delete(`/qr-codes/${id}`);
-      console.log('✅ QR code deleted successfully');
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ Failed to delete QR code:', error.message);
-      // Fallback ke Supabase
-      try {
-        console.log('🔄 Trying Supabase fallback...');
-        const result = await supabaseService.deleteQRCode(id);
-        if (!result.success) {
-          throw new Error(result.error || 'Gagal menghapus QR code');
-        }
-        console.log('✅ QR code deleted via Supabase fallback');
-        return result;
-      } catch (supaError: any) {
-        console.error('❌ Supabase fallback also failed:', supaError.message);
-        throw error;
+      console.log('🔄 [qrCodeService] Using Supabase service with database function');
+      const result = await supabaseService.deleteQRCode(id);
+      if (!result.success) {
+        console.error('❌ [qrCodeService] Supabase delete failed:', result.error);
+        throw new Error(result.error || 'Gagal menghapus QR code');
       }
+      console.log('✅ [qrCodeService] QR code deleted successfully');
+      return result;
+    } catch (error: any) {
+      console.error('❌ [qrCodeService] Delete error:', error.message);
+      throw error;
     }
   },
 

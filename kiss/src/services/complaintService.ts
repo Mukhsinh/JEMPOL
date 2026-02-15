@@ -152,7 +152,7 @@ class ComplaintService {
       
       // Coba endpoint utama dengan timeout pendek
       try {
-        const response = await api.get('/complaints', { 
+        const response = await api.get('/public/tickets', { 
           params: filters,
           timeout: 5000 // 5 detik timeout untuk cek backend
         });
@@ -189,7 +189,8 @@ class ComplaintService {
   // Get single ticket by ID
   async getTicket(id: string) {
     try {
-      const response = await api.get(`/complaints/tickets/${id}`);
+      // Gunakan endpoint public yang benar
+      const response = await api.get(`/public/tickets/${id}`);
       return response.data;
     } catch (error: any) {
       console.error('Error in getTicket:', error);
@@ -226,8 +227,8 @@ class ComplaintService {
         return response.data;
       }
       
-      // Jika ada token, gunakan endpoint authenticated
-      const response = await api.post('/complaints/tickets', data);
+      // Jika ada token, gunakan endpoint authenticated (gunakan endpoint public)
+      const response = await api.post('/public/external-tickets', data);
       return response.data;
     } catch (error: any) {
       console.error('Error in createTicket:', error);
@@ -319,8 +320,19 @@ class ComplaintService {
 
   // Update ticket
   async updateTicket(id: string, data: Partial<Ticket>) {
-    const response = await api.put(`/complaints/tickets/${id}`, data);
-    return response.data;
+    try {
+      // Gunakan Supabase langsung untuk update
+      console.log('📝 Updating ticket via Supabase:', id);
+      const result = await supabaseService.updateTicket(id, data);
+      return result;
+    } catch (error: any) {
+      console.error('Error in updateTicket:', error);
+      return {
+        success: false,
+        error: error.message || 'Gagal mengupdate tiket',
+        data: null
+      };
+    }
   }
 
   // Update complaint (alias untuk updateTicket)
@@ -336,8 +348,8 @@ class ComplaintService {
   // Get complaints by unit
   async getComplaintsByUnit(unitId: string) {
     try {
-      const response = await api.get(`/complaints/unit/${unitId}`);
-      return response.data;
+      // Gunakan getTickets dengan filter unit_id
+      return await this.getTickets({ unit_id: unitId });
     } catch (error: any) {
       console.error('Error in getComplaintsByUnit:', error);
       return {
@@ -354,8 +366,19 @@ class ComplaintService {
     is_internal?: boolean;
     response_type?: string;
   }) {
-    const response = await api.post(`/complaints/tickets/${ticketId}/responses`, data);
-    return response.data;
+    try {
+      // Gunakan Supabase langsung untuk add response
+      console.log('💬 Adding response via Supabase:', ticketId);
+      const result = await supabaseService.addTicketResponse(ticketId, data);
+      return result;
+    } catch (error: any) {
+      console.error('Error in addResponse:', error);
+      return {
+        success: false,
+        error: error.message || 'Gagal menambahkan respon',
+        data: null
+      };
+    }
   }
 
   // Get units

@@ -48,9 +48,11 @@ backend/
 !index.html
 !kiss/index.html
 test-*.js
+!test-build-vercel.js
 fix-*.js
 diagnose-*.js
 verify-*.js
+!verify-vercel-ready.js
 ensure-*.js
 create-*.js
 reset-*.js
@@ -62,10 +64,12 @@ optimize-*.js
 identify-*.js
 tambah-*.js
 
-# Documentation files (kecuali README.md)
+# Documentation files (kecuali README.md dan deployment docs)
 *.md
 !README.md
 !.kiro/**/*.md
+!VERCEL_*.md
+!DEPLOY_*.md
 
 # Temporary files
 *.tmp

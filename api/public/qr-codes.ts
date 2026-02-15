@@ -1,17 +1,24 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
-if (!supabaseUrl || !supabaseKey) {
+if (!supabaseUrl || !supabaseServiceKey) {
   console.error('❌ Missing Supabase credentials');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// GUNAKAN SERVICE ROLE KEY untuk bypass RLS
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 /**
- * GET /api/qr-codes - Get all QR codes with pagination and filters
+ * GET /api/public/qr-codes - Get all QR codes with pagination and filters
+ * POST /api/public/qr-codes - Create new QR code
  * Query params:
  * - page: number (default: 1)
  * - limit: number (default: 10)
@@ -156,11 +163,15 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // Generate unique code and token
-    const code = `QR${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-    const token = `${Math.random().toString(36).substring(2)}${Date.now()}`;
+    // Generate unique code and token dengan format yang lebih baik
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 7).toUpperCase();
+    const code = `QR${timestamp}${randomStr}`;
+    const token = `${timestamp.toString(36)}-${Math.random().toString(36).substring(2, 15)}`;
 
-    // Insert QR code
+    console.log('🔄 Creating QR code with code:', code);
+
+    // Insert QR code - SERVICE ROLE KEY akan bypass RLS
     const { data, error } = await supabase
       .from('qr_codes')
       .insert({
@@ -193,6 +204,8 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
         details: error.message 
       });
     }
+
+    console.log('✅ QR code created successfully:', data);
 
     return res.status(201).json(data);
 

@@ -19,8 +19,8 @@ export default function TrackTicket() {
 
   const handleSearchWithTicket = async (ticket: string) => {
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3004';
-      const url = `${apiUrl}/api/public/track-ticket?ticket=${encodeURIComponent(ticket)}`;
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const url = `${apiUrl}/public/track-ticket?ticket=${encodeURIComponent(ticket)}`;
       
       console.log('🔍 Fetching ticket from:', url);
       

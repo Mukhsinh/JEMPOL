@@ -1,0 +1,99 @@
+==============================================
+COPY ENVIRONMENT VARIABLES INI KE VERCEL
+==============================================
+
+Buka Vercel Dashboard → Settings → Environment Variables
+Tambahkan satu per satu dengan cara:
+1. Klik "Add New"
+2. Copy Key dan Value di bawah
+3. Pilih: Production, Preview, Development
+4. Klik "Save"
+
+==============================================
+FRONTEND VARIABLES (dengan prefix VITE_)
+==============================================
+
+1. VITE_SUPABASE_URL
+---
+Key: VITE_SUPABASE_URL
+Value: https://jxxzbdivafzzwqhagwrf.supabase.co
+Environment: Production, Preview, Development
+
+2. VITE_SUPABASE_ANON_KEY
+---
+Key: VITE_SUPABASE_ANON_KEY
+Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MTkwNTEsImV4cCI6MjA1MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg
+Environment: Production, Preview, Development
+
+3. VITE_API_URL
+---
+Key: VITE_API_URL
+Value: /api
+Environment: Production, Preview, Development
+
+==============================================
+BACKEND VARIABLES (TANPA prefix VITE_)
+==============================================
+
+4. SUPABASE_URL
+---
+Key: SUPABASE_URL
+Value: https://jxxzbdivafzzwqhagwrf.supabase.co
+Environment: Production, Preview, Development
+
+5. SUPABASE_ANON_KEY
+---
+Key: SUPABASE_ANON_KEY
+Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHpiZGl2YWZ6endxaGFnd3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MTkwNTEsImV4cCI6MjA1MDQ5NTA1MX0.ICOtGuxrD19GtawdR9JAsnFn9XsHxWkr1aHCEkgHqXg
+Environment: Production, Preview, Development
+
+6. SUPABASE_SERVICE_ROLE_KEY ⚠️ PENTING!
+---
+Key: SUPABASE_SERVICE_ROLE_KEY
+Value: [GANTI DENGAN SERVICE ROLE KEY DARI SUPABASE DASHBOARD]
+Environment: Production, Preview, Development
+
+⚠️ CARA AMBIL SERVICE ROLE KEY:
+1. Buka: https://supabase.com/dashboard
+2. Pilih project: jxxzbdivafzzwqhagwrf
+3. Settings → API
+4. Copy "service_role" key (BUKAN anon key!)
+5. Paste di Value
+
+7. NODE_ENV
+---
+Key: NODE_ENV
+Value: production
+Environment: Production (HANYA Production)
+
+==============================================
+CHECKLIST
+==============================================
+
+Setelah menambahkan semua variabel:
+[ ] Semua 7 variabel sudah ditambahkan
+[ ] SUPABASE_SERVICE_ROLE_KEY sudah diganti dengan key yang benar
+[ ] Semua variabel (kecuali NODE_ENV) dipilih untuk Production, Preview, Development
+[ ] NODE_ENV hanya dipilih untuk Production
+[ ] Sudah klik "Save" untuk setiap variabel
+
+==============================================
+LANGKAH SELANJUTNYA
+==============================================
+
+Setelah semua variabel ditambahkan:
+
+1. Redeploy (jika sudah pernah deploy):
+   - Pergi ke tab Deployments
+   - Klik titik tiga (⋮) di deployment terakhir
+   - Pilih "Redeploy"
+
+2. Deploy pertama kali:
+   - Jalankan: vercel --prod
+   - Atau push ke Git untuk auto-deploy
+
+3. Verifikasi:
+   - Test API: https://your-app.vercel.app/api/public/health
+   - Test Frontend: https://your-app.vercel.app
+
+==============================================

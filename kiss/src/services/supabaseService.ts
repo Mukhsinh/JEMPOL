@@ -722,9 +722,52 @@ class SupabaseService {
 
       if (error) throw error;
 
+      // Hitung analytics untuk setiap QR code dari data tiket
+      const qrCodesWithAnalytics = await Promise.all(
+        (data || []).map(async (qr) => {
+          try {
+            // Hitung total scan dari usage_count
+            const scans_30d = qr.usage_count || 0;
+
+            // Hitung tiket internal
+            const { count: internalCount } = await supabase
+              .from('tickets')
+              .select('*', { count: 'exact', head: true })
+              .eq('qr_code_id', qr.id);
+
+            // Hitung tiket eksternal
+            const { count: externalCount } = await supabase
+              .from('external_tickets')
+              .select('*', { count: 'exact', head: true })
+              .eq('qr_code_id', qr.id);
+
+            const tickets_30d = (internalCount || 0) + (externalCount || 0);
+
+            return {
+              ...qr,
+              analytics: {
+                scans_30d,
+                tickets_30d,
+                trend: []
+              }
+            };
+          } catch (err) {
+            console.warn(`Failed to get analytics for QR ${qr.id}:`, err);
+            return {
+              ...qr,
+              analytics: {
+                scans_30d: qr.usage_count || 0,
+                tickets_30d: 0,
+                trend: []
+              }
+            };
+          }
+        })
+      );
+
       return {
         success: true,
-        data: data || [],
+        data: qrCodesWithAnalytics,
         message: 'QR codes berhasil diambil'
       };
     } catch (error: any) {
@@ -831,32 +874,49 @@ class SupabaseService {
     show_options?: string[];
   }) {
     try {
-      // Generate unique code and token
-      const code = `QR-${Date.now().toString(36).toUpperCase()}`;
-      const token = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 15)}`;
+      console.log('🔄 Creating QR code using database function...');
 
+      // Convert show_options array to JSONB
+      const showOptionsJsonb = JSON.stringify(qrData.show_options || ['internal_ticket', 'external_ticket', 'survey']);
+
+      // Gunakan database function yang bypass RLS
       const { data, error } = await supabase
-        .from('qr_codes')
-        .insert({
-          ...qrData,
-          code,
-          token,
-          is_active: true,
-          usage_count: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select(`
-          *,
-          units:unit_id (id, name, code)
-        `)
-        .single();
+        .rpc('create_qr_code', {
+          p_unit_id: qrData.unit_id,
+          p_name: qrData.name,
+          p_description: qrData.description || null,
+          p_redirect_type: qrData.redirect_type || 'selection',
+          p_auto_fill_unit: qrData.auto_fill_unit !== false,
+          p_show_options: showOptionsJsonb
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database function error:', error);
+        throw error;
+      }
+
+      // Function returns array, ambil item pertama
+      const qrCode = Array.isArray(data) ? data[0] : data;
+
+      if (!qrCode) {
+        throw new Error('QR code created but no data returned');
+      }
+
+      console.log('✅ QR code created successfully:', qrCode);
+
+      // Fetch unit info untuk response lengkap
+      const { data: unitData } = await supabase
+        .from('units')
+        .select('id, name, code, description')
+        .eq('id', qrData.unit_id)
+        .single();
 
       return {
         success: true,
-        data,
+        data: {
+          ...qrCode,
+          units: unitData
+        },
         message: 'QR code berhasil dibuat'
       };
     } catch (error: any) {
@@ -910,16 +970,31 @@ class SupabaseService {
 
   async deleteQRCode(id: string) {
     try {
-      const { error } = await supabase
-        .from('qr_codes')
-        .delete()
-        .eq('id', id);
+      console.log(`🔄 Deleting QR code ${id} using database function...`);
+      
+      // Gunakan database function yang bypass RLS
+      const { data, error } = await supabase
+        .rpc('delete_qr_code', {
+          p_id: id
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Database function error:', error);
+        throw error;
+      }
+
+      // Parse JSON response dari function
+      const result = typeof data === 'string' ? JSON.parse(data) : data;
+
+      if (!result.success) {
+        throw new Error(result.error || 'Gagal menghapus QR code');
+      }
+
+      console.log(`✅ ${result.message}`);
 
       return {
         success: true,
-        message: 'QR code berhasil dihapus'
+        message: result.message
       };
     } catch (error: any) {
       console.error('SupabaseService.deleteQRCode error:', error);

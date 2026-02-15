@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing Supabase credentials');
@@ -153,6 +153,8 @@ async function handlePatch(req: VercelRequest, res: VercelResponse, id: string) 
  */
 async function handleDelete(req: VercelRequest, res: VercelResponse, id: string) {
   try {
+    console.log(`🔄 Deleting QR code ${id}...`);
+    
     // Check if QR code exists
     const { data: existingQR, error: checkError } = await supabase
       .from('qr_codes')
@@ -184,6 +186,8 @@ async function handleDelete(req: VercelRequest, res: VercelResponse, id: string)
         details: deleteError.message 
       });
     }
+
+    console.log(`✅ QR code "${existingQR.name}" deleted successfully`);
 
     return res.status(200).json({ 
       success: true,
