@@ -1,21 +1,15 @@
 # Node modules
 node_modules
-**/node_modules
 
 # Git
 .git
-.gitignore
 
 # Environment files (local only)
 .env.local
 .env.*.local
-**/.env.local
 
 # Logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
 # OS files
 .DS_Store
@@ -26,18 +20,9 @@ Thumbs.db
 .idea
 .kiro
 
-# Test files
-**/*.test.ts
-**/*.test.tsx
-**/*.spec.ts
-**/*.spec.tsx
-**/test
-**/tests
+# Test files di kiss
 kiss/src/test
 kiss/tests
 
 # Documentation
-**/docs
 kiss/docs
-
-# Build artifacts (jangan ignore dist karena dibutuhkan untuk deployment)
