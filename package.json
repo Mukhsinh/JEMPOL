@@ -10,7 +10,7 @@
     "dev": "npm run dev --workspace=kiss",
     "dev:api": "vercel dev --listen 3004",
     "dev:full": "concurrently \"npm run dev:api\" \"npm run dev --workspace=kiss\"",
-    "build": "npm run build --workspace=kiss",
+    "build": "node build-wrapper.js",
     "build:skip-check": "npm run build:skip-check --workspace=kiss",
     "build:deploy": "npm run build:deploy --workspace=kiss",
     "vercel-build": "node build-wrapper.js",
