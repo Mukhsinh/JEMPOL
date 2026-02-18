@@ -120,6 +120,7 @@ class ComplaintService {
   async getTickets(filters: TicketFilters = {}): Promise<APIResponse<Ticket[]>> {
     try {
       console.log('🎫 Fetching tickets with filters:', filters);
+      console.log('🔍 isVercelProduction:', isVercelProduction());
       
       // Cek cache terlebih dahulu
       const now = Date.now();
@@ -136,6 +137,7 @@ class ComplaintService {
       if (isVercelProduction()) {
         console.log('🌐 Using Supabase direct');
         const result = await supabaseService.getTickets(filters);
+        console.log('📊 Supabase result:', result);
         if (result.success) {
           ComplaintService.ticketsCache = {
             data: result.data || [],

@@ -43,13 +43,15 @@ class SupabaseService {
     limit?: number;
   } = {}) {
     try {
+      console.log('🔍 SupabaseService.getTickets called with filters:', filters);
+      
       let query = supabase
         .from('tickets')
         .select(`
           *,
-          units:unit_id (id, name, code),
-          service_categories:category_id (id, name),
-          users:assigned_to (full_name, email)
+          units!tickets_unit_id_fkey(id, name, code),
+          service_categories!tickets_category_id_fkey(id, name),
+          admins!tickets_assigned_to_fkey(full_name, email)
         `)
         .order('created_at', { ascending: false });
 
@@ -70,11 +72,18 @@ class SupabaseService {
       }
       if (filters.limit) {
         query = query.limit(filters.limit);
+      } else {
+        query = query.limit(100); // Default limit
       }
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Supabase query error:', error);
+        throw error;
+      }
+
+      console.log('✅ Tickets fetched from Supabase:', data?.length || 0);
 
       return {
         success: true,
@@ -82,7 +91,7 @@ class SupabaseService {
         message: 'Tickets berhasil diambil'
       };
     } catch (error: any) {
-      console.error('SupabaseService.getTickets error:', error);
+      console.error('❌ SupabaseService.getTickets error:', error);
       return {
         success: false,
         data: [],
@@ -93,19 +102,25 @@ class SupabaseService {
 
   async getTicketById(id: string) {
     try {
+      console.log('🔍 SupabaseService.getTicketById called for:', id);
+      
       const { data, error } = await supabase
         .from('tickets')
         .select(`
           *,
-          units:unit_id (id, name, code),
-          service_categories:category_id (id, name),
-          users:assigned_to (full_name, email),
-          creator:created_by (full_name, email)
+          units!tickets_unit_id_fkey(id, name, code),
+          service_categories!tickets_category_id_fkey(id, name),
+          admins!tickets_assigned_to_fkey(full_name, email)
         `)
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Supabase query error:', error);
+        throw error;
+      }
+
+      console.log('✅ Ticket fetched from Supabase:', data?.ticket_number);
 
       return {
         success: true,
@@ -113,7 +128,7 @@ class SupabaseService {
         message: 'Ticket berhasil diambil'
       };
     } catch (error: any) {
-      console.error('SupabaseService.getTicketById error:', error);
+      console.error('❌ SupabaseService.getTicketById error:', error);
       return {
         success: false,
         data: null,
@@ -404,8 +419,8 @@ class SupabaseService {
           status,
           priority,
           created_at,
-          units:unit_id (id, name, code),
-          service_categories:category_id (id, name)
+          units:unit_id(id, name, code),
+          service_categories:category_id(id, name)
         `)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -468,7 +483,7 @@ class SupabaseService {
         .from('users')
         .select(`
           *,
-          units:unit_id (id, name, code)
+          units:unit_id(id, name, code)
         `)
         .order('full_name');
 
@@ -716,7 +731,7 @@ class SupabaseService {
         .from('qr_codes')
         .select(`
           *,
-          units:unit_id (id, name, code)
+          units:unit_id(id, name, code)
         `)
         .order('created_at', { ascending: false });
 
@@ -786,7 +801,7 @@ class SupabaseService {
         .from('qr_codes')
         .select(`
           *,
-          units:unit_id (id, name, code)
+          units:unit_id(id, name, code)
         `)
         .eq('id', id)
         .single();
@@ -825,7 +840,7 @@ class SupabaseService {
           redirect_type,
           auto_fill_unit,
           show_options,
-          units:unit_id (id, name, code)
+          units:unit_id(id, name, code)
         `)
         .eq('code', code)
         .eq('is_active', true)
@@ -947,7 +962,7 @@ class SupabaseService {
         .eq('id', id)
         .select(`
           *,
-          units:unit_id (id, name, code)
+          units:unit_id(id, name, code)
         `)
         .single();
 

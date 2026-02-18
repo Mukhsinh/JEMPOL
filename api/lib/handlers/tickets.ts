@@ -1,12 +1,20 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
+// Initialize Supabase client - coba berbagai environment variable
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
+console.log('🔧 Supabase config check:', {
+  hasUrl: !!supabaseUrl,
+  hasKey: !!supabaseKey,
+  urlPrefix: supabaseUrl.substring(0, 30),
+  env: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+});
+
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing Supabase credentials');
+  console.error('Available env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
 }
 
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
@@ -56,14 +64,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('📥 Query params:', { status, priority, unit_id, type, limit });
 
-    // Build query - gunakan syntax yang lebih aman untuk relasi
+    // Build query - gunakan syntax yang benar untuk foreign key relations
     let query = supabase
       .from('tickets')
       .select(`
         *,
-        units!unit_id(id, name, code),
-        service_categories!category_id(id, name),
-        patient_types!patient_type_id(id, name)
+        units!tickets_unit_id_fkey(id, name, code),
+        service_categories!tickets_category_id_fkey(id, name)
       `)
       .order('created_at', { ascending: false });
 

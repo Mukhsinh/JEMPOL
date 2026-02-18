@@ -36,9 +36,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Parse URL path
-    const path = req.url?.replace(/^\/api/, '') || '';
-    console.log(`🎯 ${req.method} ${path}`);
+    // Parse URL path - handle both /api/public/... dan /public/...
+    let path = req.url?.split('?')[0] || ''; // Remove query string
+    
+    // Normalize path - remove /api prefix if exists
+    if (path.startsWith('/api')) {
+      path = path.substring(4);
+    }
+    
+    console.log(`🎯 ${req.method} ${path} (original: ${req.url})`);
 
     // Route ke handler yang sesuai berdasarkan path
     if (path.startsWith('/public/app-settings')) {

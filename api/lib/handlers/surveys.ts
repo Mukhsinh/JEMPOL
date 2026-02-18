@@ -329,33 +329,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('✅ Survey saved successfully:', survey.id);
 
-    // Update QR code usage if applicable
+    // Update QR code usage if applicable (non-blocking)
     if (qr_code_id) {
-      try {
-        const { data: currentQR } = await supabase
-          .from('qr_codes')
-          .select('usage_count')
-          .eq('id', qr_code_id)
-          .single();
-
-        await supabase
-          .from('qr_codes')
-          .update({
-            usage_count: (currentQR?.usage_count || 0) + 1,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', qr_code_id);
-
-        console.log('✅ Updated QR code usage count');
-      } catch (error) {
-        console.log('⚠️ Error updating QR code usage:', error);
-      }
+      // Jalankan update QR code secara async tanpa menunggu
+      supabase
+        .from('qr_codes')
+        .select('usage_count')
+        .eq('id', qr_code_id)
+        .single()
+        .then(({ data: currentQR }) => {
+          return supabase
+            .from('qr_codes')
+            .update({
+              usage_count: (currentQR?.usage_count || 0) + 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', qr_code_id);
+        })
+        .then(() => {
+          console.log('✅ Updated QR code usage count');
+        })
+        .catch((error) => {
+          console.log('⚠️ Error updating QR code usage (non-critical):', error);
+        });
     }
 
+    // Return response immediately tanpa menunggu QR code update
     return res.status(201).json({
       success: true,
       message: 'Survei berhasil dikirim',
-      data: survey
+      data: {
+        id: survey.id,
+        created_at: survey.created_at
+      }
     });
 
   } catch (error: any) {

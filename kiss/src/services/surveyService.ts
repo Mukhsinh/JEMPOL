@@ -202,7 +202,7 @@ export const surveyService = {
       .from('public_surveys')
       .select(`
         *,
-        units:unit_id (
+        units:unit_id(
           id,
           name
         )
@@ -276,7 +276,7 @@ export const surveyService = {
       .from('public_surveys')
       .select(`
         *,
-        units:unit_id (
+        units:unit_id(
           id,
           name
         )
