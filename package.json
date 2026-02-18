@@ -4,7 +4,7 @@
   "private": true,
   "description": "KISS - Keluhan Informasi Saran Sistem",
   "engines": {
-    "node": "24.x",
+    "node": "20.x",
     "npm": "10.x"
   },
   "packageManager": "npm@10.2.4",
