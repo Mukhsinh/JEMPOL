@@ -7,7 +7,7 @@
   "trailingSlash": false,
   "functions": {
     "api/**/*.ts": {
-      "runtime": "nodejs20.x",
+      "runtime": "@vercel/node@3.0.12",
       "maxDuration": 10
     }
   },
