@@ -1,14 +1,24 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client - gunakan variable yang benar (tanpa VITE_ prefix untuk backend)
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+// Initialize Supabase client
+// PERBAIKAN: Prioritas membaca env vars untuk Vercel deployment
+// 1. Coba VITE_ prefix dulu (karena Vercel expose VITE_ vars ke functions)
+// 2. Fallback ke non-VITE prefix
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+console.log('🔧 Environment check (internal-tickets handler):');
+console.log('   VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'EXISTS' : 'MISSING');
+console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? 'EXISTS' : 'MISSING');
+console.log('   VITE_SUPABASE_ANON_KEY:', process.env.VITE_SUPABASE_ANON_KEY ? `EXISTS (length: ${process.env.VITE_SUPABASE_ANON_KEY.length})` : 'MISSING');
+console.log('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? `EXISTS (length: ${process.env.SUPABASE_ANON_KEY.length})` : 'MISSING');
+console.log('   Final supabaseUrl:', supabaseUrl ? `SET (${supabaseUrl.substring(0, 40)}...)` : 'NOT SET');
+console.log('   Final supabaseKey:', supabaseKey ? `SET (length: ${supabaseKey.length})` : 'NOT SET');
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing Supabase credentials');
-  console.error('   SUPABASE_URL:', supabaseUrl ? 'SET' : 'NOT SET');
-  console.error('   SUPABASE_KEY:', supabaseKey ? 'SET' : 'NOT SET');
+  console.error('   All env vars with SUPABASE:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
 }
 
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
@@ -82,14 +92,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Validasi Supabase credentials
     if (!supabaseUrl || !supabaseKey || !supabase) {
       console.error('❌ Supabase credentials missing');
-      console.error('   VITE_SUPABASE_URL:', supabaseUrl ? 'SET' : 'NOT SET');
-      console.error('   VITE_SUPABASE_SERVICE_ROLE_KEY:', process.env.VITE_SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'NOT SET');
+      console.error('   supabaseUrl:', supabaseUrl ? 'SET' : 'NOT SET');
+      console.error('   supabaseKey:', supabaseKey ? 'SET' : 'NOT SET');
+      console.error('   supabase client:', supabase ? 'INITIALIZED' : 'NOT INITIALIZED');
+      console.error('   VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'SET' : 'NOT SET');
       console.error('   VITE_SUPABASE_ANON_KEY:', process.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
       
       return res.status(500).json({
         success: false,
         error: 'Konfigurasi server tidak lengkap. Hubungi administrator.',
-        details: 'Supabase credentials not configured in Vercel environment variables'
+        details: 'Supabase credentials not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel environment variables.'
       });
     }
     

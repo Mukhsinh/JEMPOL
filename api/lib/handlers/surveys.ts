@@ -2,24 +2,26 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
-// Vercel akan inject environment variables dari dashboard
-// Prioritas: SUPABASE_URL > VITE_SUPABASE_URL (untuk Vercel Functions)
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-// Gunakan ANON KEY untuk public operations (RLS policy sudah allow INSERT untuk semua)
-const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+// PERBAIKAN: Prioritas membaca env vars untuk Vercel deployment
+// 1. Coba VITE_ prefix dulu (karena Vercel expose VITE_ vars ke functions)
+// 2. Fallback ke non-VITE prefix
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
-console.log('🔧 Environment check:');
-console.log('   SUPABASE_URL:', supabaseUrl ? `SET (${supabaseUrl.substring(0, 30)}...)` : 'NOT SET');
-console.log('   SUPABASE_ANON_KEY:', supabaseKey ? `SET (length: ${supabaseKey.length})` : 'NOT SET');
-console.log('   process.env.SUPABASE_URL:', process.env.SUPABASE_URL ? 'EXISTS' : 'MISSING');
-console.log('   process.env.VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'EXISTS' : 'MISSING');
+console.log('🔧 Environment check (surveys handler):');
+console.log('   VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'EXISTS' : 'MISSING');
+console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? 'EXISTS' : 'MISSING');
+console.log('   VITE_SUPABASE_ANON_KEY:', process.env.VITE_SUPABASE_ANON_KEY ? `EXISTS (length: ${process.env.VITE_SUPABASE_ANON_KEY.length})` : 'MISSING');
+console.log('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? `EXISTS (length: ${process.env.SUPABASE_ANON_KEY.length})` : 'MISSING');
+console.log('   Final supabaseUrl:', supabaseUrl ? `SET (${supabaseUrl.substring(0, 40)}...)` : 'NOT SET');
+console.log('   Final supabaseKey:', supabaseKey ? `SET (length: ${supabaseKey.length})` : 'NOT SET');
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing Supabase credentials.');
-  console.error('   Available env vars:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
+  console.error('   All env vars with SUPABASE:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers PERTAMA KALI dengan safe method
@@ -64,12 +66,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Validasi Supabase credentials
-    if (!supabaseUrl || !supabaseKey) {
+    if (!supabaseUrl || !supabaseKey || !supabase) {
       console.error('❌ Supabase credentials missing');
+      console.error('   supabaseUrl:', supabaseUrl ? 'SET' : 'NOT SET');
+      console.error('   supabaseKey:', supabaseKey ? 'SET' : 'NOT SET');
+      console.error('   supabase client:', supabase ? 'INITIALIZED' : 'NOT INITIALIZED');
       return res.status(500).json({
         success: false,
         error: 'Konfigurasi server tidak lengkap. Hubungi administrator.',
-        details: 'Supabase credentials not configured'
+        details: 'Supabase credentials not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel environment variables.'
       });
     }
     
