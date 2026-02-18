@@ -4,6 +4,7 @@
   "buildCommand": "cd kiss && npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "kiss/dist",
   "framework": null,
+  "cleanUrls": true,
   "trailingSlash": false,
   "functions": {
     "api/**/*.ts": {
@@ -13,11 +14,7 @@
   },
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    },
-    {
-      "source": "/:path*",
+      "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
   ],
