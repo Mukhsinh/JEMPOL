@@ -45,6 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     console.log(`🎯 ${req.method} ${path} (original: ${req.url})`);
+    console.log(`📋 Query params:`, req.query);
 
     // Route ke handler yang sesuai berdasarkan path
     if (path.startsWith('/public/app-settings')) {
@@ -129,11 +130,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
   } catch (error: any) {
-    console.error('❌ Unified handler error:', error);
+    console.error('❌ Unified handler error:', {
+      message: error.message,
+      stack: error.stack?.substring(0, 500),
+      url: req.url,
+      method: req.method
+    });
+    
+    // Pastikan response selalu JSON
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    
     return res.status(500).json({
       success: false,
       error: 'Terjadi kesalahan server',
-      details: error.message
+      details: error.message,
+      debug: {
+        url: req.url,
+        method: req.method,
+        timestamp: new Date().toISOString()
+      }
     });
   }
 }

@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers
+  // Set CORS headers PERTAMA SEBELUM SEMUA LOGIC
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
@@ -10,6 +10,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   
   try {
+    console.log('🎯 track-ticket handler called:', req.method, req.url);
+    
     // Handle OPTIONS request
     if (req.method === 'OPTIONS') {
       return res.status(200).json({ success: true });
@@ -27,23 +29,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ticketNumber = req.query.ticket as string;
     
     if (!ticketNumber) {
+      console.log('❌ Ticket number missing');
       return res.status(400).json({
         success: false,
         error: 'Nomor tiket harus diisi'
       });
     }
 
-    console.log('🎯 GET /api/public/track-ticket dipanggil untuk:', ticketNumber);
+    console.log('🔍 Searching for ticket:', ticketNumber);
     
     // Initialize Supabase client
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
     
+    console.log('🔑 Checking credentials:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseKey,
+      urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 30) : 'none'
+    });
+    
     if (!supabaseUrl || !supabaseKey) {
       console.error('❌ Supabase credentials tidak tersedia');
       return res.status(500).json({
         success: false,
-        error: 'Konfigurasi server tidak lengkap'
+        error: 'Konfigurasi server tidak lengkap',
+        debug: {
+          hasUrl: !!supabaseUrl,
+          hasKey: !!supabaseKey,
+          envVars: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+        }
       });
     }
     
@@ -256,14 +270,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error: any) {
     console.error('❌ Unexpected error in track ticket:', {
       message: error.message,
-      stack: error.stack?.substring(0, 200)
+      stack: error.stack?.substring(0, 200),
+      name: error.name
     });
     
+    // Pastikan response selalu JSON
     return res.status(500).json({
       success: false,
       error: 'Terjadi kesalahan saat melacak tiket',
+      details: error.message || 'Unknown error',
       debug: {
-        errorType: error.constructor.name,
+        errorType: error.constructor?.name || 'Unknown',
+        errorName: error.name || 'Unknown',
         timestamp: new Date().toISOString()
       }
     });

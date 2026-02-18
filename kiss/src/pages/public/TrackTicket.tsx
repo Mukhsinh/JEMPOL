@@ -116,11 +116,23 @@ const TrackTicket: React.FC = () => {
     try {
       // Gunakan endpoint yang benar untuk Vercel
       const apiUrl = import.meta.env.VITE_API_URL || '/api';
-      const response = await fetch(
-        `${apiUrl}/public/track-ticket?ticket=${encodeURIComponent(ticket.trim())}`
-      );
+      const url = `${apiUrl}/public/track-ticket?ticket=${encodeURIComponent(ticket.trim())}`;
+      
+      console.log('🔍 Fetching ticket from:', url);
+      
+      const response = await fetch(url);
+      
+      // Cek apakah response adalah JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('❌ Response bukan JSON:', text.substring(0, 200));
+        throw new Error('Server mengembalikan response yang tidak valid. Silakan coba lagi.');
+      }
 
       const data = await response.json();
+      
+      console.log('📊 Response data:', { success: data.success, hasData: !!data.data });
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Tiket tidak ditemukan');
@@ -128,6 +140,7 @@ const TrackTicket: React.FC = () => {
 
       setTicketData(data.data);
     } catch (err: any) {
+      console.error('❌ Error tracking ticket:', err);
       if (!silent) {
         setError(err.message || 'Terjadi kesalahan saat mencari tiket');
       }

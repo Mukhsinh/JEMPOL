@@ -22,6 +22,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   
   try {
+    console.log('🎯 app-settings handler called:', req.method, req.url);
+    
     // Handle OPTIONS request
     if (req.method === 'OPTIONS') {
       return res.status(200).json({ success: true });
@@ -46,14 +48,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return handleAppSettings(req, res);
     
   } catch (error: any) {
-    console.error('❌ Unexpected error:', error);
+    console.error('❌ Unexpected error in app-settings:', error);
     
     return res.status(200).json({
       success: false,
       error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
       data: [],
       debug: {
-        errorType: error.constructor.name,
+        errorType: error.constructor?.name || 'Unknown',
+        errorName: error.name || 'Unknown',
         timestamp: new Date().toISOString()
       }
     });
@@ -67,12 +70,23 @@ async function handleUnits(req: VercelRequest, res: VercelResponse) {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
   
+  console.log('🔑 Checking credentials:', {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseKey,
+    urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 30) : 'none'
+  });
+  
   if (!supabaseUrl || !supabaseKey) {
     console.error('❌ Missing Supabase credentials');
     return res.status(200).json({
       success: false,
       error: 'Konfigurasi Supabase tidak lengkap',
-      data: []
+      data: [],
+      debug: {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseKey,
+        envVars: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+      }
     });
   }
   
@@ -111,12 +125,23 @@ async function handleAppSettings(req: VercelRequest, res: VercelResponse) {
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
   
+  console.log('🔑 Checking credentials:', {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseKey,
+    urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 30) : 'none'
+  });
+  
   if (!supabaseUrl || !supabaseKey) {
     console.warn('⚠️ Supabase credentials not configured, using default settings');
     return res.status(200).json({
       success: true,
       data: DEFAULT_SETTINGS,
-      warning: 'Using default settings'
+      warning: 'Using default settings',
+      debug: {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseKey,
+        envVars: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
+      }
     });
   }
   
