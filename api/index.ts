@@ -46,6 +46,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     console.log(`🎯 ${req.method} ${path} (original: ${req.url})`);
     console.log(`📋 Query params:`, req.query);
+    console.log(`🔍 Checking track-ticket route: path="${path}", startsWith="/public/track-ticket"=${path.startsWith('/public/track-ticket')}`);
 
     // Route ke handler yang sesuai berdasarkan path
     if (path.startsWith('/public/app-settings')) {
@@ -105,6 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     if (path.startsWith('/public/track-ticket')) {
+      console.log('✅ Routing to track-ticket handler');
       return trackTicketHandler(req, res);
     }
     

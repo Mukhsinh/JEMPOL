@@ -114,13 +114,19 @@ const TrackTicket: React.FC = () => {
     }
 
     try {
+      // Normalize ticket number - uppercase dan trim
+      const normalizedTicket = ticket.trim().toUpperCase();
+      
       // Gunakan endpoint yang benar untuk Vercel
       const apiUrl = import.meta.env.VITE_API_URL || '/api';
-      const url = `${apiUrl}/public/track-ticket?ticket=${encodeURIComponent(ticket.trim())}`;
+      const url = `${apiUrl}/public/track-ticket?ticket=${encodeURIComponent(normalizedTicket)}`;
       
       console.log('🔍 Fetching ticket from:', url);
+      console.log('📋 Normalized ticket number:', normalizedTicket);
       
       const response = await fetch(url);
+      
+      console.log('📡 Response status:', response.status, response.statusText);
       
       // Cek apakah response adalah JSON
       const contentType = response.headers.get('content-type');
@@ -132,13 +138,14 @@ const TrackTicket: React.FC = () => {
 
       const data = await response.json();
       
-      console.log('📊 Response data:', { success: data.success, hasData: !!data.data });
+      console.log('📊 Response data:', data);
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Tiket tidak ditemukan');
       }
 
       setTicketData(data.data);
+      console.log('✅ Ticket data loaded successfully');
     } catch (err: any) {
       console.error('❌ Error tracking ticket:', err);
       if (!silent) {
@@ -247,8 +254,8 @@ const TrackTicket: React.FC = () => {
               </div>
             ) : (
               <div className="w-10 h-10 bg-white rounded-xl shadow-md flex items-center justify-center text-blue-600">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8.57829 8.57829C5.52816 11.6284 3.451 15.5145 2.60947 19.7452C1.76794 23.9758 2.19984 28.361 3.85056 32.3462C5.50128 36.3314 8.29667 39.7376 11.8832 42.134C15.4698 44.5305 19.6865 45.8096 24 45.8096C28.3135 45.8096 32.5302 44.5305 36.1168 42.134C39.7033 39.7375 42.4987 36.3314 44.1494 32.3462C45.8002 28.361 46.2321 23.9758 45.3905 19.7452C44.549 15.5145 42.4718 11.6284 39.4217 8.57829L24 24L8.57829 8.57829Z" fill="currentColor"></path>
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 2.18l8 3.6v8.72c0 4.54-3.08 8.79-8 9.96-4.92-1.17-8-5.42-8-9.96V7.78l8-3.6zM11 8v6h2V8h-2zm0 8v2h2v-2h-2z"/>
                 </svg>
               </div>
             )}
@@ -882,11 +889,17 @@ const TrackTicket: React.FC = () => {
           {/* Divider */}
           <div className="h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent"></div>
 
-          {/* Footer Text */}
+          {/* Footer Text - Gunakan app_footer dari pengaturan */}
           <div className="text-center">
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
-              {appSettings.app_footer || `© ${new Date().getFullYear()} ${appSettings.institution_name}. Hak Cipta Dilindungi.`}
-            </p>
+            {appSettings.app_footer ? (
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed whitespace-pre-line">
+                {appSettings.app_footer}
+              </p>
+            ) : (
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                © {new Date().getFullYear()} {appSettings.institution_name}. Hak Cipta Dilindungi.
+              </p>
+            )}
           </div>
         </div>
       </footer>

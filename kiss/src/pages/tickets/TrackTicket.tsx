@@ -72,15 +72,18 @@ export default function TrackTicket() {
       }
 
       const data = await response.json();
-      console.log('✅ Response data:', data);
+      console.log('📊 Response data:', data);
 
       if (!response.ok) {
+        console.log('❌ Response not OK:', response.status, data);
         throw new Error(data.error || 'Gagal melacak tiket');
       }
 
       if (data.success && data.data) {
+        console.log('✅ Ticket data valid, setting state');
         setTrackingData(data.data);
       } else {
+        console.log('❌ Data structure invalid:', data);
         throw new Error('Data tiket tidak valid');
       }
     } catch (err: any) {

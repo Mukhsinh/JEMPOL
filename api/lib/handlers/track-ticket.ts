@@ -26,26 +26,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     // Get ticket number from query parameter
+    console.log('📋 Full query object:', JSON.stringify(req.query));
     const ticketNumber = req.query.ticket as string;
     
     if (!ticketNumber) {
-      console.log('❌ Ticket number missing');
+      console.log('❌ Ticket number missing from query');
+      console.log('❌ Available query keys:', Object.keys(req.query));
       return res.status(400).json({
         success: false,
-        error: 'Nomor tiket harus diisi'
+        error: 'Nomor tiket harus diisi',
+        debug: {
+          receivedQuery: req.query,
+          url: req.url
+        }
       });
     }
 
     console.log('🔍 Searching for ticket:', ticketNumber);
     
-    // Initialize Supabase client
+    // Initialize Supabase client - GUNAKAN ANON KEY untuk public endpoint
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
     
     console.log('🔑 Checking credentials:', {
       hasUrl: !!supabaseUrl,
       hasKey: !!supabaseKey,
-      urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 30) : 'none'
+      urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 30) : 'none',
+      keyPrefix: supabaseKey ? supabaseKey.substring(0, 20) : 'none'
     });
     
     if (!supabaseUrl || !supabaseKey) {
@@ -65,13 +72,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       auth: {
         persistSession: false,
         autoRefreshToken: false
+      },
+      global: {
+        headers: {
+          'apikey': supabaseKey
+        }
       }
     });
-    console.log('✅ Supabase client initialized');
+    console.log('✅ Supabase client initialized with anon key');
     
-    // Fetch ticket dengan nomor tiket - coba dulu tanpa .single() untuk debugging
-    console.log('🔍 Mencari tiket dengan nomor:', ticketNumber);
-    const { data: tickets, error: ticketError } = await supabase
+    // Fetch ticket dengan nomor tiket - coba beberapa variasi untuk memastikan ditemukan
+    const normalizedTicketNumber = ticketNumber.trim();
+    console.log('🔍 Mencari tiket dengan nomor (original):', normalizedTicketNumber);
+    
+    // Coba query dengan eq dulu (exact match, case sensitive)
+    let { data: tickets, error: ticketError } = await supabase
       .from('tickets')
       .select(`
         id,
@@ -85,19 +100,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         resolved_at,
         first_response_at,
         sla_deadline,
-        units:unit_id(name, code),
-        service_categories:category_id(name)
+        units!tickets_unit_id_fkey(name, code),
+        service_categories!tickets_category_id_fkey(name)
       `)
-      .eq('ticket_number', ticketNumber);
+      .eq('ticket_number', normalizedTicketNumber);
+
+    // Jika tidak ditemukan, coba dengan ilike (case insensitive)
+    if ((!tickets || tickets.length === 0) && !ticketError) {
+      console.log('🔍 Mencoba dengan case-insensitive search...');
+      const result = await supabase
+        .from('tickets')
+        .select(`
+          id,
+          ticket_number,
+          title,
+          description,
+          status,
+          priority,
+          created_at,
+          updated_at,
+          resolved_at,
+          first_response_at,
+          sla_deadline,
+          units!tickets_unit_id_fkey(name, code),
+          service_categories!tickets_category_id_fkey(name)
+        `)
+        .ilike('ticket_number', normalizedTicketNumber);
+      
+      tickets = result.data;
+      ticketError = result.error;
+    }
 
     if (ticketError) {
       console.error('❌ Error fetching ticket:', ticketError);
-      return res.status(404).json({
+      return res.status(500).json({
         success: false,
-        error: 'Tiket tidak ditemukan',
+        error: 'Terjadi kesalahan saat mencari tiket',
         debug: {
           errorMessage: ticketError.message,
-          errorCode: ticketError.code
+          errorCode: ticketError.code,
+          searchedTicket: normalizedTicketNumber
         }
       });
     }
@@ -105,13 +147,107 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log('📊 Hasil query tickets:', tickets ? tickets.length : 0, 'tiket ditemukan');
 
     if (!tickets || tickets.length === 0) {
-      console.error('❌ Tiket tidak ditemukan di database');
+      // Coba cari di external_tickets jika tidak ditemukan di tickets
+      console.log('🔍 Mencari di external_tickets...');
+      
+      // Coba exact match dulu
+      let { data: externalTickets, error: externalError } = await supabase
+        .from('external_tickets')
+        .select(`
+          id,
+          ticket_number,
+          complaint_type,
+          description,
+          status,
+          priority,
+          created_at,
+          updated_at,
+          resolved_at,
+          units:unit_id(name, code)
+        `)
+        .eq('ticket_number', normalizedTicketNumber);
+      
+      // Jika tidak ditemukan, coba case-insensitive
+      if ((!externalTickets || externalTickets.length === 0) && !externalError) {
+        console.log('🔍 Mencoba external tickets dengan case-insensitive...');
+        const result = await supabase
+          .from('external_tickets')
+          .select(`
+            id,
+            ticket_number,
+            complaint_type,
+            description,
+            status,
+            priority,
+            created_at,
+            updated_at,
+            resolved_at,
+            units:unit_id(name, code)
+          `)
+          .ilike('ticket_number', normalizedTicketNumber);
+        
+        externalTickets = result.data;
+        externalError = result.error;
+      }
+
+      if (externalError) {
+        console.error('❌ Error fetching external ticket:', externalError);
+      }
+
+      if (externalTickets && externalTickets.length > 0) {
+        const externalTicket = externalTickets[0];
+        console.log('✅ Tiket eksternal ditemukan:', externalTicket.ticket_number);
+        
+        // Map external ticket ke format ticket biasa
+        const mappedTicket = {
+          id: externalTicket.id,
+          ticket_number: externalTicket.ticket_number,
+          title: externalTicket.complaint_type || 'Tiket Eksternal',
+          description: externalTicket.description,
+          status: externalTicket.status,
+          priority: externalTicket.priority || 'medium',
+          created_at: externalTicket.created_at,
+          updated_at: externalTicket.updated_at,
+          resolved_at: externalTicket.resolved_at,
+          sla_deadline: null,
+          unit: externalTicket.units,
+          category: null
+        };
+
+        // Return dengan timeline minimal untuk external ticket
+        return res.status(200).json({
+          success: true,
+          data: {
+            ticket: mappedTicket,
+            timeline: [
+              {
+                type: 'created',
+                title: 'Tiket Dibuat',
+                description: 'Tiket pengaduan eksternal telah dibuat dan terdaftar dalam sistem',
+                timestamp: externalTicket.created_at,
+                icon: 'add_circle',
+                color: 'blue'
+              }
+            ],
+            escalationUnits: [],
+            stats: {
+              totalResponses: 0,
+              totalEscalations: 0,
+              isResolved: !!externalTicket.resolved_at,
+              isOverSLA: false
+            }
+          }
+        });
+      }
+
+      console.error('❌ Tiket tidak ditemukan di database manapun');
       return res.status(404).json({
         success: false,
         error: 'Tiket tidak ditemukan. Pastikan nomor tiket yang Anda masukkan benar.',
         debug: {
-          searchedTicketNumber: ticketNumber,
-          ticketsFound: 0
+          searchedTicketNumber: normalizedTicketNumber,
+          ticketsFound: 0,
+          externalTicketsFound: 0
         }
       });
     }
@@ -239,8 +375,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     timeline.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
     console.log('✅ Data tracking berhasil diambil');
-
-    return res.status(200).json({
+    
+    const responseData = {
       success: true,
       data: {
         ticket: {
@@ -266,7 +402,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           isOverSLA: ticket.sla_deadline && new Date(ticket.sla_deadline) < new Date() && !ticket.resolved_at
         }
       }
-    });
+    };
+    
+    console.log('📤 Sending response:', JSON.stringify(responseData).substring(0, 200));
+
+    return res.status(200).json(responseData);
   } catch (error: any) {
     console.error('❌ Unexpected error in track ticket:', {
       message: error.message,
