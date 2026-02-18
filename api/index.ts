@@ -1,23 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-// Import semua handlers dari folder lib/public
-import appSettingsHandler from './lib/public/app-settings';
-import escalationHandler from './lib/public/escalation';
-import externalTicketsHandler from './lib/public/external-tickets';
-import internalTicketsHandler from './lib/public/internal-tickets';
-import qrCodesHandler from './lib/public/qr-codes';
-import responseTemplatesHandler from './lib/public/response-templates';
-import rolesHandler from './lib/public/roles';
-import surveyStatsHandler from './lib/public/survey-stats';
-import surveysHandler from './lib/public/surveys';
-import ticketsHandler from './lib/public/tickets';
-import trackTicketHandler from './lib/public/track-ticket';
-import usersHandler from './lib/public/users';
-import userByIdHandler from './lib/public/users/[id]';
-import surveyAddressStatsHandler from './lib/public/surveys/address-stats';
-import surveyIkmByUnitHandler from './lib/public/surveys/ikm-by-unit';
-import surveyResponsesHandler from './lib/public/surveys/responses';
-import surveyStatsDetailHandler from './lib/public/surveys/stats';
+// Import semua handlers dari folder lib/handlers (bukan public untuk menghindari Vercel auto-detect)
+import appSettingsHandler from './lib/handlers/app-settings';
+import escalationHandler from './lib/handlers/escalation';
+import externalTicketsHandler from './lib/handlers/external-tickets';
+import internalTicketsHandler from './lib/handlers/internal-tickets';
+import qrCodesHandler from './lib/handlers/qr-codes';
+import responseTemplatesHandler from './lib/handlers/response-templates';
+import rolesHandler from './lib/handlers/roles';
+import surveyStatsHandler from './lib/handlers/survey-stats';
+import surveysHandler from './lib/handlers/surveys';
+import ticketsHandler from './lib/handlers/tickets';
+import trackTicketHandler from './lib/handlers/track-ticket';
+import usersHandler from './lib/handlers/users';
+import userByIdHandler from './lib/handlers/users/[id]';
+import surveyAddressStatsHandler from './lib/handlers/surveys/address-stats';
+import surveyIkmByUnitHandler from './lib/handlers/surveys/ikm-by-unit';
+import surveyResponsesHandler from './lib/handlers/surveys/responses';
+import surveyStatsDetailHandler from './lib/handlers/surveys/stats';
 
 /**
  * Unified API Handler untuk Vercel

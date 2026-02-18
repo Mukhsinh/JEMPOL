@@ -26,3 +26,6 @@ kiss/tests
 
 # Documentation
 kiss/docs
+
+# API handlers (hanya api/index.ts yang jadi serverless function)
+api/lib/handlers
