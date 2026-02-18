@@ -250,7 +250,19 @@ const TrackTicket: React.FC = () => {
           <div className="flex items-center gap-3">
             {appSettings.logo_url ? (
               <div className="w-10 h-10 bg-white rounded-xl shadow-md flex items-center justify-center p-1.5">
-                <img src={appSettings.logo_url} alt="Logo" className="w-full h-full object-contain" />
+                <img 
+                  src={appSettings.logo_url} 
+                  alt={`Logo ${appSettings.institution_name}`} 
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    // Fallback jika gambar gagal dimuat
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                      parent.innerHTML = '<svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 2.18l8 3.6v8.72c0 4.54-3.08 8.79-8 9.96-4.92-1.17-8-5.42-8-9.96V7.78l8-3.6zM11 8v6h2V8h-2zm0 8v2h2v-2h-2z"/></svg>';
+                    }
+                  }}
+                />
               </div>
             ) : (
               <div className="w-10 h-10 bg-white rounded-xl shadow-md flex items-center justify-center text-blue-600">

@@ -44,15 +44,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('🔍 Searching for ticket:', ticketNumber);
     
-    // Initialize Supabase client - GUNAKAN ANON KEY untuk public endpoint
-    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+    // Initialize Supabase client - Prioritaskan VITE_ env vars
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
     
     console.log('🔑 Checking credentials:', {
       hasUrl: !!supabaseUrl,
       hasKey: !!supabaseKey,
       urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 30) : 'none',
-      keyPrefix: supabaseKey ? supabaseKey.substring(0, 20) : 'none'
+      keyPrefix: supabaseKey ? supabaseKey.substring(0, 20) : 'none',
+      envVars: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
     });
     
     if (!supabaseUrl || !supabaseKey) {

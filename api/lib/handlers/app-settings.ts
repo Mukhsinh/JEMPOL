@@ -122,13 +122,17 @@ async function handleUnits(req: VercelRequest, res: VercelResponse) {
 async function handleAppSettings(req: VercelRequest, res: VercelResponse) {
   console.log('🎯 GET /api/public/app-settings');
   
+  // Prioritas: SUPABASE_URL > VITE_SUPABASE_URL
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+  // Prioritas: SUPABASE_ANON_KEY > VITE_SUPABASE_ANON_KEY (JANGAN gunakan SERVICE_ROLE_KEY untuk public endpoint)
+  const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
   
   console.log('🔑 Checking credentials:', {
     hasUrl: !!supabaseUrl,
     hasKey: !!supabaseKey,
-    urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 30) : 'none'
+    urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 30) : 'none',
+    keyPrefix: supabaseKey ? supabaseKey.substring(0, 20) + '...' : 'none',
+    envVarsAvailable: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
   });
   
   if (!supabaseUrl || !supabaseKey) {
@@ -136,12 +140,7 @@ async function handleAppSettings(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       success: true,
       data: DEFAULT_SETTINGS,
-      warning: 'Using default settings',
-      debug: {
-        hasUrl: !!supabaseUrl,
-        hasKey: !!supabaseKey,
-        envVars: Object.keys(process.env).filter(k => k.includes('SUPABASE'))
-      }
+      warning: 'Using default settings - credentials missing'
     });
   }
   
@@ -149,14 +148,18 @@ async function handleAppSettings(req: VercelRequest, res: VercelResponse) {
     auth: {
       persistSession: false,
       autoRefreshToken: false
+    },
+    global: {
+      headers: {
+        'apikey': supabaseKey
+      }
     }
   });
   
-  // Query dengan filter is_public untuk public endpoint
+  // Query TANPA filter is_public dulu untuk testing
   const { data: settings, error } = await supabase
     .from('app_settings')
-    .select('setting_key, setting_value')
-    .eq('is_public', true)
+    .select('setting_key, setting_value, is_public')
     .order('setting_key');
 
   if (error) {
@@ -164,15 +167,21 @@ async function handleAppSettings(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       success: true,
       data: DEFAULT_SETTINGS,
-      warning: 'Using default settings - database query failed'
+      warning: 'Using default settings - database query failed',
+      error: error.message
     });
   }
 
+  console.log(`✅ Fetched ${settings?.length || 0} settings from database`);
+
   const settingsObject: any = {};
   if (settings && settings.length > 0) {
-    settings.forEach((item: any) => {
-      settingsObject[item.setting_key] = item.setting_value;
-    });
+    // Filter hanya yang is_public = true
+    settings
+      .filter((item: any) => item.is_public === true)
+      .forEach((item: any) => {
+        settingsObject[item.setting_key] = item.setting_value;
+      });
   }
 
   const finalSettings = {
