@@ -17,6 +17,9 @@ interface SurveyStats {
   average_q6?: number;
   average_q7?: number;
   average_q8?: number;
+  average_q9?: number;
+  average_q10?: number;
+  average_q11?: number;
 }
 
 interface SurveyResponse {
@@ -57,12 +60,13 @@ interface AddressStats {
   percentage: number;
 }
 
-// Fungsi untuk menghitung IKM dari rata-rata skor
+// Fungsi untuk menghitung IKM dari rata-rata skor (11 unsur)
 const calculateIKM = (avgScore: number): number => {
-  return (avgScore / 5) * 100;
+  // IKM = rata-rata skor * 20 (untuk skala 100)
+  return avgScore * 20;
 };
 
-// Fungsi untuk menghitung NPS
+// Fungsi untuk menghitung NPS berdasarkan overall_score
 const calculateNPS = (responses: any[]): number => {
   if (responses.length === 0) return 0;
   
@@ -70,18 +74,24 @@ const calculateNPS = (responses: any[]): number => {
   let detractors = 0;
   
   responses.forEach(r => {
-    // Hitung average dari q1-q8 scores
-    const scores = [
-      r.q1_score, r.q2_score, r.q3_score, r.q4_score,
-      r.q5_score, r.q6_score, r.q7_score, r.q8_score
-    ].filter(s => s !== null && s !== undefined);
+    // Gunakan overall_score jika ada, jika tidak hitung dari rata-rata q1-q11
+    let rating = r.overall_score;
     
-    const avgRating = scores.length > 0 
-      ? scores.reduce((a, b) => a + b, 0) / scores.length 
-      : 0;
+    if (!rating) {
+      const scores = [
+        r.q1_score, r.q2_score, r.q3_score, r.q4_score,
+        r.q5_score, r.q6_score, r.q7_score, r.q8_score,
+        r.q9_score, r.q10_score, r.q11_score
+      ].filter(s => s !== null && s !== undefined);
+      
+      rating = scores.length > 0 
+        ? scores.reduce((a, b) => a + b, 0) / scores.length 
+        : 0;
+    }
     
-    if (avgRating >= 4) promoters++;
-    else if (avgRating <= 2) detractors++;
+    // NPS: rating >= 4 = promoter, rating <= 2 = detractor
+    if (rating >= 4) promoters++;
+    else if (rating <= 2) detractors++;
   });
   
   return Math.round(((promoters - detractors) / responses.length) * 100);
@@ -119,9 +129,9 @@ export const surveyService = {
     const responses = data || [];
     const totalResponses = responses.length;
     
-    // Hitung rata-rata per pertanyaan
+    // Hitung rata-rata per pertanyaan (11 unsur)
     const avgScores = {
-      q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0, q7: 0, q8: 0
+      q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0, q7: 0, q8: 0, q9: 0, q10: 0, q11: 0
     };
     
     if (totalResponses > 0) {
@@ -134,6 +144,9 @@ export const surveyService = {
         avgScores.q6 += r.q6_score || 0;
         avgScores.q7 += r.q7_score || 0;
         avgScores.q8 += r.q8_score || 0;
+        avgScores.q9 += r.q9_score || 0;
+        avgScores.q10 += r.q10_score || 0;
+        avgScores.q11 += r.q11_score || 0;
       });
       
       Object.keys(avgScores).forEach(key => {
@@ -141,8 +154,11 @@ export const surveyService = {
       });
     }
     
-    // Hitung IKM (rata-rata dari semua pertanyaan)
-    const overallAvg = Object.values(avgScores).reduce((a, b) => a + b, 0) / 8;
+    // Hitung IKM (rata-rata dari 11 unsur pelayanan)
+    const validScores = Object.values(avgScores).filter(s => s > 0);
+    const overallAvg = validScores.length > 0 
+      ? validScores.reduce((a, b) => a + b, 0) / validScores.length 
+      : 0;
     const ikmScore = calculateIKM(overallAvg);
     
     return {
@@ -161,6 +177,9 @@ export const surveyService = {
       average_q6: avgScores.q6,
       average_q7: avgScores.q7,
       average_q8: avgScores.q8,
+      average_q9: avgScores.q9,
+      average_q10: avgScores.q10,
+      average_q11: avgScores.q11,
     };
   },
 
@@ -201,10 +220,11 @@ export const surveyService = {
     if (error) throw error;
     
     return (data || []).map((r: any) => {
-      // Hitung average_rating dari q1-q8 scores
+      // Hitung average_rating dari q1-q11 scores (11 unsur pelayanan)
       const scores = [
         r.q1_score, r.q2_score, r.q3_score, r.q4_score,
-        r.q5_score, r.q6_score, r.q7_score, r.q8_score
+        r.q5_score, r.q6_score, r.q7_score, r.q8_score,
+        r.q9_score, r.q10_score, r.q11_score
       ].filter(s => s !== null && s !== undefined);
       
       const average_rating = scores.length > 0 
@@ -295,12 +315,13 @@ export const surveyService = {
       
       if (totalResponses === 0) return;
       
-      // Hitung rata-rata semua pertanyaan
+      // Hitung rata-rata semua pertanyaan (11 unsur)
       let totalScore = 0;
       responses.forEach(r => {
         const scores = [
           r.q1_score, r.q2_score, r.q3_score, r.q4_score,
-          r.q5_score, r.q6_score, r.q7_score, r.q8_score
+          r.q5_score, r.q6_score, r.q7_score, r.q8_score,
+          r.q9_score, r.q10_score, r.q11_score
         ].filter(s => s !== null);
         
         if (scores.length > 0) {

@@ -48,15 +48,7 @@ const Reports = () => {
 
     const exportToPDF = async () => {
         try {
-            const blob = await reportService.exportToPDF(filters);
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `laporan-${new Date().toISOString().split('T')[0]}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            await reportService.exportToPDF(filters);
         } catch (err) {
             console.error('Error exporting PDF:', err);
             alert('Gagal mengekspor PDF');
@@ -65,15 +57,7 @@ const Reports = () => {
 
     const exportToExcel = async () => {
         try {
-            const blob = await reportService.exportToExcel(filters);
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `laporan-${new Date().toISOString().split('T')[0]}.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
+            await reportService.exportToExcel(filters);
         } catch (err) {
             console.error('Error exporting Excel:', err);
             alert('Gagal mengekspor Excel');
@@ -287,81 +271,83 @@ const Reports = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="w-full h-96 flex items-end justify-center gap-4 md:gap-8 px-4 md:px-8 py-4 border-l-4 border-b-4 border-gray-300 rounded-bl-lg relative bg-gradient-to-br from-gray-50 to-white overflow-x-auto">
-                        {/* Grafik Pengaduan */}
-                        {(chartFilter === 'all' || chartFilter === 'complaint') && (
-                        <div className="flex-1 min-w-[120px] max-w-[200px] flex flex-col items-center gap-3 relative z-10 group">
-                            <div className="bg-white px-3 py-1.5 rounded-lg shadow-md border-2 border-red-200 group-hover:scale-110 transition-transform">
-                                <span className="text-xl md:text-2xl font-black text-red-600">{reportData.kpi.totalComplaints}</span>
+                    <div className="w-full min-h-[420px] flex flex-col justify-end px-4 md:px-8 pt-12 pb-4 border-l-4 border-b-4 border-gray-300 rounded-bl-lg relative bg-gradient-to-br from-gray-50 to-white overflow-x-auto">
+                        <div className="flex items-end justify-center gap-4 md:gap-8 h-full">
+                            {/* Grafik Pengaduan */}
+                            {(chartFilter === 'all' || chartFilter === 'complaint') && (
+                            <div className="flex-1 min-w-[120px] max-w-[200px] flex flex-col items-center justify-end h-full relative group">
+                                <div className="absolute top-0 bg-white px-2 py-1 rounded-lg shadow-md border-2 border-red-200 group-hover:scale-110 transition-transform z-20">
+                                    <span className="text-sm md:text-base font-bold text-red-600">{reportData.kpi.totalComplaints}</span>
+                                </div>
+                                <div 
+                                    className="w-full bg-gradient-to-t from-red-700 via-red-500 to-red-400 hover:from-red-800 hover:via-red-600 hover:to-red-500 rounded-t-xl transition-all cursor-pointer shadow-2xl relative group-hover:scale-105 flex flex-col items-center justify-start pt-2 mt-10"
+                                    style={{ height: `${Math.max((reportData.kpi.totalComplaints / Math.max(reportData.kpi.totalComplaints, reportData.kpi.totalSuggestions, reportData.kpi.totalRequests, 1)) * 260, 50)}px` }}
+                                    title={`${reportData.kpi.totalComplaints} pengaduan`}
+                                >
+                                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-xl"></div>
+                                    <span className="text-white text-xs font-bold whitespace-nowrap relative z-10">
+                                        {Math.round((reportData.kpi.totalComplaints / Math.max(reportData.kpi.totalComplaints + reportData.kpi.totalSuggestions + reportData.kpi.totalRequests, 1)) * 100)}%
+                                    </span>
+                                </div>
+                                <div className="text-center mt-2 w-full">
+                                    <span className="text-xs md:text-sm font-bold text-red-700 bg-red-50 px-2 py-1 rounded-full shadow-sm block mb-1 truncate">Pengaduan</span>
+                                    <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center justify-center gap-1 ${reportData.kpi.totalComplaintsChange >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                        <span className="material-symbols-outlined text-[12px]">{reportData.kpi.totalComplaintsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>{Math.abs(reportData.kpi.totalComplaintsChange)}%
+                                    </span>
+                                </div>
                             </div>
-                            <div 
-                                className="w-full bg-gradient-to-t from-red-700 via-red-500 to-red-400 hover:from-red-800 hover:via-red-600 hover:to-red-500 rounded-t-xl transition-all cursor-pointer shadow-2xl relative group-hover:scale-105 flex flex-col items-center justify-start pt-2"
-                                style={{ height: `${Math.max((reportData.kpi.totalComplaints / Math.max(reportData.kpi.totalComplaints, reportData.kpi.totalSuggestions, reportData.kpi.totalRequests, 1)) * 280, 50)}px` }}
-                                title={`${reportData.kpi.totalComplaints} pengaduan`}
-                            >
-                                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-xl"></div>
-                                <span className="text-white text-xs font-bold whitespace-nowrap relative z-10">
-                                    {Math.round((reportData.kpi.totalComplaints / Math.max(reportData.kpi.totalComplaints + reportData.kpi.totalSuggestions + reportData.kpi.totalRequests, 1)) * 100)}%
-                                </span>
-                            </div>
-                            <div className="text-center mt-2 w-full">
-                                <span className="text-xs md:text-sm font-bold text-red-700 bg-red-50 px-2 py-1 rounded-full shadow-sm block mb-1 truncate">Pengaduan</span>
-                                <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center justify-center gap-1 ${reportData.kpi.totalComplaintsChange >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                    <span className="material-symbols-outlined text-[12px]">{reportData.kpi.totalComplaintsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>{Math.abs(reportData.kpi.totalComplaintsChange)}%
-                                </span>
-                            </div>
-                        </div>
-                        )}
+                            )}
 
-                        {/* Grafik Permintaan */}
-                        {(chartFilter === 'all' || chartFilter === 'information') && (
-                        <div className="flex-1 min-w-[120px] max-w-[200px] flex flex-col items-center gap-3 relative z-10 group">
-                            <div className="bg-white px-3 py-1.5 rounded-lg shadow-md border-2 border-blue-200 group-hover:scale-110 transition-transform">
-                                <span className="text-xl md:text-2xl font-black text-blue-600">{reportData.kpi.totalRequests}</span>
+                            {/* Grafik Permintaan */}
+                            {(chartFilter === 'all' || chartFilter === 'information') && (
+                            <div className="flex-1 min-w-[120px] max-w-[200px] flex flex-col items-center justify-end h-full relative group">
+                                <div className="absolute top-0 bg-white px-2 py-1 rounded-lg shadow-md border-2 border-blue-200 group-hover:scale-110 transition-transform z-20">
+                                    <span className="text-sm md:text-base font-bold text-blue-600">{reportData.kpi.totalRequests}</span>
+                                </div>
+                                <div 
+                                    className="w-full bg-gradient-to-t from-blue-700 via-blue-500 to-blue-400 hover:from-blue-800 hover:via-blue-600 hover:to-blue-500 rounded-t-xl transition-all cursor-pointer shadow-2xl relative group-hover:scale-105 flex flex-col items-center justify-start pt-2 mt-10"
+                                    style={{ height: `${Math.max((reportData.kpi.totalRequests / Math.max(reportData.kpi.totalComplaints, reportData.kpi.totalSuggestions, reportData.kpi.totalRequests, 1)) * 260, 50)}px` }}
+                                    title={`${reportData.kpi.totalRequests} permintaan`}
+                                >
+                                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-xl"></div>
+                                    <span className="text-white text-xs font-bold whitespace-nowrap relative z-10">
+                                        {Math.round((reportData.kpi.totalRequests / Math.max(reportData.kpi.totalComplaints + reportData.kpi.totalSuggestions + reportData.kpi.totalRequests, 1)) * 100)}%
+                                    </span>
+                                </div>
+                                <div className="text-center mt-2 w-full">
+                                    <span className="text-xs md:text-sm font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-full shadow-sm block mb-1 truncate">Permintaan</span>
+                                    <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center justify-center gap-1 ${reportData.kpi.totalRequestsChange >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                        <span className="material-symbols-outlined text-[12px]">{reportData.kpi.totalRequestsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>{Math.abs(reportData.kpi.totalRequestsChange)}%
+                                    </span>
+                                </div>
                             </div>
-                            <div 
-                                className="w-full bg-gradient-to-t from-blue-700 via-blue-500 to-blue-400 hover:from-blue-800 hover:via-blue-600 hover:to-blue-500 rounded-t-xl transition-all cursor-pointer shadow-2xl relative group-hover:scale-105 flex flex-col items-center justify-start pt-2"
-                                style={{ height: `${Math.max((reportData.kpi.totalRequests / Math.max(reportData.kpi.totalComplaints, reportData.kpi.totalSuggestions, reportData.kpi.totalRequests, 1)) * 280, 50)}px` }}
-                                title={`${reportData.kpi.totalRequests} permintaan`}
-                            >
-                                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-xl"></div>
-                                <span className="text-white text-xs font-bold whitespace-nowrap relative z-10">
-                                    {Math.round((reportData.kpi.totalRequests / Math.max(reportData.kpi.totalComplaints + reportData.kpi.totalSuggestions + reportData.kpi.totalRequests, 1)) * 100)}%
-                                </span>
-                            </div>
-                            <div className="text-center mt-2 w-full">
-                                <span className="text-xs md:text-sm font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-full shadow-sm block mb-1 truncate">Permintaan</span>
-                                <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center justify-center gap-1 ${reportData.kpi.totalRequestsChange >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                    <span className="material-symbols-outlined text-[12px]">{reportData.kpi.totalRequestsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>{Math.abs(reportData.kpi.totalRequestsChange)}%
-                                </span>
-                            </div>
-                        </div>
-                        )}
+                            )}
 
-                        {/* Grafik Saran */}
-                        {(chartFilter === 'all' || chartFilter === 'suggestion') && (
-                        <div className="flex-1 min-w-[120px] max-w-[200px] flex flex-col items-center gap-3 relative z-10 group">
-                            <div className="bg-white px-3 py-1.5 rounded-lg shadow-md border-2 border-purple-200 group-hover:scale-110 transition-transform">
-                                <span className="text-xl md:text-2xl font-black text-purple-600">{reportData.kpi.totalSuggestions}</span>
+                            {/* Grafik Saran */}
+                            {(chartFilter === 'all' || chartFilter === 'suggestion') && (
+                            <div className="flex-1 min-w-[120px] max-w-[200px] flex flex-col items-center justify-end h-full relative group">
+                                <div className="absolute top-0 bg-white px-2 py-1 rounded-lg shadow-md border-2 border-purple-200 group-hover:scale-110 transition-transform z-20">
+                                    <span className="text-sm md:text-base font-bold text-purple-600">{reportData.kpi.totalSuggestions}</span>
+                                </div>
+                                <div 
+                                    className="w-full bg-gradient-to-t from-purple-700 via-purple-500 to-purple-400 hover:from-purple-800 hover:via-purple-600 hover:to-purple-500 rounded-t-xl transition-all cursor-pointer shadow-2xl relative group-hover:scale-105 flex flex-col items-center justify-start pt-2 mt-10"
+                                    style={{ height: `${Math.max((reportData.kpi.totalSuggestions / Math.max(reportData.kpi.totalComplaints, reportData.kpi.totalSuggestions, reportData.kpi.totalRequests, 1)) * 260, 50)}px` }}
+                                    title={`${reportData.kpi.totalSuggestions} saran`}
+                                >
+                                    <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-xl"></div>
+                                    <span className="text-white text-xs font-bold whitespace-nowrap relative z-10">
+                                        {Math.round((reportData.kpi.totalSuggestions / Math.max(reportData.kpi.totalComplaints + reportData.kpi.totalSuggestions + reportData.kpi.totalRequests, 1)) * 100)}%
+                                    </span>
+                                </div>
+                                <div className="text-center mt-2 w-full">
+                                    <span className="text-xs md:text-sm font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-full shadow-sm block mb-1 truncate">Saran</span>
+                                    <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center justify-center gap-1 ${reportData.kpi.totalSuggestionsChange >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                        <span className="material-symbols-outlined text-[12px]">{reportData.kpi.totalSuggestionsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>{Math.abs(reportData.kpi.totalSuggestionsChange)}%
+                                    </span>
+                                </div>
                             </div>
-                            <div 
-                                className="w-full bg-gradient-to-t from-purple-700 via-purple-500 to-purple-400 hover:from-purple-800 hover:via-purple-600 hover:to-purple-500 rounded-t-xl transition-all cursor-pointer shadow-2xl relative group-hover:scale-105 flex flex-col items-center justify-start pt-2"
-                                style={{ height: `${Math.max((reportData.kpi.totalSuggestions / Math.max(reportData.kpi.totalComplaints, reportData.kpi.totalSuggestions, reportData.kpi.totalRequests, 1)) * 280, 50)}px` }}
-                                title={`${reportData.kpi.totalSuggestions} saran`}
-                            >
-                                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-xl"></div>
-                                <span className="text-white text-xs font-bold whitespace-nowrap relative z-10">
-                                    {Math.round((reportData.kpi.totalSuggestions / Math.max(reportData.kpi.totalComplaints + reportData.kpi.totalSuggestions + reportData.kpi.totalRequests, 1)) * 100)}%
-                                </span>
-                            </div>
-                            <div className="text-center mt-2 w-full">
-                                <span className="text-xs md:text-sm font-bold text-purple-700 bg-purple-50 px-2 py-1 rounded-full shadow-sm block mb-1 truncate">Saran</span>
-                                <span className={`text-xs font-bold px-2 py-1 rounded-full flex items-center justify-center gap-1 ${reportData.kpi.totalSuggestionsChange >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                    <span className="material-symbols-outlined text-[12px]">{reportData.kpi.totalSuggestionsChange >= 0 ? 'arrow_upward' : 'arrow_downward'}</span>{Math.abs(reportData.kpi.totalSuggestionsChange)}%
-                                </span>
-                            </div>
+                            )}
                         </div>
-                        )}
                     </div>
                 </div>
             )}
@@ -886,7 +872,67 @@ const Reports = () => {
                                     <label className="text-xs font-semibold text-gray-500 uppercase">Judul Tiket</label>
                                     <p className="text-sm font-medium text-gray-900 mt-1 bg-gray-50 p-3 rounded-lg">{selectedTicket.title}</p>
                                 </div>
+                                {selectedTicket.description && (
+                                    <div className="col-span-2">
+                                        <label className="text-xs font-semibold text-gray-500 uppercase">Deskripsi</label>
+                                        <p className="text-sm text-gray-900 mt-1 bg-gray-50 p-3 rounded-lg">{selectedTicket.description}</p>
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Informasi Pelapor */}
+                            {(selectedTicket.reporterName || selectedTicket.reporterEmail || selectedTicket.reporterPhone || selectedTicket.reporterAddress) && (
+                                <div className="border-t pt-4 mt-4">
+                                    <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-blue-600">person</span>
+                                        Informasi Pelapor
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {selectedTicket.reporterName && (
+                                            <div>
+                                                <label className="text-xs font-semibold text-gray-500 uppercase">Nama</label>
+                                                <p className="text-sm text-gray-900 mt-1">{selectedTicket.reporterName}</p>
+                                            </div>
+                                        )}
+                                        {selectedTicket.reporterIdentityType && (
+                                            <div>
+                                                <label className="text-xs font-semibold text-gray-500 uppercase">Tipe Identitas</label>
+                                                <p className="text-sm text-gray-900 mt-1 capitalize">{selectedTicket.reporterIdentityType}</p>
+                                            </div>
+                                        )}
+                                        {selectedTicket.reporterEmail && (
+                                            <div>
+                                                <label className="text-xs font-semibold text-gray-500 uppercase">Email</label>
+                                                <p className="text-sm text-gray-900 mt-1">{selectedTicket.reporterEmail}</p>
+                                            </div>
+                                        )}
+                                        {selectedTicket.reporterPhone && (
+                                            <div>
+                                                <label className="text-xs font-semibold text-gray-500 uppercase">Telepon</label>
+                                                <p className="text-sm text-gray-900 mt-1">{selectedTicket.reporterPhone}</p>
+                                            </div>
+                                        )}
+                                        {selectedTicket.ageRange && (
+                                            <div>
+                                                <label className="text-xs font-semibold text-gray-500 uppercase">Rentang Usia</label>
+                                                <p className="text-sm text-gray-900 mt-1">{selectedTicket.ageRange}</p>
+                                            </div>
+                                        )}
+                                        {selectedTicket.source && (
+                                            <div>
+                                                <label className="text-xs font-semibold text-gray-500 uppercase">Sumber</label>
+                                                <p className="text-sm text-gray-900 mt-1 capitalize">{selectedTicket.source}</p>
+                                            </div>
+                                        )}
+                                        {selectedTicket.reporterAddress && (
+                                            <div className="col-span-2">
+                                                <label className="text-xs font-semibold text-gray-500 uppercase">Alamat</label>
+                                                <p className="text-sm text-gray-900 mt-1 bg-gray-50 p-3 rounded-lg">{selectedTicket.reporterAddress}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end">
                             <button 

@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import KPICard from '../components/KPICard';
 import StatusChart from '../components/StatusChart';
 import TicketTable from '../components/TicketTable';
+import { generateDashboardReportPDF } from '../utils/pdfGenerator';
 
 interface FilterState {
     dateRange: string;
@@ -171,24 +172,33 @@ const Dashboard = () => {
     };
 
     const handleExportReport = () => {
-        const csvData = [
-            ['Metric', 'Value'],
-            ['Total Tickets', totalTickets.toString()],
-            ['Open Tickets', getStatusCount('open').toString()],
-            ['In Progress', getStatusCount('in_progress').toString()],
-            ['Escalated', getStatusCount('escalated').toString()],
-            ['Resolved', getStatusCount('resolved').toString()],
-            ['Closed', getStatusCount('closed').toString()]
-        ];
-        
-        const csvContent = csvData.map(row => row.join(',')).join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `dashboard-report-${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        window.URL.revokeObjectURL(url);
+        if (!metrics) {
+            console.warn('Tidak ada data untuk diekspor');
+            return;
+        }
+
+        // Siapkan data untuk PDF sesuai interface DashboardReportData
+        const pdfData = {
+            totalTickets,
+            statusCounts: {
+                open: getStatusCount('open'),
+                in_progress: getStatusCount('in_progress'),
+                escalated: getStatusCount('escalated'),
+                resolved: getStatusCount('resolved'),
+                closed: getStatusCount('closed')
+            },
+            recentTickets: metrics.recentTickets || [],
+            filters: {
+                dateRange: getDateRangeLabel(filters.dateRange),
+                unit: getUnitLabel(filters.unit_id),
+                status: getStatusLabel(filters.status),
+                category: getCategoryLabel(filters.category_id)
+            },
+            generatedAt: new Date().toISOString()
+        };
+
+        // Generate PDF
+        generateDashboardReportPDF(pdfData);
     };
 
     const handleFilterChange = (key: keyof FilterState, value: string) => {

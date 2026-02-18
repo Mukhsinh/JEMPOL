@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import userService, { User, Unit, CreateUserData, UpdateUserData } from '../../services/userService';
 
 interface UserWithUnit extends User {
@@ -16,6 +17,7 @@ interface UserFormData {
 }
 
 const UserManagement = () => {
+    const { user: currentUser, isSuperAdmin } = useAuth();
     const [users, setUsers] = useState<UserWithUnit[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -212,25 +214,44 @@ const UserManagement = () => {
 
     const handleAddUser = async () => {
         try {
+            // Validasi input
+            if (!formData.full_name || !formData.email) {
+                alert('Nama lengkap dan email wajib diisi.');
+                return;
+            }
+
+            // Validasi format email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(formData.email)) {
+                alert('Format email tidak valid.');
+                return;
+            }
+
             const userData: CreateUserData = {
-                full_name: formData.full_name,
-                email: formData.email,
-                employee_id: formData.employee_id || undefined,
-                phone: formData.phone || undefined,
+                full_name: formData.full_name.trim(),
+                email: formData.email.trim().toLowerCase(),
+                employee_id: formData.employee_id?.trim() || undefined,
+                phone: formData.phone?.trim() || undefined,
                 unit_id: formData.unit_id || undefined,
                 role: formData.role,
-                password: formData.password,
+                password: formData.password?.trim() || undefined,
                 create_admin_account: !!formData.password
             };
 
-            await userService.createUser(userData);
+            console.log('Creating user with data:', userData);
+            const newUser = await userService.createUser(userData);
+            console.log('User created successfully:', newUser);
+            
             alert('Pengguna berhasil ditambahkan.');
             setShowAddModal(false);
             resetForm();
-            fetchData();
-        } catch (error) {
+            
+            // Refresh data dari server untuk memastikan sinkronisasi
+            await fetchData();
+        } catch (error: any) {
             console.error('Error adding user:', error);
-            alert('Gagal menambahkan pengguna: ' + (error as Error).message);
+            const errorMessage = error?.response?.data?.error || error?.message || 'Terjadi kesalahan saat menambahkan pengguna';
+            alert('Gagal menambahkan pengguna: ' + errorMessage);
         }
     };
 
@@ -261,16 +282,34 @@ const UserManagement = () => {
         }
     };
 
-    const handleDeleteUser = async (userId: string) => {
-        if (!confirm('Apakah Anda yakin ingin menonaktifkan pengguna ini?')) return;
+    const handleDeleteUser = async (userId: string, userName: string) => {
+        // Validasi role superadmin
+        if (!isSuperAdmin) {
+            alert('Hanya superadmin yang dapat menghapus pengguna.');
+            return;
+        }
+
+        // Cek apakah user sedang login
+        if (currentUser?.id === userId) {
+            alert('Anda tidak dapat menghapus akun Anda sendiri.');
+            return;
+        }
+
+        if (!confirm(`Apakah Anda yakin ingin menghapus pengguna "${userName}"?\n\nTindakan ini akan:\n- Menghapus data pengguna secara permanen\n- Tidak dapat dibatalkan\n\nLanjutkan?`)) return;
 
         try {
+            console.log('Deleting user:', userId);
             await userService.deleteUser(userId);
-            alert('Pengguna berhasil dinonaktifkan.');
-            fetchData();
-        } catch (error) {
+            console.log('User deleted successfully');
+            
+            alert('Pengguna berhasil dihapus.');
+            
+            // Refresh data dari server untuk memastikan sinkronisasi
+            await fetchData();
+        } catch (error: any) {
             console.error('Error deleting user:', error);
-            alert('Gagal menonaktifkan pengguna.');
+            const errorMessage = error?.response?.data?.error || error?.message || 'Terjadi kesalahan saat menghapus pengguna';
+            alert('Gagal menghapus pengguna: ' + errorMessage);
         }
     };
 
@@ -526,13 +565,15 @@ const UserManagement = () => {
                                                         >
                                                             <span className="material-symbols-outlined text-[18px]">edit</span>
                                                         </button>
-                                                        <button
-                                                            onClick={() => handleDeleteUser(user.id)}
-                                                            className="size-8 flex items-center justify-center rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-text-secondary dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                                            title="Nonaktifkan"
-                                                        >
-                                                            <span className="material-symbols-outlined text-[18px]">block</span>
-                                                        </button>
+                                                        {isSuperAdmin && (
+                                                            <button
+                                                                onClick={() => handleDeleteUser(user.id, user.full_name)}
+                                                                className="size-8 flex items-center justify-center rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-text-secondary dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                                                title="Hapus (Hanya Superadmin)"
+                                                            >
+                                                                <span className="material-symbols-outlined text-[18px]">delete</span>
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>

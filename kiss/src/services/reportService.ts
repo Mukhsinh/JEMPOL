@@ -1,4 +1,3 @@
-import api from './api';
 import { supabaseService } from './supabaseService';
 import { supabase } from '../utils/supabaseClient';
 
@@ -119,6 +118,14 @@ export interface FullReportData {
   riskAnalysis: RiskAnalysis[];
   detailedReports: DetailedReport[];
   totalReports: number;
+  statusCounts?: {
+    open: number;
+    in_progress: number;
+    escalated: number;
+    resolved: number;
+    closed: number;
+  };
+  unitCounts?: { [unitName: string]: number };
 }
 
 interface TicketRecord {
@@ -769,7 +776,23 @@ class ReportService {
 
       console.log('📋 Detailed reports:', detailedReports.length, 'Total:', total);
 
-      return { kpi, trends, periodTrends, categoryTrends, patientTypeTrends, riskAnalysis, detailedReports, totalReports: total };
+      // Hitung status counts dari semua tiket (bukan hanya yang dipaginasi)
+      const statusCounts = {
+        open: allTickets.filter(t => t.status === 'open').length,
+        in_progress: allTickets.filter(t => t.status === 'in_progress').length,
+        escalated: allTickets.filter(t => t.status === 'escalated').length,
+        resolved: allTickets.filter(t => t.status === 'resolved').length,
+        closed: allTickets.filter(t => t.status === 'closed').length
+      };
+
+      // Hitung unit counts dari semua tiket
+      const unitCounts: { [unitName: string]: number } = {};
+      allTickets.forEach(ticket => {
+        const unitName = ticket.units?.name || 'Tidak Diketahui';
+        unitCounts[unitName] = (unitCounts[unitName] || 0) + 1;
+      });
+
+      return { kpi, trends, periodTrends, categoryTrends, patientTypeTrends, riskAnalysis, detailedReports, totalReports: total, statusCounts, unitCounts };
     } catch (error) {
       console.error('❌ Error fetching report data:', error);
       return {
@@ -813,14 +836,131 @@ class ReportService {
     } catch { return []; }
   }
 
-  async exportToExcel(params?: ReportFilters): Promise<Blob> {
-    const response = await api.get('/reports/export/excel', { params, responseType: 'blob' });
-    return response.data;
+  async exportToExcel(params?: ReportFilters): Promise<void> {
+    try {
+      // Import dinamis untuk menghindari bundle size besar
+      const XLSX = await import('xlsx');
+      
+      // Ambil data lengkap
+      const data = await this.getReportData(params);
+      
+      // Buat workbook
+      const wb = XLSX.utils.book_new();
+      
+      // Sheet 1: Ringkasan
+      const summaryData = [
+        ['LAPORAN ANALITIK LAYANAN'],
+        ['Periode', params?.dateRange || 'Bulan Ini'],
+        ['Tanggal Cetak', new Date().toLocaleDateString('id-ID')],
+        [],
+        ['RINGKASAN EKSEKUTIF'],
+        ['Total Pengaduan', data.kpi.totalComplaints.toString()],
+        ['Total Saran', data.kpi.totalSuggestions.toString()],
+        ['Total Permintaan Informasi', data.kpi.totalRequests.toString()],
+        ['Total Survey', data.kpi.totalSurveys.toString()],
+        ['Tiket Terselesaikan', data.kpi.resolvedComplaints.toString()],
+        ['Rata-rata Waktu Respon (Menit)', data.kpi.averageResponseTime.toString()]
+      ];
+      const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+      XLSX.utils.book_append_sheet(wb, ws1, 'Ringkasan');
+      
+      // Sheet 2: Detail Tiket
+      if (data.detailedReports && data.detailedReports.length > 0) {
+        const detailData = [
+          ['No', 'ID Tiket', 'Tanggal', 'Unit Kerja', 'Kategori', 'Jenis Pasien', 'Status', 'Waktu Respon (Menit)', 'Judul']
+        ];
+        data.detailedReports.forEach((r, idx) => {
+          detailData.push([
+            (idx + 1).toString(),
+            r.ticketNumber,
+            r.date,
+            r.unitName,
+            r.categoryName,
+            r.patientTypeName,
+            r.status,
+            r.responseTime !== null ? r.responseTime.toString() : '-',
+            r.title
+          ]);
+        });
+        const ws2 = XLSX.utils.aoa_to_sheet(detailData);
+        XLSX.utils.book_append_sheet(wb, ws2, 'Detail Tiket');
+      }
+      
+      // Sheet 3: Kategori
+      if (data.categoryTrends && data.categoryTrends.length > 0) {
+        const categoryData = [
+          ['No', 'Kategori Layanan', 'Jumlah', 'Persentase']
+        ];
+        data.categoryTrends.forEach((cat, idx) => {
+          categoryData.push([
+            (idx + 1).toString(), 
+            cat.categoryName, 
+            cat.count.toString(), 
+            `${cat.percentage}%`
+          ]);
+        });
+        const ws3 = XLSX.utils.aoa_to_sheet(categoryData);
+        XLSX.utils.book_append_sheet(wb, ws3, 'Kategori');
+      }
+      
+      // Sheet 4: Jenis Pasien
+      if (data.patientTypeTrends && data.patientTypeTrends.length > 0) {
+        const patientData = [
+          ['No', 'Jenis Pasien', 'Jumlah', 'Persentase']
+        ];
+        data.patientTypeTrends.forEach((pt, idx) => {
+          patientData.push([
+            (idx + 1).toString(), 
+            pt.patientTypeName, 
+            pt.count.toString(), 
+            `${pt.percentage}%`
+          ]);
+        });
+        const ws4 = XLSX.utils.aoa_to_sheet(patientData);
+        XLSX.utils.book_append_sheet(wb, ws4, 'Jenis Pasien');
+      }
+      
+      // Sheet 5: Tren 7 Hari
+      if (data.trends && data.trends.length > 0) {
+        const trendData = [
+          ['Tanggal', 'Total Tiket', 'Terselesaikan', 'Persentase']
+        ];
+        data.trends.forEach(t => {
+          const percentage = t.complaints > 0 ? Math.round((t.resolved / t.complaints) * 100) : 0;
+          trendData.push([
+            t.date, 
+            t.complaints.toString(), 
+            t.resolved.toString(), 
+            `${percentage}%`
+          ]);
+        });
+        const ws5 = XLSX.utils.aoa_to_sheet(trendData);
+        XLSX.utils.book_append_sheet(wb, ws5, 'Tren 7 Hari');
+      }
+      
+      // Download file
+      const fileName = `Laporan_Layanan_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      throw error;
+    }
   }
 
-  async exportToPDF(params?: ReportFilters): Promise<Blob> {
-    const response = await api.get('/reports/export/pdf', { params, responseType: 'blob' });
-    return response.data;
+  async exportToPDF(params?: ReportFilters): Promise<void> {
+    try {
+      // Import dinamis
+      const { generateReportPDF } = await import('../utils/reportPDF');
+      
+      // Ambil data lengkap
+      const data = await this.getReportData(params);
+      
+      // Generate PDF
+      generateReportPDF(data, params || {});
+    } catch (error) {
+      console.error('Error exporting to PDF:', error);
+      throw error;
+    }
   }
 }
 

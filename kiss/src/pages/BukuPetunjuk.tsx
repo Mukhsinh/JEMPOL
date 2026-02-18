@@ -115,7 +115,7 @@ const BukuPetunjuk: React.FC = () => {
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Koleksi lengkap dokumentasi dan panduan untuk Kanal Informasi Saran dan Survei (KISS). 
-            Unduh e-book profesional dalam format PDF atau baca langsung dalam format HTML.
+            Unduh e-book profesional dalam format PDF.
           </p>
         </div>
 
@@ -160,21 +160,10 @@ const BukuPetunjuk: React.FC = () => {
                     <FileText className="w-4 h-4 mr-1" />
                     {ebook.pages} halaman
                   </div>
-                  <div className="text-sm text-gray-500">
-                    Format: PDF & HTML
-                  </div>
                 </div>
 
                 {/* Action Buttons */}
                 <div className="space-y-3">
-                  <button
-                    onClick={() => handleViewHTML(ebook)}
-                    className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>Baca Online (HTML)</span>
-                  </button>
-                  
                   <button
                     onClick={() => handleDownloadPDF(ebook)}
                     disabled={loading === ebook.id}
@@ -224,7 +213,7 @@ const BukuPetunjuk: React.FC = () => {
             <div className="text-gray-600">Total Halaman</div>
           </div>
           <div className="bg-white rounded-lg shadow p-6 text-center">
-            <div className="text-3xl font-bold text-purple-600 mb-2">2</div>
+            <div className="text-3xl font-bold text-purple-600 mb-2">1</div>
             <div className="text-gray-600">Format Tersedia</div>
           </div>
         </div>

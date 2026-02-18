@@ -9,7 +9,7 @@ interface FormData {
   email: string;
   age: string;
   gender: string;
-  q1: string; q2: string; q3: string; q4: string; q5: string; q6: string; q7: string; q8: string;
+  q1: string; q2: string; q3: string; q4: string; q5: string; q6: string; q7: string; q8: string; q9: string; q10: string; q11: string;
   overall_satisfaction: string;
   suggestions: string;
 }
@@ -69,7 +69,7 @@ const PublicSurvey: React.FC = () => {
     email: '',
     age: '',
     gender: '',
-    q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: '',
+    q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: '', q9: '', q10: '', q11: '',
     overall_satisfaction: '',
     suggestions: ''
   });
@@ -82,7 +82,10 @@ const PublicSurvey: React.FC = () => {
     { id: 'q5', code: 'U5', title: 'Produk Spesifikasi', text: 'Bagaimana kesesuaian produk pelayanan antara yang tercantum dalam standar pelayanan dengan hasil yang diberikan?' },
     { id: 'q6', code: 'U6', title: 'Kompetensi', text: 'Bagaimana kompetensi/kemampuan petugas dalam pelayanan?' },
     { id: 'q7', code: 'U7', title: 'Perilaku', text: 'Bagaimana perilaku petugas dalam pelayanan terkait kesopanan dan keramahan?' },
-    { id: 'q8', code: 'U8', title: 'Pengaduan', text: 'Bagaimana kualitas penanganan pengaduan, saran dan masukan?' }
+    { id: 'q8', code: 'U8', title: 'Penanganan Pengaduan', text: 'Bagaimana kualitas penanganan pengaduan, saran dan masukan?' },
+    { id: 'q9', code: 'U9', title: 'Sarana dan Prasarana', text: 'Bagaimana kualitas sarana dan prasarana yang tersedia?' },
+    { id: 'q10', code: 'U10', title: 'Keamanan dan Keselamatan', text: 'Bagaimana tingkat keamanan dan keselamatan dalam pelayanan?' },
+    { id: 'q11', code: 'U11', title: 'Informasi Layanan', text: 'Bagaimana kejelasan dan kemudahan akses informasi layanan?' }
   ];
 
   const ratingOptions = [
@@ -132,7 +135,7 @@ const PublicSurvey: React.FC = () => {
         regency: null,
         district: null,
         address_detail: null,
-        // Mapping skor dari q1-q8 ke u1_score-u8_score
+        // Mapping skor dari q1-q11 ke u1_score-u11_score
         u1_score: formData.q1 ? parseInt(formData.q1) : null,
         u2_score: formData.q2 ? parseInt(formData.q2) : null,
         u3_score: formData.q3 ? parseInt(formData.q3) : null,
@@ -141,9 +144,9 @@ const PublicSurvey: React.FC = () => {
         u6_score: formData.q6 ? parseInt(formData.q6) : null,
         u7_score: formData.q7 ? parseInt(formData.q7) : null,
         u8_score: formData.q8 ? parseInt(formData.q8) : null,
-        u9_score: null,
-        u10_score: null,
-        u11_score: null,
+        u9_score: formData.q9 ? parseInt(formData.q9) : null,
+        u10_score: formData.q10 ? parseInt(formData.q10) : null,
+        u11_score: formData.q11 ? parseInt(formData.q11) : null,
         overall_score: formData.overall_satisfaction ? parseInt(formData.overall_satisfaction) : null,
         comments: formData.suggestions || null,
         qr_code: qrCode || null,
@@ -214,7 +217,7 @@ const PublicSurvey: React.FC = () => {
                   email: '',
                   age: '',
                   gender: '',
-                  q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: '',
+                  q1: '', q2: '', q3: '', q4: '', q5: '', q6: '', q7: '', q8: '', q9: '', q10: '', q11: '', q9: '', q10: '', q11: '',
                   overall_satisfaction: '',
                   suggestions: ''
                 });

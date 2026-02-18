@@ -17,20 +17,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     console.log(`🎯 ${req.method} /api/public/users - Vercel Function`);
     
-    // Initialize Supabase client
+    // Initialize Supabase client dengan service role key untuk bypass RLS
     const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+    // Prioritaskan SERVICE_ROLE_KEY untuk operasi admin
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     
     if (!supabaseUrl || !supabaseKey) {
       console.error('❌ Missing Supabase credentials');
-      return res.status(200).json({
+      console.error('❌ SUPABASE_URL:', supabaseUrl ? 'SET' : 'MISSING');
+      console.error('❌ SUPABASE_SERVICE_ROLE_KEY:', supabaseKey ? 'SET' : 'MISSING');
+      return res.status(500).json({
         success: false,
-        error: 'Konfigurasi Supabase tidak lengkap',
+        error: 'Konfigurasi Supabase tidak lengkap. Pastikan SUPABASE_SERVICE_ROLE_KEY sudah diset.',
         data: []
       });
     }
     
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
     
     // GET - Fetch all users with relations
     if (req.method === 'GET') {
@@ -77,19 +85,77 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'POST') {
       const userData = req.body;
       
+      console.log('📝 POST /api/public/users - Request body:', JSON.stringify(userData, null, 2));
+      
+      // Validasi input - required fields
+      if (!userData.full_name || !userData.email) {
+        console.error('❌ Validation failed: missing full_name or email');
+        return res.status(400).json({
+          success: false,
+          error: 'Nama lengkap dan email wajib diisi'
+        });
+      }
+      
+      // Validasi format email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(userData.email)) {
+        console.error('❌ Validation failed: invalid email format');
+        return res.status(400).json({
+          success: false,
+          error: 'Format email tidak valid'
+        });
+      }
+      
+      // Validasi role jika diberikan
+      const validRoles = ['staff', 'supervisor', 'manager', 'director', 'admin'];
+      if (userData.role && !validRoles.includes(userData.role)) {
+        console.error('❌ Validation failed: invalid role');
+        return res.status(400).json({
+          success: false,
+          error: `Role tidak valid. Gunakan salah satu: ${validRoles.join(', ')}`
+        });
+      }
+
+      // Cek apakah email sudah ada - gunakan maybeSingle() untuk menghindari error
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id, email')
+        .eq('email', userData.email.toLowerCase())
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('❌ Error checking existing user:', checkError);
+        return res.status(400).json({
+          success: false,
+          error: 'Gagal memeriksa email: ' + checkError.message
+        });
+      }
+
+      if (existingUser) {
+        console.error('❌ Email already exists:', userData.email);
+        return res.status(400).json({
+          success: false,
+          error: 'Email sudah terdaftar'
+        });
+      }
+      
+      const insertData = {
+        full_name: userData.full_name.trim(),
+        email: userData.email.toLowerCase().trim(),
+        employee_id: userData.employee_id || null,
+        phone: userData.phone || null,
+        unit_id: userData.unit_id || null,
+        role: userData.role || 'staff',
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('📝 Inserting user data:', JSON.stringify(insertData, null, 2));
+      
       const { data: newUser, error } = await supabase
         .from('users')
-        .insert({
-          full_name: userData.full_name,
-          email: userData.email,
-          employee_id: userData.employee_id || null,
-          phone: userData.phone || null,
-          unit_id: userData.unit_id || null,
-          role: userData.role || 'staff',
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(insertData)
         .select(`
           *,
           units:unit_id (id, name, code)
@@ -100,17 +166,143 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error('❌ Error creating user:', error);
         return res.status(400).json({
           success: false,
-          error: 'Gagal membuat pengguna',
-          details: error.message
+          error: 'Gagal membuat pengguna: ' + error.message,
+          details: error
         });
       }
 
-      console.log('✅ User created:', newUser.id);
+      console.log('✅ User created successfully:', newUser.id, newUser.full_name);
 
       return res.status(201).json({
         success: true,
         data: newUser,
         message: 'Pengguna berhasil dibuat'
+      });
+    }
+    
+    // PUT - Update user
+    if (req.method === 'PUT') {
+      // Ambil userId dari query parameter
+      const userId = req.query.id as string;
+      
+      console.log('✏️ PUT /api/public/users - User ID:', userId);
+      console.log('✏️ Query params:', req.query);
+      
+      if (!userId || userId === 'users') {
+        console.error('❌ User ID missing or invalid');
+        return res.status(400).json({
+          success: false,
+          error: 'User ID diperlukan'
+        });
+      }
+
+      const userData = req.body;
+      
+      console.log('✏️ Update data:', JSON.stringify(userData, null, 2));
+      
+      const { data: updatedUser, error } = await supabase
+        .from('users')
+        .update({
+          full_name: userData.full_name,
+          email: userData.email,
+          employee_id: userData.employee_id || null,
+          phone: userData.phone || null,
+          unit_id: userData.unit_id || null,
+          role: userData.role,
+          is_active: userData.is_active !== undefined ? userData.is_active : true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId)
+        .select(`
+          *,
+          units:unit_id (id, name, code)
+        `)
+        .single();
+
+      if (error) {
+        console.error('❌ Error updating user:', error);
+        return res.status(400).json({
+          success: false,
+          error: 'Gagal memperbarui pengguna: ' + error.message,
+          details: error
+        });
+      }
+
+      console.log('✅ User updated:', userId);
+
+      return res.status(200).json({
+        success: true,
+        data: updatedUser,
+        message: 'Pengguna berhasil diperbarui'
+      });
+    }
+    
+    // DELETE - Delete user (hard delete)
+    if (req.method === 'DELETE') {
+      // Ambil userId dari query parameter
+      const userId = req.query.id as string;
+      
+      console.log('🗑️ DELETE /api/public/users - User ID:', userId);
+      console.log('🗑️ Query params:', req.query);
+      console.log('🗑️ Full URL:', req.url);
+      
+      if (!userId || userId === 'users') {
+        console.error('❌ User ID missing or invalid');
+        return res.status(400).json({
+          success: false,
+          error: 'User ID diperlukan'
+        });
+      }
+
+      // Cek apakah user ada
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('id, full_name, email, admin_id')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('❌ Error checking user:', checkError);
+        return res.status(400).json({
+          success: false,
+          error: 'Gagal memeriksa pengguna: ' + checkError.message
+        });
+      }
+
+      if (!existingUser) {
+        console.error('❌ User not found:', userId);
+        return res.status(404).json({
+          success: false,
+          error: 'Pengguna tidak ditemukan'
+        });
+      }
+
+      console.log('🗑️ Attempting to delete user:', existingUser.full_name, existingUser.email);
+
+      // Hard delete - hapus permanen dari database menggunakan SERVICE_ROLE_KEY
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (error) {
+        console.error('❌ Error deleting user:', error);
+        return res.status(400).json({
+          success: false,
+          error: 'Gagal menghapus pengguna: ' + error.message
+        });
+      }
+
+      console.log('✅ User deleted successfully:', userId, existingUser.full_name);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Pengguna berhasil dihapus',
+        deleted_user: {
+          id: existingUser.id,
+          name: existingUser.full_name,
+          email: existingUser.email
+        }
       });
     }
     

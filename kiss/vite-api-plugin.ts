@@ -153,32 +153,59 @@ function createMockResponse(res: ServerResponse) {
 
 /**
  * Resolve the API handler file path from the request URL
+ * Supports dynamic routes like [id].ts
  */
-function resolveApiHandlerPath(urlPath: string): string | null {
+function resolveApiHandlerPath(urlPath: string): { filePath: string | null, params: Record<string, string> } {
     const apiDir = path.resolve(__dirname, '..', 'api');
 
     // Remove /api prefix and query string
     let routePath = urlPath.replace(/^\/api\//, '').split('?')[0].replace(/\/$/, '');
+    const segments = routePath.split('/');
 
     // Try direct file match (.ts)
     const directFile = path.join(apiDir, `${routePath}.ts`);
     if (fs.existsSync(directFile)) {
-        return directFile;
+        return { filePath: directFile, params: {} };
     }
 
     // Try index file in directory
     const indexFile = path.join(apiDir, routePath, 'index.ts');
     if (fs.existsSync(indexFile)) {
-        return indexFile;
+        return { filePath: indexFile, params: {} };
     }
 
     // Try .js extension
     const jsFile = path.join(apiDir, `${routePath}.js`);
     if (fs.existsSync(jsFile)) {
-        return jsFile;
+        return { filePath: jsFile, params: {} };
     }
 
-    return null;
+    // Try dynamic routes (e.g., /users/123 -> /users/[id].ts)
+    // Check if last segment could be a dynamic parameter
+    if (segments.length >= 2) {
+        const lastSegment = segments[segments.length - 1];
+        const parentPath = segments.slice(0, -1).join('/');
+        
+        // Try [id].ts pattern
+        const dynamicFile = path.join(apiDir, parentPath, '[id].ts');
+        if (fs.existsSync(dynamicFile)) {
+            return { 
+                filePath: dynamicFile, 
+                params: { id: lastSegment } 
+            };
+        }
+
+        // Try [slug].ts pattern
+        const slugFile = path.join(apiDir, parentPath, '[slug].ts');
+        if (fs.existsSync(slugFile)) {
+            return { 
+                filePath: slugFile, 
+                params: { slug: lastSegment } 
+            };
+        }
+    }
+
+    return { filePath: null, params: {} };
 }
 
 export function viteApiPlugin(): Plugin {
@@ -205,8 +232,8 @@ export function viteApiPlugin(): Plugin {
                 console.log(`\n🎯 [Local API] ${req.method} ${url}`);
 
                 try {
-                    // Find the handler file
-                    const handlerPath = resolveApiHandlerPath(url);
+                    // Find the handler file and extract dynamic params
+                    const { filePath: handlerPath, params: dynamicParams } = resolveApiHandlerPath(url);
 
                     if (!handlerPath) {
                         console.log(`❌ [Local API] Handler tidak ditemukan: ${url}`);
@@ -219,6 +246,9 @@ export function viteApiPlugin(): Plugin {
                     }
 
                     console.log(`📂 [Local API] Loading: ${path.relative(path.resolve(__dirname, '..'), handlerPath)}`);
+                    if (Object.keys(dynamicParams).length > 0) {
+                        console.log(`📋 [Local API] Dynamic params:`, dynamicParams);
+                    }
 
                     // Parse body for POST/PUT/PATCH requests
                     let body = {};
@@ -241,7 +271,9 @@ export function viteApiPlugin(): Plugin {
                     }
 
                     // Create mock Vercel-compatible request/response objects
+                    // Merge dynamic params into query params
                     const mockReq = createMockRequest(req, body);
+                    mockReq.query = { ...mockReq.query, ...dynamicParams };
                     const mockRes = createMockResponse(res);
 
                     // Execute the handler

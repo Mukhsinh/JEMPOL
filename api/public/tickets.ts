@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing Supabase credentials');
@@ -56,14 +56,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('📥 Query params:', { status, priority, unit_id, type, limit });
 
-    // Build query
+    // Build query - gunakan syntax yang lebih aman untuk relasi
     let query = supabase
       .from('tickets')
       .select(`
         *,
-        units:unit_id(id, name, code),
-        service_categories:category_id(id, name),
-        patient_types:patient_type_id(id, name)
+        units!unit_id(id, name, code),
+        service_categories!category_id(id, name),
+        patient_types!patient_type_id(id, name)
       `)
       .order('created_at', { ascending: false });
 

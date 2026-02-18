@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { surveyService } from '../../services/surveyService';
 import AppFooter from '../../components/AppFooter';
+import { generateSurveyReportPDF } from '../../utils/pdfGenerator';
 
 interface SurveyStats {
   total_surveys: number;
@@ -18,6 +19,9 @@ interface SurveyStats {
   average_q6?: number;
   average_q7?: number;
   average_q8?: number;
+  average_q9?: number;
+  average_q10?: number;
+  average_q11?: number;
 }
 
 interface SurveyResponse {
@@ -72,7 +76,10 @@ const surveyQuestions = [
   { code: 'U5', title: 'Produk', key: 'q5_score' },
   { code: 'U6', title: 'Kompetensi', key: 'q6_score' },
   { code: 'U7', title: 'Perilaku', key: 'q7_score' },
-  { code: 'U8', title: 'Pengaduan', key: 'q8_score' }
+  { code: 'U8', title: 'Penanganan Pengaduan', key: 'q8_score' },
+  { code: 'U9', title: 'Sarana & Prasarana', key: 'q9_score' },
+  { code: 'U10', title: 'Keamanan & Keselamatan', key: 'q10_score' },
+  { code: 'U11', title: 'Informasi Layanan', key: 'q11_score' }
 ];
 
 const SurveyReport: React.FC = () => {
@@ -176,16 +183,28 @@ const SurveyReport: React.FC = () => {
     }
   };
 
-  const handleExportReport = async (format: 'pdf' | 'print') => {
+  const handleExportReport = async () => {
     try {
-      if (format === 'print') {
-        window.print();
-      } else {
-        // TODO: Implement PDF export
-        alert('Fitur export PDF akan segera tersedia');
+      if (!stats) {
+        alert('Data belum tersedia');
+        return;
       }
+
+      const unitName = filters.unit !== 'all' 
+        ? units.find(u => u.id === filters.unit)?.name 
+        : 'Semua Unit';
+
+      generateSurveyReportPDF({
+        stats,
+        responses,
+        unitIKM,
+        addressStats,
+        dateRange,
+        unitName
+      });
     } catch (err: any) { 
-      setError(err.message); 
+      console.error('Error generating PDF:', err);
+      setError('Gagal membuat PDF: ' + err.message); 
     }
   };
 
@@ -264,13 +283,10 @@ const SurveyReport: React.FC = () => {
       <div className="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-6">
         <div className="flex flex-col gap-2 max-w-2xl">
           <h1 className="text-slate-900 text-3xl font-black leading-tight tracking-tight">Laporan Survey Kepuasan Masyarakat</h1>
-          <p className="text-slate-500 text-base">Analisis komprehensif kepuasan pasien dan masyarakat terhadap layanan publik.</p>
+          <p className="text-slate-500 text-base">Analisis komprehensif kepuasan pasien dan masyarakat terhadap layanan publik (11 Unsur Pelayanan).</p>
         </div>
         <div className="flex items-center gap-3">
-          <button onClick={() => handleExportReport('print')} className="flex items-center gap-2 h-10 px-4 bg-white border border-slate-200 rounded-lg text-slate-700 text-sm font-bold hover:bg-slate-50">
-            <span className="material-symbols-outlined text-[20px]">print</span>Cetak
-          </button>
-          <button onClick={() => handleExportReport('pdf')} className="flex items-center gap-2 h-10 px-4 bg-white border border-slate-200 rounded-lg text-slate-700 text-sm font-bold hover:bg-slate-50">
+          <button onClick={handleExportReport} className="flex items-center gap-2 h-10 px-4 bg-[#137fec] text-white rounded-lg text-sm font-bold hover:bg-[#0d6fd4] transition-colors shadow-sm">
             <span className="material-symbols-outlined text-[20px]">download</span>Unduh PDF
           </button>
         </div>
@@ -322,7 +338,7 @@ const SurveyReport: React.FC = () => {
             <span className="text-sm text-slate-500">/ 100</span>
           </div>
           <div className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-bold mt-2">
-            <span className="material-symbols-outlined text-sm">trending_up</span>Dari 8 Unsur
+            <span className="material-symbols-outlined text-sm">trending_up</span>Dari 11 Unsur
           </div>
         </div>
         <div className="bg-white p-5 rounded-xl border border-slate-200 h-36 relative group">
@@ -349,8 +365,10 @@ const SurveyReport: React.FC = () => {
         <div className="bg-white p-6 rounded-xl border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 mb-6">Skor Per Unsur Pelayanan</h3>
           <div className="flex flex-col gap-4">
-            {surveyQuestions.map((q) => {
-              const statsKey = `average_${q.key.replace('_score', '')}` as keyof SurveyStats;
+            {surveyQuestions.map((q, index) => {
+              // Mapping key yang benar: q1_score -> average_q1
+              const questionNumber = index + 1;
+              const statsKey = `average_q${questionNumber}` as keyof SurveyStats;
               const score = stats?.[statsKey] as number || 0;
               const pct = (Number(score) / 5) * 100;
               return (
