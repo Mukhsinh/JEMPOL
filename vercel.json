@@ -8,13 +8,14 @@
   "functions": {
     "api/index.ts": {
       "runtime": "@vercel/node@3.0.12",
-      "maxDuration": 10
+      "maxDuration": 10,
+      "includeFiles": "api/lib/**"
     }
   },
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "/api/index"
+      "destination": "/api/index.ts"
     },
     {
       "source": "/:path*",
