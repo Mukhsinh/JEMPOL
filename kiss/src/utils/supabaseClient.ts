@@ -32,24 +32,6 @@ const createSupabaseClient = () => {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
-        },
-        fetch: async (url, options = {}) => {
-          // Timeout lebih singkat (15 detik) tanpa retry untuk performa lebih cepat
-          const timeout = 15000;
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), timeout);
-          
-          try {
-            const response = await fetch(url, {
-              ...options,
-              signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-            return response;
-          } catch (error: any) {
-            clearTimeout(timeoutId);
-            throw error;
-          }
         }
       },
       realtime: {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../utils/supabaseClient';
+import { useAppSettings } from '../../contexts/AppSettingsContext';
 
 interface AppSettingsForm {
   app_name: string;
@@ -19,6 +20,7 @@ interface AppSettingsForm {
 }
 
 const AppSettings: React.FC = () => {
+  const { refreshSettings } = useAppSettings();
   const [settings, setSettings] = useState<AppSettingsForm>({
     app_name: '',
     app_footer: '',
@@ -88,16 +90,48 @@ const AppSettings: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setError(null);
 
     try {
-      for (const [key, value] of Object.entries(settings)) {
-        await supabase
-          .from('app_settings')
-          .upsert({ setting_key: key, setting_value: value, updated_at: new Date().toISOString() }, { onConflict: 'setting_key' });
+      // Cek autentikasi terlebih dahulu
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Anda harus login untuk menyimpan pengaturan');
       }
+
+      // Simpan setiap setting dengan error handling individual
+      const errors: string[] = [];
+      for (const [key, value] of Object.entries(settings)) {
+        const { error: upsertError } = await supabase
+          .from('app_settings')
+          .upsert({ 
+            setting_key: key, 
+            setting_value: value, 
+            updated_at: new Date().toISOString() 
+          }, { 
+            onConflict: 'setting_key' 
+          });
+        
+        if (upsertError) {
+          console.error(`Error saving ${key}:`, upsertError);
+          errors.push(`${key}: ${upsertError.message}`);
+        }
+      }
+
+      if (errors.length > 0) {
+        throw new Error(`Gagal menyimpan beberapa pengaturan:\n${errors.join('\n')}`);
+      }
+
       alert('Pengaturan berhasil disimpan');
-    } catch (err) {
-      alert('Gagal menyimpan pengaturan');
+      // Refresh data untuk memastikan sinkronisasi
+      await fetchSettings();
+      // Trigger refresh di semua komponen yang menggunakan context
+      await refreshSettings();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Gagal menyimpan pengaturan';
+      console.error('Error saving settings:', err);
+      setError(message);
+      alert(message);
     } finally {
       setSaving(false);
     }

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { AppSettingsProvider } from './contexts/AppSettingsContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './layouts/MainLayout';
 
@@ -63,8 +64,9 @@ import RolesPermissionsPage from './pages/master-data/RolesPermissionsPage';
 function App() {
   return (
     <AuthProvider>
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <Routes>
+      <AppSettingsProvider>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/lacak-tiket" element={<Suspense fallback={<LoadingSpinner />}><TrackTicket /></Suspense>} />
@@ -144,8 +146,9 @@ function App() {
               </MainLayout>
             </ProtectedRoute>
           } />
-        </Routes>
-      </Router>
+          </Routes>
+        </Router>
+      </AppSettingsProvider>
     </AuthProvider>
   );
 }

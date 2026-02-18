@@ -1,27 +1,17 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppSettings } from '../contexts/AppSettingsContext';
 import { useState, useEffect } from 'react';
-import { supabase } from '../utils/supabaseClient';
-
-interface AppSettings {
-    app_name: string;
-    institution_name: string;
-    logo_url: string;
-}
 
 export default function Sidebar() {
     const location = useLocation();
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const { settings: appSettings } = useAppSettings();
     const [isMasterDataOpen, setIsMasterDataOpen] = useState(false);
     const [isTicketsOpen, setIsTicketsOpen] = useState(false);
     const [isSurveyOpen, setIsSurveyOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [appSettings, setAppSettings] = useState<AppSettings>({
-        app_name: 'Sistem Pengaduan',
-        institution_name: 'Rumah Sakit',
-        logo_url: ''
-    });
 
     const isActive = (path: string) => {
         if (path === '/' && location.pathname === '/') return true;
@@ -60,37 +50,6 @@ export default function Sidebar() {
             setIsSettingsOpen(true);
         }
     }, [location.pathname]);
-
-    // Fetch app settings from database
-    useEffect(() => {
-        const fetchAppSettings = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('app_settings')
-                    .select('setting_key, setting_value')
-                    .in('setting_key', ['app_name', 'institution_name', 'logo_url']);
-
-                if (error) {
-                    console.error('Error fetching app settings:', error);
-                    return;
-                }
-
-                if (data) {
-                    const settings: Partial<AppSettings> = {};
-                    data.forEach((item: { setting_key: string; setting_value: string }) => {
-                        if (item.setting_key === 'app_name') settings.app_name = item.setting_value;
-                        if (item.setting_key === 'institution_name') settings.institution_name = item.setting_value;
-                        if (item.setting_key === 'logo_url') settings.logo_url = item.setting_value;
-                    });
-                    setAppSettings(prev => ({ ...prev, ...settings }));
-                }
-            } catch (err) {
-                console.error('Error loading app settings:', err);
-            }
-        };
-
-        fetchAppSettings();
-    }, []);
 
     const handleLogout = () => {
         logout();

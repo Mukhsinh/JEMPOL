@@ -268,15 +268,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('is_internal', false)
       .order('created_at', { ascending: true });
 
-    // Fetch escalations
+    // Fetch escalations - PERBAIKAN: tabel tidak punya kolom escalation_level dan resolved_at
     const { data: escalations } = await supabase
       .from('ticket_escalations')
       .select(`
         id,
-        escalation_level,
         reason,
-        created_at,
-        resolved_at
+        escalation_type,
+        escalated_at,
+        created_at
       `)
       .eq('ticket_id', ticket.id)
       .order('created_at', { ascending: true });
@@ -336,26 +336,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Event: Escalations
     if (escalations && escalations.length > 0) {
-      escalations.forEach((esc) => {
+      escalations.forEach((esc, index) => {
         timeline.push({
           type: 'escalation',
-          title: `Eskalasi Level ${esc.escalation_level || 1}`,
-          description: esc.reason || 'Tiket dieskalasi ke level yang lebih tinggi',
-          timestamp: esc.created_at,
+          title: `Eskalasi ${esc.escalation_type === 'automatic' ? 'Otomatis' : 'Manual'}`,
+          description: esc.reason || 'Tiket dieskalasi untuk penanganan lebih lanjut',
+          timestamp: esc.escalated_at || esc.created_at,
           icon: 'trending_up',
           color: 'orange'
         });
-
-        if (esc.resolved_at) {
-          timeline.push({
-            type: 'escalation_resolved',
-            title: 'Eskalasi Diselesaikan',
-            description: `Eskalasi level ${esc.escalation_level || 1} telah diselesaikan`,
-            timestamp: esc.resolved_at,
-            icon: 'check_circle',
-            color: 'emerald'
-          });
-        }
       });
     }
 

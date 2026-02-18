@@ -145,8 +145,14 @@ async function handleAppSettings(req: VercelRequest, res: VercelResponse) {
     });
   }
   
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
   
+  // Query dengan filter is_public untuk public endpoint
   const { data: settings, error } = await supabase
     .from('app_settings')
     .select('setting_key, setting_value')
