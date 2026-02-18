@@ -153,58 +153,20 @@ function createMockResponse(res: ServerResponse) {
 
 /**
  * Resolve the API handler file path from the request URL
- * Supports dynamic routes like [id].ts
+ * Semua request /api/* akan di-route ke api/index.ts (unified handler)
  */
 function resolveApiHandlerPath(urlPath: string): { filePath: string | null, params: Record<string, string> } {
     const apiDir = path.resolve(__dirname, '..', 'api');
-
-    // Remove /api prefix and query string
-    let routePath = urlPath.replace(/^\/api\//, '').split('?')[0].replace(/\/$/, '');
-    const segments = routePath.split('/');
-
-    // Try direct file match (.ts)
-    const directFile = path.join(apiDir, `${routePath}.ts`);
-    if (fs.existsSync(directFile)) {
-        return { filePath: directFile, params: {} };
+    
+    // Semua request /api/* menggunakan unified handler di api/index.ts
+    const unifiedHandler = path.join(apiDir, 'index.ts');
+    
+    if (fs.existsSync(unifiedHandler)) {
+        console.log(`   → Routing ke unified handler: api/index.ts`);
+        return { filePath: unifiedHandler, params: {} };
     }
 
-    // Try index file in directory
-    const indexFile = path.join(apiDir, routePath, 'index.ts');
-    if (fs.existsSync(indexFile)) {
-        return { filePath: indexFile, params: {} };
-    }
-
-    // Try .js extension
-    const jsFile = path.join(apiDir, `${routePath}.js`);
-    if (fs.existsSync(jsFile)) {
-        return { filePath: jsFile, params: {} };
-    }
-
-    // Try dynamic routes (e.g., /users/123 -> /users/[id].ts)
-    // Check if last segment could be a dynamic parameter
-    if (segments.length >= 2) {
-        const lastSegment = segments[segments.length - 1];
-        const parentPath = segments.slice(0, -1).join('/');
-        
-        // Try [id].ts pattern
-        const dynamicFile = path.join(apiDir, parentPath, '[id].ts');
-        if (fs.existsSync(dynamicFile)) {
-            return { 
-                filePath: dynamicFile, 
-                params: { id: lastSegment } 
-            };
-        }
-
-        // Try [slug].ts pattern
-        const slugFile = path.join(apiDir, parentPath, '[slug].ts');
-        if (fs.existsSync(slugFile)) {
-            return { 
-                filePath: slugFile, 
-                params: { slug: lastSegment } 
-            };
-        }
-    }
-
+    console.log(`   ❌ Unified handler tidak ditemukan: ${unifiedHandler}`);
     return { filePath: null, params: {} };
 }
 

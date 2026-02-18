@@ -293,6 +293,8 @@ export default function TicketList() {
                         <option value="all">Semua Jenis</option>
                         <option value="internal">Internal</option>
                         <option value="external">Eksternal</option>
+                        <option value="complaint">Keluhan</option>
+                        <option value="information">Informasi</option>
                     </select>
                     <select
                         className="px-3 py-2 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 dark:text-white min-w-[140px]"
@@ -386,11 +388,14 @@ export default function TicketList() {
                                         </td>
                                         <td className="px-4 py-4">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                                                ticket.type === 'internal' 
+                                                ticket.type === 'internal' || ticket.type === 'information'
                                                     ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 border-indigo-200' 
                                                     : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-purple-200'
                                             }`}>
-                                                {ticket.type === 'internal' ? 'Internal' : 'Eksternal'}
+                                                {ticket.type === 'internal' ? 'Internal' : 
+                                                 ticket.type === 'external' ? 'Eksternal' :
+                                                 ticket.type === 'complaint' ? 'Keluhan' :
+                                                 ticket.type === 'information' ? 'Informasi' : ticket.type}
                                             </span>
                                         </td>
                                         <td className="px-4 py-4">
