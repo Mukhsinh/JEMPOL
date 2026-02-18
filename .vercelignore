@@ -26,3 +26,13 @@ kiss/tests
 
 # Documentation
 kiss/docs
+
+# API lib folder (handlers sudah di-import di api/index.ts)
+api/lib
+
+# API lib files - hanya api/index.ts yang jadi function
+api/lib
+api/node_modules
+api/package.json
+api/package-lock.json
+api/tsconfig.json
