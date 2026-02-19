@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
+// PERBAIKAN: Di Vercel, VITE_ prefix tidak tersedia untuk serverless functions
+// Prioritas: non-VITE vars dulu (untuk Vercel), baru VITE vars (untuk local dev)
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
