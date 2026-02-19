@@ -12,6 +12,7 @@ import surveyStatsHandler from './lib/handlers/survey-stats';
 import surveysHandler from './lib/handlers/surveys';
 import ticketsHandler from './lib/handlers/tickets';
 import trackTicketHandler from './lib/handlers/track-ticket';
+import unitsHandler from './lib/handlers/units';
 import usersHandler from './lib/handlers/users';
 import userByIdHandler from './lib/handlers/users/[id]';
 import surveyAddressStatsHandler from './lib/handlers/surveys/address-stats';
@@ -108,6 +109,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (path.startsWith('/public/track-ticket')) {
       console.log('✅ Routing to track-ticket handler');
       return trackTicketHandler(req, res);
+    }
+    
+    if (path.startsWith('/public/units')) {
+      return unitsHandler(req, res);
     }
     
     // Handle /public/users/[id] - harus sebelum /public/users
