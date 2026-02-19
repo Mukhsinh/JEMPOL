@@ -123,7 +123,7 @@ Task list ini akan mengimplementasikan perbaikan untuk error 500 yang terjadi sa
   - Log success dengan summary
   - _Requirements: 1.4, 8.1, 8.5_
 
-- [-] 4. Perbaiki internal ticket submission handler
+- [x] 4. Perbaiki internal ticket submission handler
   - Update `api/lib/handlers/internal-tickets.ts` dengan fixes
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
@@ -290,7 +290,7 @@ Task list ini akan mengimplementasikan perbaikan untuk error 500 yang terjadi sa
   - Verify timestamp included
   - Run 100 iterations
 
-- [ ] 6. Checkpoint - Verify all fixes working
+- [x] 6. Checkpoint - Verify all fixes working
   - Test survey submission manually dengan valid data
   - Test survey submission dengan invalid unit_id
   - Test internal ticket submission dengan valid data

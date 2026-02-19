@@ -9,19 +9,18 @@ import { validateUnit, validateCategory, validateQRCode } from '../validators/da
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const endpoint = '/api/public/surveys';
   
-  // Set headers FIRST - before any logic
-  setAPIHeaders(res);
-  
-  // Handle OPTIONS request (preflight)
-  if (req.method === 'OPTIONS') {
-    return res.status(200).json({ success: true, message: 'CORS preflight OK' });
-  }
-  
-  // Log request
-  logRequest(req.method || 'UNKNOWN', endpoint);
-  
-  // Wrapper untuk memastikan SELALU return JSON
   try {
+    // Set headers FIRST - before any logic
+    setAPIHeaders(res);
+    
+    // Handle OPTIONS request (preflight)
+    if (req.method === 'OPTIONS') {
+      return res.status(200).json({ success: true, message: 'CORS preflight OK' });
+    }
+    
+    // Log request
+    logRequest(req.method || 'UNKNOWN', endpoint);
+    
     // Only allow POST
     if (req.method !== 'POST') {
       logWarn('Method not allowed', { method: req.method });

@@ -19,7 +19,11 @@ export function getSupabaseConfig(): SupabaseConfig {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
   const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
   
-  const isConfigured = !!(url && anonKey && url.length > 0 && anonKey.length > 0);
+  // Trim whitespace yang mungkin ada
+  const trimmedUrl = url.trim();
+  const trimmedKey = anonKey.trim();
+  
+  const isConfigured = !!(trimmedUrl && trimmedKey && trimmedUrl.length > 0 && trimmedKey.length > 0);
   
   let source: 'production' | 'development' | 'missing' = 'missing';
   if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
@@ -29,8 +33,8 @@ export function getSupabaseConfig(): SupabaseConfig {
   }
   
   return {
-    url,
-    anonKey,
+    url: trimmedUrl,
+    anonKey: trimmedKey,
     isConfigured,
     source
   };

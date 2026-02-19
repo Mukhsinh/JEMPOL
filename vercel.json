@@ -9,7 +9,7 @@
     "api/index.ts": {
       "runtime": "@vercel/node@3.2.29",
       "maxDuration": 10,
-      "includeFiles": "api/lib/handlers/**"
+      "includeFiles": "api/lib/**"
     }
   },
   "rewrites": [
