@@ -1,360 +1,330 @@
-# Implementation Plan
-
-- [-] 1. Database Schema Setup and Migration
-
-  - Create comprehensive database migration for all complaint management tables
-  - Set up indexes for optimal query performance
-  - Establish foreign key relationships and constraints
-  - Integrate with existing Supabase database structure
-  - _Requirements: 8.1, 8.2, 10.2_
-
-
-- [ ] 1.1 Write property test for hierarchical unit structure
-  - **Property 30: Hierarchical Unit Structure Maintenance**
-  - **Validates: Requirements 8.1**
-
-- [ ] 2. Core Data Models and Validation
-  - [ ] 2.1 Create TypeScript interfaces for all entities
-    - Define interfaces for tickets, users, units, responses, escalations
-    - Implement validation schemas using Zod or similar
-    - Create type-safe database query builders
-    - _Requirements: 2.1, 2.2, 8.1_
-
-  - [ ] 2.2 Write property test for ticket data validation
-    - **Property 2: Public Ticket Creation**
-    - **Validates: Requirements 1.2**
-
-  - [ ] 2.3 Implement User model with role-based permissions
-    - Extend existing admin system with new user roles
-    - Create role hierarchy and permission matrix
-    - Implement role validation functions
-    - _Requirements: 2.1, 8.3, 10.1_
-
-  - [ ] 2.4 Write property test for role-based access control
-    - **Property 26: Role-Based Access Enforcement**
-    - **Validates: Requirements 10.5**
-
-  - [ ] 2.5 Create Ticket model with status management
-    - Implement ticket lifecycle state machine
-    - Add SLA calculation and tracking
-    - Create ticket number generation logic
-    - _Requirements: 1.2, 2.5, 4.1, 4.2_
-
-  - [ ] 2.6 Write property test for unique ticket number generation
-    - **Property 8: Unique Ticket Number Generation**
-    - **Validates: Requirements 2.5**
-
-- [ ] 3. Authentication and Authorization System
-  - [ ] 3.1 Extend existing JWT authentication
-    - Integrate with existing admin authentication
-    - Add role-based JWT claims
-    - Implement token refresh mechanism
-    - _Requirements: 10.1, 2.1_
-
-  - [ ] 3.2 Write property test for JWT authentication validation
-    - **Property 24: JWT Authentication Validation**
-    - **Validates: Requirements 10.1**
-
-  - [ ] 3.3 Create authorization middleware
-    - Implement role-based route protection
-    - Add resource-level permission checking
-    - Create audit logging for access attempts
-    - _Requirements: 8.3, 10.3, 10.5_
-
-  - [ ] 3.4 Write property test for permission enforcement
-    - **Property 5: Internal Permission Validation**
-    - **Validates: Requirements 2.1**
-
-- [ ] 4. QR Code Management System
-  - [ ] 4.1 Implement QR code generation service
-    - Create unique QR codes for each unit
-    - Generate secure tokens for public access
-    - Implement QR code validation logic
-    - _Requirements: 1.1_
-
-  - [ ] 4.2 Write property test for QR code form display
-    - **Property 1: QR Code Form Display**
-    - **Validates: Requirements 1.1**
-
-  - [ ] 4.3 Create public form routing
-    - Implement QR code token validation
-    - Route to unit-specific public forms
-    - Track QR code usage statistics
-    - _Requirements: 1.1, 1.3_
-
-- [ ] 5. Ticket Management Core Services
-  - [ ] 5.1 Implement ticket creation service
-    - Handle both public and internal ticket creation
-    - Implement input validation and sanitization
-    - Add file attachment handling
-    - _Requirements: 1.2, 2.2, 2.3, 2.5_
-
-  - [ ] 5.2 Write property test for file upload validation
-    - **Property 27: File Upload Validation**
-    - **Validates: Requirements 2.3, 10.4**
-
-  - [ ] 5.3 Create ticket assignment and routing logic
-    - Implement automatic unit assignment
-    - Add manual assignment capabilities
-    - Create assignment history tracking
-    - _Requirements: 2.5, 3.3_
-
-  - [ ] 5.4 Write property test for urgency-based routing
-    - **Property 11: Urgency-Based Routing**
-    - **Validates: Requirements 3.3**
-
-  - [ ] 5.5 Implement ticket response system
-    - Create response creation and management
-    - Add internal vs external response handling
-    - Implement response templates
-    - _Requirements: 8.5_
-
-- [ ] 6. AI Classification Engine
-  - [ ] 6.1 Set up AI service integration
-    - Configure connection to LLM API (OpenAI/Anthropic)
-    - Create Indonesian NLP processing pipeline
-    - Implement confidence scoring system
-    - _Requirements: 3.1, 3.2, 8.4_
-
-  - [ ] 6.2 Write property test for Indonesian NLP classification
-    - **Property 9: Indonesian NLP Classification**
-    - **Validates: Requirements 3.1**
-
-  - [ ] 6.3 Implement sentiment analysis
-    - Add sentiment scoring for ticket content
-    - Create urgency level determination logic
-    - Implement pattern recognition for similar tickets
-    - _Requirements: 3.2, 3.5_
-
-  - [ ] 6.4 Write property test for AI output completeness
-    - **Property 10: AI Output Completeness**
-    - **Validates: Requirements 3.2**
-
-  - [ ] 6.5 Create human review flagging system
-    - Implement low confidence detection
-    - Add manual override capabilities
-    - Create review queue management
-    - _Requirements: 3.4_
-
-  - [ ] 6.6 Write property test for low confidence flagging
-    - **Property 12: Low Confidence Flagging**
-    - **Validates: Requirements 3.4**
-
-- [ ] 7. Escalation and SLA Management
-  - [ ] 7.1 Implement SLA calculation engine
-    - Create SLA deadline calculation
-    - Add business hours and holiday handling
-    - Implement SLA tracking and monitoring
-    - _Requirements: 4.1, 4.2_
-
-  - [ ] 7.2 Write property test for SLA reminder automation
-    - **Property 13: SLA Reminder Automation**
-    - **Validates: Requirements 4.1**
-
-  - [ ] 7.3 Create automatic escalation system
-    - Implement escalation rule engine
-    - Add organizational hierarchy traversal
-    - Create escalation history tracking
-    - _Requirements: 4.2, 4.3, 4.4_
-
-  - [ ] 7.4 Write property test for automatic SLA escalation
-    - **Property 14: Automatic SLA Escalation**
-    - **Validates: Requirements 4.2**
-
-  - [ ] 7.5 Implement escalation notifications
-    - Create escalation event handling
-    - Add multi-party notification logic
-    - Implement critical priority flagging
-    - _Requirements: 4.3, 4.4_
-
-  - [ ] 7.6 Write property test for escalation notification completeness
-    - **Property 15: Escalation Notification Completeness**
-    - **Validates: Requirements 4.3**
-
-- [ ] 8. Notification System
-  - [ ] 8.1 Create notification service architecture
-    - Implement multi-channel notification system
-    - Add email, web, and WhatsApp integration
-    - Create notification queue management
-    - _Requirements: 6.1, 6.2_
-
-  - [ ] 8.2 Write property test for multi-channel notification delivery
-    - **Property 21: Multi-Channel Notification Delivery**
-    - **Validates: Requirements 6.1**
-
-  - [ ] 8.3 Implement notification preferences
-    - Create user preference management
-    - Add channel-specific configuration
-    - Implement preference validation
-    - _Requirements: 6.2_
-
-  - [ ] 8.4 Write property test for notification preference compliance
-    - **Property 22: Notification Preference Compliance**
-    - **Validates: Requirements 6.2**
-
-  - [ ] 8.5 Create notification templates and triggers
-    - Implement event-based notification triggers
-    - Add customizable notification templates
-    - Create notification delivery tracking
-    - _Requirements: 6.3, 6.4, 6.5_
-
-- [ ] 9. Dashboard and Analytics Backend
-  - [ ] 9.1 Implement real-time metrics service
-    - Create dashboard data aggregation
-    - Add real-time update mechanisms
-    - Implement caching for performance
-    - _Requirements: 5.1_
-
-  - [ ] 9.2 Write property test for real-time dashboard updates
-    - **Property 17: Real-Time Dashboard Updates**
-    - **Validates: Requirements 5.1**
-
-  - [ ] 9.3 Create filtering and analytics engine
-    - Implement dynamic filtering system
-    - Add comparative analytics calculations
-    - Create KPI threshold monitoring
-    - _Requirements: 5.2, 5.3, 5.4_
-
-  - [ ] 9.4 Write property test for filter-responsive charts
-    - **Property 18: Filter-Responsive Charts**
-    - **Validates: Requirements 5.2**
-
-  - [ ] 9.5 Implement report generation service
-    - Create PDF and Excel export functionality
-    - Add AI-powered trend analysis
-    - Implement scheduled report generation
-    - _Requirements: 5.5, 7.1, 7.2, 7.3_
-
-  - [ ] 9.6 Write property test for export data integrity
-    - **Property 28: Export Data Integrity**
-    - **Validates: Requirements 5.5, 7.4**
-
-- [ ] 10. Satisfaction Survey System
-  - [ ] 10.1 Implement survey management
-    - Create automatic survey triggering
-    - Add survey response collection
-    - Implement survey analytics
-    - _Requirements: 9.1, 9.2, 9.4_
-
-  - [ ] 10.2 Write property test for survey data recording
-    - **Property 29: Survey Data Recording**
-    - **Validates: Requirements 9.2**
-
-  - [ ] 10.3 Create satisfaction analytics
-    - Implement satisfaction trend analysis
-    - Add quality improvement workflow triggers
-    - Create satisfaction reporting
-    - _Requirements: 9.3, 9.5_
-
-- [ ] 11. Frontend Components Development
-  - [ ] 11.1 Create public QR code interface
-    - Build responsive public form components
-    - Implement CAPTCHA integration
-    - Add file upload functionality for public users
-    - _Requirements: 1.1, 1.2, 1.3_
-
-  - [ ] 11.2 Develop internal ticket management UI
-    - Create role-based ticket creation forms
-    - Implement dynamic field rendering
-    - Add ticket assignment and response interfaces
-    - _Requirements: 2.1, 2.2, 2.4_
-
-  - [ ] 11.3 Write property test for dynamic form fields
-    - **Property 6: Dynamic Form Fields**
-    - **Validates: Requirements 2.2**
-
-  - [ ] 11.4 Build dashboard and analytics interface
-    - Create real-time dashboard components
-    - Implement interactive charts and filters
-    - Add export functionality to UI
-    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
-
-  - [ ] 11.5 Develop notification management UI
-    - Create notification center component
-    - Implement notification preference settings
-    - Add real-time notification updates
-    - _Requirements: 6.1, 6.2_
-
-- [ ] 12. API Endpoints Implementation
-  - [ ] 12.1 Create public API endpoints
-    - Implement QR code validation endpoints
-    - Add public ticket submission API
-    - Create ticket tracking endpoints
-    - _Requirements: 1.1, 1.2, 1.5_
-
-  - [ ] 12.2 Develop internal API endpoints
-    - Create authenticated ticket management API
-    - Implement user and role management endpoints
-    - Add escalation and response APIs
-    - _Requirements: 2.1, 2.5, 4.2, 4.3_
-
-  - [ ] 12.3 Build analytics and reporting APIs
-    - Create dashboard data endpoints
-    - Implement report generation APIs
-    - Add export functionality endpoints
-    - _Requirements: 5.1, 5.2, 5.5, 7.1_
-
-- [ ] 13. Security and Audit Implementation
-  - [ ] 13.1 Implement comprehensive audit logging
-    - Create audit log service
-    - Add action tracking across all operations
-    - Implement log retention and archival
-    - _Requirements: 10.3_
-
-  - [ ] 13.2 Write property test for comprehensive audit logging
-    - **Property 25: Comprehensive Audit Logging**
-    - **Validates: Requirements 10.3**
-
-  - [ ] 13.3 Add data encryption and security
-    - Implement sensitive data encryption
-    - Add file security scanning
-    - Create security policy enforcement
-    - _Requirements: 10.2, 10.4_
-
-- [ ] 14. Integration and Configuration
-  - [ ] 14.1 Integrate with existing JEMPOL system
-    - Ensure seamless integration with current admin system
-    - Preserve existing innovation showcase functionality
-    - Add navigation between old and new features
-    - _Requirements: All_
-
-  - [ ] 14.2 Create system configuration management
-    - Implement master data management interfaces
-    - Add AI confidence threshold configuration
-    - Create SLA and escalation rule management
-    - _Requirements: 8.1, 8.2, 8.4, 8.5_
-
-  - [ ] 14.3 Set up external service integrations
-    - Configure email service integration
-    - Add WhatsApp API integration (optional)
-    - Set up file storage and CDN
-    - _Requirements: 6.1_
-
-- [ ] 15. Testing and Quality Assurance
-  - [ ] 15.1 Implement comprehensive test suite
-    - Create integration tests for all API endpoints
-    - Add end-to-end tests for critical user journeys
-    - Implement performance testing for analytics
-    - _Requirements: All_
-
-  - [ ] 15.2 Write remaining property tests for all correctness properties
-    - Implement all 30 correctness properties as property-based tests
-    - Ensure 100+ iterations per test for statistical confidence
-    - Add custom generators for Indonesian text and organizational data
-    - _Requirements: All_
-
-- [ ] 16. Final Integration and Deployment Preparation
-  - [ ] 16.1 Complete system integration testing
-    - Test all components working together
-    - Verify data flow between all services
-    - Ensure performance meets requirements
-    - _Requirements: All_
-
-  - [ ] 16.2 Prepare production deployment
-    - Set up environment configuration
-    - Create deployment scripts and documentation
-    - Implement monitoring and alerting
-    - _Requirements: All_
-
-- [ ] 17. Final Checkpoint - Ensure all tests pass
-  - Ensure all tests pass, ask the user if questions arise.
+# Implementation Plan: Perbaikan Error Submit Tiket Internal dan Survey
+
+## Overview
+
+Task list ini akan mengimplementasikan perbaikan untuk error 500 yang terjadi saat submit tiket internal dan survey. Implementasi akan dilakukan secara incremental dengan fokus pada critical fixes terlebih dahulu, kemudian high priority, dan medium priority.
+
+## Tasks
+
+- [x] 1. Setup utility modules dan shared functions
+  - Buat folder structure untuk utilities
+  - Implementasi base functions yang akan digunakan oleh semua handlers
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 1.1 Buat environment configuration module
+  - Buat file `api/lib/config/supabase.ts`
+  - Implementasi `getSupabaseConfig()` dengan fallback logic (SUPABASE_* → VITE_SUPABASE_*)
+  - Export singleton Supabase client
+  - Log configuration status saat initialization
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 1.2 Buat safe header manager utility
+  - Buat file `api/lib/utils/headers.ts`
+  - Implementasi `setHeaderSafe()` dengan try-catch
+  - Implementasi `setCORSHeaders()` untuk set semua CORS headers
+  - Implementasi `setJSONHeaders()` untuk set Content-Type
+  - Implementasi `ensureJSONResponse()` untuk memastikan response adalah JSON
+  - _Requirements: 5.1, 5.2, 5.3, 5.5_
+
+- [x] 1.3 Buat error response builder utility
+  - Buat file `api/lib/utils/response.ts`
+  - Implementasi `buildErrorResponse()` untuk format error response
+  - Implementasi `buildSuccessResponse()` untuk format success response
+  - Implementasi error code mapping dari Supabase ke user-friendly messages
+  - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
+
+- [x] 1.4 Buat logger utility
+  - Buat file `api/lib/utils/logger.ts`
+  - Implementasi `logInfo()`, `logError()`, `logWarn()`, `logDebug()`
+  - Format log dengan emoji prefixes dan structured data
+  - Limit stack trace length untuk readability
+  - _Requirements: 4.1, 4.2, 4.3, 4.4_
+
+- [x] 2. Implementasi request validators
+  - Buat validators untuk validasi input data sebelum database operations
+  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+
+- [x] 2.1 Buat request validator module
+  - Buat file `api/lib/validators/request.ts`
+  - Implementasi `validateUUID()` dengan regex check
+  - Implementasi `validateRequired()` untuk check required fields
+  - Implementasi `validateEnum()` untuk validate enum values
+  - Implementasi `sanitizeOptionalFields()` untuk convert empty to null
+  - _Requirements: 6.1, 6.3, 6.4, 6.5_
+
+- [x] 2.2 Buat database validator module
+  - Buat file `api/lib/validators/database.ts`
+  - Implementasi `validateUnit()` untuk check unit exists dan active
+  - Implementasi `validateCategory()` untuk check category exists dan active
+  - Implementasi `validateQRCode()` untuk check QR code exists dan active
+  - Return data jika valid untuk reuse (avoid duplicate queries)
+  - _Requirements: 6.2, 7.1_
+
+- [x] 2.3 Buat survey data validator
+  - Tambahkan `validateSurveyData()` di `api/lib/validators/request.ts`
+  - Validate service_type required
+  - Validate score values (1-4 range)
+  - Validate optional fields format (email, phone)
+  - Return ValidationResult dengan errors array
+  - _Requirements: 1.2, 6.1, 6.5_
+
+- [x] 2.4 Buat internal ticket data validator
+  - Tambahkan `validateInternalTicketData()` di `api/lib/validators/request.ts`
+  - Validate title dan description required
+  - Validate unit_id required dan UUID format
+  - Validate priority enum
+  - Return ValidationResult dengan errors array
+  - _Requirements: 2.2, 6.1, 6.3_
+
+- [x] 3. Perbaiki survey submission handler
+  - Update `api/lib/handlers/surveys.ts` dengan fixes
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+
+- [x] 3.1 Update surveys handler dengan safe header management
+  - Import dan gunakan `setHeaderSafe()` di awal handler
+  - Set CORS dan JSON headers sebelum semua logic
+  - Wrap semua logic dalam try-catch untuk ensure JSON response
+  - _Requirements: 5.1, 5.2, 5.3, 5.5_
+
+- [x] 3.2 Update surveys handler dengan environment validation
+  - Import dan gunakan `getSupabaseConfig()` dari config module
+  - Check `isConfigured` sebelum process request
+  - Return 500 dengan clear error jika config missing
+  - Log configuration source (production/development/missing)
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 3.3 Update surveys handler dengan request validation
+  - Import dan gunakan validators dari request validator module
+  - Validate survey data sebelum database operation
+  - Return 400 dengan field errors jika validation gagal
+  - Log validation errors dengan context
+  - _Requirements: 1.2, 6.1, 6.3, 6.4, 6.5_
+
+- [x] 3.4 Update surveys handler dengan foreign key validation
+  - Import dan gunakan database validators
+  - Validate unit_id jika provided (optional untuk survey)
+  - Validate category_id jika provided (optional)
+  - Set ke null jika invalid instead of error
+  - Log validation results
+  - _Requirements: 1.5, 6.2, 7.1_
+
+- [x] 3.5 Update surveys handler dengan improved error handling
+  - Import dan gunakan `buildErrorResponse()` dan `logError()`
+  - Map Supabase error codes ke user-friendly messages
+  - Always return JSON response (never HTML)
+  - Include timestamp dan endpoint dalam error response
+  - Log detailed error dengan context
+  - _Requirements: 1.3, 4.1, 4.2, 4.5, 8.2, 8.3, 8.4, 8.5_
+
+- [x] 3.6 Update surveys handler dengan success response
+  - Import dan gunakan `buildSuccessResponse()`
+  - Return 201 dengan survey ID dan created_at
+  - Include timestamp dalam response
+  - Log success dengan summary
+  - _Requirements: 1.4, 8.1, 8.5_
+
+- [-] 4. Perbaiki internal ticket submission handler
+  - Update `api/lib/handlers/internal-tickets.ts` dengan fixes
+  - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+
+- [x] 4.1 Update internal-tickets handler dengan safe header management
+  - Import dan gunakan `setHeaderSafe()` di awal handler
+  - Set CORS dan JSON headers sebelum semua logic
+  - Wrap semua logic dalam try-catch untuk ensure JSON response
+  - _Requirements: 5.1, 5.2, 5.3, 5.5_
+
+- [x] 4.2 Update internal-tickets handler dengan environment validation
+  - Import dan gunakan `getSupabaseConfig()` dari config module
+  - Check `isConfigured` sebelum process request
+  - Return 500 dengan clear error jika config missing
+  - Log configuration source
+  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
+
+- [x] 4.3 Update internal-tickets handler dengan request validation
+  - Import dan gunakan validators dari request validator module
+  - Validate ticket data sebelum database operation
+  - Validate unit_id REQUIRED (berbeda dengan survey)
+  - Return 400 dengan field errors jika validation gagal
+  - Log validation errors dengan context
+  - _Requirements: 2.2, 6.1, 6.3, 6.4, 6.5_
+
+- [x] 4.4 Update internal-tickets handler dengan foreign key validation
+  - Import dan gunakan database validators
+  - Validate unit_id MUST exist dan active (required untuk internal ticket)
+  - Validate category_id jika provided (optional)
+  - Set category_id ke null jika invalid
+  - Return 400 jika unit_id invalid
+  - Log validation results
+  - _Requirements: 2.2, 2.3, 6.2, 7.1_
+
+- [x] 4.5 Update internal-tickets handler dengan ticket number generation
+  - Implementasi `generateTicketNumber()` dengan proper error handling
+  - Format: INT-YYYY-NNNN
+  - Query last ticket number dengan error handling
+  - Ensure uniqueness dengan proper increment logic
+  - Log generated ticket number
+  - _Requirements: 2.4, 7.2_
+
+- [x] 4.6 Update internal-tickets handler dengan improved error handling
+  - Import dan gunakan `buildErrorResponse()` dan `logError()`
+  - Map Supabase error codes ke user-friendly messages
+  - Always return JSON response (never HTML)
+  - Include timestamp dan endpoint dalam error response
+  - Log detailed error dengan context
+  - _Requirements: 4.1, 4.2, 4.5, 8.2, 8.3, 8.4, 8.5_
+
+- [x] 4.7 Update internal-tickets handler dengan success response
+  - Import dan gunakan `buildSuccessResponse()`
+  - Return 201 dengan ticket_number dan ticket data
+  - Include populated relations (unit name)
+  - Include timestamp dalam response
+  - Log success dengan ticket number
+  - _Requirements: 2.4, 7.5, 8.1, 8.5_
+
+- [x] 4.8 Update internal-tickets handler dengan QR code usage update
+  - Implementasi QR code usage update sebagai non-blocking operation
+  - Use async/await dengan proper error handling
+  - Don't fail request jika QR update gagal (log warning only)
+  - Increment usage_count dengan proper race condition handling
+  - Log QR code update result
+  - _Requirements: 2.5, 7.3_
+
+- [ ] 5. Testing dan validation
+  - Write tests untuk verify fixes
+  - _Requirements: All_
+
+- [ ]* 5.1 Write unit tests untuk validators
+  - Test `validateUUID()` dengan valid dan invalid UUIDs
+  - Test `validateRequired()` dengan missing fields
+  - Test `validateEnum()` dengan valid dan invalid values
+  - Test `sanitizeOptionalFields()` dengan empty strings dan null
+  - _Requirements: 6.1, 6.3, 6.4, 6.5_
+
+- [ ]* 5.2 Write unit tests untuk header manager
+  - Test `setHeaderSafe()` dengan headers not sent
+  - Test `setHeaderSafe()` dengan headers already sent
+  - Test `setCORSHeaders()` sets all required headers
+  - Test `setJSONHeaders()` sets Content-Type correctly
+  - _Requirements: 5.1, 5.2, 5.5_
+
+- [ ]* 5.3 Write unit tests untuk error response builder
+  - Test error mapping untuk berbagai Supabase error codes
+  - Test response structure consistency
+  - Test field error formatting
+  - Test timestamp inclusion
+  - _Requirements: 8.2, 8.3, 8.4, 8.5_
+
+- [ ]* 5.4 Write property test untuk survey submission
+  - **Property 1: Survey Submission Success**
+  - **Validates: Requirements 1.1**
+  - Generate random valid survey data
+  - Submit survey
+  - Verify returns 201 dan data saved
+  - Run 100 iterations
+
+- [ ]* 5.5 Write property test untuk validation error response
+  - **Property 2: Validation Error Response Format**
+  - **Validates: Requirements 1.2, 2.2**
+  - Generate random invalid data
+  - Submit data
+  - Verify returns 400 dengan clear error message
+  - Run 100 iterations
+
+- [ ]* 5.6 Write property test untuk optional foreign key handling
+  - **Property 4: Optional Foreign Key Handling**
+  - **Validates: Requirements 1.5, 2.3**
+  - Generate survey dengan invalid unit_id
+  - Submit survey
+  - Verify saved dengan unit_id null
+  - Run 100 iterations
+
+- [ ]* 5.7 Write property test untuk internal ticket submission
+  - **Property 5: Internal Ticket Submission Success**
+  - **Validates: Requirements 2.1**
+  - Generate random valid ticket data
+  - Submit ticket
+  - Verify returns 201 dan data saved
+  - Run 100 iterations
+
+- [ ]* 5.8 Write property test untuk ticket number uniqueness
+  - **Property 6: Ticket Number Uniqueness**
+  - **Validates: Requirements 2.4, 7.2**
+  - Generate multiple tickets
+  - Verify all ticket numbers are unique
+  - Run 100 iterations
+
+- [ ]* 5.9 Write property test untuk JSON response consistency
+  - **Property 11: JSON Response Consistency**
+  - **Validates: Requirements 4.5, 5.2, 5.3**
+  - Generate various error scenarios
+  - Verify all responses have Content-Type application/json
+  - Verify response body is valid JSON
+  - Run 100 iterations
+
+- [ ]* 5.10 Write property test untuk CORS headers
+  - **Property 12: CORS Headers Presence**
+  - **Validates: Requirements 5.1, 5.2**
+  - Make various API requests
+  - Verify all responses include CORS headers
+  - Run 100 iterations
+
+- [ ]* 5.11 Write property test untuk UUID validation
+  - **Property 14: UUID Validation Before Query**
+  - **Validates: Requirements 6.1, 6.2**
+  - Generate random strings (valid and invalid UUIDs)
+  - Verify validation happens before database query
+  - Run 100 iterations
+
+- [ ]* 5.12 Write property test untuk enum validation
+  - **Property 15: Enum Validation**
+  - **Validates: Requirements 6.3, 6.4**
+  - Generate random priority and source values
+  - Verify valid values accepted, invalid rejected with default
+  - Run 100 iterations
+
+- [ ]* 5.13 Write property test untuk response structure
+  - **Property 19 & 20: Response Structure**
+  - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
+  - Generate various success and error scenarios
+  - Verify response structure matches schema
+  - Verify timestamp included
+  - Run 100 iterations
+
+- [ ] 6. Checkpoint - Verify all fixes working
+  - Test survey submission manually dengan valid data
+  - Test survey submission dengan invalid unit_id
+  - Test internal ticket submission dengan valid data
+  - Test internal ticket submission dengan invalid unit_id
+  - Verify error responses are JSON
+  - Verify CORS headers present
+  - Check logs untuk proper error details
+  - Ensure all tests pass
+
+- [ ] 7. Update environment variables di Vercel
+  - Login ke Vercel dashboard
+  - Navigate ke project settings → Environment Variables
+  - Add `SUPABASE_URL` dengan value dari .env.local
+  - Add `SUPABASE_ANON_KEY` dengan value dari .env.local
+  - Verify variables saved
+  - Redeploy untuk apply changes
+  - _Requirements: 3.1, 3.2, 3.3_
+
+- [ ] 8. Deploy dan verify di production
+  - Deploy ke Vercel
+  - Test survey submission di production
+  - Test internal ticket submission di production
+  - Verify error responses
+  - Check Vercel function logs
+  - Monitor error rate
+  - _Requirements: All_
+
+## Notes
+
+- Tasks marked dengan `*` adalah optional dan dapat di-skip untuk faster MVP
+- Setiap task references specific requirements untuk traceability
+- Checkpoints memastikan incremental validation
+- Property tests validate universal correctness properties
+- Unit tests validate specific examples dan edge cases
+- Priority: Critical fixes (tasks 1-4) harus selesai sebelum testing
+- Testing (task 5) dapat dilakukan parallel dengan implementation
+- Deployment (tasks 7-8) hanya setelah semua tests pass

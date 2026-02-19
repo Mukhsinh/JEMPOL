@@ -1,97 +1,62 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-// PERBAIKAN CRITICAL: Di Vercel, VITE_ prefix TIDAK tersedia untuk serverless functions
-// Prioritas: non-VITE vars dulu (untuk Vercel), baru VITE vars (untuk local dev)
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
-
-console.log('🔧 Environment check (surveys handler):');
-console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? 'EXISTS' : 'MISSING');
-console.log('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? `EXISTS (length: ${process.env.SUPABASE_ANON_KEY.length})` : 'MISSING');
-console.log('   VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'EXISTS (fallback)' : 'MISSING');
-console.log('   VITE_SUPABASE_ANON_KEY:', process.env.VITE_SUPABASE_ANON_KEY ? `EXISTS (fallback, length: ${process.env.VITE_SUPABASE_ANON_KEY.length})` : 'MISSING');
-console.log('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? `EXISTS (length: ${process.env.SUPABASE_ANON_KEY.length})` : 'MISSING');
-console.log('   Final supabaseUrl:', supabaseUrl ? `SET (${supabaseUrl.substring(0, 40)}...)` : 'NOT SET');
-console.log('   Final supabaseKey:', supabaseKey ? `SET (length: ${supabaseKey.length})` : 'NOT SET');
-
-if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Missing Supabase credentials.');
-  console.error('   All env vars with SUPABASE:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
-}
-
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+import { getSupabaseClient, isSupabaseConfigured } from '../config/supabase';
+import { setAPIHeaders } from '../utils/headers';
+import { buildErrorResponse, buildSuccessResponse, buildConfigErrorResponse, buildValidationErrorResponse } from '../utils/response';
+import { logRequest, logError, logSuccess, logWarn, logValidationError, logDatabase } from '../utils/logger';
+import { validateSurveyData, validateUUID } from '../validators/request';
+import { validateUnit, validateCategory, validateQRCode } from '../validators/database';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers PERTAMA KALI dengan safe method
-  const setHeaderSafe = (key: string, value: string) => {
-    try {
-      if (!res.headersSent) {
-        res.setHeader(key, value);
-      }
-    } catch (e) {
-      console.error(`Failed to set header ${key}:`, e);
-    }
-  };
+  const endpoint = '/api/public/surveys';
   
-  setHeaderSafe('Access-Control-Allow-Origin', '*');
-  setHeaderSafe('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  setHeaderSafe('Access-Control-Allow-Headers', 'Content-Type, Accept, Authorization');
-  setHeaderSafe('Content-Type', 'application/json; charset=utf-8');
-  setHeaderSafe('Cache-Control', 'no-cache, no-store, must-revalidate');
-  setHeaderSafe('X-Content-Type-Options', 'nosniff');
+  // Set headers FIRST - before any logic
+  setAPIHeaders(res);
   
   // Handle OPTIONS request (preflight)
   if (req.method === 'OPTIONS') {
     return res.status(200).json({ success: true, message: 'CORS preflight OK' });
   }
   
-  console.log('🎯 POST /api/public/surveys dipanggil');
-  console.log('📍 Request method:', req.method);
-  console.log('📍 Request URL:', req.url);
-  console.log('📍 Request headers:', JSON.stringify(req.headers, null, 2));
-  console.log('📍 Request body type:', typeof req.body);
-  console.log('📍 Request body:', JSON.stringify(req.body, null, 2));
+  // Log request
+  logRequest(req.method || 'UNKNOWN', endpoint);
   
-  // PERBAIKAN: Wrapper untuk memastikan SELALU return JSON
+  // Wrapper untuk memastikan SELALU return JSON
   try {
     // Only allow POST
     if (req.method !== 'POST') {
-      console.log('❌ Method not allowed:', req.method);
-      return res.status(405).json({
-        success: false,
-        error: 'Method not allowed. Only POST is supported.'
-      });
+      logWarn('Method not allowed', { method: req.method });
+      return res.status(405).json(
+        buildErrorResponse(
+          { message: 'Method not allowed. Only POST is supported.' },
+          endpoint
+        )
+      );
     }
 
-    // Validasi Supabase credentials
-    if (!supabaseUrl || !supabaseKey || !supabase) {
-      console.error('❌ Supabase credentials missing');
-      console.error('   supabaseUrl:', supabaseUrl ? 'SET' : 'NOT SET');
-      console.error('   supabaseKey:', supabaseKey ? 'SET' : 'NOT SET');
-      console.error('   supabase client:', supabase ? 'INITIALIZED' : 'NOT INITIALIZED');
-      return res.status(500).json({
-        success: false,
-        error: 'Konfigurasi server tidak lengkap. Hubungi administrator.',
-        details: 'Supabase credentials not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel environment variables.'
-      });
+    // Validate Supabase configuration
+    if (!isSupabaseConfigured()) {
+      logError('Supabase not configured', new Error('Missing credentials'));
+      return res.status(500).json(buildConfigErrorResponse(endpoint));
     }
     
-    // Validasi request body
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+      logError('Supabase client is null', new Error('Client initialization failed'));
+      return res.status(500).json(buildConfigErrorResponse(endpoint));
+    }
+    
+    // Validate request body
     if (!req.body || typeof req.body !== 'object') {
-      console.error('❌ Invalid request body:', req.body);
-      return res.status(400).json({
-        success: false,
-        error: 'Request body tidak valid',
-        details: 'Body harus berupa JSON object'
-      });
+      logValidationError('request_body', 'Body must be JSON object', req.body);
+      return res.status(400).json(
+        buildErrorResponse(
+          { message: 'Request body tidak valid', details: 'Body harus berupa JSON object' },
+          endpoint
+        )
+      );
     }
     
-    // Log raw body untuk debugging
-    console.log('📥 Raw request body keys:', Object.keys(req.body || {}));
-    console.log('📥 Body sample:', JSON.stringify(req.body || {}).substring(0, 500));
-    
+    // Extract data from request
     const {
       unit_id,
       service_type,
@@ -108,7 +73,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       regency,
       district,
       address_detail,
-      // Skor 11 unsur IKM (sesuai dengan form - frontend mengirim u1_score, u2_score, dst)
       u1_score, u2_score, u3_score, u4_score, u5_score,
       u6_score, u7_score, u8_score, u9_score, u10_score, u11_score,
       overall_score,
@@ -117,122 +81,74 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       source = 'public_survey'
     } = req.body;
 
-    console.log('📥 Received survey request:', {
-      unit_id,
-      visitor_phone,
-      is_anonymous,
-      service_type,
-      source,
-      has_scores: !!(u1_score || u2_score || u3_score || u4_score || u5_score || u6_score || u7_score || u8_score || u9_score || u10_score || u11_score)
-    });
+    // Validate survey data
+    const validationResult = validateSurveyData(req.body);
+    if (!validationResult.valid) {
+      logValidationError('survey_data', validationResult.errors.join(', '));
+      const fieldErrors: Record<string, string> = {};
+      validationResult.errors.forEach((error, index) => {
+        fieldErrors[`field_${index}`] = error;
+      });
+      return res.status(400).json(buildValidationErrorResponse(fieldErrors, endpoint));
+    }
 
-    // Validasi source
+    // Validate source enum
     const validSources = ['web', 'qr_code', 'mobile', 'email', 'phone', 'public_survey'];
     const finalSource = validSources.includes(source) ? source : 'public_survey';
-    console.log('✅ Using source:', finalSource);
 
-    // Validasi unit (optional - hanya jika unit_id diberikan dan bukan string kosong)
-    let unitData = null;
+    // Validate unit_id (optional untuk survey)
     let finalUnitId = null;
-    
     if (unit_id && unit_id.trim() !== '') {
-      try {
-        // Cek apakah unit_id adalah UUID yang valid
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(unit_id)) {
-          console.warn('⚠️ Unit ID bukan UUID yang valid, akan di-set null:', unit_id);
-          finalUnitId = null;
+      const uuidValidation = validateUUID(unit_id, 'Unit ID');
+      if (uuidValidation.valid) {
+        const unitValidation = await validateUnit(supabase, unit_id);
+        if (unitValidation.valid) {
+          finalUnitId = unit_id;
+          logSuccess('Unit validated', { unit_name: unitValidation.data?.name });
         } else {
-          const { data, error: unitCheckError } = await supabase
-            .from('units')
-            .select('id, name')
-            .eq('id', unit_id)
-            .eq('is_active', true)
-            .single();
-
-          if (unitCheckError || !data) {
-            console.warn('⚠️ Unit tidak ditemukan atau tidak aktif, akan di-set null:', unit_id, unitCheckError?.message);
-            finalUnitId = null;
-          } else {
-            unitData = data;
-            finalUnitId = unit_id;
-            console.log('✅ Unit verified:', unitData.name);
-          }
+          logWarn('Unit validation failed, setting to null', { unit_id, error: unitValidation.error });
         }
-      } catch (unitError: any) {
-        console.warn('⚠️ Error validating unit, akan di-set null:', unitError.message);
-        finalUnitId = null;
+      } else {
+        logWarn('Invalid unit UUID, setting to null', { unit_id });
       }
     }
 
-    // Validasi service_category_id (optional - hanya jika diberikan dan bukan string kosong)
+    // Validate service_category_id (optional)
     let finalServiceCategoryId = null;
-    
     if (service_category_id && service_category_id.trim() !== '') {
-      try {
-        // Cek apakah service_category_id adalah UUID yang valid
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(service_category_id)) {
-          console.warn('⚠️ Service Category ID bukan UUID yang valid, akan di-set null:', service_category_id);
-          finalServiceCategoryId = null;
+      const uuidValidation = validateUUID(service_category_id, 'Service Category ID');
+      if (uuidValidation.valid) {
+        const categoryValidation = await validateCategory(supabase, service_category_id);
+        if (categoryValidation.valid) {
+          finalServiceCategoryId = service_category_id;
+          logSuccess('Category validated', { category_name: categoryValidation.data?.name });
         } else {
-          const { data, error: categoryCheckError } = await supabase
-            .from('service_categories')
-            .select('id, name')
-            .eq('id', service_category_id)
-            .single();
-
-          if (categoryCheckError || !data) {
-            console.warn('⚠️ Service Category tidak ditemukan, akan di-set null:', service_category_id, categoryCheckError?.message);
-            finalServiceCategoryId = null;
-          } else {
-            finalServiceCategoryId = service_category_id;
-            console.log('✅ Service Category verified:', data.name);
-          }
+          logWarn('Category validation failed, setting to null', { service_category_id, error: categoryValidation.error });
         }
-      } catch (categoryError: any) {
-        console.warn('⚠️ Error validating service category, akan di-set null:', categoryError.message);
-        finalServiceCategoryId = null;
+      } else {
+        logWarn('Invalid category UUID, setting to null', { service_category_id });
       }
     }
 
-    // Hitung skor rata-rata dari 11 unsur jika ada
-    const scores = [
-      u1_score, u2_score, u3_score, u4_score, u5_score,
-      u6_score, u7_score, u8_score, u9_score, u10_score, u11_score
-    ].filter(s => s != null && s !== '').map(s => parseInt(s as string));
-    
-    const avgScore = scores.length > 0 
-      ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) 
-      : null;
-
-    // Find QR code ID if qr_code token provided
+    // Find QR code ID if provided
     let qr_code_id = null;
-    if (qr_code) {
-      try {
-        const { data: qrData } = await supabase
-          .from('qr_codes')
-          .select('id')
-          .eq('token', qr_code)
-          .eq('is_active', true)
-          .single();
-        
-        if (qrData) {
-          qr_code_id = qrData.id;
-          console.log('✅ Found QR code ID:', qr_code_id);
-        }
-      } catch (error) {
-        console.log('⚠️ Error finding QR code:', error);
+    if (qr_code && qr_code.trim() !== '') {
+      const qrValidation = await validateQRCode(supabase, qr_code);
+      if (qrValidation.valid) {
+        qr_code_id = qrValidation.data?.id;
+        logSuccess('QR code validated', { qr_id: qr_code_id });
+      } else {
+        logWarn('QR code validation failed', { qr_code, error: qrValidation.error });
       }
     }
 
-    // Simpan ke tabel public_surveys
+    // Prepare survey data for insert
     const surveyData: any = {
-      unit_id: finalUnitId, // Gunakan finalUnitId yang sudah divalidasi
-      service_category_id: finalServiceCategoryId, // Gunakan finalServiceCategoryId yang sudah divalidasi
+      unit_id: finalUnitId,
+      service_category_id: finalServiceCategoryId,
       visitor_name: is_anonymous ? null : visitor_name,
       visitor_email: is_anonymous ? null : visitor_email,
-      visitor_phone: visitor_phone,
+      visitor_phone: visitor_phone || null,
       service_type: service_type || null,
       age_range: age_range || null,
       gender: gender || null,
@@ -243,7 +159,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       kecamatan: district || null,
       alamat_jalan: address_detail || null,
       is_anonymous: is_anonymous || false,
-      // Skor 11 unsur IKM (mapping ke kolom q1_score - q11_score di database)
+      // Map u1_score to q1_score, etc.
       q1_score: u1_score ? (typeof u1_score === 'number' ? u1_score : parseInt(u1_score as string)) : null,
       q2_score: u2_score ? (typeof u2_score === 'number' ? u2_score : parseInt(u2_score as string)) : null,
       q3_score: u3_score ? (typeof u3_score === 'number' ? u3_score : parseInt(u3_score as string)) : null,
@@ -255,7 +171,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       q9_score: u9_score ? (typeof u9_score === 'number' ? u9_score : parseInt(u9_score as string)) : null,
       q10_score: u10_score ? (typeof u10_score === 'number' ? u10_score : parseInt(u10_score as string)) : null,
       q11_score: u11_score ? (typeof u11_score === 'number' ? u11_score : parseInt(u11_score as string)) : null,
-      // Skor agregat
       overall_score: overall_score ? (typeof overall_score === 'number' ? overall_score : parseInt(overall_score as string)) : null,
       comments: comments || null,
       qr_code: qr_code || null,
@@ -263,18 +178,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ip_address: null,
       user_agent: null
     };
-    
-    console.log('📤 Inserting survey data:', {
-      unit_id: surveyData.unit_id,
-      service_category_id: surveyData.service_category_id,
-      visitor_phone: surveyData.visitor_phone,
-      is_anonymous: surveyData.is_anonymous,
-      has_scores: scores.length > 0,
-      source: surveyData.source,
-      has_address: !!(surveyData.kabupaten_kota && surveyData.kecamatan),
-      has_demographics: !!(surveyData.age_range && surveyData.gender && surveyData.education && surveyData.job)
-    });
 
+    // Insert survey into database
+    logDatabase('INSERT', 'public_surveys', { has_unit: !!finalUnitId, source: finalSource });
+    
     const { data: survey, error: surveyError } = await supabase
       .from('public_surveys')
       .insert([surveyData])
@@ -282,116 +189,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single();
 
     if (surveyError) {
-      console.error('❌ Error inserting survey:', surveyError);
-      console.error('❌ Error code:', surveyError.code);
-      console.error('❌ Error message:', surveyError.message);
-      console.error('❌ Error details:', surveyError.details);
-      console.error('❌ Error hint:', surveyError.hint);
-      console.error('❌ Survey data yang gagal:', JSON.stringify(surveyData, null, 2));
-      
-      let errorMessage = 'Gagal menyimpan survei';
-      let errorDetails = null;
-      
-      if (surveyError.code === '23503') {
-        // Foreign key violation
-        errorMessage = 'Data referensi tidak valid';
-        errorDetails = 'Unit atau kategori layanan tidak ditemukan di database';
-      } else if (surveyError.code === '23502') {
-        // Not null violation
-        errorMessage = 'Ada kolom wajib yang belum diisi';
-        errorDetails = surveyError.message;
-      } else if (surveyError.code === '22P02') {
-        // Invalid text representation
-        errorMessage = 'Format data tidak valid';
-        errorDetails = 'UUID atau tipe data salah';
-      } else if (surveyError.code === '42703') {
-        // Undefined column
-        errorMessage = 'Kolom database tidak ditemukan';
-        errorDetails = surveyError.message;
-      } else if (surveyError.message) {
-        errorMessage = surveyError.message;
-        errorDetails = surveyError.details || surveyError.hint;
-      }
-      
-      return res.status(500).json({
-        success: false,
-        error: errorMessage,
-        details: errorDetails,
-        error_code: surveyError.code,
-        error_message: surveyError.message,
-        debug_info: {
-          unit_id: surveyData.unit_id,
-          service_category_id: surveyData.service_category_id,
-          has_phone: !!surveyData.visitor_phone
-        }
-      });
+      logError('Failed to insert survey', surveyError, { surveyData });
+      return res.status(500).json(buildErrorResponse(surveyError, endpoint));
     }
 
-    console.log('✅ Survey saved successfully:', survey.id);
+    logSuccess('Survey saved successfully', { survey_id: survey.id });
 
-    // Update QR code usage if applicable (non-blocking)
+    // Update QR code usage count (non-blocking)
     if (qr_code_id) {
-      // Jalankan update QR code secara async tanpa menunggu
-      supabase
-        .from('qr_codes')
-        .select('usage_count')
-        .eq('id', qr_code_id)
-        .single()
-        .then(({ data: currentQR }) => {
-          return supabase
+      (async () => {
+        try {
+          const { data: currentQR } = await supabase
+            .from('qr_codes')
+            .select('usage_count')
+            .eq('id', qr_code_id)
+            .single();
+          
+          await supabase
             .from('qr_codes')
             .update({
               usage_count: (currentQR?.usage_count || 0) + 1,
               updated_at: new Date().toISOString()
             })
             .eq('id', qr_code_id);
-        })
-        .then(() => {
-          console.log('✅ Updated QR code usage count');
-        })
-        .catch((error) => {
-          console.log('⚠️ Error updating QR code usage (non-critical):', error);
-        });
+
+          logSuccess('QR code usage updated', { qr_id: qr_code_id });
+        } catch (error: any) {
+          logWarn('Failed to update QR code usage (non-critical)', { qr_id: qr_code_id, error: error.message });
+        }
+      })();
     }
 
-    // Return response immediately tanpa menunggu QR code update
-    return res.status(201).json({
-      success: true,
-      message: 'Survei berhasil dikirim',
-      data: {
-        id: survey.id,
-        created_at: survey.created_at
-      }
-    });
+    // Return success response
+    return res.status(201).json(
+      buildSuccessResponse(
+        {
+          id: survey.id,
+          created_at: survey.created_at
+        },
+        'Survei berhasil dikirim'
+      )
+    );
 
   } catch (error: any) {
-    console.error('❌ CRITICAL ERROR submitting public survey:', error);
-    console.error('❌ Error stack:', error.stack);
+    logError('CRITICAL ERROR in survey handler', error, { endpoint });
     
-    // PERBAIKAN: Pastikan header JSON di-set ulang
-    try {
-      if (!res.headersSent) {
-        res.setHeader('Content-Type', 'application/json; charset=utf-8');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('X-Content-Type-Options', 'nosniff');
-      }
-    } catch (headerError) {
-      console.error('❌ Cannot set header:', headerError);
-    }
-    
-    const errorResponse = {
-      success: false,
-      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
-      error_type: error.name || 'UnknownError',
-      details: error.stack?.split('\n').slice(0, 3).join('\n') || null,
-      timestamp: new Date().toISOString(),
-      endpoint: '/api/public/surveys'
-    };
+    // Ensure JSON response even on critical error
+    const errorResponse = buildErrorResponse(error, endpoint);
     
     if (!res.headersSent) {
-      res.status(500);
-      res.json(errorResponse);
+      return res.status(500).json(errorResponse);
     }
-    return;
   }
 }
