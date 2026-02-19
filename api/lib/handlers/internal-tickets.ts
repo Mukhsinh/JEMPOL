@@ -1,13 +1,21 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseClient, isSupabaseConfigured } from '../config/supabase';
 import { setAPIHeaders } from '../utils/headers';
-import { buildErrorResponse, buildSuccessResponse, buildConfigErrorResponse, buildValidationErrorResponse } from '../utils/response';
+import { buildErrorResponse, buildSuccessResponse, buildConfigErrorResponse, buildValidationErrorResponse, getErrorStatusCode } from '../utils/response';
 import { logRequest, logError, logSuccess, logWarn, logValidationError, logDatabase } from '../utils/logger';
-import { validateInternalTicketData, validateUUID } from '../validators/request';
-import { validateUnit, validateCategory, validateQRCode } from '../validators/database';
+import { validateInternalTicketData, validateUUID, validateEnum } from '../validators/request';
+import { validateUnit, validateCategory, validateQRCode, findCategoryByNameOrCode } from '../validators/database';
 
-// Helper function to generate ticket number
-async function generateTicketNumber(supabase: any): Promise<string> {
+/**
+ * Generate unique ticket number for internal tickets
+ * Format: INT-YYYY-NNNN
+ */
+async function generateTicketNumber(): Promise<string> {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
+  
   const year = new Date().getFullYear();
   
   try {
@@ -19,18 +27,16 @@ async function generateTicketNumber(supabase: any): Promise<string> {
       .limit(1);
 
     if (error) {
-      logError('Failed to query last ticket number', error);
-      throw new Error('Gagal generate nomor tiket');
+      logError('Error querying last ticket number', error);
+      // If error, start from 1
+      return `INT-${year}-0001`;
     }
 
     let nextNumber = 1;
     if (lastTicket && lastTicket.length > 0) {
-      const parts = lastTicket[0].ticket_number.split('-');
-      if (parts.length === 3) {
-        const lastNumber = parseInt(parts[2]);
-        if (!isNaN(lastNumber)) {
-          nextNumber = lastNumber + 1;
-        }
+      const lastNumber = parseInt(lastTicket[0].ticket_number.split('-')[2]);
+      if (!isNaN(lastNumber)) {
+        nextNumber = lastNumber + 1;
       }
     }
 
@@ -38,8 +44,10 @@ async function generateTicketNumber(supabase: any): Promise<string> {
     logSuccess('Generated ticket number', { ticket_number: ticketNumber });
     return ticketNumber;
   } catch (error: any) {
-    logError('Error generating ticket number', error);
-    throw error;
+    logError('Failed to generate ticket number', error);
+    // Fallback: use timestamp-based number
+    const timestamp = Date.now().toString().slice(-4);
+    return `INT-${year}-${timestamp}`;
   }
 }
 
@@ -122,71 +130,63 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Validate source enum
-    const validSources = ['web', 'qr_code', 'mobile', 'email', 'phone'];
-    const finalSource = validSources.includes(source) ? source : 'web';
+    const sourceValidation = validateEnum(source, ['web', 'qr_code', 'mobile', 'email', 'phone'], 'Source', 'web');
+    const finalSource = sourceValidation.sanitized || 'web';
 
     // Validate priority enum
-    const validPriorities = ['low', 'medium', 'high', 'critical'];
-    const finalPriority = validPriorities.includes(priority) ? priority : 'medium';
+    const priorityValidation = validateEnum(priority, ['low', 'medium', 'high', 'critical'], 'Priority', 'medium');
+    const finalPriority = priorityValidation.sanitized || 'medium';
 
     // Validate unit_id (REQUIRED untuk internal ticket)
-    const unitValidation = await validateUnit(supabase, unit_id);
-    if (!unitValidation.valid) {
-      logValidationError('unit_id', unitValidation.error || 'Unit tidak valid atau tidak aktif', { unit_id });
+    const uuidValidation = validateUUID(unit_id, 'Unit ID');
+    if (!uuidValidation.valid) {
+      logValidationError('unit_id', uuidValidation.errors.join(', '), unit_id);
       return res.status(400).json(
-        buildValidationErrorResponse(
-          { unit_id: unitValidation.error || 'Unit tidak valid atau tidak aktif' },
+        buildErrorResponse(
+          { message: 'Unit ID tidak valid', details: uuidValidation.errors.join(', ') },
           endpoint
         )
       );
     }
-    
+
+    const unitValidation = await validateUnit(supabase, unit_id);
+    if (!unitValidation.valid) {
+      logValidationError('unit_id', unitValidation.error || 'Unit not found', unit_id);
+      return res.status(400).json(
+        buildErrorResponse(
+          { message: 'Unit tidak valid atau tidak aktif', details: unitValidation.error },
+          endpoint
+        )
+      );
+    }
+
     logSuccess('Unit validated', { unit_name: unitValidation.data?.name });
 
     // Validate category_id (optional)
     let finalCategoryId = null;
-    const categoryIdToValidate = category_id || category;
+    const categoryInput = category_id || category;
     
-    if (categoryIdToValidate && categoryIdToValidate.trim() !== '') {
-      const uuidValidation = validateUUID(categoryIdToValidate, 'Category ID');
-      if (uuidValidation.valid) {
-        const categoryValidation = await validateCategory(supabase, categoryIdToValidate);
+    if (categoryInput && categoryInput.trim() !== '') {
+      // Check if it's a UUID
+      const categoryUuidValidation = validateUUID(categoryInput, 'Category ID');
+      
+      if (categoryUuidValidation.valid) {
+        // It's a UUID, validate directly
+        const categoryValidation = await validateCategory(supabase, categoryInput);
         if (categoryValidation.valid) {
-          finalCategoryId = categoryIdToValidate;
+          finalCategoryId = categoryInput;
           logSuccess('Category validated', { category_name: categoryValidation.data?.name });
         } else {
-          logWarn('Category validation failed, setting to null', { category_id: categoryIdToValidate, error: categoryValidation.error });
+          logWarn('Category validation failed, setting to null', { category_id: categoryInput, error: categoryValidation.error });
         }
       } else {
-        // Try to find category by name/code
-        try {
-          const categoryMap: { [key: string]: string } = {
-            'it_support': 'IT Support',
-            'facility': 'Fasilitas',
-            'equipment': 'Peralatan',
-            'hr': 'SDM',
-            'admin': 'Administrasi',
-            'other': 'Lainnya'
-          };
-          
-          const categoryName = categoryMap[categoryIdToValidate] || categoryIdToValidate;
-          logDatabase('SELECT', 'service_categories', { search: categoryName });
-          
-          const { data: categoryData } = await supabase
-            .from('service_categories')
-            .select('id')
-            .or(`name.ilike.%${categoryName}%,code.ilike.%${categoryIdToValidate}%`)
-            .eq('is_active', true)
-            .limit(1);
-          
-          if (categoryData && categoryData.length > 0) {
-            finalCategoryId = categoryData[0].id;
-            logSuccess('Found category by name/code', { category_id: finalCategoryId });
-          } else {
-            logWarn('Category not found by name/code', { search: categoryName });
-          }
-        } catch (error: any) {
-          logWarn('Error finding category by name', { error: error.message });
+        // Not a UUID, try to find by name or code
+        const categorySearch = await findCategoryByNameOrCode(supabase, categoryInput);
+        if (categorySearch.valid) {
+          finalCategoryId = categorySearch.data?.id;
+          logSuccess('Category found by name/code', { category_name: categorySearch.data?.name });
+        } else {
+          logWarn('Category not found by name/code, setting to null', { category: categoryInput });
         }
       }
     }
@@ -204,7 +204,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Generate ticket number
-    const ticketNumber = await generateTicketNumber(supabase);
+    const ticketNumber = await generateTicketNumber();
 
     // Calculate SLA deadline based on priority
     const slaDeadline = new Date();
@@ -226,7 +226,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Prepare ticket data
     const ticketData: any = {
       ticket_number: ticketNumber,
-      type: 'complaint',
+      type: 'complaint', // Internal ticket = complaint
       title: title,
       description: fullDescription,
       unit_id: unit_id,
@@ -247,14 +247,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Insert ticket into database
     logDatabase('INSERT', 'tickets', { 
       ticket_number: ticketNumber, 
-      unit_id, 
+      type: 'complaint',
       priority: finalPriority,
-      has_category: !!finalCategoryId 
+      has_category: !!finalCategoryId
     });
     
     const { data: ticket, error: ticketError } = await supabase
       .from('tickets')
-      .insert(ticketData)
+      .insert([ticketData])
       .select(`
         *,
         units:unit_id(name, code)
@@ -263,36 +263,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (ticketError) {
       logError('Failed to insert ticket', ticketError, { ticketData });
-      return res.status(500).json(buildErrorResponse(ticketError, endpoint));
+      const statusCode = getErrorStatusCode(ticketError);
+      return res.status(statusCode).json(buildErrorResponse(ticketError, endpoint));
     }
 
     logSuccess('Internal ticket created successfully', { 
       ticket_number: ticket.ticket_number,
-      unit: unitValidation.data?.name 
+      ticket_id: ticket.id
     });
 
     // Update QR code usage count (non-blocking)
     if (qr_code_id) {
-      supabase
-        .from('qr_codes')
-        .select('usage_count')
-        .eq('id', qr_code_id)
-        .single()
-        .then(({ data: currentQR }: any) => {
-          return supabase
+      (async () => {
+        try {
+          const { data: currentQR } = await supabase
+            .from('qr_codes')
+            .select('usage_count')
+            .eq('id', qr_code_id)
+            .single();
+          
+          await supabase
             .from('qr_codes')
             .update({
               usage_count: (currentQR?.usage_count || 0) + 1,
               updated_at: new Date().toISOString()
             })
             .eq('id', qr_code_id);
-        })
-        .then(() => {
+
           logSuccess('QR code usage updated', { qr_id: qr_code_id });
-        })
-        .catch((error: any) => {
+        } catch (error: any) {
           logWarn('Failed to update QR code usage (non-critical)', { qr_id: qr_code_id, error: error.message });
-        });
+        }
+      })();
     }
 
     // Return success response
@@ -300,9 +302,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       buildSuccessResponse(
         {
           ticket_number: ticket.ticket_number,
-          data: ticket
+          id: ticket.id,
+          created_at: ticket.created_at,
+          unit: ticket.units
         },
-        'Tiket berhasil dibuat. Nomor tiket Anda: ' + ticket.ticket_number
+        `Tiket berhasil dibuat. Nomor tiket: ${ticket.ticket_number}`
       )
     );
 
