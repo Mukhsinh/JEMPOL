@@ -61,7 +61,8 @@ export function validateRequired(data: any, fields: string[]): ValidationResult 
   
   for (const field of fields) {
     const value = data[field];
-    if (value === undefined || value === null || value === '') {
+    // Field dianggap kosong jika undefined, null, atau string kosong setelah trim
+    if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
       errors.push(`Field ${field} wajib diisi`);
     }
   }
@@ -291,13 +292,13 @@ export function validateInternalTicketData(data: any): ValidationResult {
     }
   }
   
-  // Validate email if provided
-  if (data.reporter_email && !validateEmail(data.reporter_email)) {
+  // Validate email if provided (dan tidak kosong)
+  if (data.reporter_email && data.reporter_email.trim() !== '' && !validateEmail(data.reporter_email)) {
     errors.push('Format email tidak valid');
   }
   
-  // Validate phone if provided
-  if (data.reporter_phone && !validatePhone(data.reporter_phone)) {
+  // Validate phone if provided (dan tidak kosong)
+  if (data.reporter_phone && data.reporter_phone.trim() !== '' && !validatePhone(data.reporter_phone)) {
     errors.push('Format nomor telepon tidak valid');
   }
   

@@ -259,22 +259,57 @@ const DirectInternalTicketForm: React.FC = () => {
     setError('');
 
     try {
-      const payload = {
-        reporter_name: formData.reporter_name,
-        reporter_email: formData.reporter_email,
-        reporter_phone: formData.reporter_phone,
-        reporter_department: formData.reporter_department,
-        reporter_position: formData.reporter_position,
-        category: formData.category,
-        priority: formData.priority,
+      // Validasi data sebelum dikirim
+      if (!formData.unit_id && !unitId) {
+        setError('Unit ID tidak boleh kosong');
+        return;
+      }
+
+      if (!formData.title || !formData.description) {
+        setError('Judul dan deskripsi wajib diisi');
+        return;
+      }
+
+      const payload: any = {
         title: formData.title,
         description: formData.description,
-        qr_code: qrCode,
         unit_id: formData.unit_id || unitId,
-        source: qrCode ? 'qr_code' : 'web'  // PERBAIKAN: gunakan 'qr_code' jika dari QR, atau 'web' jika langsung
+        priority: formData.priority || 'medium',
+        source: qrCode ? 'qr_code' : 'web'
       };
 
+      // Tambahkan field optional hanya jika ada nilainya
+      if (formData.reporter_name && formData.reporter_name.trim()) {
+        payload.reporter_name = formData.reporter_name.trim();
+      }
+      if (formData.reporter_email && formData.reporter_email.trim()) {
+        payload.reporter_email = formData.reporter_email.trim();
+      }
+      if (formData.reporter_phone && formData.reporter_phone.trim()) {
+        payload.reporter_phone = formData.reporter_phone.trim();
+      }
+      if (formData.reporter_department && formData.reporter_department.trim()) {
+        payload.reporter_department = formData.reporter_department.trim();
+      }
+      if (formData.reporter_position && formData.reporter_position.trim()) {
+        payload.reporter_position = formData.reporter_position.trim();
+      }
+      if (formData.category && formData.category.trim()) {
+        payload.category = formData.category.trim();
+      }
+      if (qrCode && qrCode.trim()) {
+        payload.qr_code = qrCode.trim();
+      }
+
       console.log('📤 Mengirim tiket internal:', payload);
+      console.log('📤 Payload validation:', {
+        has_unit_id: !!payload.unit_id,
+        has_title: !!payload.title,
+        has_description: !!payload.description,
+        unit_id_length: payload.unit_id?.length,
+        email_format: payload.reporter_email ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.reporter_email) : 'empty',
+        phone_format: payload.reporter_phone ? /^(\+62|62|0)[0-9]{8,15}$/.test(payload.reporter_phone.replace(/[\s-]/g, '')) : 'empty'
+      });
 
       // Gunakan relative path untuk production (Vercel)
       // Di production, /api akan di-route ke Vercel serverless functions
