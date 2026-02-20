@@ -122,15 +122,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const validationResult = validateInternalTicketData(req.body);
     if (!validationResult.valid) {
       logValidationError('internal_ticket_data', validationResult.errors.join(', '), req.body);
+      
+      // Log detail untuk debugging
+      console.error('❌ Validation failed:');
+      console.error('  - Errors:', validationResult.errors);
+      console.error('  - Received data:', JSON.stringify(req.body, null, 2));
+      
       const fieldErrors: Record<string, string> = {};
       validationResult.errors.forEach((error, index) => {
         fieldErrors[`field_${index}`] = error;
-      });
-      
-      // Log detail untuk debugging
-      logError('Validation failed with details', { 
-        errors: validationResult.errors,
-        receivedData: req.body 
       });
       
       return res.status(400).json(buildValidationErrorResponse(fieldErrors, endpoint));

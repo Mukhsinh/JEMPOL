@@ -114,12 +114,24 @@ const QRManagement: React.FC = () => {
           setUnits([]);
         }
 
-        // Handle QR codes response
+        // Handle QR codes response - PENTING: Pastikan data fresh dari database
         if (Array.isArray(qrResponse)) {
-          setQrCodes(qrResponse);
+          console.log('📊 QR Codes loaded:', qrResponse.length);
+          // Log redirect_type untuk setiap QR code untuk debugging
+          qrResponse.forEach((qr: any) => {
+            console.log(`  - ${qr.name}: redirect_type="${qr.redirect_type}", auto_fill_unit=${qr.auto_fill_unit}, show_options=${JSON.stringify(qr.show_options)}`);
+          });
+          // PENTING: Set state dengan data BARU dari database, bukan merge dengan state lama
+          setQrCodes([...qrResponse]); // Gunakan spread operator untuk force re-render
           setTotalPages(1);
         } else if (qrResponse?.qr_codes && Array.isArray(qrResponse.qr_codes)) {
-          setQrCodes(qrResponse.qr_codes);
+          console.log('📊 QR Codes loaded:', qrResponse.qr_codes.length);
+          // Log redirect_type untuk setiap QR code untuk debugging
+          qrResponse.qr_codes.forEach((qr: any) => {
+            console.log(`  - ${qr.name}: redirect_type="${qr.redirect_type}", auto_fill_unit=${qr.auto_fill_unit}, show_options=${JSON.stringify(qr.show_options)}`);
+          });
+          // PENTING: Set state dengan data BARU dari database, bukan merge dengan state lama
+          setQrCodes([...qrResponse.qr_codes]); // Gunakan spread operator untuk force re-render
           setTotalPages(qrResponse.pagination?.pages || 1);
         } else {
           setQrCodes([]);
@@ -179,7 +191,15 @@ const QRManagement: React.FC = () => {
       
       if (editingQR) {
         // Update existing QR code
-        console.log('🔄 [handleCreateQRCode] Mode: UPDATE');
+        console.log('🔄 [handleCreateQRCode - UPDATE] Mode: UPDATE');
+        console.log('📝 [handleCreateQRCode - UPDATE] Data yang akan diupdate:', {
+          id: editingQR.id,
+          name: formData.name,
+          redirect_type: formData.redirect_type,
+          auto_fill_unit: formData.auto_fill_unit,
+          show_options: formData.show_options
+        });
+        
         const result = await qrCodeService.updateQRCode(editingQR.id, {
           name: formData.name,
           description: formData.description,
@@ -188,17 +208,26 @@ const QRManagement: React.FC = () => {
           show_options: formData.show_options
         });
         
-        console.log('✅ [handleCreateQRCode] QR Code berhasil diupdate:', result);
-        alert('✅ QR Code berhasil diperbarui!');
+        console.log('✅ [handleCreateQRCode - UPDATE] Response dari update:', result);
+        
+        // Verifikasi data yang tersimpan
+        if (result && result.redirect_type) {
+          console.log('✅ [handleCreateQRCode - UPDATE] Data tersimpan dengan redirect_type:', result.redirect_type);
+        } else {
+          console.warn('⚠️ [handleCreateQRCode - UPDATE] Response tidak mengandung redirect_type!', result);
+        }
+        
+        // Reload data DULU sebelum tutup modal
+        console.log('🔄 [handleCreateQRCode - UPDATE] Memuat ulang data dari database...');
+        await loadData();
+        console.log('✅ [handleCreateQRCode - UPDATE] Data berhasil dimuat ulang dari database');
         
         // Tutup modal dan reset form
         setShowModal(false);
         resetForm();
         
-        // Reload data untuk menampilkan perubahan
-        console.log('🔄 [handleCreateQRCode] Memuat ulang data setelah update...');
-        await loadData();
-        console.log('✅ [handleCreateQRCode] Data berhasil dimuat ulang setelah update');
+        // Tampilkan notifikasi
+        alert('✅ QR Code berhasil diperbarui!');
       } else {
         // Create new QR code
         console.log('🔄 [handleCreateQRCode] Mode: CREATE');
@@ -262,16 +291,35 @@ const QRManagement: React.FC = () => {
   };
 
   const handleEditQRCode = (qrCode: QRCodeWithAnalytics) => {
+    console.log('🔄 [handleEditQRCode] Membuka form edit untuk QR Code:', qrCode.name);
+    console.log('📋 [handleEditQRCode] Data QR Code saat ini:', {
+      id: qrCode.id,
+      name: qrCode.name,
+      redirect_type: qrCode.redirect_type,
+      auto_fill_unit: qrCode.auto_fill_unit,
+      show_options: qrCode.show_options
+    });
+    
     setEditingQR(qrCode);
-    setFormData({
+    
+    const newFormData = {
       unit_id: qrCode.unit_id,
       name: qrCode.name,
       description: qrCode.description || '',
       redirect_type: qrCode.redirect_type || 'selection',
       auto_fill_unit: qrCode.auto_fill_unit !== false,
       show_options: qrCode.show_options || ['internal_ticket', 'external_ticket', 'survey']
-    });
+    };
+    
+    console.log('📝 [handleEditQRCode] Form data yang akan diisi:', newFormData);
+    setFormData(newFormData);
     setShowModal(true);
+    
+    console.log('✅ [handleEditQRCode] Form data diisi dengan:', {
+      redirect_type: qrCode.redirect_type || 'selection',
+      auto_fill_unit: qrCode.auto_fill_unit !== false,
+      show_options: qrCode.show_options || ['internal_ticket', 'external_ticket', 'survey']
+    });
   };
 
   const toggleQRStatus = async (id: string, currentStatus: boolean) => {
@@ -411,26 +459,28 @@ const QRManagement: React.FC = () => {
   };
 
   const getRedirectTypeBadge = (redirectType?: string, qrCode?: QRCodeWithAnalytics) => {
-    const option = REDIRECT_OPTIONS.find(o => o.value === redirectType) || REDIRECT_OPTIONS[0];
+    // PENTING: Pastikan menggunakan redirect_type dari qrCode yang tersimpan di database
+    const actualRedirectType = qrCode?.redirect_type || redirectType || 'selection';
+    const option = REDIRECT_OPTIONS.find(o => o.value === actualRedirectType) || REDIRECT_OPTIONS[0];
     
-    // Generate direct link berdasarkan redirect_type - LANGSUNG KE FORM TANPA LOGIN
-    const getDirectLink = () => {
-      if (!qrCode) return '';
-      
-      // GUNAKAN qrCodeService.generateQRUrl untuk konsistensi
-      return qrCodeService.generateQRUrl(
-        qrCode.code,
-        redirectType,
-        qrCode.unit_id,
-        qrCode.units?.name,
-        qrCode.auto_fill_unit
-      );
-    };
+    // Generate direct link berdasarkan redirect_type yang SEBENARNYA dari database
+    const directLink = qrCode ? qrCodeService.generateQRUrl(
+      qrCode.code,
+      actualRedirectType, // Gunakan actualRedirectType dari database
+      qrCode.unit_id,
+      qrCode.units?.name,
+      qrCode.auto_fill_unit
+    ) : '';
     
-    const directLink = getDirectLink();
-    const linkLabel = redirectType === 'internal_ticket' ? 'Form Tiket Internal' :
-                      redirectType === 'external_ticket' ? 'Form Tiket Eksternal' :
-                      redirectType === 'survey' ? 'Form Survei' : 'Pilihan Menu';
+    // Label yang sesuai dengan redirect_type
+    const linkLabel = actualRedirectType === 'internal_ticket' ? 'Form Tiket Internal' :
+                      actualRedirectType === 'external_ticket' ? 'Form Tiket Eksternal' :
+                      actualRedirectType === 'survey' ? 'Form Survei' : 'Pilihan Menu';
+    
+    // Debug logging untuk memastikan data benar
+    if (qrCode) {
+      console.log(`📋 QR Code "${qrCode.name}" - Redirect Type: ${actualRedirectType}, Link: ${directLink}`);
+    }
     
     return (
       <div className="space-y-1">
@@ -439,19 +489,25 @@ const QRManagement: React.FC = () => {
             <span className="material-symbols-outlined text-sm">{option.icon}</span>
             {linkLabel}
           </div>
-          <a
-            href={directLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              e.stopPropagation();
-              console.log('🔗 Opening direct link:', directLink);
-            }}
-            className="text-xs text-primary hover:text-blue-700 dark:hover:text-blue-300 hover:underline flex items-center gap-1 cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-xs">open_in_new</span>
-            Buka Link
-          </a>
+          {directLink && (
+            <a
+              href={directLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log('🔗 Membuka link:', directLink);
+                console.log('🔗 Tipe redirect:', actualRedirectType);
+                console.log('🔗 QR Code:', qrCode?.code);
+                console.log('🔗 Unit:', qrCode?.units?.name);
+                console.log('🔗 Auto-fill:', qrCode?.auto_fill_unit);
+              }}
+              className="text-xs text-primary hover:text-blue-700 dark:hover:text-blue-300 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-xs">open_in_new</span>
+              Buka Link
+            </a>
+          )}
         </div>
         {qrCode?.auto_fill_unit !== false && (
           <div className="text-xs text-slate-400 flex items-center gap-1">

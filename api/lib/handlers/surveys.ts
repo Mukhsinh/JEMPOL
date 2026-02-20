@@ -84,11 +84,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const validationResult = validateSurveyData(req.body);
     if (!validationResult.valid) {
       logValidationError('survey_data', validationResult.errors.join(', '));
-      const fieldErrors: Record<string, string> = {};
-      validationResult.errors.forEach((error, index) => {
-        fieldErrors[`field_${index}`] = error;
+      
+      // Log detail data untuk debugging
+      console.log('❌ Validation failed for survey data:', {
+        visitor_phone: req.body.visitor_phone,
+        visitor_email: req.body.visitor_email,
+        errors: validationResult.errors
       });
-      return res.status(400).json(buildValidationErrorResponse(fieldErrors, endpoint));
+      
+      // Kembalikan error yang lebih deskriptif
+      return res.status(400).json({
+        success: false,
+        error: 'Validasi data gagal',
+        details: validationResult.errors.join(', '),
+        field_errors: validationResult.errors,
+        timestamp: new Date().toISOString(),
+        endpoint
+      });
     }
 
     // Validate source enum

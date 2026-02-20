@@ -727,6 +727,8 @@ class SupabaseService {
 
   async getQRCodes() {
     try {
+      console.log('🔄 [getQRCodes] Mengambil data QR codes dari database...');
+      
       const { data, error } = await supabase
         .from('qr_codes')
         .select(`
@@ -736,6 +738,13 @@ class SupabaseService {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      
+      console.log(`✅ [getQRCodes] Data mentah dari database: ${data?.length || 0} QR codes`);
+      
+      // Log setiap QR code untuk debugging
+      data?.forEach((qr: any) => {
+        console.log(`  📋 QR "${qr.name}": redirect_type="${qr.redirect_type}", auto_fill_unit=${qr.auto_fill_unit}, show_options=${JSON.stringify(qr.show_options)}`);
+      });
 
       // Hitung analytics untuk setiap QR code dari data tiket
       const qrCodesWithAnalytics = await Promise.all(
@@ -758,8 +767,20 @@ class SupabaseService {
 
             const tickets_30d = (internalCount || 0) + (externalCount || 0);
 
+            // Parse show_options jika berupa string JSON
+            let showOptions = qr.show_options;
+            if (typeof showOptions === 'string') {
+              try {
+                showOptions = JSON.parse(showOptions);
+              } catch (e) {
+                console.warn(`Failed to parse show_options for QR ${qr.id}:`, e);
+                showOptions = ['internal_ticket', 'external_ticket', 'survey'];
+              }
+            }
+
             return {
               ...qr,
+              show_options: showOptions,
               analytics: {
                 scans_30d,
                 tickets_30d,
@@ -768,8 +789,20 @@ class SupabaseService {
             };
           } catch (err) {
             console.warn(`Failed to get analytics for QR ${qr.id}:`, err);
+            
+            // Parse show_options jika berupa string JSON
+            let showOptions = qr.show_options;
+            if (typeof showOptions === 'string') {
+              try {
+                showOptions = JSON.parse(showOptions);
+              } catch (e) {
+                showOptions = ['internal_ticket', 'external_ticket', 'survey'];
+              }
+            }
+            
             return {
               ...qr,
+              show_options: showOptions,
               analytics: {
                 scans_30d: qr.usage_count || 0,
                 tickets_30d: 0,
@@ -779,6 +812,13 @@ class SupabaseService {
           }
         })
       );
+
+      console.log(`✅ [getQRCodes] Data dengan analytics: ${qrCodesWithAnalytics.length} QR codes`);
+      
+      // Log data final yang akan dikembalikan
+      qrCodesWithAnalytics.forEach((qr: any) => {
+        console.log(`  📊 QR "${qr.name}": redirect_type="${qr.redirect_type}", auto_fill_unit=${qr.auto_fill_unit}, show_options=${JSON.stringify(qr.show_options)}`);
+      });
 
       return {
         success: true,
@@ -857,6 +897,17 @@ class SupabaseService {
 
       console.log('✅ QR code found:', data.name, 'redirect_type:', data.redirect_type);
 
+      // Parse show_options jika berupa string JSON
+      let showOptions = data.show_options;
+      if (typeof showOptions === 'string') {
+        try {
+          showOptions = JSON.parse(showOptions);
+        } catch (e) {
+          console.warn('Failed to parse show_options:', e);
+          showOptions = ['internal_ticket', 'external_ticket', 'survey'];
+        }
+      }
+
       // Update usage count (fire and forget, ignore errors for anon users)
       supabase
         .from('qr_codes')
@@ -867,7 +918,10 @@ class SupabaseService {
 
       return {
         success: true,
-        data,
+        data: {
+          ...data,
+          show_options: showOptions
+        },
         message: 'QR code berhasil diambil'
       };
     } catch (error: any) {
@@ -953,28 +1007,54 @@ class SupabaseService {
     show_options?: string[];
   }) {
     try {
+      console.log('🔄 [supabaseService] Updating QR code using database function:', id, updates);
+      
+      // Convert show_options array to JSONB if provided
+      const showOptionsJsonb = updates.show_options ? JSON.stringify(updates.show_options) : null;
+      
+      // Gunakan database function yang bypass RLS
       const { data, error } = await supabase
-        .from('qr_codes')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select(`
-          *,
-          units:unit_id(id, name, code)
-        `)
-        .single();
+        .rpc('update_qr_code', {
+          p_id: id,
+          p_name: updates.name || null,
+          p_description: updates.description || null,
+          p_is_active: updates.is_active !== undefined ? updates.is_active : null,
+          p_redirect_type: updates.redirect_type || null,
+          p_auto_fill_unit: updates.auto_fill_unit !== undefined ? updates.auto_fill_unit : null,
+          p_show_options: showOptionsJsonb
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ [supabaseService] Database function error:', error);
+        throw error;
+      }
+
+      // Function returns array, ambil item pertama
+      const qrCode = Array.isArray(data) ? data[0] : data;
+
+      if (!qrCode) {
+        throw new Error('QR code updated but no data returned');
+      }
+
+      console.log('✅ [supabaseService] QR code updated successfully:', qrCode);
+
+      // Fetch unit info untuk response lengkap
+      const { data: unitData } = await supabase
+        .from('units')
+        .select('id, name, code, description')
+        .eq('id', qrCode.unit_id)
+        .single();
 
       return {
         success: true,
-        data,
+        data: {
+          ...qrCode,
+          units: unitData
+        },
         message: 'QR code berhasil diupdate'
       };
     } catch (error: any) {
-      console.error('SupabaseService.updateQRCode error:', error);
+      console.error('❌ [supabaseService] updateQRCode error:', error);
       return {
         success: false,
         data: null,

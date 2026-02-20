@@ -368,11 +368,22 @@ const DirectInternalTicketForm: React.FC = () => {
         const errorMsg = result.error || result.message || 'Gagal mengirim tiket';
         console.error('❌ Server error:', errorMsg);
         console.error('❌ Full error response:', result);
-        setError(errorMsg);
+        
+        // Tampilkan field errors jika ada
+        if (result.field_errors) {
+          console.error('❌ Field errors:', result.field_errors);
+          const fieldErrorMessages = Object.values(result.field_errors).join('\n');
+          setError(`${errorMsg}\n\nDetail:\n${fieldErrorMessages}`);
+        } else {
+          setError(errorMsg);
+        }
         
         // Tampilkan notifikasi error
         if (typeof window !== 'undefined' && typeof window.alert === 'function') {
-          alert(`❌ Gagal membuat tiket\n\n${errorMsg}`);
+          const alertMsg = result.field_errors 
+            ? `❌ Gagal membuat tiket\n\n${errorMsg}\n\nDetail:\n${Object.values(result.field_errors).join('\n')}`
+            : `❌ Gagal membuat tiket\n\n${errorMsg}`;
+          alert(alertMsg);
         }
       }
     } catch (err: any) {

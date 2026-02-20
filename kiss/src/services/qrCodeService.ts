@@ -170,42 +170,21 @@ export const qrCodeService = {
       show_options?: string[];
     }
   ): Promise<any> {
-    // Di Vercel production, gunakan Supabase langsung
-    if (isVercelProduction()) {
-      try {
-        console.log(`🔄 Updating QR code ${id} via Supabase...`);
-        const result = await supabaseService.updateQRCode(id, data);
-        if (!result.success) {
-          throw new Error(result.error || 'Gagal mengupdate QR code');
-        }
-        console.log('✅ QR code updated successfully via Supabase');
-        return result.data;
-      } catch (error: any) {
-        console.error('❌ Supabase update failed:', error.message);
-        throw error;
-      }
-    }
-
+    console.log(`🔄 [qrCodeService] Updating QR code ${id}...`, data);
+    
+    // GUNAKAN SUPABASE SERVICE dengan database function yang bypass RLS
     try {
-      console.log(`🔄 Updating QR code ${id}...`);
-      const response = await api.patch(`/qr-codes/${id}`, data);
-      console.log('✅ QR code updated successfully');
-      return response.data;
-    } catch (error: any) {
-      console.error('❌ Failed to update QR code:', error.message);
-      // Fallback ke Supabase
-      try {
-        console.log('🔄 Trying Supabase fallback...');
-        const result = await supabaseService.updateQRCode(id, data);
-        if (!result.success) {
-          throw new Error(result.error || 'Gagal mengupdate QR code');
-        }
-        console.log('✅ QR code updated via Supabase fallback');
-        return result.data;
-      } catch (supaError: any) {
-        console.error('❌ Supabase fallback also failed:', supaError.message);
-        throw error;
+      console.log('🔄 [qrCodeService] Using Supabase service with database function');
+      const result = await supabaseService.updateQRCode(id, data);
+      if (!result.success) {
+        console.error('❌ [qrCodeService] Supabase update failed:', result.error);
+        throw new Error(result.error || 'Gagal mengupdate QR code');
       }
+      console.log('✅ [qrCodeService] QR code updated successfully:', result.data);
+      return result.data;
+    } catch (error: any) {
+      console.error('❌ [qrCodeService] Update error:', error.message);
+      throw error;
     }
   },
 

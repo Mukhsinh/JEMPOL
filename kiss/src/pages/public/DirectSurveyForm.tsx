@@ -423,7 +423,9 @@ const DirectSurveyForm: React.FC = () => {
           console.log('📥 Response data:', result);
           
           if (!response.ok) {
-            throw new Error(result.error || 'Gagal mengirim survei');
+            // Tampilkan error detail jika ada
+            const errorMessage = result.details || result.error || 'Gagal mengirim survei';
+            throw new Error(errorMessage);
           }
         }
       } catch (fetchError: any) {

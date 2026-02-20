@@ -217,10 +217,8 @@ export function validateScore(score: any, fieldName: string): ValidationResult {
 export function validateSurveyData(data: any): ValidationResult {
   const errors: string[] = [];
   
-  // Validate required field: service_type
-  if (!data.service_type || data.service_type === '') {
-    errors.push('Jenis layanan (service_type) wajib diisi');
-  }
+  // service_type adalah optional (bisa null atau kosong)
+  // Tidak perlu validasi wajib untuk service_type
   
   // Validate email if provided
   if (data.visitor_email && !validateEmail(data.visitor_email)) {
