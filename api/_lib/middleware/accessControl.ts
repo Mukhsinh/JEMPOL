@@ -329,82 +329,64 @@ export async function validateResourceAccess(
     
     console.log('🔍 Ticket unit_id:', data.unit_id, 'User unit_id:', userInfo.unit_id);
     
-    // 2. Cek SEMUA eskalasi untuk tiket ini (tanpa filter unit_id dulu)
+    // 2. Cek apakah unit user ada dalam eskalasi (query sederhana)
     const { data: allEscalationUnits, error: allEscalationError } = await supabase
       .from('ticket_escalation_units')
-      .select('id, unit_id, is_primary, is_cc, status')
-      .eq('ticket_id', resourceId);
+      .select('unit_id')
+      .eq('ticket_id', resourceId)
+      .eq('unit_id', userInfo.unit_id)
+      .limit(1);
     
-    console.log('🔍 ALL escalation units for ticket:', {
+    console.log('🔍 Checking escalation units for user unit:', {
       ticket_id: resourceId,
       user_unit_id: userInfo.unit_id,
-      all_units: allEscalationUnits,
-      count: allEscalationUnits?.length || 0,
-      error: allEscalationError ? {
-        message: allEscalationError.message,
-        details: allEscalationError.details,
-        hint: allEscalationError.hint,
-        code: allEscalationError.code
-      } : null
+      found: allEscalationUnits?.length || 0,
+      error: allEscalationError?.message
     });
     
-    // Cek apakah unit user ada dalam daftar eskalasi (primary atau CC)
+    // Jika ditemukan, user punya akses
     if (!allEscalationError && allEscalationUnits && allEscalationUnits.length > 0) {
-      const userUnitInEscalation = allEscalationUnits.find(eu => eu.unit_id === userInfo.unit_id);
-      if (userUnitInEscalation) {
-        console.log('✅ Access granted: user unit found in escalation units', {
-          is_primary: userUnitInEscalation.is_primary,
-          is_cc: userUnitInEscalation.is_cc,
-          status: userUnitInEscalation.status
-        });
-        return { hasAccess: true };
-      } else {
-        console.log('⚠️ User unit NOT found in escalation units. Available units:', 
-          allEscalationUnits.map(eu => eu.unit_id)
-        );
-      }
+      console.log('✅ Access granted: user unit found in escalation units');
+      return { hasAccess: true };
     }
     
     // 3. Fallback: Cek ticket_escalations (untuk backward compatibility)
-    const { data: escalations, error: escalationError } = await supabase
+    // Cek apakah user unit adalah to_unit_id
+    const { data: escalationsByToUnit, error: escalationToError } = await supabase
       .from('ticket_escalations')
-      .select('id, to_unit_id, cc_unit_ids, ticket_id')
+      .select('id')
+      .eq('ticket_id', resourceId)
+      .eq('to_unit_id', userInfo.unit_id)
+      .limit(1);
+    
+    if (!escalationToError && escalationsByToUnit && escalationsByToUnit.length > 0) {
+      console.log('✅ Access granted: ticket escalated to user unit (to_unit_id)');
+      return { hasAccess: true };
+    }
+    
+    // Cek apakah user unit ada di cc_unit_ids
+    const { data: escalationsByCc, error: escalationCcError } = await supabase
+      .from('ticket_escalations')
+      .select('id, cc_unit_ids')
       .eq('ticket_id', resourceId);
     
-    console.log('🔍 Checking ticket_escalations (fallback):', { 
+    console.log('🔍 Checking ticket_escalations CC (fallback):', { 
       ticket_id: resourceId, 
       user_unit_id: userInfo.unit_id,
-      found: escalations?.length || 0,
-      escalations: escalations,
-      error: escalationError ? {
-        message: escalationError.message,
-        details: escalationError.details,
-        hint: escalationError.hint,
-        code: escalationError.code
-      } : null
+      found: escalationsByCc?.length || 0,
+      error: escalationCcError?.message
     });
     
-    if (!escalationError && escalations && escalations.length > 0) {
-      // Cek apakah user unit adalah to_unit_id atau ada di cc_unit_ids
-      const hasEscalationAccess = escalations.some(esc => {
-        const isToUnit = esc.to_unit_id === userInfo.unit_id;
+    if (!escalationCcError && escalationsByCc && escalationsByCc.length > 0) {
+      // Cek apakah user unit ada di cc_unit_ids
+      const hasEscalationAccess = escalationsByCc.some(esc => {
         const isInCC = esc.cc_unit_ids && Array.isArray(esc.cc_unit_ids) && 
                        esc.cc_unit_ids.includes(userInfo.unit_id);
-        
-        console.log('🔍 Checking escalation:', {
-          escalation_id: esc.id,
-          to_unit_id: esc.to_unit_id,
-          cc_unit_ids: esc.cc_unit_ids,
-          user_unit_id: userInfo.unit_id,
-          isToUnit,
-          isInCC
-        });
-        
-        return isToUnit || isInCC;
+        return isInCC;
       });
       
       if (hasEscalationAccess) {
-        console.log('✅ Access granted: ticket escalated to user unit (via ticket_escalations)');
+        console.log('✅ Access granted: ticket escalated to user unit (cc_unit_ids)');
         return { hasAccess: true };
       }
     }

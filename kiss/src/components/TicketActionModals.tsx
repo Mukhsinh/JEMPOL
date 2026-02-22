@@ -279,10 +279,13 @@ export function ResponseModal({ isOpen, onClose, ticketId, ticketNumber, onSucce
           mark_resolved: false
         });
       } else {
-        setError(result.error || 'Gagal menambahkan respon');
+        const errorMsg = typeof result.error === 'string' ? result.error : 'Gagal menambahkan respon';
+        setError(errorMsg);
       }
     } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan');
+      const errorMsg = typeof err === 'string' ? err : (err?.message || 'Terjadi kesalahan');
+      setError(errorMsg);
+      console.error('Caught error in handleSubmit:', err);
     } finally {
       setSubmitting(false);
     }

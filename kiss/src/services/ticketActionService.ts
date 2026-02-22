@@ -83,9 +83,15 @@ class TicketActionService {
       return response.data;
     } catch (error: any) {
       console.error('Error responding to ticket:', error);
+      const errorMessage = error.response?.data?.error || error.response?.data?.details || error.message || 'Gagal menambahkan respon';
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: errorMessage
+      });
       return {
         success: false,
-        error: error.response?.data?.error || error.message || 'Gagal menambahkan respon'
+        error: errorMessage
       };
     }
   }
