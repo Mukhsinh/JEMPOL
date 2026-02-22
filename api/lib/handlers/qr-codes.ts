@@ -239,7 +239,7 @@ async function handlePost(req: VercelRequest, res: VercelResponse) {
 /**
  * Handle GET by ID - Get QR code by ID
  */
-async function handleGetById(req: VercelRequest, res: VercelResponse, id: string) {
+async function handleGetById(_req: VercelRequest, res: VercelResponse, id: string) {
   try {
     const { data, error } = await supabase
       .from('qr_codes')
@@ -335,7 +335,7 @@ async function handlePatchById(req: VercelRequest, res: VercelResponse, id: stri
 /**
  * Handle DELETE by ID - Delete QR code
  */
-async function handleDeleteById(req: VercelRequest, res: VercelResponse, id: string) {
+async function handleDeleteById(_req: VercelRequest, res: VercelResponse, id: string) {
   try {
     console.log(`🔄 Deleting QR code ${id}...`);
     
@@ -388,7 +388,7 @@ async function handleDeleteById(req: VercelRequest, res: VercelResponse, id: str
 /**
  * Handle scan - Get QR code by code (for scanning)
  */
-async function handleScan(req: VercelRequest, res: VercelResponse, code: string) {
+async function handleScan(_req: VercelRequest, res: VercelResponse, code: string) {
   try {
     if (!code) {
       return res.status(400).json({ error: 'Invalid QR code' });

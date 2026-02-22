@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getSupabaseClient, isSupabaseConfigured } from '../config/supabase';
 import { setAPIHeaders } from '../utils/headers';
-import { buildErrorResponse, buildSuccessResponse, buildConfigErrorResponse, buildValidationErrorResponse } from '../utils/response';
+import { buildErrorResponse, buildSuccessResponse, buildConfigErrorResponse } from '../utils/response';
 import { logRequest, logError, logSuccess, logWarn, logValidationError, logDatabase } from '../utils/logger';
 import { validateSurveyData, validateUUID } from '../validators/request';
 import { validateUnit, validateCategory, validateQRCode } from '../validators/database';

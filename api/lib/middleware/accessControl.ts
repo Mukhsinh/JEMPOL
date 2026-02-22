@@ -209,7 +209,7 @@ export function hasGlobalAccess(userRole: string): boolean {
  * @param unitIdColumn - Nama kolom unit_id di tabel (default: 'unit_id')
  * @returns Query dengan filter unit yang sudah diterapkan
  */
-export function applyUnitFilter<T>(
+export function applyUnitFilter(
   query: any,
   userInfo: UserInfo | null,
   unitIdColumn: string = 'unit_id'

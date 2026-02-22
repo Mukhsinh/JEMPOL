@@ -47,7 +47,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-async function handleAddressStats(req: VercelRequest, res: VercelResponse, params: any) {
+async function handleAddressStats(_req: VercelRequest, res: VercelResponse, params: any) {
   const { start_date, end_date, unit_id, group_by } = params;
   
   const validGroupBy = ['kabupaten_kota', 'kecamatan', 'kelurahan'];
@@ -89,7 +89,7 @@ async function handleAddressStats(req: VercelRequest, res: VercelResponse, param
   return res.status(200).json({ success: true, data: addressStats });
 }
 
-async function handleIKMByUnit(req: VercelRequest, res: VercelResponse, params: any) {
+async function handleIKMByUnit(_req: VercelRequest, res: VercelResponse, params: any) {
   const { start_date, end_date, unit_id } = params;
 
   let query = supabase.from('public_surveys').select(`
@@ -165,7 +165,7 @@ async function handleIKMByUnit(req: VercelRequest, res: VercelResponse, params: 
   return res.status(200).json({ success: true, data: unitIKM });
 }
 
-async function handleResponses(req: VercelRequest, res: VercelResponse, params: any) {
+async function handleResponses(_req: VercelRequest, res: VercelResponse, params: any) {
   const { start_date, end_date, unit_id } = params;
 
   let query = supabase.from('public_surveys').select(`
@@ -236,7 +236,7 @@ async function handleResponses(req: VercelRequest, res: VercelResponse, params: 
   return res.status(200).json({ success: true, data: responses });
 }
 
-async function handleStats(req: VercelRequest, res: VercelResponse, params: any) {
+async function handleStats(_req: VercelRequest, res: VercelResponse, params: any) {
   const { start_date, end_date, unit_id } = params;
 
   let query = supabase.from('public_surveys').select('*', { count: 'exact' });

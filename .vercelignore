@@ -41,3 +41,11 @@ api/test-imports.js
 
 # Backup files
 *.backup
+
+# Duplicate API files (prevent multiple serverless functions)
+kiss/api/
+kiss/api/public/
+kiss/api/qr-codes/
+kiss/api/response-templates/
+kiss/api/package.json
+kiss/api/tsconfig.json

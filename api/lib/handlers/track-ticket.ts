@@ -337,7 +337,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Event: Escalations
     if (escalations && escalations.length > 0) {
-      escalations.forEach((esc, index) => {
+      escalations.forEach((esc) => {
         timeline.push({
           type: 'escalation',
           title: `Eskalasi ${esc.escalation_type === 'automatic' ? 'Otomatis' : 'Manual'}`,

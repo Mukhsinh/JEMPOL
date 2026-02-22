@@ -30,6 +30,10 @@ const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabase
 
 // Helper function to generate ticket number
 async function generateTicketNumber(): Promise<string> {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
+  
   const year = new Date().getFullYear();
   const { data: lastTicket } = await supabase
     .from('tickets')
@@ -231,7 +235,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       reporter_email,
       reporter_phone,
       reporter_address,
-      age_range,
+      age_range: _age_range,
       service_type,
       category,
       service_category_id,

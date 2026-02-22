@@ -156,12 +156,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // 5. Tambahkan escalation info
       const escalationMap = new Map(
-        allEscalations.map(e => [e.ticket_id, { 
-          from_unit_id: e.from_unit_id, 
-          to_unit_id: e.to_unit_id,
-          escalation_date: e.created_at,
-          type: e.type
-        }])
+        allEscalations.map(e => {
+          const info: any = {
+            escalation_date: e.created_at,
+            type: e.type
+          };
+          
+          // Add from_unit_id or to_unit_id based on what exists
+          if ('from_unit_id' in e && e.from_unit_id) {
+            info.from_unit_id = e.from_unit_id;
+          }
+          if ('to_unit_id' in e && e.to_unit_id) {
+            info.to_unit_id = e.to_unit_id;
+          }
+          
+          return [e.ticket_id, info];
+        })
       );
 
       tickets = tickets.map(ticket => {

@@ -64,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 // Handler untuk units
-async function handleUnits(req: VercelRequest, res: VercelResponse) {
+async function handleUnits(_req: VercelRequest, res: VercelResponse) {
   console.log('🎯 GET /api/public/app-settings?type=units - Vercel Function');
   
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
@@ -119,7 +119,7 @@ async function handleUnits(req: VercelRequest, res: VercelResponse) {
 }
 
 // Handler untuk app settings
-async function handleAppSettings(req: VercelRequest, res: VercelResponse) {
+async function handleAppSettings(_req: VercelRequest, res: VercelResponse) {
   console.log('🎯 GET /api/public/app-settings');
   
   // Prioritas: SUPABASE_URL > VITE_SUPABASE_URL

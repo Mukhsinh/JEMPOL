@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { getUserInfo, hasGlobalAccess, validateResourceAccess } from '../middleware/accessControl';
+import { getUserInfo, validateResourceAccess } from '../middleware/accessControl';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
@@ -142,7 +142,7 @@ async function handleRespondTicket(
   userInfo: any
 ) {
   try {
-    const { message, resolution, is_internal = false, mark_resolved = false } = req.body;
+    const { message, resolution: _resolution, is_internal = false, mark_resolved = false } = req.body;
 
     if (!message) {
       return res.status(400).json({
@@ -562,7 +562,7 @@ async function handleFlagTicket(
   res: VercelResponse,
   supabase: any,
   ticketId: string,
-  userInfo: any
+  _userInfo: any
 ) {
   try {
     const { is_flagged, flag_reason } = req.body;
@@ -610,7 +610,7 @@ async function handleGetTicketsByUnit(
   res: VercelResponse,
   supabase: any,
   unitId: string,
-  userInfo: any
+  _userInfo: any
 ) {
   try {
     const { status, priority } = req.query;
@@ -651,11 +651,11 @@ async function handleGetTicketsByUnit(
 
 // Handler untuk get ticket escalations
 async function handleGetTicketEscalations(
-  req: VercelRequest,
+  _req: VercelRequest,
   res: VercelResponse,
   supabase: any,
   ticketId: string,
-  userInfo: any
+  _userInfo: any
 ) {
   try {
     const { data, error } = await supabase
@@ -693,11 +693,11 @@ async function handleGetTicketEscalations(
 
 // Handler untuk get escalation units
 async function handleGetEscalationUnits(
-  req: VercelRequest,
+  _req: VercelRequest,
   res: VercelResponse,
   supabase: any,
   ticketId: string,
-  userInfo: any
+  _userInfo: any
 ) {
   try {
     const { data, error } = await supabase
@@ -738,7 +738,7 @@ async function handleUpdateEscalationUnitStatus(
   res: VercelResponse,
   supabase: any,
   escalationUnitId: string,
-  userInfo: any
+  _userInfo: any
 ) {
   try {
     const { status, notes } = req.body;
