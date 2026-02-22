@@ -5,7 +5,7 @@ import { viteApiPlugin } from './vite-api-plugin';
 export default defineConfig({
   plugins: [
     react(),
-    viteApiPlugin(), // Handle /api/* requests locally without needing vercel dev
+    viteApiPlugin(),
   ],
   test: {
     globals: true,
@@ -23,8 +23,6 @@ export default defineConfig({
     headers: {
       'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: http://localhost:* https://localhost:* ws://localhost:* wss://localhost:*; img-src 'self' data: blob: http: https: http://localhost:* https://localhost:* https://quickchart.io https://api.qrserver.com; connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* https://*.supabase.co wss://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com;"
     },
-    // NOTE: Proxy ke localhost:3004 dihapus karena API sekarang ditangani langsung
-    // oleh viteApiPlugin tanpa perlu menjalankan vercel dev terpisah
   },
   build: {
     target: 'es2015',
@@ -45,7 +43,8 @@ export default defineConfig({
           'game': ['phaser'],
           'http': ['axios'],
           'supabase': ['@supabase/supabase-js'],
-          'socket': ['socket.io-client']
+          'pdf': ['jspdf', 'jspdf-autotable', 'html2canvas'],
+          'excel': ['xlsx']
         },
         assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/[name]-[hash].js',

@@ -6,33 +6,49 @@ Sistem Manajemen Keluhan dan Survei Kepuasan Pelanggan
 
 ### Development
 ```bash
-cd kiss
-npm install --legacy-peer-deps
+# Install dependencies
+npm run install:all
+
+# Run development server
 npm run dev
 ```
 
 ### Build Production
 ```bash
-cd kiss
 npm run build
 ```
 
 ### Deploy ke Vercel
+
+#### Persiapan
+1. Install Vercel CLI: `npm i -g vercel`
+2. Login: `vercel login`
+
+#### Deploy
 ```bash
-vercel --prod
+# Preview deployment
+npm run deploy:preview
+
+# Production deployment
+npm run deploy
 ```
 
-## Environment Variables (Vercel Dashboard)
+## Environment Variables
 
 Set di Vercel Dashboard → Settings → Environment Variables:
 
+### Frontend (VITE_*)
 ```
 VITE_SUPABASE_URL=https://jxxzbdivafzzwqhagwrf.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key
+VITE_API_URL=/api
+```
+
+### Backend (API)
+```
 SUPABASE_URL=https://jxxzbdivafzzwqhagwrf.supabase.co
 SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-VITE_API_URL=/api
 NODE_ENV=production
 ```
 
@@ -41,10 +57,11 @@ NODE_ENV=production
 ```
 /
 ├── api/              # Vercel Serverless Functions
-│   └── public/       # Public API endpoints
+│   ├── lib/          # Handlers, middleware, utils
+│   └── index.ts      # Unified API handler
 ├── kiss/             # React Frontend
 │   ├── src/          # Source code
-│   └── dist/         # Build output (auto-generated)
+│   └── dist/         # Build output
 ├── vercel.json       # Vercel configuration
 └── package.json      # Root package.json
 ```

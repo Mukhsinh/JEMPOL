@@ -20,12 +20,24 @@ Thumbs.db
 .idea
 .kiro
 
-# Test files di kiss
+# Test files
 kiss/src/test
 kiss/tests
+test-*.html
+kiss/test-*.html
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
 
-# Documentation
+# Documentation files
+*.md
+!README.md
 kiss/docs
 
-# API handlers (hanya api/index.ts yang jadi serverless function)
-api/lib/handlers
+# Development files
+kiss/vite-api-plugin.ts
+api/test-imports.js
+
+# Backup files
+*.backup

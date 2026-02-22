@@ -11,12 +11,13 @@
   "dependencies": {},
   "devDependencies": {},
   "scripts": {
-    "install:all": "cd kiss && npm install --legacy-peer-deps",
+    "install:all": "cd kiss && npm install --legacy-peer-deps && cd ../api && npm install",
     "dev": "npm --prefix kiss run dev",
     "build": "cd kiss && npm run build",
     "preview": "npm --prefix kiss run preview",
     "test": "npm --prefix kiss test",
     "deploy": "vercel --prod",
-    "deploy:preview": "vercel"
+    "deploy:preview": "vercel",
+    "clean": "cd kiss && rm -rf dist node_modules && cd ../api && rm -rf node_modules"
   }
 }

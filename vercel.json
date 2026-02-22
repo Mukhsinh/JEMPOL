@@ -1,14 +1,16 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "cd kiss && npm install --legacy-peer-deps && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "kiss/dist",
   "framework": null,
   "trailingSlash": false,
+  "installCommand": "cd kiss && npm install --legacy-peer-deps && cd ../api && npm install",
   "functions": {
     "api/index.ts": {
       "runtime": "@vercel/node@3.2.29",
       "maxDuration": 10,
+      "memory": 1024,
       "includeFiles": "api/lib/**"
     }
   },
