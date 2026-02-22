@@ -157,9 +157,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const surveyData: any = {
       unit_id: finalUnitId,
       service_category_id: finalServiceCategoryId,
-      visitor_name: is_anonymous ? null : visitor_name,
-      visitor_email: is_anonymous ? null : visitor_email,
-      visitor_phone: visitor_phone || null,
+      visitor_name: is_anonymous ? null : (visitor_name && visitor_name.trim() !== '' ? visitor_name.trim() : null),
+      visitor_email: is_anonymous ? null : (visitor_email && visitor_email.trim() !== '' ? visitor_email.trim() : null),
+      visitor_phone: visitor_phone && visitor_phone.trim() !== '' ? visitor_phone.trim() : null,
       service_type: service_type || null,
       age_range: age_range || null,
       gender: gender || null,

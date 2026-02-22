@@ -228,15 +228,17 @@ export function validateSurveyData(data: any): ValidationResult {
   // Tidak perlu validasi wajib untuk service_type
   
   // Validate email if provided (dan tidak kosong setelah trim)
-  if (data.visitor_email && typeof data.visitor_email === 'string' && data.visitor_email.trim() !== '') {
-    if (!validateEmail(data.visitor_email.trim())) {
+  if (data.visitor_email) {
+    const emailStr = String(data.visitor_email).trim();
+    if (emailStr !== '' && !validateEmail(emailStr)) {
       errors.push('Format email tidak valid');
     }
   }
   
   // Validate phone if provided (dan tidak kosong setelah trim)
-  if (data.visitor_phone && typeof data.visitor_phone === 'string' && data.visitor_phone.trim() !== '') {
-    if (!validatePhone(data.visitor_phone.trim())) {
+  if (data.visitor_phone) {
+    const phoneStr = String(data.visitor_phone).trim();
+    if (phoneStr !== '' && !validatePhone(phoneStr)) {
       errors.push('Format nomor telepon tidak valid (contoh: 081234567890 atau +6281234567890)');
     }
   }
