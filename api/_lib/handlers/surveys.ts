@@ -80,6 +80,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       source = 'public_survey'
     } = req.body;
 
+    // Log request body untuk debugging
+    console.log('📥 Survey request body:', JSON.stringify(req.body, null, 2));
+    
     // Validate survey data
     const validationResult = validateSurveyData(req.body);
     if (!validationResult.valid) {
@@ -170,19 +173,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       kecamatan: district || null,
       alamat_jalan: address_detail || null,
       is_anonymous: is_anonymous || false,
-      // Map u1_score to q1_score, etc.
-      q1_score: u1_score ? (typeof u1_score === 'number' ? u1_score : parseInt(u1_score as string)) : null,
-      q2_score: u2_score ? (typeof u2_score === 'number' ? u2_score : parseInt(u2_score as string)) : null,
-      q3_score: u3_score ? (typeof u3_score === 'number' ? u3_score : parseInt(u3_score as string)) : null,
-      q4_score: u4_score ? (typeof u4_score === 'number' ? u4_score : parseInt(u4_score as string)) : null,
-      q5_score: u5_score ? (typeof u5_score === 'number' ? u5_score : parseInt(u5_score as string)) : null,
-      q6_score: u6_score ? (typeof u6_score === 'number' ? u6_score : parseInt(u6_score as string)) : null,
-      q7_score: u7_score ? (typeof u7_score === 'number' ? u7_score : parseInt(u7_score as string)) : null,
-      q8_score: u8_score ? (typeof u8_score === 'number' ? u8_score : parseInt(u8_score as string)) : null,
-      q9_score: u9_score ? (typeof u9_score === 'number' ? u9_score : parseInt(u9_score as string)) : null,
-      q10_score: u10_score ? (typeof u10_score === 'number' ? u10_score : parseInt(u10_score as string)) : null,
-      q11_score: u11_score ? (typeof u11_score === 'number' ? u11_score : parseInt(u11_score as string)) : null,
-      overall_score: overall_score ? (typeof overall_score === 'number' ? overall_score : parseInt(overall_score as string)) : null,
+      // Map u1_score to q1_score, etc. - ensure proper integer conversion
+      q1_score: u1_score ? (typeof u1_score === 'number' ? u1_score : parseInt(String(u1_score))) : null,
+      q2_score: u2_score ? (typeof u2_score === 'number' ? u2_score : parseInt(String(u2_score))) : null,
+      q3_score: u3_score ? (typeof u3_score === 'number' ? u3_score : parseInt(String(u3_score))) : null,
+      q4_score: u4_score ? (typeof u4_score === 'number' ? u4_score : parseInt(String(u4_score))) : null,
+      q5_score: u5_score ? (typeof u5_score === 'number' ? u5_score : parseInt(String(u5_score))) : null,
+      q6_score: u6_score ? (typeof u6_score === 'number' ? u6_score : parseInt(String(u6_score))) : null,
+      q7_score: u7_score ? (typeof u7_score === 'number' ? u7_score : parseInt(String(u7_score))) : null,
+      q8_score: u8_score ? (typeof u8_score === 'number' ? u8_score : parseInt(String(u8_score))) : null,
+      q9_score: u9_score ? (typeof u9_score === 'number' ? u9_score : parseInt(String(u9_score))) : null,
+      q10_score: u10_score ? (typeof u10_score === 'number' ? u10_score : parseInt(String(u10_score))) : null,
+      q11_score: u11_score ? (typeof u11_score === 'number' ? u11_score : parseInt(String(u11_score))) : null,
+      overall_score: overall_score ? (typeof overall_score === 'number' ? overall_score : parseInt(String(overall_score))) : null,
       comments: comments || null,
       qr_code: qr_code || null,
       source: finalSource,
@@ -193,6 +196,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Insert survey into database
     logDatabase('INSERT', 'public_surveys', { has_unit: !!finalUnitId, source: finalSource });
     
+    // Log data yang akan diinsert untuk debugging
+    console.log('📝 Survey data to insert:', JSON.stringify(surveyData, null, 2));
+    
     const { data: survey, error: surveyError } = await supabase
       .from('public_surveys')
       .insert([surveyData])
@@ -200,8 +206,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single();
 
     if (surveyError) {
+      console.error('❌ Supabase insert error:', {
+        message: surveyError.message,
+        details: surveyError.details,
+        hint: surveyError.hint,
+        code: surveyError.code
+      });
       logError('Failed to insert survey', surveyError, { surveyData });
-      return res.status(500).json(buildErrorResponse(surveyError, endpoint));
+      
+      // Return error yang lebih deskriptif
+      return res.status(500).json({
+        success: false,
+        error: 'Gagal menyimpan survei',
+        details: surveyError.message,
+        hint: surveyError.hint,
+        code: surveyError.code,
+        timestamp: new Date().toISOString(),
+        endpoint
+      });
     }
 
     logSuccess('Survey saved successfully', { survey_id: survey.id });
