@@ -1,11 +1,11 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import { viteApiPlugin } from './vite-api-plugin';
 
 export default defineConfig({
   plugins: [
     react(),
-    // vite-api-plugin hanya untuk development lokal, tidak diperlukan saat build production
-    // karena Vercel akan handle /api/* dengan serverless functions
+    viteApiPlugin(),
   ],
   test: {
     globals: true,

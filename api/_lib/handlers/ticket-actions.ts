@@ -46,10 +46,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Parse URL path
     let path = req.url?.split('?')[0] || '';
+    
+    // Remove /api prefix if exists
     if (path.startsWith('/api')) {
       path = path.substring(4);
     }
-    if (path.startsWith('/public')) {
+    
+    // Remove /public/ticket-actions prefix if exists
+    if (path.startsWith('/public/ticket-actions')) {
+      path = path.substring(22); // Remove '/public/ticket-actions'
+    } else if (path.startsWith('/public')) {
       path = path.substring(7);
     }
 
@@ -68,50 +74,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     console.log('👤 User Info:', { id: userInfo.id, role: userInfo.role, unit_id: userInfo.unit_id });
 
-    // Route: POST /ticket-actions/tickets/{id}/respond
-    const respondMatch = path.match(/^\/ticket-actions\/tickets\/([a-f0-9-]{36})\/respond$/i);
+    // Route: POST /tickets/{id}/respond
+    const respondMatch = path.match(/^\/tickets\/([a-f0-9-]{36})\/respond$/i);
     if (respondMatch && req.method === 'POST') {
       const ticketId = respondMatch[1];
       return handleRespondTicket(req, res, supabase, ticketId, userInfo);
     }
 
-    // Route: POST /ticket-actions/tickets/{id}/escalate
-    const escalateMatch = path.match(/^\/ticket-actions\/tickets\/([a-f0-9-]{36})\/escalate$/i);
+    // Route: POST /tickets/{id}/escalate
+    const escalateMatch = path.match(/^\/tickets\/([a-f0-9-]{36})\/escalate$/i);
     if (escalateMatch && req.method === 'POST') {
       const ticketId = escalateMatch[1];
       return handleEscalateTicket(req, res, supabase, ticketId, userInfo);
     }
 
-    // Route: POST /ticket-actions/tickets/{id}/flag
-    const flagMatch = path.match(/^\/ticket-actions\/tickets\/([a-f0-9-]{36})\/flag$/i);
+    // Route: POST /tickets/{id}/flag
+    const flagMatch = path.match(/^\/tickets\/([a-f0-9-]{36})\/flag$/i);
     if (flagMatch && req.method === 'POST') {
       const ticketId = flagMatch[1];
       return handleFlagTicket(req, res, supabase, ticketId, userInfo);
     }
 
-    // Route: GET /ticket-actions/tickets/by-unit/{unitId}
-    const byUnitMatch = path.match(/^\/ticket-actions\/tickets\/by-unit\/([a-f0-9-]{36})$/i);
+    // Route: GET /tickets/by-unit/{unitId}
+    const byUnitMatch = path.match(/^\/tickets\/by-unit\/([a-f0-9-]{36})$/i);
     if (byUnitMatch && req.method === 'GET') {
       const unitId = byUnitMatch[1];
       return handleGetTicketsByUnit(req, res, supabase, unitId, userInfo);
     }
 
-    // Route: GET /ticket-actions/tickets/{id}/escalations
-    const escalationsMatch = path.match(/^\/ticket-actions\/tickets\/([a-f0-9-]{36})\/escalations$/i);
+    // Route: GET /tickets/{id}/escalations
+    const escalationsMatch = path.match(/^\/tickets\/([a-f0-9-]{36})\/escalations$/i);
     if (escalationsMatch && req.method === 'GET') {
       const ticketId = escalationsMatch[1];
       return handleGetTicketEscalations(req, res, supabase, ticketId, userInfo);
     }
 
-    // Route: GET /ticket-actions/tickets/{id}/escalation-units
-    const escalationUnitsMatch = path.match(/^\/ticket-actions\/tickets\/([a-f0-9-]{36})\/escalation-units$/i);
+    // Route: GET /tickets/{id}/escalation-units
+    const escalationUnitsMatch = path.match(/^\/tickets\/([a-f0-9-]{36})\/escalation-units$/i);
     if (escalationUnitsMatch && req.method === 'GET') {
       const ticketId = escalationUnitsMatch[1];
       return handleGetEscalationUnits(req, res, supabase, ticketId, userInfo);
     }
 
-    // Route: PATCH /ticket-actions/escalation-units/{id}/status
-    const updateStatusMatch = path.match(/^\/ticket-actions\/escalation-units\/([a-f0-9-]{36})\/status$/i);
+    // Route: PATCH /escalation-units/{id}/status
+    const updateStatusMatch = path.match(/^\/escalation-units\/([a-f0-9-]{36})\/status$/i);
     if (updateStatusMatch && req.method === 'PATCH') {
       const escalationUnitId = updateStatusMatch[1];
       return handleUpdateEscalationUnitStatus(req, res, supabase, escalationUnitId, userInfo);
