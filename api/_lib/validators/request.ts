@@ -165,9 +165,16 @@ export function validatePhone(phone: string): boolean {
     return false;
   }
   
+  // Trim whitespace
+  const trimmed = phone.trim();
+  if (trimmed === '') {
+    return false;
+  }
+  
   // Indonesian phone: starts with 0 or +62, followed by 8-15 digits
-  const phoneRegex = /^(\+62|62|0)[0-9]{8,15}$/;
-  return phoneRegex.test(phone.replace(/[\s-]/g, ''));
+  // Allow spaces and dashes
+  const phoneRegex = /^(\+62|62|0)[0-9\s-]{8,15}$/;
+  return phoneRegex.test(trimmed);
 }
 
 /**
@@ -220,13 +227,13 @@ export function validateSurveyData(data: any): ValidationResult {
   // service_type adalah optional (bisa null atau kosong)
   // Tidak perlu validasi wajib untuk service_type
   
-  // Validate email if provided
-  if (data.visitor_email && !validateEmail(data.visitor_email)) {
+  // Validate email if provided (dan tidak kosong)
+  if (data.visitor_email && data.visitor_email.trim() !== '' && !validateEmail(data.visitor_email)) {
     errors.push('Format email tidak valid');
   }
   
-  // Validate phone if provided
-  if (data.visitor_phone && !validatePhone(data.visitor_phone)) {
+  // Validate phone if provided (dan tidak kosong)
+  if (data.visitor_phone && data.visitor_phone.trim() !== '' && !validatePhone(data.visitor_phone)) {
     errors.push('Format nomor telepon tidak valid');
   }
   
