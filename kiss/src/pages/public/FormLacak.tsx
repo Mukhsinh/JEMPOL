@@ -460,7 +460,7 @@ const FormLacak = () => {
                     <div key={response.id} className={`flex gap-3 ${index < ticket.ticket_responses!.length - 1 ? 'pb-3 border-b border-slate-100 dark:border-slate-700' : ''}`}>
                       <div className={`size-2 mt-1.5 rounded-full ${index === 0 ? 'bg-primary shadow-[0_0_8px_rgba(19,127,236,0.5)]' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
                       <div className="flex-grow">
-                        <p className="text-xs font-bold">{response.response_type === 'resolution' ? 'Resolusi' : 'Respon'}</p>
+                        <p className="text-xs font-bold">{response.response_type === 'resolution' ? 'Tanggapan' : 'Respon'}</p>
                         <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{response.message}</p>
                         <div className="flex justify-between mt-0.5">
                           <p className="text-[10px] text-slate-500">{formatDate(response.created_at)}</p>

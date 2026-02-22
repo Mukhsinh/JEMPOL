@@ -9,6 +9,8 @@ interface User {
   email?: string;
   role: string;
   name?: string;
+  unit_id?: string;
+  unit_name?: string;
 }
 
 interface AuthContextType {
@@ -19,6 +21,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  hasGlobalAccess: boolean;
+  userUnitId: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -76,7 +80,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Get admin profile dengan timeout singkat
             const profilePromise = supabase
               .from('admins')
-              .select('id, username, full_name, email, role, is_active')
+              .select(`
+                id, 
+                username, 
+                full_name, 
+                email, 
+                role, 
+                is_active,
+                unit_id,
+                units:unit_id (
+                  name
+                )
+              `)
               .eq('email', session.user.email)
               .eq('is_active', true)
               .single();
@@ -98,7 +113,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               full_name: profileData.full_name,
               email: profileData.email,
               role: profileData.role || 'admin',
+              unit_id: profileData.unit_id,
+              unit_name: profileData.units?.name,
             };
+
+            // DEBUG: Log user data
+            console.log('🔍 [AuthContext.initAuth] User data loaded:', {
+              id: userData.id,
+              email: userData.email,
+              role: userData.role,
+              unit_id: userData.unit_id,
+              unit_name: userData.unit_name,
+              timestamp: new Date().toISOString()
+            });
 
             // Simpan ke cache untuk next load
             localStorage.setItem('adminUser', JSON.stringify(userData));
@@ -144,7 +171,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const profilePromise = supabase
             .from('admins')
-            .select('id, username, full_name, email, role, is_active')
+            .select(`
+              id, 
+              username, 
+              full_name, 
+              email, 
+              role, 
+              is_active,
+              unit_id,
+              units:unit_id (
+                name
+              )
+            `)
             .eq('email', session.user.email)
             .eq('is_active', true)
             .single();
@@ -162,6 +200,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               full_name: profileData.full_name,
               email: profileData.email,
               role: profileData.role || 'admin',
+              unit_id: profileData.unit_id,
+              unit_name: profileData.units?.name,
             });
           }
         } catch (error) {
@@ -181,10 +221,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Clear any existing session first
-      await supabase.auth.signOut();
-      await new Promise(resolve => setTimeout(resolve, 100)); // Kurangi delay
-
       // Validate input
       const cleanEmail = email.trim().toLowerCase();
       if (!cleanEmail || !password) {
@@ -207,12 +243,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: authData, error: authError } = await Promise.race([loginPromise, timeoutPromise]) as any;
 
       if (authError) {
+        console.error('Auth error details:', authError);
         let errorMessage = 'Login gagal';
         
         if (authError.message?.includes('Invalid login credentials')) {
           errorMessage = 'Email atau password salah';
+        } else if (authError.message?.includes('Email not confirmed')) {
+          errorMessage = 'Email belum dikonfirmasi. Silakan cek email Anda untuk konfirmasi.';
         } else if (authError.message?.includes('timeout')) {
           errorMessage = 'Koneksi timeout, silakan coba lagi';
+        } else if (authError.status === 400) {
+          errorMessage = 'Email atau password salah. Pastikan email sudah terdaftar dan dikonfirmasi.';
+        } else {
+          errorMessage = `Login gagal: ${authError.message}`;
         }
         
         return {
@@ -234,7 +277,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Get admin profile dengan timeout yang cukup
       const profilePromise = supabase
         .from('admins')
-        .select('id, username, full_name, email, role, is_active')
+        .select(`
+          id, 
+          username, 
+          full_name, 
+          email, 
+          role, 
+          is_active,
+          unit_id,
+          units:unit_id (
+            name
+          )
+        `)
         .eq('email', cleanEmail)
         .eq('is_active', true)
         .maybeSingle(); // Gunakan maybeSingle untuk menghindari error jika tidak ada data
@@ -270,7 +324,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         full_name: adminProfile.full_name,
         email: adminProfile.email,
         role: adminProfile.role || 'admin',
+        unit_id: adminProfile.unit_id,
+        unit_name: adminProfile.units?.name,
       };
+
+      // DEBUG: Log user data after login
+      console.log('🔍 [AuthContext.login] User logged in:', {
+        id: userData.id,
+        email: userData.email,
+        role: userData.role,
+        unit_id: userData.unit_id,
+        unit_name: userData.unit_name,
+        timestamp: new Date().toISOString()
+      });
 
       setUser(userData);
       // Simpan ke cache untuk next load
@@ -304,15 +370,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // Memoized computed values untuk menghindari re-render
-  const authValues = useMemo(() => ({
-    user,
-    isLoading,
-    isAuthenticated: !!user,
-    login,
-    logout,
-    isAdmin: user?.role === 'admin' || user?.role === 'superadmin',
-    isSuperAdmin: user?.role === 'superadmin'
-  }), [user, isLoading, login, logout]);
+  const authValues = useMemo(() => {
+    const values = {
+      user,
+      isLoading,
+      isAuthenticated: !!user,
+      login,
+      logout,
+      isAdmin: user?.role === 'admin' || user?.role === 'superadmin',
+      isSuperAdmin: user?.role === 'superadmin',
+      hasGlobalAccess: user?.role === 'superadmin' || user?.role === 'direktur',
+      userUnitId: user?.unit_id || null,
+    };
+    
+    // DEBUG: Log auth values untuk debugging notifikasi
+    console.log('🔐 [AuthContext] Auth values updated:', {
+      userId: user?.id,
+      userUnitId: values.userUnitId,
+      role: user?.role,
+      hasGlobalAccess: values.hasGlobalAccess,
+      timestamp: new Date().toISOString()
+    });
+    
+    return values;
+  }, [user, isLoading, login, logout]);
 
   return (
     <AuthContext.Provider value={authValues}>

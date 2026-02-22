@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { getUserInfo, applyEscalationUnitFilter } from '../middleware/accessControl';
+import { logSuccessfulAccess } from '../utils/auditLog';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
@@ -29,6 +31,114 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const path = url?.split('?')[0] || '';
 
   try {
+    // GET /escalation/tickets - Get ticket escalations dengan access control
+    if (method === 'GET' && path.endsWith('/tickets')) {
+      console.log('🎯 GET /api/public/escalation/tickets');
+      
+      // Extract user info untuk access control
+      const userInfo = await getUserInfo(req, supabase);
+      console.log('👤 User info:', userInfo);
+
+      // Get query parameters for filtering
+      const {
+        status,
+        ticket_id,
+        from_unit_id,
+        to_unit_id,
+        date_from,
+        date_to,
+        limit = '100'
+      } = req.query;
+
+      console.log('📥 Query params:', { status, ticket_id, from_unit_id, to_unit_id, limit });
+
+      // Build query
+      let query = supabase
+        .from('ticket_escalations')
+        .select(`
+          *,
+          tickets!ticket_escalations_ticket_id_fkey(id, ticket_number, title, status),
+          from_units:from_unit_id(id, name, code),
+          to_units:to_unit_id(id, name, code),
+          escalated_by_user:escalated_by(id, full_name, email)
+        `)
+        .order('escalated_at', { ascending: false });
+
+      // Apply unit-based access control FIRST
+      query = applyEscalationUnitFilter(query, userInfo);
+
+      // Apply filters
+      if (status && status !== 'all') {
+        query = query.eq('status', status);
+      }
+
+      if (ticket_id) {
+        query = query.eq('ticket_id', ticket_id);
+      }
+
+      if (from_unit_id) {
+        query = query.eq('from_unit_id', from_unit_id);
+      }
+
+      if (to_unit_id) {
+        query = query.eq('to_unit_id', to_unit_id);
+      }
+
+      if (date_from) {
+        query = query.gte('escalated_at', date_from);
+      }
+
+      if (date_to) {
+        query = query.lte('escalated_at', date_to);
+      }
+
+      // Apply limit
+      const limitNum = parseInt(limit as string) || 100;
+      query = query.limit(limitNum);
+
+      const { data: escalations, error } = await query;
+
+      if (error) {
+        console.error('❌ Error fetching ticket escalations:', error);
+        return res.status(500).json({
+          success: false,
+          error: 'Gagal mengambil data eskalasi tiket',
+          details: error.message
+        });
+      }
+
+      console.log(`✅ Fetched ${escalations?.length || 0} ticket escalations`);
+
+      // Log successful access (non-blocking)
+      if (userInfo && escalations && escalations.length > 0) {
+        (async () => {
+          try {
+            await logSuccessfulAccess(
+              supabase,
+              userInfo.id,
+              userInfo.role,
+              'view',
+              'escalation',
+              'list',
+              userInfo.unit_id,
+              {
+                ip: req.headers['x-forwarded-for'] as string || req.headers['x-real-ip'] as string,
+                userAgent: req.headers['user-agent'] as string
+              }
+            );
+          } catch (logError) {
+            console.error('Failed to log access (non-critical):', logError);
+          }
+        })();
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: escalations || [],
+        message: 'Ticket escalations berhasil diambil'
+      });
+    }
+
     // GET /escalation/rules - Get all escalation rules
     if (method === 'GET' && path.endsWith('/rules')) {
       const { data, error } = await supabase

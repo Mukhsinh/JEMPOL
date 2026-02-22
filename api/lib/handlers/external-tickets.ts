@@ -1,27 +1,32 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { getUserInfo, applyUnitFilter } from '../middleware/accessControl';
+import { logSuccessfulAccess } from '../utils/auditLog';
 
 // Initialize Supabase client
-// PERBAIKAN CRITICAL: Di Vercel, VITE_ prefix TIDAK tersedia untuk serverless functions
-// Prioritas: non-VITE vars dulu (untuk Vercel), baru VITE vars (untuk local dev)
+// PERBAIKAN CRITICAL: Gunakan SERVICE_ROLE_KEY untuk bypass RLS saat membuat notifikasi
+// Prioritas: SERVICE_ROLE_KEY dulu (untuk bypass RLS), baru ANON_KEY (fallback)
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
 console.log('🔧 Environment check (external-tickets handler):');
 console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? 'EXISTS' : 'MISSING');
-console.log('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? `EXISTS (length: ${process.env.SUPABASE_ANON_KEY.length})` : 'MISSING');
-console.log('   VITE_SUPABASE_URL:', process.env.VITE_SUPABASE_URL ? 'EXISTS (fallback)' : 'MISSING');
-console.log('   VITE_SUPABASE_ANON_KEY:', process.env.VITE_SUPABASE_ANON_KEY ? `EXISTS (fallback, length: ${process.env.VITE_SUPABASE_ANON_KEY.length})` : 'MISSING');
-console.log('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? `EXISTS (length: ${process.env.SUPABASE_ANON_KEY.length})` : 'MISSING');
+console.log('   SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'EXISTS (preferred for RLS bypass)' : 'MISSING');
+console.log('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? `EXISTS (fallback, length: ${process.env.SUPABASE_ANON_KEY.length})` : 'MISSING');
+console.log('   Using key type:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SERVICE_ROLE' : 'ANON');
 console.log('   Final supabaseUrl:', supabaseUrl ? `SET (${supabaseUrl.substring(0, 40)}...)` : 'NOT SET');
-console.log('   Final supabaseKey:', supabaseKey ? `SET (length: ${supabaseKey.length})` : 'NOT SET');
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing Supabase credentials');
   console.error('   All env vars with SUPABASE:', Object.keys(process.env).filter(k => k.includes('SUPABASE')));
 }
 
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+}) : null;
 
 // Helper function to generate ticket number
 async function generateTicketNumber(): Promise<string> {
@@ -73,12 +78,133 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true });
     }
 
-    // Only allow POST
+    // Handle GET - List external tickets dengan access control
+    if (req.method === 'GET') {
+      console.log('🎯 GET /api/public/external-tickets');
+      
+      if (!supabase) {
+        return res.status(500).json({
+          success: false,
+          error: 'Konfigurasi server tidak lengkap'
+        });
+      }
+
+      // Extract user info untuk access control
+      const userInfo = await getUserInfo(req, supabase);
+      console.log('👤 User info:', userInfo);
+
+      // Get query parameters for filtering
+      const {
+        status,
+        priority,
+        unit_id,
+        service_type,
+        date_from,
+        date_to,
+        search,
+        limit = '100'
+      } = req.query;
+
+      console.log('📥 Query params:', { status, priority, unit_id, service_type, limit });
+
+      // Build query
+      let query = supabase
+        .from('tickets')
+        .select(`
+          *,
+          units!tickets_unit_id_fkey(id, name, code),
+          service_categories!tickets_category_id_fkey(id, name),
+          patient_types!tickets_patient_type_id_fkey(id, name)
+        `)
+        .order('created_at', { ascending: false });
+
+      // Apply unit-based access control FIRST
+      query = applyUnitFilter(query, userInfo, 'unit_id');
+
+      // Apply filters
+      if (status && status !== 'all') {
+        query = query.eq('status', status);
+      }
+
+      if (priority && priority !== 'all') {
+        query = query.eq('priority', priority);
+      }
+
+      // Note: unit_id filter dari query params akan override unit filter dari access control
+      // Ini hanya untuk superadmin/direktur yang bisa pilih unit tertentu
+      if (unit_id) {
+        query = query.eq('unit_id', unit_id);
+      }
+
+      if (service_type && service_type !== 'all') {
+        query = query.eq('type', service_type);
+      }
+
+      if (date_from) {
+        query = query.gte('created_at', date_from);
+      }
+
+      if (date_to) {
+        query = query.lte('created_at', date_to);
+      }
+
+      if (search) {
+        query = query.or(`ticket_number.ilike.%${search}%,title.ilike.%${search}%,description.ilike.%${search}%`);
+      }
+
+      // Apply limit
+      const limitNum = parseInt(limit as string) || 100;
+      query = query.limit(limitNum);
+
+      const { data: tickets, error } = await query;
+
+      if (error) {
+        console.error('❌ Error fetching external tickets:', error);
+        return res.status(500).json({
+          success: false,
+          error: 'Gagal mengambil data tiket eksternal',
+          details: error.message
+        });
+      }
+
+      console.log(`✅ Fetched ${tickets?.length || 0} external tickets`);
+
+      // Log successful access (non-blocking)
+      if (userInfo && tickets && tickets.length > 0) {
+        (async () => {
+          try {
+            await logSuccessfulAccess(
+              supabase,
+              userInfo.id,
+              userInfo.role,
+              'view',
+              'external_ticket',
+              'list',
+              userInfo.unit_id,
+              {
+                ip: req.headers['x-forwarded-for'] as string || req.headers['x-real-ip'] as string,
+                userAgent: req.headers['user-agent'] as string
+              }
+            );
+          } catch (logError) {
+            console.error('Failed to log access (non-critical):', logError);
+          }
+        })();
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: tickets || [],
+        message: 'External tickets berhasil diambil'
+      });
+    }
+
+    // Only allow POST for creating tickets
     if (req.method !== 'POST') {
       return res.status(405).json({
         success: false,
-        error: `Method ${req.method} not allowed. Use POST method.`,
-        allowed_methods: ['POST', 'OPTIONS']
+        error: `Method ${req.method} not allowed. Use GET or POST method.`,
+        allowed_methods: ['GET', 'POST', 'OPTIONS']
       });
     }
     
@@ -452,6 +578,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     console.log('✅ External ticket created successfully:', ticket.ticket_number);
+
+    // Log successful ticket creation (non-blocking)
+    const userInfo = await getUserInfo(req, supabase);
+    if (userInfo) {
+      (async () => {
+        try {
+          await logSuccessfulAccess(
+            supabase,
+            userInfo.id,
+            userInfo.role,
+            'create',
+            'external_ticket',
+            ticket.id,
+            unit_id,
+            {
+              ip: req.headers['x-forwarded-for'] as string || req.headers['x-real-ip'] as string,
+              userAgent: req.headers['user-agent'] as string
+            }
+          );
+        } catch (logError) {
+          console.error('Failed to log access (non-critical):', logError);
+        }
+      })();
+    }
 
     // Update QR code usage count if applicable
     if (qr_code_id) {

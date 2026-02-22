@@ -40,7 +40,7 @@ interface FilterState {
 }
 
 export default function DashboardPage() {
-    const { user, logout } = useAuth();
+    const { user, logout, hasGlobalAccess, userUnitId } = useAuth();
     const navigate = useNavigate();
     const [tickets, setTickets] = useState<Ticket[]>([]);
     const [stats, setStats] = useState<Stats>({
@@ -164,10 +164,12 @@ export default function DashboardPage() {
                 externalQuery = externalQuery.gte('created_at', startDate.toISOString());
             }
 
-            // Apply unit filter
-            if (filters.unitId) {
-                internalQuery = internalQuery.eq('unit_id', filters.unitId);
-                externalQuery = externalQuery.eq('unit_id', filters.unitId);
+            // Apply unit filter - auto-apply untuk regular user
+            const effectiveUnitId = filters.unitId || (!hasGlobalAccess && userUnitId ? userUnitId : null);
+            if (effectiveUnitId) {
+                // User hanya dapat melihat tiket yang ditujukan langsung ke unit mereka
+                internalQuery = internalQuery.eq('unit_id', effectiveUnitId);
+                externalQuery = externalQuery.eq('unit_id', effectiveUnitId);
             }
 
             // Apply status filter

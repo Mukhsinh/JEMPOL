@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { complaintService } from '../services/complaintService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface StatusChartProps {
     metrics?: any;
@@ -14,6 +15,7 @@ interface ChartDataItem {
 const StatusChart: React.FC<StatusChartProps> = ({ metrics }) => {
     const [chartData, setChartData] = useState<ChartDataItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const { userUnitId, hasGlobalAccess } = useAuth();
 
     useEffect(() => {
         const fetchChartData = async () => {
@@ -47,7 +49,7 @@ const StatusChart: React.FC<StatusChartProps> = ({ metrics }) => {
 
                 const dataPromise = Promise.all([
                     complaintService.getUnits(),
-                    complaintService.getTickets({ limit: 1000 })
+                    complaintService.getTickets({ limit: 1000 }, userUnitId, hasGlobalAccess)
                 ]);
 
                 const [unitsResponse, ticketsResponse] = await Promise.race([dataPromise, timeoutPromise]) as [any, any];
@@ -83,7 +85,7 @@ const StatusChart: React.FC<StatusChartProps> = ({ metrics }) => {
         };
 
         fetchChartData();
-    }, [metrics]);
+    }, [metrics, userUnitId, hasGlobalAccess]);
 
     const maxCount = Math.max(...chartData.map(item => item.count), 1);
 
@@ -127,7 +129,7 @@ const StatusChart: React.FC<StatusChartProps> = ({ metrics }) => {
                                 'bg-cyan-500 hover:bg-cyan-600'
                             ];
                             return (
-                                <div key={index} className="flex flex-col items-center gap-2 flex-1 max-w-[80px] group">
+                                <div key={index} className="flex flex-col items-center gap-2 flex-1 max-w-[100px] group">
                                     <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                                         {item.count}
                                     </span>
@@ -144,9 +146,22 @@ const StatusChart: React.FC<StatusChartProps> = ({ metrics }) => {
                                             </div>
                                         )}
                                     </div>
-                                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400 text-center truncate w-full" title={item.name}>
-                                        {item.name.length > 8 ? item.name.substring(0, 8) + '...' : item.name}
-                                    </span>
+                                    <div className="text-center w-full px-1">
+                                        <span 
+                                            className="text-[10px] font-medium text-slate-600 dark:text-slate-400 block leading-tight"
+                                            title={item.name}
+                                            style={{
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 2,
+                                                WebkitBoxOrient: 'vertical',
+                                                overflow: 'hidden',
+                                                wordBreak: 'break-word',
+                                                hyphens: 'auto'
+                                            }}
+                                        >
+                                            {item.name}
+                                        </span>
+                                    </div>
                                 </div>
                             );
                         })}

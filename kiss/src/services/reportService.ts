@@ -534,10 +534,17 @@ class ReportService {
     }
   }
 
-  async getReportData(params?: ReportFilters): Promise<FullReportData> {
+  async getReportData(params?: ReportFilters, userUnitId?: string | null, hasGlobalAccess?: boolean): Promise<FullReportData> {
     try {
       const startDate = this.getStartDate(params?.dateRange);
       console.log('📊 Report: Fetching data from', startDate.toISOString());
+      
+      // Auto-apply unit filter jika user tidak punya global access
+      let effectiveUnitId = params?.unitId;
+      if (!hasGlobalAccess && userUnitId) {
+        effectiveUnitId = userUnitId;
+        console.log('🔒 Applying unit filter for regular user:', userUnitId);
+      }
       
       // OPTIMASI: Query hanya field yang diperlukan untuk mengurangi payload
       let ticketsQuery = supabase.from('tickets')
@@ -561,7 +568,10 @@ class ReportService {
         .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false });
 
-      if (params?.unitId) ticketsQuery = ticketsQuery.eq('unit_id', params.unitId);
+      if (effectiveUnitId) {
+        // User hanya dapat melihat tiket yang ditujukan langsung ke unit mereka
+        ticketsQuery = ticketsQuery.eq('unit_id', effectiveUnitId);
+      }
       if (params?.categoryId) ticketsQuery = ticketsQuery.eq('category_id', params.categoryId);
       if (params?.status) ticketsQuery = ticketsQuery.eq('status', params.status);
       if (params?.priority) ticketsQuery = ticketsQuery.eq('priority', params.priority);
@@ -595,7 +605,7 @@ class ReportService {
         .gte('created_at', startDate.toISOString())
         .order('created_at', { ascending: false });
 
-      if (params?.unitId) externalTicketsQuery = externalTicketsQuery.eq('unit_id', params.unitId);
+      if (effectiveUnitId) externalTicketsQuery = externalTicketsQuery.eq('unit_id', effectiveUnitId);
       if (params?.categoryId) externalTicketsQuery = externalTicketsQuery.eq('service_category_id', params.categoryId);
       if (params?.status) externalTicketsQuery = externalTicketsQuery.eq('status', params.status);
       if (params?.priority) externalTicketsQuery = externalTicketsQuery.eq('priority', params.priority);
@@ -735,10 +745,10 @@ class ReportService {
         averageResponseTimeChange: -2
       };
 
-      const trends = await this.calculateTrends(params?.unitId, params?.categoryId);
-      const periodTrends = await this.calculatePeriodTrends(params?.unitId, params?.categoryId);
-      const categoryTrends = await this.calculateCategoryTrends(startDate, params?.unitId);
-      const patientTypeTrends = await this.calculatePatientTypeTrends(startDate, params?.unitId);
+      const trends = await this.calculateTrends(effectiveUnitId, params?.categoryId);
+      const periodTrends = await this.calculatePeriodTrends(effectiveUnitId, params?.categoryId);
+      const categoryTrends = await this.calculateCategoryTrends(startDate, effectiveUnitId);
+      const patientTypeTrends = await this.calculatePatientTypeTrends(startDate, effectiveUnitId);
       const riskAnalysis = await this.calculateRiskAnalysis(startDate);
 
       const page = params?.page || 1;

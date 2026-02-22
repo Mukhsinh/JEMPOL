@@ -30,6 +30,46 @@ export interface EscalationLog {
   executed_at: string;
 }
 
+export interface Escalation {
+  id: string;
+  ticket_id: string;
+  from_unit_id: string;
+  to_unit_id: string;
+  reason: string;
+  status: string;
+  created_at: string;
+  resolved_at?: string;
+  tickets?: {
+    id: string;
+    ticket_number: string;
+    title: string;
+    status: string;
+  };
+  from_unit?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  to_unit?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+}
+
+export interface GetEscalationsParams {
+  status?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface GetEscalationsResult {
+  data: Escalation[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface EscalationStats {
   rules: {
     total: number;
@@ -50,13 +90,146 @@ export interface EscalationStats {
 }
 
 class EscalationService {
-  async getRules(): Promise<EscalationRule[]> {
+  /**
+   * Get escalations dengan auto-apply unit filter untuk regular user
+   * User dapat melihat escalation jika unit mereka adalah from_unit atau to_unit
+   */
+  async getEscalations(
+    params?: GetEscalationsParams,
+    userUnitId?: string | null,
+    hasGlobalAccess?: boolean
+  ): Promise<GetEscalationsResult> {
     try {
-      // Langsung gunakan Supabase untuk development
+      const page = params?.page || 1;
+      const limit = params?.limit || 20;
+      const offset = (page - 1) * limit;
+
+      // Build query
+      let query = supabase
+        .from('escalations')
+        .select(`
+          id,
+          ticket_id,
+          from_unit_id,
+          to_unit_id,
+          reason,
+          status,
+          created_at,
+          resolved_at,
+          tickets (id, ticket_number, title, status),
+          from_unit:units!from_unit_id (id, name, code),
+          to_unit:units!to_unit_id (id, name, code)
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      // Apply unit filter untuk regular user
+      if (!hasGlobalAccess && userUnitId) {
+        console.log('🔒 Applying escalation unit filter for regular user:', userUnitId);
+        query = query.or(`from_unit_id.eq.${userUnitId},to_unit_id.eq.${userUnitId}`);
+      }
+
+      // Apply status filter
+      if (params?.status) {
+        query = query.eq('status', params.status);
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        console.error('❌ Error fetching escalations:', error);
+        throw error;
+      }
+
+      return {
+        data: data || [],
+        total: count || 0,
+        page,
+        limit,
+      };
+    } catch (error) {
+      console.error('❌ Error in getEscalations:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get escalation by ID dengan access validation
+   */
+  async getEscalationById(
+    escalationId: string,
+    userUnitId?: string | null,
+    hasGlobalAccess?: boolean
+  ): Promise<Escalation | null> {
+    try {
       const { data, error } = await supabase
+        .from('escalations')
+        .select(`
+          id,
+          ticket_id,
+          from_unit_id,
+          to_unit_id,
+          reason,
+          status,
+          created_at,
+          resolved_at,
+          tickets (id, ticket_number, title, status),
+          from_unit:units!from_unit_id (id, name, code),
+          to_unit:units!to_unit_id (id, name, code)
+        `)
+        .eq('id', escalationId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Not found
+          return null;
+        }
+        console.error('❌ Error fetching escalation:', error);
+        throw error;
+      }
+
+      // Validate access untuk regular user
+      if (!hasGlobalAccess && userUnitId) {
+        const hasAccess = data.from_unit_id === userUnitId || data.to_unit_id === userUnitId;
+        if (!hasAccess) {
+          console.warn('🚫 Access denied: User unit', userUnitId, 'trying to access escalation between', data.from_unit_id, 'and', data.to_unit_id);
+          throw new Error('ACCESS_DENIED');
+        }
+      }
+
+      return data;
+    } catch (error: any) {
+      if (error.message === 'ACCESS_DENIED') {
+        throw error;
+      }
+      console.error('❌ Error in getEscalationById:', error);
+      throw error;
+    }
+  }
+
+  async getRules(
+    userUnitId?: string | null,
+    hasGlobalAccess?: boolean,
+    selectedUnit?: string
+  ): Promise<EscalationRule[]> {
+    try {
+      // Build query
+      let query = supabase
         .from('escalation_rules')
         .select('*')
         .order('created_at', { ascending: false });
+
+      // Apply unit filter untuk regular user
+      // Escalation rules biasanya tidak terikat ke unit tertentu,
+      // tapi jika ada kolom unit_id di escalation_rules, uncomment ini:
+      // if (!hasGlobalAccess && userUnitId) {
+      //   query = query.eq('unit_id', userUnitId);
+      // } else if (selectedUnit) {
+      //   query = query.eq('unit_id', selectedUnit);
+      // }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching escalation rules:', error);
@@ -70,7 +243,11 @@ class EscalationService {
     }
   }
 
-  async getStats(): Promise<EscalationStats> {
+  async getStats(
+    userUnitId?: string | null,
+    hasGlobalAccess?: boolean,
+    selectedUnit?: string
+  ): Promise<EscalationStats> {
     try {
       // Get rules stats
       const { data: rules, error: rulesError } = await supabase
@@ -107,11 +284,20 @@ class EscalationService {
         successRate: total > 0 ? Math.round((successful / total) * 100) : 0
       };
 
-      // Get escalated tickets count
-      const { count: escalatedCount, error: ticketsError } = await supabase
+      // Get escalated tickets count dengan unit filter
+      let ticketsQuery = supabase
         .from('tickets')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'escalated');
+
+      // Apply unit filter untuk regular user
+      if (!hasGlobalAccess && userUnitId) {
+        ticketsQuery = ticketsQuery.eq('unit_id', userUnitId);
+      } else if (selectedUnit) {
+        ticketsQuery = ticketsQuery.eq('unit_id', selectedUnit);
+      }
+
+      const { count: escalatedCount, error: ticketsError } = await ticketsQuery;
 
       if (ticketsError) throw ticketsError;
 
@@ -131,6 +317,24 @@ class EscalationService {
         tickets: { escalated: 0 },
         period: '30 days'
       };
+    }
+  }
+
+  /**
+   * Get units untuk dropdown selector (hanya untuk superadmin/direktur)
+   */
+  async getUnits(): Promise<{ data: Array<{ id: string; name: string }> | null; error: any }> {
+    try {
+      const { data, error } = await supabase
+        .from('units')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+
+      return { data, error };
+    } catch (error) {
+      console.error('Error fetching units:', error);
+      return { data: null, error };
     }
   }
 

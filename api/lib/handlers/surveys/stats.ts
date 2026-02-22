@@ -24,13 +24,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { start_date, end_date, unit_id } = req.query;
+    const { start_date, end_date, unit_id, user_unit_id, has_global_access } = req.query;
 
     let query = supabase.from('public_surveys').select('*', { count: 'exact' });
 
     if (start_date) query = query.gte('created_at', start_date);
     if (end_date) query = query.lte('created_at', end_date);
-    if (unit_id && unit_id !== 'all') query = query.eq('unit_id', unit_id);
+    
+    // PENTING: Filter berdasarkan unit untuk user non-global
+    const hasGlobalAccess = has_global_access === 'true';
+    if (!hasGlobalAccess && user_unit_id && user_unit_id !== 'all') {
+      console.log('🔒 Applying unit filter for survey stats:', user_unit_id);
+      query = query.eq('unit_id', user_unit_id);
+    } else if (unit_id && unit_id !== 'all') {
+      // Untuk admin/superadmin yang memilih unit tertentu
+      query = query.eq('unit_id', unit_id);
+    }
 
     const { data: surveys, error, count } = await query;
 

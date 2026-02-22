@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { complaintService, Ticket } from '../services/complaintService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface TicketTableProps {
     filters?: {
@@ -17,6 +18,7 @@ const TicketTable: React.FC<TicketTableProps> = ({ filters }) => {
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
+    const { userUnitId, hasGlobalAccess } = useAuth();
 
     const fetchTickets = async () => {
         console.log('🎫 TicketTable: Fetching tickets...');
@@ -35,7 +37,7 @@ const TicketTable: React.FC<TicketTableProps> = ({ filters }) => {
                 params.unit_id = filters.unit_id;
             }
             
-            const response = await complaintService.getTickets(params);
+            const response = await complaintService.getTickets(params, userUnitId, hasGlobalAccess);
             
             if (response.success) {
                 setTickets(response.data || []);
@@ -52,7 +54,7 @@ const TicketTable: React.FC<TicketTableProps> = ({ filters }) => {
 
     useEffect(() => {
         fetchTickets();
-    }, [filters]);
+    }, [filters, userUnitId, hasGlobalAccess]);
 
     const handleTicketClick = (ticketId: string) => {
         navigate(`/tickets/${ticketId}`);

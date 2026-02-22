@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { complaintService } from '../services/complaintService';
 import { useAuth } from '../contexts/AuthContext';
 import KPICard from '../components/KPICard';
 import StatusChart from '../components/StatusChart';
+import EscalationChart from '../components/EscalationChart';
 import TicketTable from '../components/TicketTable';
-import { generateDashboardReportPDF } from '../utils/pdfGenerator';
+import { generateDashboardReportPDF } from '../utils/dashboardReportPDF';
+import { useNotifications } from '../hooks/useNotifications';
 
 interface FilterState {
     dateRange: string;
@@ -26,7 +29,8 @@ interface ServiceCategory {
 }
 
 const Dashboard = () => {
-    const { user } = useAuth();
+    const navigate = useNavigate();
+    const { user, hasGlobalAccess, userUnitId } = useAuth();
     const [metrics, setMetrics] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [units, setUnits] = useState<Unit[]>([]);
@@ -41,6 +45,10 @@ const Dashboard = () => {
     const [showUnitDropdown, setShowUnitDropdown] = useState(false);
     const [showStatusDropdown, setShowStatusDropdown] = useState(false);
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+    
+    // Notifications
+    const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+    const [showNotifications, setShowNotifications] = useState(false);
 
     // Load initial data dengan optimasi timeout
     useEffect(() => {
@@ -87,25 +95,37 @@ const Dashboard = () => {
             try {
                 console.log('📈 Fetching dashboard metrics with filters:', filters);
                 
+                // Apply unit filter untuk regular user
+                const effectiveFilters = {
+                    ...filters,
+                    // Jika user tidak punya global access dan tidak ada unit_id di filter, gunakan userUnitId
+                    unit_id: !hasGlobalAccess && filters.unit_id === 'all' && userUnitId 
+                        ? userUnitId 
+                        : filters.unit_id,
+                    // Kirim parameter kontrol akses
+                    userUnitId: userUnitId || undefined,
+                    hasGlobalAccess: hasGlobalAccess
+                };
+                
+                console.log('🔒 Effective filters with unit access control:', effectiveFilters);
+                
                 // Timeout lebih pendek untuk response lebih cepat
                 const timeoutPromise = new Promise((_, reject) => {
                     setTimeout(() => reject(new Error('Metrics request timeout')), 8000);
                 });
                 
-                const metricsPromise = complaintService.getDashboardMetricsFiltered({
-                    dateRange: filters.dateRange,
-                    unit_id: filters.unit_id,
-                    category_id: filters.category_id,
-                    status: filters.status
-                });
+                const metricsPromise = complaintService.getDashboardMetricsFiltered(effectiveFilters);
                 
-                const response = await Promise.race([metricsPromise, timeoutPromise]) as any;
+                const metricsResponse = await Promise.race([
+                    metricsPromise,
+                    timeoutPromise
+                ]) as any;
                 
-                if (response.success) {
-                    setMetrics(response.data);
+                if (metricsResponse.success) {
+                    setMetrics(metricsResponse.data);
                     console.log('✅ Dashboard metrics loaded successfully');
                 } else {
-                    console.warn('⚠️ Dashboard metrics failed:', response.error);
+                    console.warn('⚠️ Dashboard metrics failed:', metricsResponse.error);
                     // Set default metrics jika gagal
                     setMetrics({
                         statusCounts: {},
@@ -127,7 +147,7 @@ const Dashboard = () => {
         };
 
         fetchMetrics();
-    }, [filters]);
+    }, [filters, hasGlobalAccess, userUnitId]);
 
     // Close dropdowns when clicking outside
     useEffect(() => {
@@ -171,34 +191,124 @@ const Dashboard = () => {
         fetchMetrics();
     };
 
-    const handleExportReport = () => {
+    const handleExportReport = async () => {
         if (!metrics) {
             console.warn('Tidak ada data untuk diekspor');
             return;
         }
 
-        // Siapkan data untuk PDF sesuai interface DashboardReportData
-        const pdfData = {
-            totalTickets,
-            statusCounts: {
-                open: getStatusCount('open'),
-                in_progress: getStatusCount('in_progress'),
-                escalated: getStatusCount('escalated'),
-                resolved: getStatusCount('resolved'),
-                closed: getStatusCount('closed')
-            },
-            recentTickets: metrics.recentTickets || [],
-            filters: {
-                dateRange: getDateRangeLabel(filters.dateRange),
-                unit: getUnitLabel(filters.unit_id),
-                status: getStatusLabel(filters.status),
-                category: getCategoryLabel(filters.category_id)
-            },
-            generatedAt: new Date().toISOString()
-        };
+        try {
+            // Hitung breakdown per unit
+            const unitBreakdown: Array<{ unit: string; count: number; percentage: number }> = [];
+            if (metrics.recentTickets && metrics.recentTickets.length > 0) {
+                const unitCounts: { [key: string]: number } = {};
+                
+                metrics.recentTickets.forEach((ticket: any) => {
+                    const unitName = ticket.units?.name || 'Unit Tidak Tercatat';
+                    unitCounts[unitName] = (unitCounts[unitName] || 0) + 1;
+                });
+                
+                Object.entries(unitCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .forEach(([unit, count]) => {
+                        unitBreakdown.push({
+                            unit,
+                            count,
+                            percentage: parseFloat(((count / metrics.recentTickets.length) * 100).toFixed(1))
+                        });
+                    });
+            }
 
-        // Generate PDF
-        generateDashboardReportPDF(pdfData);
+            // Hitung breakdown per kategori
+            const categoryBreakdown: Array<{ category: string; count: number; percentage: number }> = [];
+            if (metrics.recentTickets && metrics.recentTickets.length > 0) {
+                const categoryCounts: { [key: string]: number } = {};
+                metrics.recentTickets.forEach((ticket: any) => {
+                    const categoryName = ticket.service_categories?.name || 'Belum Dikategorikan';
+                    categoryCounts[categoryName] = (categoryCounts[categoryName] || 0) + 1;
+                });
+                
+                Object.entries(categoryCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .forEach(([category, count]) => {
+                        categoryBreakdown.push({
+                            category,
+                            count,
+                            percentage: parseFloat(((count / metrics.recentTickets.length) * 100).toFixed(1))
+                        });
+                    });
+            }
+
+            // Hitung tren 7 hari terakhir
+            const trendData: Array<{ date: string; open: number; resolved: number; total: number }> = [];
+            if (metrics.recentTickets && metrics.recentTickets.length > 0) {
+                const last7Days: { [key: string]: { open: number; resolved: number; total: number } } = {};
+                
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+                    last7Days[dateStr] = { open: 0, resolved: 0, total: 0 };
+                }
+
+                metrics.recentTickets.forEach((ticket: any) => {
+                    if (ticket.created_at) {
+                        const ticketDate = new Date(ticket.created_at);
+                        const dateStr = ticketDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+                        
+                        if (last7Days[dateStr]) {
+                            last7Days[dateStr].total++;
+                            if (ticket.status === 'open') last7Days[dateStr].open++;
+                            if (ticket.status === 'resolved') last7Days[dateStr].resolved++;
+                        }
+                    }
+                });
+
+                Object.entries(last7Days).forEach(([date, counts]) => {
+                    trendData.push({ date, ...counts });
+                });
+            }
+
+            // Hitung metrik kinerja
+            const resolvedCount = getStatusCount('resolved');
+            const escalatedCount = getStatusCount('escalated');
+            const performanceMetrics = {
+                averageResponseTime: 45, // Placeholder - bisa dihitung dari data real
+                resolutionRate: totalTickets > 0 ? (resolvedCount / totalTickets) * 100 : 0,
+                escalationRate: totalTickets > 0 ? (escalatedCount / totalTickets) * 100 : 0
+            };
+
+            // Siapkan data untuk PDF sesuai interface DashboardReportData
+            const pdfData = {
+                totalTickets,
+                statusCounts: {
+                    open: getStatusCount('open'),
+                    in_progress: getStatusCount('in_progress'),
+                    escalated: getStatusCount('escalated'),
+                    resolved: getStatusCount('resolved'),
+                    closed: getStatusCount('closed')
+                },
+                recentTickets: metrics.recentTickets || [],
+                filters: {
+                    dateRange: getDateRangeLabel(filters.dateRange),
+                    unit: getUnitLabel(filters.unit_id),
+                    status: getStatusLabel(filters.status),
+                    category: getCategoryLabel(filters.category_id)
+                },
+                generatedAt: new Date().toISOString(),
+                unitBreakdown,
+                categoryBreakdown,
+                trendData,
+                performanceMetrics
+            };
+
+            // Generate PDF
+            generateDashboardReportPDF(pdfData);
+            console.log('✅ Laporan dashboard berhasil diunduh');
+        } catch (error) {
+            console.error('❌ Error generating dashboard report:', error);
+            alert('Gagal mengunduh laporan. Silakan coba lagi.');
+        }
     };
 
     const handleFilterChange = (key: keyof FilterState, value: string) => {
@@ -256,6 +366,93 @@ const Dashboard = () => {
                     <p className="text-slate-500 dark:text-slate-400 text-sm">Selamat datang kembali, {user?.full_name || 'Pengguna'}. Berikut adalah ringkasan hari ini.</p>
                 </div>
                 <div className="flex items-center gap-3">
+                    {/* Icon Notifikasi dengan animasi berkedip */}
+                    <div className="relative">
+                        <button 
+                            onClick={() => setShowNotifications(!showNotifications)}
+                            className={`relative p-2 transition-colors bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-lg ${
+                                unreadCount > 0 
+                                    ? 'text-red-500 hover:text-red-600 notification-blink' 
+                                    : 'text-slate-500 hover:text-primary'
+                            }`}
+                            title="Notifikasi"
+                        >
+                            <span className="material-symbols-outlined">notifications</span>
+                            {unreadCount > 0 && (
+                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-lg shadow-red-500/50 badge-pulse">
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </span>
+                            )}
+                        </button>
+                        
+                        {/* Dropdown Notifikasi */}
+                        {showNotifications && (
+                            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 max-h-96 overflow-hidden flex flex-col">
+                                <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                                    <h3 className="font-semibold text-slate-900 dark:text-white">Notifikasi</h3>
+                                    {unreadCount > 0 && (
+                                        <button 
+                                            onClick={markAllAsRead}
+                                            className="text-xs text-primary hover:underline"
+                                        >
+                                            Tandai semua dibaca
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="overflow-y-auto flex-1">
+                                    {notifications.length === 0 ? (
+                                        <div className="px-4 py-8 text-center text-slate-500 text-sm">
+                                            Tidak ada notifikasi
+                                        </div>
+                                    ) : (
+                                        notifications.map(notif => (
+                                            <button
+                                                key={notif.id}
+                                                onClick={() => {
+                                                    markAsRead(notif.id);
+                                                    setShowNotifications(false);
+                                                    navigate('/tickets');
+                                                }}
+                                                className={`w-full text-left block px-4 py-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
+                                                    !notif.is_read ? 'bg-blue-50 dark:bg-blue-900/10' : ''
+                                                }`}
+                                            >
+                                                <div className="flex items-start gap-3">
+                                                    <span className={`material-symbols-outlined text-[20px] mt-0.5 ${
+                                                        notif.type === 'escalation' || notif.type === 'ticket_escalated' ? 'text-orange-500' : 'text-blue-500'
+                                                    }`}>
+                                                        {notif.type === 'escalation' || notif.type === 'ticket_escalated' ? 'trending_up' : 'notifications_active'}
+                                                    </span>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm text-slate-900 dark:text-white font-medium">
+                                                            {notif.message}
+                                                        </p>
+                                                        {notif.tickets?.ticket_number && (
+                                                            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                                                                {notif.tickets.ticket_number}
+                                                            </p>
+                                                        )}
+                                                        <p className="text-xs text-slate-500 mt-1">
+                                                            {new Date(notif.created_at).toLocaleString('id-ID', {
+                                                                day: 'numeric',
+                                                                month: 'short',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit'
+                                                            })}
+                                                        </p>
+                                                    </div>
+                                                    {!notif.is_read && (
+                                                        <span className="w-2 h-2 bg-blue-500 rounded-full mt-2"></span>
+                                                    )}
+                                                </div>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
                     <button 
                         onClick={handleRefresh}
                         disabled={loading}
@@ -264,6 +461,7 @@ const Dashboard = () => {
                         <span className={`material-symbols-outlined text-[20px] ${loading ? 'animate-spin' : ''}`}>refresh</span>
                         <span>{loading ? 'Memuat...' : 'Perbarui'}</span>
                     </button>
+                    
                     <button 
                         onClick={handleExportReport}
                         className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm shadow-blue-500/30"
@@ -273,6 +471,16 @@ const Dashboard = () => {
                     </button>
                 </div>
             </div>
+
+            {/* Unit Context Indicator */}
+            {!hasGlobalAccess && user?.unit_name && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-3 rounded-lg">
+                    <p className="text-sm text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[20px]">location_on</span>
+                        <span>📍 Menampilkan data untuk: <strong>{user.unit_name}</strong></span>
+                    </p>
+                </div>
+            )}
 
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-surface-dark p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
@@ -317,44 +525,46 @@ const Dashboard = () => {
                     )}
                 </div>
 
-                {/* Unit Filter */}
-                <div className="relative">
-                    <button 
-                        onClick={() => {
-                            setShowUnitDropdown(!showUnitDropdown);
-                            setShowDateDropdown(false);
-                            setShowStatusDropdown(false);
-                            setShowCategoryDropdown(false);
-                        }}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
-                    >
-                        <span>{getUnitLabel(filters.unit_id)}</span>
-                        <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
-                    </button>
-                    {showUnitDropdown && (
-                        <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-10 min-w-[200px] max-h-60 overflow-y-auto">
-                            <button
-                                onClick={() => handleFilterChange('unit_id', 'all')}
-                                className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 ${
-                                    filters.unit_id === 'all' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
-                                }`}
-                            >
-                                Semua Unit
-                            </button>
-                            {units.map(unit => (
+                {/* Unit Filter - Hanya untuk superadmin/direktur */}
+                {hasGlobalAccess && (
+                    <div className="relative">
+                        <button 
+                            onClick={() => {
+                                setShowUnitDropdown(!showUnitDropdown);
+                                setShowDateDropdown(false);
+                                setShowStatusDropdown(false);
+                                setShowCategoryDropdown(false);
+                            }}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm font-medium text-slate-700 dark:text-slate-200"
+                        >
+                            <span>{getUnitLabel(filters.unit_id)}</span>
+                            <span className="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+                        </button>
+                        {showUnitDropdown && (
+                            <div className="absolute top-full left-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-10 min-w-[200px] max-h-60 overflow-y-auto">
                                 <button
-                                    key={unit.id}
-                                    onClick={() => handleFilterChange('unit_id', unit.id)}
+                                    onClick={() => handleFilterChange('unit_id', 'all')}
                                     className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 ${
-                                        filters.unit_id === unit.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
+                                        filters.unit_id === 'all' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
                                     }`}
                                 >
-                                    {unit.name}
+                                    Semua Unit
                                 </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                                {units.map(unit => (
+                                    <button
+                                        key={unit.id}
+                                        onClick={() => handleFilterChange('unit_id', unit.id)}
+                                        className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 ${
+                                            filters.unit_id === unit.id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : 'text-slate-700 dark:text-slate-300'
+                                        }`}
+                                    >
+                                        {unit.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Status Filter */}
                 <div className="relative">
@@ -496,9 +706,17 @@ const Dashboard = () => {
                 />
             </div>
 
+
+
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <StatusChart />
+                <EscalationChart filters={{
+                    dateRange: filters.dateRange,
+                    unit_id: filters.unit_id,
+                    userUnitId: userUnitId || undefined,
+                    hasGlobalAccess: hasGlobalAccess
+                }} />
                 <div className="lg:col-span-1 bg-white dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 flex flex-col">
                     <div className="flex justify-between items-center mb-6">
                         <div>

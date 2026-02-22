@@ -2,18 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { complaintService, Ticket } from '../../services/complaintService';
+import { ticketService } from '../../services/ticketService';
 import { EscalationModal, ResponseModal } from '../../components/TicketActionModals';
-
-// Tipe untuk notifikasi
-interface Notification {
-    id: string;
-    ticket_id: string;
-    ticket_number: string;
-    type: 'new_ticket' | 'escalation' | 'response';
-    message: string;
-    created_at: string;
-    is_read: boolean;
-}
 
 export default function TicketList() {
     const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -24,10 +14,7 @@ export default function TicketList() {
     const [filterType, setFilterType] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState('');
     
-    // Notification states
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [showNotifications, setShowNotifications] = useState(false);
-    const [unreadCount, setUnreadCount] = useState(0);
+
     
     // Modal states
     const [escalationModal, setEscalationModal] = useState<{ isOpen: boolean; ticketId: string; ticketNumber: string; unitId?: string }>({
@@ -37,57 +24,16 @@ export default function TicketList() {
         isOpen: false, ticketId: '', ticketNumber: ''
     });
     
-    const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+    const { isAuthenticated, isLoading: authLoading, user, hasGlobalAccess, userUnitId } = useAuth();
 
     useEffect(() => {
         if (!authLoading && isAuthenticated) {
             fetchTickets();
-            fetchNotifications();
         } else if (!authLoading && !isAuthenticated) {
             setError('Anda harus login terlebih dahulu');
             setLoading(false);
         }
     }, [isAuthenticated, authLoading]);
-
-    // Fetch notifications
-    async function fetchNotifications() {
-        try {
-            // Simulasi fetch notifikasi - nanti bisa diganti dengan API real
-            const mockNotifications: Notification[] = tickets
-                .filter(t => t.status === 'open' || t.status === 'escalated')
-                .slice(0, 5)
-                .map(t => ({
-                    id: `notif-${t.id}`,
-                    ticket_id: t.id,
-                    ticket_number: t.ticket_number || '',
-                    type: t.status === 'escalated' ? 'escalation' : 'new_ticket',
-                    message: t.status === 'escalated' 
-                        ? `Tiket ${t.ticket_number} telah dieskalasi` 
-                        : `Tiket baru ${t.ticket_number} masuk`,
-                    created_at: t.created_at,
-                    is_read: false
-                }));
-            
-            setNotifications(mockNotifications);
-            setUnreadCount(mockNotifications.filter(n => !n.is_read).length);
-        } catch (err) {
-            console.error('Failed to fetch notifications:', err);
-        }
-    }
-
-    // Mark notification as read
-    function markAsRead(notificationId: string) {
-        setNotifications(prev => 
-            prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
-        );
-        setUnreadCount(prev => Math.max(0, prev - 1));
-    }
-
-    // Mark all as read
-    function markAllAsRead() {
-        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-        setUnreadCount(0);
-    }
 
     async function fetchTickets() {
         if (!isAuthenticated) {
@@ -99,31 +45,65 @@ export default function TicketList() {
         setLoading(true);
         setError(null);
         try {
-            const response = await complaintService.getTickets();
-            if (response.success) {
-                setTickets(response.data || []);
-            } else {
-                setError(response.error || 'Failed to fetch tickets');
+            // DEBUG: Log auth context values
+            console.log('🔍 [TicketList.fetchTickets] Auth context:', {
+                user: {
+                    id: user?.id,
+                    name: user?.name,
+                    email: user?.email,
+                    role: user?.role,
+                    unit_id: user?.unit_id,
+                    unit_name: user?.unit_name
+                },
+                userUnitId,
+                hasGlobalAccess,
+                timestamp: new Date().toISOString()
+            });
+
+            // Gunakan ticketService dengan auto-apply unit filter
+            const result = await ticketService.getTickets(
+                {
+                    status: filterStatus !== 'all' ? filterStatus : undefined,
+                    priority: filterPriority !== 'all' ? filterPriority : undefined,
+                    page: 1,
+                    limit: 100
+                },
+                userUnitId,
+                hasGlobalAccess
+            );
+            
+            console.log('✅ [TicketList.fetchTickets] Received tickets:', {
+                count: result.data.length,
+                tickets: result.data.map(t => ({
+                    id: t.id,
+                    ticket_number: t.ticket_number,
+                    unit_id: t.unit_id,
+                    unit_name: t.units?.name
+                }))
+            });
+            
+            setTickets(result.data as any);
+        } catch (err: any) {
+            // Fallback ke complaintService jika ticketService gagal
+            try {
+                const response = await complaintService.getTickets({}, userUnitId, hasGlobalAccess);
+                if (response.success) {
+                    setTickets(response.data || []);
+                } else {
+                    setError(response.error || 'Failed to fetch tickets');
+                    setTickets([]);
+                }
+            } catch (fallbackErr: any) {
+                setError(fallbackErr.message || 'Failed to fetch tickets');
                 setTickets([]);
             }
-        } catch (err: any) {
-            setError(err.message || 'Failed to fetch tickets');
-            setTickets([]);
         } finally {
             setLoading(false);
         }
     }
 
-    // Filter logic - filter berdasarkan unit user jika bukan admin/superadmin
+    // Filter logic - ticketService sudah filter berdasarkan unit, tinggal filter UI saja
     const filteredTickets = tickets.filter(ticket => {
-        // Filter berdasarkan unit kerja - hanya admin/superadmin yang bisa lihat semua
-        const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
-        
-        // Filter tiket yang masuk langsung atau eskalasi ke unit ini
-        const isDirectTicket = ticket.unit_id === (user as any)?.unit_id;
-        const isEscalatedToUnit = ticket.status === 'escalated' && ticket.escalated_to_unit_id === (user as any)?.unit_id;
-        const matchesTicketAccess = isAdmin || isDirectTicket || isEscalatedToUnit;
-        
         const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
         const matchesPriority = filterPriority === 'all' || ticket.priority === filterPriority;
         const matchesType = filterType === 'all' || ticket.type === filterType;
@@ -132,7 +112,7 @@ export default function TicketList() {
             (ticket.ticket_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (ticket.units?.name || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-        return matchesTicketAccess && matchesStatus && matchesPriority && matchesType && matchesSearch;
+        return matchesStatus && matchesPriority && matchesType && matchesSearch;
     });
 
     const getStatusColor = (status: string) => {
@@ -171,6 +151,39 @@ export default function TicketList() {
 
     return (
         <div className="p-6 md:p-8 max-w-[1600px] mx-auto flex flex-col gap-6">
+            {/* Warning jika user tidak punya unit */}
+            {!hasGlobalAccess && !userUnitId && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3">
+                    <span className="material-symbols-outlined text-red-600 text-[24px]">warning</span>
+                    <div>
+                        <p className="text-sm font-medium text-red-900">⚠️ Akun Anda belum terdaftar ke unit kerja</p>
+                        <p className="text-xs text-red-700">Silakan hubungi administrator untuk mendaftarkan akun Anda ke unit kerja yang sesuai</p>
+                    </div>
+                </div>
+            )}
+            
+            {/* Unit Context Indicator */}
+            {!hasGlobalAccess && user?.unit_name && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
+                    <span className="material-symbols-outlined text-blue-600 text-[24px]">info</span>
+                    <div>
+                        <p className="text-sm font-medium text-blue-900">📍 Menampilkan tiket untuk: {user.unit_name}</p>
+                        <p className="text-xs text-blue-700">Anda hanya dapat melihat tiket dari unit kerja Anda</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Unit Selector untuk Superadmin/Direktur */}
+            {hasGlobalAccess && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                        <span className="material-symbols-outlined text-green-600 text-[24px]">admin_panel_settings</span>
+                        <p className="text-sm font-medium text-green-900">Akses Global Aktif</p>
+                    </div>
+                    <p className="text-xs text-green-700">Anda dapat melihat tiket dari semua unit</p>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
@@ -182,87 +195,7 @@ export default function TicketList() {
                         <span className="material-symbols-outlined">refresh</span>
                     </button>
                     
-                    {/* Tombol Notifikasi */}
-                    <div className="relative">
-                        <button 
-                            onClick={() => setShowNotifications(!showNotifications)}
-                            className="relative p-2 text-slate-500 hover:text-primary transition-colors bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-lg"
-                        >
-                            <span className="material-symbols-outlined">notifications</span>
-                            {unreadCount > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                                    {unreadCount > 9 ? '9+' : unreadCount}
-                                </span>
-                            )}
-                        </button>
-                        
-                        {/* Dropdown Notifikasi */}
-                        {showNotifications && (
-                            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 max-h-96 overflow-hidden flex flex-col">
-                                <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                                    <h3 className="font-semibold text-slate-900 dark:text-white">Notifikasi</h3>
-                                    {unreadCount > 0 && (
-                                        <button 
-                                            onClick={markAllAsRead}
-                                            className="text-xs text-primary hover:underline"
-                                        >
-                                            Tandai semua dibaca
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="overflow-y-auto flex-1">
-                                    {notifications.length === 0 ? (
-                                        <div className="px-4 py-8 text-center text-slate-500 text-sm">
-                                            Tidak ada notifikasi
-                                        </div>
-                                    ) : (
-                                        notifications.map(notif => (
-                                            <Link
-                                                key={notif.id}
-                                                to={`/tickets/${notif.ticket_id}`}
-                                                onClick={() => {
-                                                    markAsRead(notif.id);
-                                                    setShowNotifications(false);
-                                                }}
-                                                className={`block px-4 py-3 border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${
-                                                    !notif.is_read ? 'bg-blue-50 dark:bg-blue-900/10' : ''
-                                                }`}
-                                            >
-                                                <div className="flex items-start gap-3">
-                                                    <span className={`material-symbols-outlined text-[20px] mt-0.5 ${
-                                                        notif.type === 'escalation' ? 'text-orange-500' : 'text-blue-500'
-                                                    }`}>
-                                                        {notif.type === 'escalation' ? 'trending_up' : 'notifications_active'}
-                                                    </span>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm text-slate-900 dark:text-white font-medium">
-                                                            {notif.message}
-                                                        </p>
-                                                        <p className="text-xs text-slate-500 mt-1">
-                                                            {new Date(notif.created_at).toLocaleString('id-ID', {
-                                                                day: 'numeric',
-                                                                month: 'short',
-                                                                hour: '2-digit',
-                                                                minute: '2-digit'
-                                                            })}
-                                                        </p>
-                                                    </div>
-                                                    {!notif.is_read && (
-                                                        <span className="w-2 h-2 bg-blue-500 rounded-full mt-2"></span>
-                                                    )}
-                                                </div>
-                                            </Link>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">
-                        <span className="material-symbols-outlined text-[16px] text-primary">person</span>
-                        <span className="font-medium">{user?.name || user?.email || 'User'}</span>
-                    </div>
+
                     <Link to="/form/eksternal" className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm shadow-blue-500/30">
                         <span className="material-symbols-outlined text-[20px]">add</span>
                         <span>Buat Tiket Baru</span>
@@ -383,8 +316,28 @@ export default function TicketList() {
                                             <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{ticket.title}</p>
                                             <p className="text-xs text-slate-500 mt-0.5 truncate">{ticket.description || 'Tidak ada deskripsi'}</p>
                                         </td>
-                                        <td className="px-4 py-4 text-sm text-slate-600 dark:text-slate-400">
-                                            {ticket.units?.name || '-'}
+                                        <td className="px-4 py-4">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-sm text-slate-600 dark:text-slate-400">
+                                                    {ticket.units?.name || '-'}
+                                                </span>
+                                                {ticket.is_escalated && ticket.escalation_type === 'received' && ticket.escalated_from_unit && (
+                                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded-md border border-orange-200 dark:border-orange-700 w-fit">
+                                                        <span className="material-symbols-outlined text-[14px]">trending_up</span>
+                                                        <span className="text-xs font-medium">
+                                                            Eskalasi dari {ticket.escalated_from_unit.name}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {ticket.is_escalated && ticket.escalation_type === 'sent' && (
+                                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded-md border border-orange-200 dark:border-orange-700 w-fit">
+                                                        <span className="material-symbols-outlined text-[14px]">call_made</span>
+                                                        <span className="text-xs font-medium">
+                                                            Dieskalasikan
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </td>
                                         <td className="px-4 py-4">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
@@ -442,14 +395,22 @@ export default function TicketList() {
                                                         <span className="material-symbols-outlined text-[20px]">trending_up</span>
                                                     </button>
                                                 )}
-                                                {/* Flag Status Tiket - Hijau jika selesai, Merah jika belum */}
+                                                {/* Flag Status Tiket - Hijau solid jika selesai, Oranye solid jika eskalasi, Merah solid jika belum */}
                                                 <div 
                                                     className={`p-1.5 rounded-lg ${
                                                         ticket.status === 'resolved' || ticket.status === 'closed'
-                                                            ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20'
-                                                            : 'text-red-500 bg-red-50 dark:bg-red-900/20'
+                                                            ? 'text-white bg-emerald-600'
+                                                            : ticket.status === 'escalated' || ticket.is_escalated
+                                                            ? 'text-white bg-orange-600'
+                                                            : 'text-white bg-red-600'
                                                     }`}
-                                                    title={ticket.status === 'resolved' || ticket.status === 'closed' ? 'Tiket Selesai' : 'Tiket Belum Selesai'}
+                                                    title={
+                                                        ticket.status === 'resolved' || ticket.status === 'closed' 
+                                                            ? 'Tiket Selesai' 
+                                                            : ticket.status === 'escalated' || ticket.is_escalated
+                                                            ? 'Tiket Dieskalasikan'
+                                                            : 'Tiket Belum Selesai'
+                                                    }
                                                 >
                                                     <span className="material-symbols-outlined text-[20px]">flag</span>
                                                 </div>

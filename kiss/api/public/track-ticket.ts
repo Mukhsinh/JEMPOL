@@ -175,7 +175,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       responses.forEach((response) => {
         timeline.push({
           type: 'response',
-          title: response.response_type === 'resolution' ? 'Resolusi' : 'Respon',
+          title: response.response_type === 'resolution' ? 'Tanggapan' : 'Respon',
           description: response.message,
           timestamp: response.created_at,
           icon: response.response_type === 'resolution' ? 'check_circle' : 'chat',

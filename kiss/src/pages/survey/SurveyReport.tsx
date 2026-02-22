@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { surveyService } from '../../services/surveyService';
 import AppFooter from '../../components/AppFooter';
 import { generateSurveyReportPDF } from '../../utils/pdfGenerator';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface SurveyStats {
   total_surveys: number;
@@ -83,6 +84,7 @@ const surveyQuestions = [
 ];
 
 const SurveyReport: React.FC = () => {
+  const { user, hasGlobalAccess, userUnitId } = useAuth();
   const [stats, setStats] = useState<SurveyStats | null>(null);
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [unitIKM, setUnitIKM] = useState<UnitIKM[]>([]);
@@ -125,11 +127,25 @@ const SurveyReport: React.FC = () => {
       setLoading(true);
       setError(null);
       
+      // Auto-apply unit filter untuk user non-global
+      const effectiveUnitId = !hasGlobalAccess && userUnitId 
+        ? userUnitId 
+        : (filters.unit !== 'all' ? filters.unit : undefined);
+      
       const params = {
         start_date: dateRange.start,
         end_date: dateRange.end,
-        unit_id: filters.unit !== 'all' ? filters.unit : undefined
+        unit_id: effectiveUnitId,
+        user_unit_id: userUnitId || undefined,
+        has_global_access: hasGlobalAccess
       };
+
+      console.log('🔒 Survey Report - Effective filters:', { 
+        hasGlobalAccess, 
+        userUnitId, 
+        selectedUnit: filters.unit,
+        effectiveUnitId 
+      });
 
       // Fetch semua data menggunakan surveyService
       const [statsData, responsesData, ikmData] = await Promise.all([
@@ -168,10 +184,17 @@ const SurveyReport: React.FC = () => {
 
   const fetchAddressStats = async () => {
     try {
+      // Auto-apply unit filter untuk user non-global
+      const effectiveUnitId = !hasGlobalAccess && userUnitId 
+        ? userUnitId 
+        : (filters.unit !== 'all' ? filters.unit : undefined);
+      
       const params = {
         start_date: dateRange.start,
         end_date: dateRange.end,
-        unit_id: filters.unit !== 'all' ? filters.unit : undefined,
+        unit_id: effectiveUnitId,
+        user_unit_id: userUnitId || undefined,
+        has_global_access: hasGlobalAccess,
         group_by: addressGroupBy
       };
       
@@ -303,15 +326,18 @@ const SurveyReport: React.FC = () => {
               <option value="this_year">Tahun Ini</option>
             </select>
           </label>
-          <label className="flex flex-col flex-1 min-w-[200px]">
-            <span className="text-slate-700 text-xs font-semibold uppercase mb-2">Unit Kerja</span>
-            <select className="h-11 px-4 bg-slate-50 border border-slate-200 rounded-lg text-sm" value={filters.unit} onChange={(e) => setFilters({...filters, unit: e.target.value})}>
-              <option value="all">Semua Unit</option>
-              {units.map(unit => (
-                <option key={unit.id} value={unit.id}>{unit.name}</option>
-              ))}
-            </select>
-          </label>
+          {/* Unit selector hanya untuk superadmin/direktur */}
+          {hasGlobalAccess && (
+            <label className="flex flex-col flex-1 min-w-[200px]">
+              <span className="text-slate-700 text-xs font-semibold uppercase mb-2">Unit Kerja</span>
+              <select className="h-11 px-4 bg-slate-50 border border-slate-200 rounded-lg text-sm" value={filters.unit} onChange={(e) => setFilters({...filters, unit: e.target.value})}>
+                <option value="all">Semua Unit</option>
+                {units.map(unit => (
+                  <option key={unit.id} value={unit.id}>{unit.name}</option>
+                ))}
+              </select>
+            </label>
+          )}
           <button onClick={handleApplyFilter} className="h-11 px-6 bg-[#137fec] text-white rounded-lg text-sm font-bold flex items-center gap-2">
             <span className="material-symbols-outlined text-[20px]">filter_list</span>Terapkan
           </button>
@@ -319,6 +345,17 @@ const SurveyReport: React.FC = () => {
       </div>
 
       {error && <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">{error}</div>}
+
+      {/* Unit Context Indicator */}
+      {!hasGlobalAccess && user?.unit_name && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
+          <span className="material-symbols-outlined text-blue-600 text-[24px]">info</span>
+          <div>
+            <p className="text-sm font-medium text-blue-900">📍 Menampilkan data survey untuk: {user.unit_name}</p>
+            <p className="text-xs text-blue-700">Anda hanya dapat melihat data survey dari unit kerja Anda</p>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

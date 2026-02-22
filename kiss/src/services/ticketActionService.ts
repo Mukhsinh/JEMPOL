@@ -65,7 +65,7 @@ class TicketActionService {
   // Eskalasi tiket ke unit lain dengan tembusan
   async escalateTicket(ticketId: string, data: EscalateTicketData) {
     try {
-      const response = await api.post(`/ticket-actions/tickets/${ticketId}/escalate`, data);
+      const response = await api.post(`/public/ticket-actions/tickets/${ticketId}/escalate`, data);
       return response.data;
     } catch (error: any) {
       console.error('Error escalating ticket:', error);
@@ -79,7 +79,7 @@ class TicketActionService {
   // Respon tiket (bisa langsung selesaikan)
   async respondTicket(ticketId: string, data: RespondTicketData) {
     try {
-      const response = await api.post(`/ticket-actions/tickets/${ticketId}/respond`, data);
+      const response = await api.post(`/public/ticket-actions/tickets/${ticketId}/respond`, data);
       return response.data;
     } catch (error: any) {
       console.error('Error responding to ticket:', error);
@@ -93,7 +93,7 @@ class TicketActionService {
   // Flag/unflag tiket
   async flagTicket(ticketId: string, data: FlagTicketData) {
     try {
-      const response = await api.post(`/ticket-actions/tickets/${ticketId}/flag`, data);
+      const response = await api.post(`/public/ticket-actions/tickets/${ticketId}/flag`, data);
       return response.data;
     } catch (error: any) {
       console.error('Error flagging ticket:', error);
@@ -107,7 +107,7 @@ class TicketActionService {
   // Get tiket berdasarkan unit
   async getTicketsByUnit(unitId: string, filters?: { status?: string; priority?: string }) {
     try {
-      const response = await api.get(`/ticket-actions/tickets/by-unit/${unitId}`, { params: filters });
+      const response = await api.get(`/public/ticket-actions/tickets/by-unit/${unitId}`, { params: filters });
       return response.data;
     } catch (error: any) {
       console.error('Error fetching tickets by unit:', error);
@@ -122,7 +122,7 @@ class TicketActionService {
   // Get history eskalasi tiket
   async getTicketEscalations(ticketId: string): Promise<{ success: boolean; data: TicketEscalation[]; error?: string }> {
     try {
-      const response = await api.get(`/ticket-actions/tickets/${ticketId}/escalations`);
+      const response = await api.get(`/public/ticket-actions/tickets/${ticketId}/escalations`);
       return response.data;
     } catch (error: any) {
       console.error('Error fetching ticket escalations:', error);
@@ -137,7 +137,7 @@ class TicketActionService {
   // Get unit eskalasi tiket
   async getTicketEscalationUnits(ticketId: string): Promise<{ success: boolean; data: EscalationUnit[]; error?: string }> {
     try {
-      const response = await api.get(`/ticket-actions/tickets/${ticketId}/escalation-units`);
+      const response = await api.get(`/public/ticket-actions/tickets/${ticketId}/escalation-units`);
       return response.data;
     } catch (error: any) {
       console.error('Error fetching escalation units:', error);
@@ -152,7 +152,7 @@ class TicketActionService {
   // Update status eskalasi unit
   async updateEscalationUnitStatus(escalationUnitId: string, status: string, notes?: string) {
     try {
-      const response = await api.patch(`/ticket-actions/escalation-units/${escalationUnitId}/status`, {
+      const response = await api.patch(`/public/ticket-actions/escalation-units/${escalationUnitId}/status`, {
         status,
         notes
       });

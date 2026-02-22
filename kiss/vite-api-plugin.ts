@@ -53,6 +53,9 @@ function loadEnvFiles() {
     if (!process.env.SUPABASE_ANON_KEY && process.env.VITE_SUPABASE_ANON_KEY) {
         process.env.SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
     }
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.VITE_SUPABASE_SERVICE_ROLE_KEY) {
+        process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    }
 }
 
 /**
@@ -180,6 +183,7 @@ export function viteApiPlugin(): Plugin {
             console.log('\n🔌 Vite Local API Plugin aktif - menangani /api/* secara lokal');
             console.log('   SUPABASE_URL:', process.env.SUPABASE_URL ? '✅ SET' : '❌ NOT SET');
             console.log('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? '✅ SET' : '❌ NOT SET');
+            console.log('   SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ SET' : '❌ NOT SET');
             console.log('   Tidak perlu menjalankan vercel dev terpisah!\n');
 
             // Add middleware BEFORE Vite's own middleware to intercept /api/* requests

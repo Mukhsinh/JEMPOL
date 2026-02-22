@@ -168,6 +168,12 @@ class UnitService {
 
   async createUnit(unit: Partial<Unit>): Promise<Unit> {
     try {
+      // Pastikan user sudah login
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Anda harus login terlebih dahulu untuk menambah unit kerja');
+      }
+
       const { data, error } = await supabase
         .from('units')
         .insert([unit])
@@ -185,6 +191,12 @@ class UnitService {
 
   async updateUnit(id: string, unit: Partial<Unit>): Promise<Unit> {
     try {
+      // Pastikan user sudah login
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Anda harus login terlebih dahulu untuk memperbarui unit kerja');
+      }
+
       const { data, error } = await supabase
         .from('units')
         .update(unit)
@@ -203,6 +215,12 @@ class UnitService {
 
   async deleteUnit(id: string): Promise<void> {
     try {
+      // Pastikan user sudah login
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Anda harus login terlebih dahulu untuk menghapus unit kerja');
+      }
+
       const { error } = await supabase
         .from('units')
         .delete()

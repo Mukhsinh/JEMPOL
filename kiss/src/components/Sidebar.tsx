@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 export default function Sidebar() {
     const location = useLocation();
     const navigate = useNavigate();
-    const { user, logout } = useAuth();
+    const { user, logout, isSuperAdmin } = useAuth();
     const { settings: appSettings } = useAppSettings();
     const [isMasterDataOpen, setIsMasterDataOpen] = useState(false);
     const [isTicketsOpen, setIsTicketsOpen] = useState(false);
@@ -158,27 +158,33 @@ export default function Sidebar() {
                                     <p className="text-sm font-medium">Tiket Eksternal</p>
                                 </Link>
                                 
-                                <Link
-                                    to="/tickets/qr-management"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/tickets/qr-management')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">QR Code Management</p>
-                                </Link>
+                                {/* QR Management - Hanya Superadmin */}
+                                {isSuperAdmin && (
+                                    <Link
+                                        to="/tickets/qr-management"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/tickets/qr-management')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                        <p className="text-sm font-medium">QR Code Management</p>
+                                    </Link>
+                                )}
                                 
-                                <Link
-                                    to="/tickets/escalation"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/tickets/escalation')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Eskalasi</p>
-                                </Link>
+                                {/* Escalation - Hanya Superadmin */}
+                                {isSuperAdmin && (
+                                    <Link
+                                        to="/tickets/escalation"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/tickets/escalation')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                        <p className="text-sm font-medium">Eskalasi</p>
+                                    </Link>
+                                )}
                             </div>
                         )}
                     </div>
@@ -233,106 +239,108 @@ export default function Sidebar() {
                         <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Manajemen</p>
                     </div>
 
-                    {/* Master Data Dropdown */}
-                    <div className="mb-2">
-                        <button
-                            onClick={() => setIsMasterDataOpen(!isMasterDataOpen)}
-                            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors ${isMasterDataActive()
-                                ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                }`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <span className="material-symbols-outlined">database</span>
-                                <p className="text-sm font-medium">Master Data</p>
-                            </div>
-                            <span className={`material-symbols-outlined text-sm transition-transform ${isMasterDataOpen ? 'rotate-180' : ''}`}>
-                                expand_more
-                            </span>
-                        </button>
+                    {/* Master Data Dropdown - Hanya Superadmin */}
+                    {isSuperAdmin && (
+                        <div className="mb-2">
+                            <button
+                                onClick={() => setIsMasterDataOpen(!isMasterDataOpen)}
+                                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors ${isMasterDataActive()
+                                    ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                    }`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="material-symbols-outlined">database</span>
+                                    <p className="text-sm font-medium">Master Data</p>
+                                </div>
+                                <span className={`material-symbols-outlined text-sm transition-transform ${isMasterDataOpen ? 'rotate-180' : ''}`}>
+                                    expand_more
+                                </span>
+                            </button>
 
-                        {/* Master Data Submenu */}
-                        {isMasterDataOpen && (
-                            <div className="mt-2 ml-6 flex flex-col gap-1">
-                                <Link
-                                    to="/master-data/units"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/units')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Unit Kerja</p>
-                                </Link>
-                                
-                                <Link
-                                    to="/master-data/unit-types"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/unit-types')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Tipe Unit Kerja</p>
-                                </Link>
-                                
-                                <Link
-                                    to="/master-data/service-categories"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/service-categories')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Kategori Layanan</p>
-                                </Link>
-                                
-                                <Link
-                                    to="/master-data/ticket-types"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/ticket-types')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Tipe Tiket</p>
-                                </Link>
-                                
-                                <Link
-                                    to="/master-data/ticket-statuses"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/ticket-statuses')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Status Tiket</p>
-                                </Link>
-                                
-                                <Link
-                                    to="/master-data/patient-types"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/patient-types')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Jenis Pasien</p>
-                                </Link>
-                                
-                                <Link
-                                    to="/master-data/sla-settings"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/sla-settings')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
-                                    <p className="text-sm font-medium">Pengaturan SLA</p>
-                                </Link>
-                            </div>
-                        )}
-                    </div>
+                            {/* Master Data Submenu */}
+                            {isMasterDataOpen && (
+                                <div className="mt-2 ml-6 flex flex-col gap-1">
+                                    <Link
+                                        to="/master-data/units"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/units')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                        <p className="text-sm font-medium">Unit Kerja</p>
+                                    </Link>
+                                    
+                                    <Link
+                                        to="/master-data/unit-types"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/unit-types')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                        <p className="text-sm font-medium">Tipe Unit Kerja</p>
+                                    </Link>
+                                    
+                                    <Link
+                                        to="/master-data/service-categories"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/service-categories')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                        <p className="text-sm font-medium">Kategori Layanan</p>
+                                    </Link>
+                                    
+                                    <Link
+                                        to="/master-data/ticket-types"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/ticket-types')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                        <p className="text-sm font-medium">Tipe Tiket</p>
+                                    </Link>
+                                    
+                                    <Link
+                                        to="/master-data/ticket-statuses"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/ticket-statuses')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                        <p className="text-sm font-medium">Status Tiket</p>
+                                    </Link>
+                                    
+                                    <Link
+                                        to="/master-data/patient-types"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/patient-types')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                        <p className="text-sm font-medium">Jenis Pasien</p>
+                                    </Link>
+                                    
+                                    <Link
+                                        to="/master-data/sla-settings"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/master-data/sla-settings')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></span>
+                                        <p className="text-sm font-medium">Pengaturan SLA</p>
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     <Link
                         to="/reports"
@@ -345,110 +353,121 @@ export default function Sidebar() {
                         <p className="text-sm font-medium">Laporan & Analitik</p>
                     </Link>
 
-                    <Link
-                        to="/users"
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive('/users')
-                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                            }`}
-                    >
-                        <span className="material-symbols-outlined">group</span>
-                        <p className="text-sm font-medium">Pengguna</p>
-                    </Link>
+                    {/* Pengguna - Hanya Superadmin */}
+                    {isSuperAdmin && (
+                        <Link
+                            to="/users"
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive('/users')
+                                ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                }`}
+                        >
+                            <span className="material-symbols-outlined">group</span>
+                            <p className="text-sm font-medium">Pengguna</p>
+                        </Link>
+                    )}
 
-                    <Link
-                        to="/realtime-notification"
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive('/realtime-notification')
-                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                            }`}
-                    >
-                        <span className="material-symbols-outlined">notifications</span>
-                        <p className="text-sm font-medium">Notifikasi</p>
-                    </Link>
+                    {/* Notifikasi - Hanya Superadmin */}
+                    {isSuperAdmin && (
+                        <Link
+                            to="/realtime-notification"
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive('/realtime-notification')
+                                ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                }`}
+                        >
+                            <span className="material-symbols-outlined">notifications</span>
+                            <p className="text-sm font-medium">Notifikasi</p>
+                        </Link>
+                    )}
 
                     <div className="pt-2 pb-1">
                         <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Dokumentasi</p>
                     </div>
 
-                    <Link
-                        to="/buku-petunjuk"
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive('/buku-petunjuk')
-                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                            }`}
-                    >
-                        <span className="material-symbols-outlined">menu_book</span>
-                        <p className="text-sm font-medium">Buku Petunjuk</p>
-                    </Link>
-
-                    {/* Settings Dropdown */}
-                    <div className="mb-2">
-                        <button
-                            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors ${isSettingsActive()
+                    {/* Buku Petunjuk - Hanya Superadmin */}
+                    {isSuperAdmin && (
+                        <Link
+                            to="/buku-petunjuk"
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive('/buku-petunjuk')
                                 ? 'bg-primary text-white shadow-md shadow-blue-500/20'
                                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                                 }`}
                         >
-                            <div className="flex items-center gap-3">
-                                <span className="material-symbols-outlined">settings</span>
-                                <p className="text-sm font-medium">Pengaturan</p>
-                            </div>
-                            <span className={`material-symbols-outlined text-sm transition-transform ${isSettingsOpen ? 'rotate-180' : ''}`}>
-                                expand_more
-                            </span>
-                        </button>
+                            <span className="material-symbols-outlined">menu_book</span>
+                            <p className="text-sm font-medium">Buku Petunjuk</p>
+                        </Link>
+                    )}
 
-                        {/* Settings Submenu */}
-                        {isSettingsOpen && (
-                            <div className="mt-2 ml-6 flex flex-col gap-1">
-                                <Link
-                                    to="/settings/app"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/settings/app')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="material-symbols-outlined text-green-500">tune</span>
-                                    <p className="text-sm font-medium">Pengaturan Aplikasi</p>
-                                </Link>
-                                
-                                <Link
-                                    to="/settings/roles-permissions"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/settings/roles-permissions')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="material-symbols-outlined text-blue-500">security</span>
-                                    <p className="text-sm font-medium">Peran & Hak Akses</p>
-                                </Link>
-                                
-                                <Link
-                                    to="/settings/response-templates"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/settings/response-templates')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="material-symbols-outlined text-slate-600">chat</span>
-                                    <p className="text-sm font-medium">Template Respon</p>
-                                </Link>
-                                
-                                <Link
-                                    to="/settings/ai-trust"
-                                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/settings/ai-trust')
-                                        ? 'bg-primary text-white shadow-md shadow-blue-500/20'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                        }`}
-                                >
-                                    <span className="material-symbols-outlined text-purple-500">psychology</span>
-                                    <p className="text-sm font-medium">Pengaturan Kepercayaan AI</p>
-                                </Link>
-                            </div>
-                        )}
-                    </div>
+                    {/* Settings Dropdown - Hanya Superadmin */}
+                    {isSuperAdmin && (
+                        <div className="mb-2">
+                            <button
+                                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors ${isSettingsActive()
+                                    ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                    }`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="material-symbols-outlined">settings</span>
+                                    <p className="text-sm font-medium">Pengaturan</p>
+                                </div>
+                                <span className={`material-symbols-outlined text-sm transition-transform ${isSettingsOpen ? 'rotate-180' : ''}`}>
+                                    expand_more
+                                </span>
+                            </button>
+
+                            {/* Settings Submenu */}
+                            {isSettingsOpen && (
+                                <div className="mt-2 ml-6 flex flex-col gap-1">
+                                    <Link
+                                        to="/settings/app"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/settings/app')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="material-symbols-outlined text-green-500">tune</span>
+                                        <p className="text-sm font-medium">Pengaturan Aplikasi</p>
+                                    </Link>
+                                    
+                                    <Link
+                                        to="/settings/roles-permissions"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/settings/roles-permissions')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="material-symbols-outlined text-blue-500">security</span>
+                                        <p className="text-sm font-medium">Peran & Hak Akses</p>
+                                    </Link>
+                                    
+                                    <Link
+                                        to="/settings/response-templates"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/settings/response-templates')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="material-symbols-outlined text-slate-600">chat</span>
+                                        <p className="text-sm font-medium">Template Respon</p>
+                                    </Link>
+                                    
+                                    <Link
+                                        to="/settings/ai-trust"
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${isActive('/settings/ai-trust')
+                                            ? 'bg-primary text-white shadow-md shadow-blue-500/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                            }`}
+                                    >
+                                        <span className="material-symbols-outlined text-purple-500">psychology</span>
+                                        <p className="text-sm font-medium">Pengaturan Kepercayaan AI</p>
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </nav>
             </div>
 

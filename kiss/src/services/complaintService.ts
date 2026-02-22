@@ -117,13 +117,13 @@ class ComplaintService {
   private static readonly CACHE_DURATION = 30000; // 30 detik
 
   // Get all tickets with filters
-  async getTickets(filters: TicketFilters = {}): Promise<APIResponse<Ticket[]>> {
+  async getTickets(filters: TicketFilters = {}, userUnitId?: string | null, hasGlobalAccess?: boolean): Promise<APIResponse<Ticket[]>> {
     try {
       console.log('🎫 Fetching tickets with filters:', filters);
       
-      // Cek cache terlebih dahulu
+      // Cek cache terlebih dahulu (hanya untuk admin/superadmin)
       const now = Date.now();
-      if (ComplaintService.ticketsCache && (now - ComplaintService.ticketsCache.timestamp) < ComplaintService.CACHE_DURATION) {
+      if (hasGlobalAccess && ComplaintService.ticketsCache && (now - ComplaintService.ticketsCache.timestamp) < ComplaintService.CACHE_DURATION) {
         console.log('📦 Using cached tickets data');
         return {
           success: true,
@@ -134,10 +134,14 @@ class ComplaintService {
       
       // LANGSUNG gunakan Supabase untuk performa dan stabilitas lebih baik
       console.log('🌐 Using Supabase direct for better performance');
-      const result = await supabaseService.getTickets(filters);
+      const result = await supabaseService.getTickets({
+        ...filters,
+        userUnitId,
+        hasGlobalAccess
+      });
       console.log('📊 Supabase result:', result.success ? `${result.data?.length || 0} tickets` : result.error);
       
-      if (result.success) {
+      if (result.success && hasGlobalAccess) {
         ComplaintService.ticketsCache = {
           data: result.data || [],
           timestamp: now
@@ -153,8 +157,8 @@ class ComplaintService {
     } catch (error: any) {
       console.error('❌ Error in getTickets:', error);
       
-      // Return cached data jika ada
-      if (ComplaintService.ticketsCache) {
+      // Return cached data jika ada (hanya untuk admin)
+      if (hasGlobalAccess && ComplaintService.ticketsCache) {
         console.log('⚠️ Using cached data due to error');
         return { 
           success: true, 
@@ -405,6 +409,17 @@ class ComplaintService {
     // Langsung gunakan Supabase untuk performa lebih baik
     console.log('📈 Fetching dashboard metrics from Supabase with filters:', filters);
     return await supabaseService.getDashboardMetrics(filters);
+  }
+
+  // Get escalation stats
+  async getEscalationStats(filters?: {
+    dateRange?: string;
+    unit_id?: string;
+    userUnitId?: string;
+    hasGlobalAccess?: boolean;
+  }) {
+    console.log('📊 Fetching escalation stats with filters:', filters);
+    return await supabaseService.getEscalationStats(filters);
   }
 
   // Public API methods (no auth required)

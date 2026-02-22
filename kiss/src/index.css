@@ -99,3 +99,35 @@
     font-variation-settings: 'FILL' 1, 'wght' 600;
   }
 }
+
+  /* Animasi berkedip untuk notifikasi */
+  @keyframes notification-blink {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.7;
+      transform: scale(1.05);
+    }
+  }
+
+  .notification-blink {
+    animation: notification-blink 1.5s ease-in-out infinite;
+  }
+
+  /* Animasi untuk badge notifikasi */
+  @keyframes badge-pulse {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    50% {
+      transform: scale(1.1);
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
+    }
+  }
+
+  .badge-pulse {
+    animation: badge-pulse 2s ease-in-out infinite;
+  }

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import reportService, { FullReportData, ReportFilters, DetailedReport } from '../services/reportService';
+import { useAuth } from '../contexts/AuthContext';
 
 const Reports = () => {
+    const { user, hasGlobalAccess, userUnitId } = useAuth();
     const [reportData, setReportData] = useState<FullReportData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -23,7 +25,7 @@ const Reports = () => {
         try {
             setLoading(true);
             setError(null);
-            const data = await reportService.getReportData({ ...filters, page: currentPage, limit: 10 });
+            const data = await reportService.getReportData({ ...filters, page: currentPage, limit: 10 }, userUnitId, hasGlobalAccess);
             setReportData(data);
         } catch (err) {
             console.error('Error loading report data:', err);
@@ -150,6 +152,28 @@ const Reports = () => {
                 </div>
             </div>
 
+            {/* Unit Context Indicator */}
+            {!hasGlobalAccess && user?.unit_name && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3">
+                    <span className="material-symbols-outlined text-blue-600 text-[24px]">info</span>
+                    <div>
+                        <p className="text-sm font-medium text-blue-900">📍 Menampilkan data untuk: {user.unit_name}</p>
+                        <p className="text-xs text-blue-700">Anda hanya dapat melihat data dari unit kerja Anda</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Unit Selector untuk Superadmin/Direktur */}
+            {hasGlobalAccess && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                        <span className="material-symbols-outlined text-green-600 text-[24px]">admin_panel_settings</span>
+                        <p className="text-sm font-medium text-green-900">Akses Global Aktif</p>
+                    </div>
+                    <p className="text-xs text-green-700 mb-3">Anda dapat melihat data dari semua unit. Gunakan filter unit di bawah untuk memilih unit tertentu.</p>
+                </div>
+            )}
+
             {/* Filters */}
             <div className="bg-white rounded-xl border border-[#e7edf3] p-4 shadow-sm">
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -168,21 +192,24 @@ const Reports = () => {
                                 </div>
                             )}
                         </div>
-                        <div className="relative">
-                            <button onClick={() => setShowFilters(prev => ({ ...prev, unit: !prev.unit }))} className="flex h-10 items-center gap-2 rounded-lg bg-[#f6f7f8] hover:bg-[#eef2f6] px-4 min-w-[160px]">
-                                <span className="material-symbols-outlined text-[#4c739a] text-[20px]">domain</span>
-                                <span className="text-sm font-medium">{getUnitLabel()}</span>
-                                <span className="material-symbols-outlined text-[20px]">expand_more</span>
-                            </button>
-                            {showFilters.unit && (
-                                <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[200px] max-h-60 overflow-y-auto">
-                                    <button onClick={() => { handleFilterChange('unitId', ''); setShowFilters(prev => ({ ...prev, unit: false })); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm border-b">Semua Unit</button>
-                                    {units.map(unit => (
-                                        <button key={unit.id} onClick={() => { handleFilterChange('unitId', unit.id); setShowFilters(prev => ({ ...prev, unit: false })); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">{unit.name}</button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                        {/* Unit selector hanya untuk superadmin/direktur */}
+                        {hasGlobalAccess && (
+                            <div className="relative">
+                                <button onClick={() => setShowFilters(prev => ({ ...prev, unit: !prev.unit }))} className="flex h-10 items-center gap-2 rounded-lg bg-[#f6f7f8] hover:bg-[#eef2f6] px-4 min-w-[160px]">
+                                    <span className="material-symbols-outlined text-[#4c739a] text-[20px]">domain</span>
+                                    <span className="text-sm font-medium">{getUnitLabel()}</span>
+                                    <span className="material-symbols-outlined text-[20px]">expand_more</span>
+                                </button>
+                                {showFilters.unit && (
+                                    <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[200px] max-h-60 overflow-y-auto">
+                                        <button onClick={() => { handleFilterChange('unitId', ''); setShowFilters(prev => ({ ...prev, unit: false })); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm border-b">Semua Unit</button>
+                                        {units.map(unit => (
+                                            <button key={unit.id} onClick={() => { handleFilterChange('unitId', unit.id); setShowFilters(prev => ({ ...prev, unit: false })); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">{unit.name}</button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         <div className="relative">
                             <button onClick={() => setShowFilters(prev => ({ ...prev, category: !prev.category }))} className="flex h-10 items-center gap-2 rounded-lg bg-[#f6f7f8] hover:bg-[#eef2f6] px-4 min-w-[160px]">
                                 <span className="material-symbols-outlined text-[#4c739a] text-[20px]">category</span>

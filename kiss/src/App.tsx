@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { AppSettingsProvider } from './contexts/AppSettingsContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import SuperAdminRoute from './components/SuperAdminRoute';
 import MainLayout from './layouts/MainLayout';
 
 // Loading component
@@ -107,41 +108,123 @@ function App() {
                   <Route path="/tickets/internal-form" element={<Suspense fallback={<LoadingSpinner />}><DirectInternalTicketForm /></Suspense>} />
                   <Route path="/tickets/tiket-internal" element={<Suspense fallback={<LoadingSpinner />}><TiketInternal /></Suspense>} />
                   <Route path="/tickets/tiket-eksternal" element={<Suspense fallback={<LoadingSpinner />}><DirectExternalTicketForm /></Suspense>} />
-                  <Route path="/tickets/qr-management" element={<Suspense fallback={<LoadingSpinner />}><QRManagement /></Suspense>} />
-                  <Route path="/qr-codes" element={<Suspense fallback={<LoadingSpinner />}><QRManagement /></Suspense>} />
-                  <Route path="/tickets/ai-escalation" element={<Suspense fallback={<LoadingSpinner />}><AIEscalationManagement /></Suspense>} />
-                  <Route path="/tickets/escalation" element={<Suspense fallback={<LoadingSpinner />}><EscalationManagement /></Suspense>} />
+                  {/* QR Management - Hanya Superadmin */}
+                  <Route path="/tickets/qr-management" element={
+                    <SuperAdminRoute>
+                      <Suspense fallback={<LoadingSpinner />}><QRManagement /></Suspense>
+                    </SuperAdminRoute>
+                  } />
+                  <Route path="/qr-codes" element={
+                    <SuperAdminRoute>
+                      <Suspense fallback={<LoadingSpinner />}><QRManagement /></Suspense>
+                    </SuperAdminRoute>
+                  } />
+                  
+                  {/* Escalation Management - Hanya Superadmin */}
+                  <Route path="/tickets/ai-escalation" element={
+                    <SuperAdminRoute>
+                      <Suspense fallback={<LoadingSpinner />}><AIEscalationManagement /></Suspense>
+                    </SuperAdminRoute>
+                  } />
+                  <Route path="/tickets/escalation" element={
+                    <SuperAdminRoute>
+                      <Suspense fallback={<LoadingSpinner />}><EscalationManagement /></Suspense>
+                    </SuperAdminRoute>
+                  } />
 
                   {/* Survey Management */}
                   <Route path="/survey/admin" element={<Suspense fallback={<LoadingSpinner />}><SurveyLanding /></Suspense>} />
                   <Route path="/survey/form" element={<Suspense fallback={<LoadingSpinner />}><DirectSurveyForm /></Suspense>} />
                   <Route path="/survey/report" element={<Suspense fallback={<LoadingSpinner />}><SurveyReport /></Suspense>} />
 
-                  {/* User Management */}
-                  <Route path="/users" element={<UserManagement />} />
+                  {/* User Management - Hanya Superadmin */}
+                  <Route path="/users" element={
+                    <SuperAdminRoute>
+                      <UserManagement />
+                    </SuperAdminRoute>
+                  } />
                   <Route path="/users/profile" element={<UserProfile />} />
 
-                  {/* Master Data Management */}
-                  <Route path="/master-data" element={<MasterData />} />
-                  <Route path="/master-data/units" element={<UnitsPage />} />
-                  <Route path="/master-data/unit-types" element={<UnitTypesPage />} />
-                  <Route path="/master-data/service-categories" element={<ServiceCategoriesPage />} />
-                  <Route path="/master-data/ticket-types" element={<TicketTypesPage />} />
-                  <Route path="/master-data/ticket-classifications" element={<TicketClassificationsPage />} />
-                  <Route path="/master-data/ticket-statuses" element={<TicketStatusesPage />} />
-                  <Route path="/master-data/patient-types" element={<PatientTypesPage />} />
-                  <Route path="/master-data/roles-permissions" element={<RolesPermissionsPage />} />
-                  <Route path="/master-data/sla-settings" element={<SLASettingsPage />} />
-                  <Route path="/unified-master-data" element={<UnifiedMasterData />} />
+                  {/* Master Data Management - Hanya Superadmin */}
+                  <Route path="/master-data" element={
+                    <SuperAdminRoute>
+                      <MasterData />
+                    </SuperAdminRoute>
+                  } />
+                  <Route path="/master-data/units" element={
+                    <SuperAdminRoute>
+                      <UnitsPage />
+                    </SuperAdminRoute>
+                  } />
+                  <Route path="/master-data/unit-types" element={
+                    <SuperAdminRoute>
+                      <UnitTypesPage />
+                    </SuperAdminRoute>
+                  } />
+                  <Route path="/master-data/service-categories" element={
+                    <SuperAdminRoute>
+                      <ServiceCategoriesPage />
+                    </SuperAdminRoute>
+                  } />
+                  <Route path="/master-data/ticket-types" element={
+                    <SuperAdminRoute>
+                      <TicketTypesPage />
+                    </SuperAdminRoute>
+                  } />
+                  <Route path="/master-data/ticket-classifications" element={
+                    <SuperAdminRoute>
+                      <TicketClassificationsPage />
+                    </SuperAdminRoute>
+                  } />
+                  <Route path="/master-data/ticket-statuses" element={
+                    <SuperAdminRoute>
+                      <TicketStatusesPage />
+                    </SuperAdminRoute>
+                  } />
+                  <Route path="/master-data/patient-types" element={
+                    <SuperAdminRoute>
+                      <PatientTypesPage />
+                    </SuperAdminRoute>
+                  } />
+                  <Route path="/master-data/roles-permissions" element={
+                    <SuperAdminRoute>
+                      <RolesPermissionsPage />
+                    </SuperAdminRoute>
+                  } />
+                  <Route path="/master-data/sla-settings" element={
+                    <SuperAdminRoute>
+                      <SLASettingsPage />
+                    </SuperAdminRoute>
+                  } />
+                  <Route path="/unified-master-data" element={
+                    <SuperAdminRoute>
+                      <UnifiedMasterData />
+                    </SuperAdminRoute>
+                  } />
 
-                  {/* Settings */}
-                  <Route path="/settings/*" element={<SettingsPage />} />
+                  {/* Settings - Hanya Superadmin */}
+                  <Route path="/settings/*" element={
+                    <SuperAdminRoute>
+                      <SettingsPage />
+                    </SuperAdminRoute>
+                  } />
 
                   {/* Reports & Analytics */}
                   <Route path="/reports" element={<Reports />} />
                   
-                  {/* Notifications */}
-                  <Route path="/realtime-notification" element={<NotificationSettings />} />
+                  {/* Notifications - Hanya Superadmin */}
+                  <Route path="/realtime-notification" element={
+                    <SuperAdminRoute>
+                      <NotificationSettings />
+                    </SuperAdminRoute>
+                  } />
+                  
+                  {/* Buku Petunjuk - Hanya Superadmin */}
+                  <Route path="/buku-petunjuk-admin" element={
+                    <SuperAdminRoute>
+                      <BukuPetunjuk />
+                    </SuperAdminRoute>
+                  } />
                 </Routes>
               </MainLayout>
             </ProtectedRoute>

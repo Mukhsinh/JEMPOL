@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import { escalationService, EscalationStats } from '../../services/escalationService';
 import type { EscalationRule } from '../../services/escalationService';
 import EscalationRuleModal from '../../components/EscalationRuleModal';
 
 const EscalationManagement: React.FC = () => {
+  const { user, hasGlobalAccess, userUnitId } = useAuth();
   const [rules, setRules] = useState<EscalationRule[]>([]);
   const [stats, setStats] = useState<EscalationStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -11,10 +13,26 @@ const EscalationManagement: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRule, setSelectedRule] = useState<EscalationRule | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<string | undefined>(undefined);
+  const [units, setUnits] = useState<Array<{ id: string; name: string }>>([]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+    if (hasGlobalAccess) {
+      fetchUnits();
+    }
+  }, [selectedUnit, userUnitId, hasGlobalAccess]);
+
+  const fetchUnits = async () => {
+    try {
+      // Fetch units untuk dropdown (hanya untuk superadmin/direktur)
+      const { data, error } = await escalationService.getUnits();
+      if (error) throw error;
+      setUnits(data || []);
+    } catch (err) {
+      console.warn('Failed to load units:', err);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -28,11 +46,11 @@ const EscalationManagement: React.FC = () => {
 
       const [rulesData, statsData] = await Promise.race([
         Promise.all([
-          escalationService.getRules().catch(err => {
+          escalationService.getRules(userUnitId, hasGlobalAccess, selectedUnit).catch(err => {
             console.warn('Failed to load rules:', err);
             return [];
           }),
-          escalationService.getStats().catch(err => {
+          escalationService.getStats(userUnitId, hasGlobalAccess, selectedUnit).catch(err => {
             console.warn('Failed to load stats:', err);
             return {
               rules: { total: 0, active: 0, inactive: 0 },
@@ -61,6 +79,8 @@ const EscalationManagement: React.FC = () => {
       console.error('Error fetching data:', err);
       if (err.message === 'Request timeout') {
         setError('Koneksi lambat. Silakan refresh halaman atau periksa koneksi internet Anda.');
+      } else if (err.message === 'ACCESS_DENIED') {
+        setError('Anda tidak memiliki akses ke data eskalasi ini. Data ini melibatkan unit kerja lain.');
       } else {
         setError(err.message || 'Gagal memuat data eskalasi');
       }
@@ -117,7 +137,11 @@ const EscalationManagement: React.FC = () => {
       await fetchData();
     } catch (err: any) {
       console.error('Error toggling rule:', err);
-      setError(err.message || 'Gagal mengubah status aturan');
+      if (err.message === 'ACCESS_DENIED') {
+        setError('Anda tidak memiliki akses untuk mengubah aturan ini.');
+      } else {
+        setError(err.message || 'Gagal mengubah status aturan');
+      }
     } finally {
       setActionLoading(null);
     }
@@ -132,7 +156,11 @@ const EscalationManagement: React.FC = () => {
       await fetchData();
     } catch (err: any) {
       console.error('Error deleting rule:', err);
-      setError(err.message || 'Gagal menghapus aturan');
+      if (err.message === 'ACCESS_DENIED') {
+        setError('Anda tidak memiliki akses untuk menghapus aturan ini.');
+      } else {
+        setError(err.message || 'Gagal menghapus aturan');
+      }
     } finally {
       setActionLoading(null);
     }
@@ -159,6 +187,9 @@ const EscalationManagement: React.FC = () => {
       await fetchData();
     } catch (err: any) {
       console.error('Error saving rule:', err);
+      if (err.message === 'ACCESS_DENIED') {
+        setError('Anda tidak memiliki akses untuk menyimpan aturan ini.');
+      }
       throw err;
     }
   };
@@ -232,6 +263,43 @@ const EscalationManagement: React.FC = () => {
           Tambah Aturan
         </button>
       </div>
+
+      {/* Unit Context Indicator - untuk regular user */}
+      {!hasGlobalAccess && user?.unit_name && (
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+          <div className="flex items-center">
+            <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 mr-2">location_on</span>
+            <span className="text-sm text-blue-700 dark:text-blue-300">
+              Menampilkan eskalasi untuk: <strong>{user.unit_name}</strong>
+            </span>
+          </div>
+          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1 ml-7">
+            Anda dapat melihat eskalasi yang melibatkan unit Anda (sebagai pengirim atau penerima)
+          </p>
+        </div>
+      )}
+
+      {/* Unit Selector - hanya untuk superadmin/direktur */}
+      {hasGlobalAccess && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Filter Unit
+          </label>
+          <select
+            value={selectedUnit || 'all'}
+            onChange={(e) => setSelectedUnit(e.target.value === 'all' ? undefined : e.target.value)}
+            className="w-full md:w-64 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="all">Semua Unit</option>
+            {units.map(unit => (
+              <option key={unit.id} value={unit.id}>{unit.name}</option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Pilih unit untuk melihat eskalasi spesifik atau "Semua Unit" untuk melihat semua data
+          </p>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

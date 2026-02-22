@@ -10,6 +10,7 @@ import responseTemplatesHandler from './lib/handlers/response-templates';
 import rolesHandler from './lib/handlers/roles';
 import surveyStatsHandler from './lib/handlers/survey-stats';
 import surveysHandler from './lib/handlers/surveys';
+import ticketActionsHandler from './lib/handlers/ticket-actions';
 import ticketsHandler from './lib/handlers/tickets';
 import trackTicketHandler from './lib/handlers/track-ticket';
 import unitsHandler from './lib/handlers/units';
@@ -102,6 +103,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return surveysHandler(req, res);
     }
     
+    if (path.startsWith('/public/ticket-actions')) {
+      return ticketActionsHandler(req, res);
+    }
+    
     if (path.startsWith('/public/tickets')) {
       return ticketsHandler(req, res);
     }
@@ -116,12 +121,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     
     // Handle /public/users/[id] - harus sebelum /public/users
-    if (path.match(/^\/public\/users\/[^/]+$/)) {
-      // Extract ID dari path dan masukkan ke query
-      const id = path.split('/').pop();
-      if (id) {
-        req.query.id = id;
-      }
+    // Match pattern: /public/users/{uuid}
+    const userIdMatch = path.match(/^\/public\/users\/([a-f0-9-]{36})$/i);
+    if (userIdMatch) {
+      const id = userIdMatch[1];
+      console.log(`✅ Matched user ID route: ${id}`);
+      req.query.id = id;
       return userByIdHandler(req, res);
     }
     

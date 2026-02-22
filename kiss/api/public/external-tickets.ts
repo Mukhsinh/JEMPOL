@@ -1,18 +1,27 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client - gunakan variable yang benar (tanpa VITE_ prefix untuk backend)
-// Vercel akan inject environment variables dari dashboard
+// Initialize Supabase client - PENTING: Gunakan SERVICE_ROLE_KEY untuk bypass RLS
+// Ini diperlukan agar trigger notify_new_ticket() bisa insert ke tabel notifications
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
+console.log('🔧 Supabase config check (external-tickets):');
+console.log('   SUPABASE_URL:', supabaseUrl ? 'EXISTS' : 'MISSING');
+console.log('   SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'EXISTS (preferred)' : 'MISSING');
+console.log('   SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'EXISTS (fallback)' : 'MISSING');
+console.log('   Using key type:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SERVICE_ROLE' : 'ANON');
+
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Missing Supabase credentials. Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel environment variables.');
-  console.error('   SUPABASE_URL:', supabaseUrl ? 'SET' : 'NOT SET');
-  console.error('   SUPABASE_KEY:', supabaseKey ? 'SET' : 'NOT SET');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 // Helper function to generate ticket number
 async function generateTicketNumber(): Promise<string> {

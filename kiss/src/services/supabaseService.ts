@@ -41,10 +41,122 @@ class SupabaseService {
     category_id?: string;
     search?: string;
     limit?: number;
+    userUnitId?: string;
+    hasGlobalAccess?: boolean;
   } = {}) {
     try {
       console.log('🔍 SupabaseService.getTickets called with filters:', filters);
       
+      // Untuk user dengan unit tertentu, ambil tiket yang relevan
+      if (!filters.hasGlobalAccess && filters.userUnitId) {
+        console.log('🔒 Fetching tickets for unit:', filters.userUnitId);
+        
+        // Ambil semua tiket yang unit_id = userUnitId
+        let directQuery = supabase
+          .from('tickets')
+          .select(`
+            *,
+            units!tickets_unit_id_fkey(id, name, code),
+            service_categories!tickets_category_id_fkey(id, name),
+            admins!tickets_assigned_to_fkey(full_name, email)
+          `)
+          .eq('unit_id', filters.userUnitId)
+          .order('created_at', { ascending: false });
+
+        // Apply filters
+        if (filters.status && filters.status !== 'all') {
+          directQuery = directQuery.eq('status', filters.status);
+        }
+        if (filters.priority && filters.priority !== 'all') {
+          directQuery = directQuery.eq('priority', filters.priority);
+        }
+        if (filters.category_id) {
+          directQuery = directQuery.eq('category_id', filters.category_id);
+        }
+        if (filters.search) {
+          directQuery = directQuery.or(`title.ilike.%${filters.search}%,ticket_number.ilike.%${filters.search}%`);
+        }
+
+        const { data: directTickets, error: directError } = await directQuery;
+
+        if (directError) {
+          console.error('❌ Error fetching direct tickets:', directError);
+          throw directError;
+        }
+
+        // Ambil tiket yang dieskalasi ke unit ini
+        const { data: escalations, error: escalationError } = await supabase
+          .from('ticket_escalations')
+          .select('ticket_id')
+          .eq('to_unit_id', filters.userUnitId);
+
+        if (escalationError) {
+          console.error('❌ Error fetching escalations:', escalationError);
+        }
+
+        const escalatedTicketIds = escalations?.map((e: any) => e.ticket_id) || [];
+
+        // Ambil tiket yang dieskalasi (jika ada)
+        let escalatedTickets: any[] = [];
+        if (escalatedTicketIds.length > 0) {
+          let escQuery = supabase
+            .from('tickets')
+            .select(`
+              *,
+              units!tickets_unit_id_fkey(id, name, code),
+              service_categories!tickets_category_id_fkey(id, name),
+              admins!tickets_assigned_to_fkey(full_name, email)
+            `)
+            .in('id', escalatedTicketIds)
+            .order('created_at', { ascending: false });
+
+          // Apply filters
+          if (filters.status && filters.status !== 'all') {
+            escQuery = escQuery.eq('status', filters.status);
+          }
+          if (filters.priority && filters.priority !== 'all') {
+            escQuery = escQuery.eq('priority', filters.priority);
+          }
+          if (filters.category_id) {
+            escQuery = escQuery.eq('category_id', filters.category_id);
+          }
+          if (filters.search) {
+            escQuery = escQuery.or(`title.ilike.%${filters.search}%,ticket_number.ilike.%${filters.search}%`);
+          }
+
+          const { data: escTickets, error: escError } = await escQuery;
+
+          if (escError) {
+            console.error('❌ Error fetching escalated tickets:', escError);
+          } else {
+            escalatedTickets = escTickets || [];
+          }
+        }
+
+        // Gabungkan dan deduplikasi
+        const allTickets = [...(directTickets || []), ...escalatedTickets];
+        const uniqueTickets = Array.from(
+          new Map(allTickets.map((t: any) => [t.id, t])).values()
+        );
+
+        // Sort by created_at descending
+        uniqueTickets.sort((a: any, b: any) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+
+        // Apply limit
+        const limitedTickets = filters.limit ? uniqueTickets.slice(0, filters.limit) : uniqueTickets.slice(0, 100);
+
+        console.log('✅ Tickets fetched for unit:', limitedTickets.length);
+
+        return {
+          success: true,
+          data: limitedTickets,
+          message: 'Tickets berhasil diambil'
+        };
+      }
+
+      // Untuk admin/superadmin - ambil semua atau filter by unit
       let query = supabase
         .from('tickets')
         .select(`
@@ -343,6 +455,8 @@ class SupabaseService {
     unit_id?: string;
     status?: string;
     category_id?: string;
+    userUnitId?: string;
+    hasGlobalAccess?: boolean;
   }) {
     try {
       console.log('📊 Fetching dashboard metrics with filters:', filters);
@@ -380,9 +494,16 @@ class SupabaseService {
       if (startDate) {
         query = query.gte('created_at', startDate.toISOString());
       }
-      if (filters?.unit_id && filters.unit_id !== 'all') {
+      
+      // PENTING: Filter berdasarkan unit untuk user non-global
+      if (!filters?.hasGlobalAccess && filters?.userUnitId) {
+        console.log('🔒 Applying unit filter for non-global user:', filters.userUnitId);
+        query = query.eq('unit_id', filters.userUnitId);
+      } else if (filters?.unit_id && filters.unit_id !== 'all') {
+        // Untuk admin/superadmin yang memilih unit tertentu
         query = query.eq('unit_id', filters.unit_id);
       }
+      
       if (filters?.status && filters.status !== 'all') {
         query = query.eq('status', filters.status);
       }
@@ -428,9 +549,15 @@ class SupabaseService {
       if (startDate) {
         recentQuery = recentQuery.gte('created_at', startDate.toISOString());
       }
-      if (filters?.unit_id && filters.unit_id !== 'all') {
+      
+      // PENTING: Filter berdasarkan unit untuk user non-global
+      if (!filters?.hasGlobalAccess && filters?.userUnitId) {
+        recentQuery = recentQuery.eq('unit_id', filters.userUnitId);
+      } else if (filters?.unit_id && filters.unit_id !== 'all') {
+        // Untuk admin/superadmin yang memilih unit tertentu
         recentQuery = recentQuery.eq('unit_id', filters.unit_id);
       }
+      
       if (filters?.status && filters.status !== 'all') {
         recentQuery = recentQuery.eq('status', filters.status);
       }
@@ -442,7 +569,68 @@ class SupabaseService {
 
       if (recentError) throw recentError;
 
-      console.log('✅ Dashboard metrics loaded:', count || tickets?.length || 0, 'tickets');
+      // Get escalation data
+      let escalationIncoming = 0;
+      let escalationOutgoing = 0;
+
+      if (filters?.userUnitId) {
+        // Eskalasi masuk ke unit ini
+        const { count: incomingCount } = await supabase
+          .from('ticket_escalations')
+          .select('*', { count: 'exact', head: true })
+          .eq('to_unit_id', filters.userUnitId);
+        
+        escalationIncoming = incomingCount || 0;
+
+        // Eskalasi keluar dari unit ini (dari tiket yang dimiliki unit ini)
+        const { data: unitTickets } = await supabase
+          .from('tickets')
+          .select('id')
+          .eq('unit_id', filters.userUnitId);
+        
+        if (unitTickets && unitTickets.length > 0) {
+          const ticketIds = unitTickets.map((t: any) => t.id);
+          const { count: outgoingCount } = await supabase
+            .from('ticket_escalations')
+            .select('*', { count: 'exact', head: true })
+            .in('ticket_id', ticketIds);
+          
+          escalationOutgoing = outgoingCount || 0;
+        }
+      } else if (filters?.unit_id && filters.unit_id !== 'all') {
+        // Untuk admin yang memilih unit tertentu
+        const { count: incomingCount } = await supabase
+          .from('ticket_escalations')
+          .select('*', { count: 'exact', head: true })
+          .eq('to_unit_id', filters.unit_id);
+        
+        escalationIncoming = incomingCount || 0;
+
+        const { data: unitTickets } = await supabase
+          .from('tickets')
+          .select('id')
+          .eq('unit_id', filters.unit_id);
+        
+        if (unitTickets && unitTickets.length > 0) {
+          const ticketIds = unitTickets.map((t: any) => t.id);
+          const { count: outgoingCount } = await supabase
+            .from('ticket_escalations')
+            .select('*', { count: 'exact', head: true })
+            .in('ticket_id', ticketIds);
+          
+          escalationOutgoing = outgoingCount || 0;
+        }
+      } else if (filters?.hasGlobalAccess) {
+        // Untuk superadmin, hitung semua eskalasi
+        const { count: totalEscalations } = await supabase
+          .from('ticket_escalations')
+          .select('*', { count: 'exact', head: true });
+        
+        escalationIncoming = totalEscalations || 0;
+        escalationOutgoing = totalEscalations || 0;
+      }
+
+      console.log('✅ Dashboard metrics loaded:', count || tickets?.length || 0, 'tickets', 'Eskalasi masuk:', escalationIncoming, 'Eskalasi keluar:', escalationOutgoing);
 
       return {
         success: true,
@@ -450,7 +638,9 @@ class SupabaseService {
           statusCounts,
           priorityCounts,
           totalTickets: count || tickets?.length || 0,
-          recentTickets: recentTickets || []
+          recentTickets: recentTickets || [],
+          escalationIncoming,
+          escalationOutgoing
         },
         message: 'Dashboard metrics berhasil diambil'
       };
@@ -468,7 +658,9 @@ class SupabaseService {
           },
           priorityCounts: {},
           totalTickets: 0,
-          recentTickets: []
+          recentTickets: [],
+          escalationIncoming: 0,
+          escalationOutgoing: 0
         },
         error: error.message || 'Gagal mengambil data dashboard'
       };
@@ -1186,6 +1378,129 @@ class SupabaseService {
         success: false,
         data: {},
         error: error.message || 'Gagal mengambil pengaturan aplikasi'
+      };
+    }
+  }
+
+  // ==================== ESCALATION STATS ====================
+
+  async getEscalationStats(filters?: {
+    dateRange?: string;
+    unit_id?: string;
+    userUnitId?: string;
+    hasGlobalAccess?: boolean;
+  }) {
+    try {
+      console.log('📊 Fetching escalation stats with filters:', filters);
+      
+      // Hitung tanggal filter
+      let startDate: Date | null = null;
+      if (filters?.dateRange) {
+        const now = new Date();
+        switch (filters.dateRange) {
+          case 'last_7_days':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case 'last_30_days':
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case 'last_90_days':
+            startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+          case 'this_month':
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+          case 'last_month':
+            const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            startDate = lastMonth;
+            break;
+        }
+      }
+
+      // Untuk user dengan unit tertentu
+      if (!filters?.hasGlobalAccess && filters?.userUnitId) {
+        // Eskalasi keluar: ambil tiket yang unit_id = userUnitId dan ada eskalasi
+        const { data: outgoingTickets } = await supabase
+          .from('tickets')
+          .select('id')
+          .eq('unit_id', filters.userUnitId);
+
+        const outgoingTicketIds = outgoingTickets?.map((t: any) => t.id) || [];
+
+        let outgoingCount = 0;
+        
+        if (outgoingTicketIds.length > 0) {
+          let outgoingQuery = supabase
+            .from('ticket_escalations')
+            .select('id', { count: 'exact', head: true })
+            .in('ticket_id', outgoingTicketIds);
+
+          if (startDate) {
+            outgoingQuery = outgoingQuery.gte('created_at', startDate.toISOString());
+          }
+
+          const outgoingResult = await outgoingQuery;
+          outgoingCount = outgoingResult.count || 0;
+        }
+
+        // Eskalasi masuk: to_unit_id = userUnitId
+        let incomingQuery = supabase
+          .from('ticket_escalations')
+          .select('id', { count: 'exact', head: true })
+          .eq('to_unit_id', filters.userUnitId);
+
+        if (startDate) {
+          incomingQuery = incomingQuery.gte('created_at', startDate.toISOString());
+        }
+
+        const incomingResult = await incomingQuery;
+
+        return {
+          success: true,
+          data: {
+            outgoing: outgoingCount,
+            incoming: incomingResult.count || 0
+          },
+          message: 'Escalation stats berhasil diambil'
+        };
+      }
+
+      // Untuk admin/superadmin
+      let query = supabase
+        .from('ticket_escalations')
+        .select('id', { count: 'exact', head: true });
+
+      if (startDate) {
+        query = query.gte('created_at', startDate.toISOString());
+      }
+
+      if (filters?.unit_id && filters.unit_id !== 'all') {
+        query = query.eq('to_unit_id', filters.unit_id);
+      }
+
+      const { count, error } = await query;
+
+      if (error) throw error;
+
+      return {
+        success: true,
+        data: {
+          total: count || 0,
+          outgoing: 0,
+          incoming: 0
+        },
+        message: 'Escalation stats berhasil diambil'
+      };
+    } catch (error: any) {
+      console.error('SupabaseService.getEscalationStats error:', error);
+      return {
+        success: false,
+        data: {
+          outgoing: 0,
+          incoming: 0,
+          total: 0
+        },
+        error: error.message || 'Gagal mengambil data eskalasi'
       };
     }
   }

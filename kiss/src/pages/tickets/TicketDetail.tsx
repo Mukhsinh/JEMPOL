@@ -125,7 +125,17 @@ const TicketDetail: React.FC = () => {
 
     } catch (err: any) {
       console.error('Error fetching ticket details:', err);
-      setError(err.message || 'Gagal mengambil data tiket');
+      
+      // Handle 403 Access Denied
+      if (err.message === 'ACCESS_DENIED' || err.message?.includes('403')) {
+        setError('Anda tidak memiliki akses ke tiket ini. Tiket ini berada di unit kerja lain.');
+        // Redirect ke ticket list setelah 3 detik
+        setTimeout(() => {
+          navigate('/tickets');
+        }, 3000);
+      } else {
+        setError(err.message || 'Gagal mengambil data tiket');
+      }
     } finally {
       setLoading(false);
     }
@@ -283,14 +293,22 @@ const TicketDetail: React.FC = () => {
               <span>Selesai</span>
             </button>
           )}
-          {/* Flag Status Tiket - Hijau jika selesai, Merah jika belum */}
+          {/* Flag Status Tiket - Hijau jika selesai, Oranye jika eskalasi, Merah jika belum */}
           <div
             className={`p-2 rounded-lg ${
               ticket.status === 'resolved' || ticket.status === 'closed'
                 ? 'text-emerald-600 bg-emerald-50'
+                : ticket.status === 'escalated' || ticket.is_escalated
+                ? 'text-orange-600 bg-orange-50'
                 : 'text-red-500 bg-red-50'
             }`}
-            title={ticket.status === 'resolved' || ticket.status === 'closed' ? 'Tiket Selesai' : 'Tiket Belum Selesai'}
+            title={
+              ticket.status === 'resolved' || ticket.status === 'closed' 
+                ? 'Tiket Selesai' 
+                : ticket.status === 'escalated' || ticket.is_escalated
+                ? 'Tiket Dieskalasikan'
+                : 'Tiket Belum Selesai'
+            }
           >
             <span className="material-symbols-outlined">flag</span>
           </div>
@@ -452,7 +470,7 @@ const TicketDetail: React.FC = () => {
                             <span className="text-xs text-amber-600 font-medium bg-amber-100 px-2 py-0.5 rounded">Internal</span>
                           )}
                           {response.response_type === 'resolution' && (
-                            <span className="text-xs text-emerald-600 font-medium bg-emerald-100 px-2 py-0.5 rounded">Resolusi</span>
+                            <span className="text-xs text-emerald-600 font-medium bg-emerald-100 px-2 py-0.5 rounded">Tanggapan</span>
                           )}
                           {response.response_type === 'escalation' && (
                             <span className="text-xs text-orange-600 font-medium bg-orange-100 px-2 py-0.5 rounded">Eskalasi</span>

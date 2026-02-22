@@ -99,7 +99,7 @@ const calculateNPS = (responses: any[]): number => {
 
 export const surveyService = {
   // Ambil statistik survey
-  async getStats(params: { start_date: string; end_date: string; unit_id?: string }): Promise<SurveyStats> {
+  async getStats(params: { start_date: string; end_date: string; unit_id?: string; user_unit_id?: string; has_global_access?: boolean }): Promise<SurveyStats> {
     // Jika backend tersedia, gunakan API
     if (!isVercelProduction()) {
       try {
@@ -118,7 +118,10 @@ export const surveyService = {
       .gte('created_at', params.start_date)
       .lte('created_at', params.end_date + 'T23:59:59');
 
-    if (params.unit_id) {
+    // PENTING: Filter berdasarkan unit untuk user non-global
+    if (!params.has_global_access && params.user_unit_id) {
+      query = query.eq('unit_id', params.user_unit_id);
+    } else if (params.unit_id) {
       query = query.eq('unit_id', params.unit_id);
     }
 
@@ -184,7 +187,7 @@ export const surveyService = {
   },
 
   // Ambil responses
-  async getResponses(params: { start_date: string; end_date: string; unit_id?: string }): Promise<SurveyResponse[]> {
+  async getResponses(params: { start_date: string; end_date: string; unit_id?: string; user_unit_id?: string; has_global_access?: boolean }): Promise<SurveyResponse[]> {
     // Jika backend tersedia, gunakan API
     if (!isVercelProduction()) {
       try {
@@ -211,7 +214,10 @@ export const surveyService = {
       .lte('created_at', params.end_date + 'T23:59:59')
       .order('created_at', { ascending: false });
 
-    if (params.unit_id) {
+    // PENTING: Filter berdasarkan unit untuk user non-global
+    if (!params.has_global_access && params.user_unit_id) {
+      query = query.eq('unit_id', params.user_unit_id);
+    } else if (params.unit_id) {
       query = query.eq('unit_id', params.unit_id);
     }
 
@@ -258,7 +264,7 @@ export const surveyService = {
   },
 
   // Ambil IKM per unit
-  async getIKMByUnit(params: { start_date: string; end_date: string; unit_id?: string }): Promise<UnitIKM[]> {
+  async getIKMByUnit(params: { start_date: string; end_date: string; unit_id?: string; user_unit_id?: string; has_global_access?: boolean }): Promise<UnitIKM[]> {
     // Jika backend tersedia, gunakan API
     if (!isVercelProduction()) {
       try {
@@ -284,7 +290,10 @@ export const surveyService = {
       .gte('created_at', params.start_date)
       .lte('created_at', params.end_date + 'T23:59:59');
 
-    if (params.unit_id) {
+    // PENTING: Filter berdasarkan unit untuk user non-global
+    if (!params.has_global_access && params.user_unit_id) {
+      query = query.eq('unit_id', params.user_unit_id);
+    } else if (params.unit_id) {
       query = query.eq('unit_id', params.unit_id);
     }
 
@@ -349,6 +358,8 @@ export const surveyService = {
     start_date: string; 
     end_date: string; 
     unit_id?: string;
+    user_unit_id?: string;
+    has_global_access?: boolean;
     group_by: 'kabupaten_kota' | 'kecamatan' | 'kelurahan';
   }): Promise<AddressStats[]> {
     // Jika backend tersedia, gunakan API
@@ -368,7 +379,10 @@ export const surveyService = {
       .gte('created_at', params.start_date)
       .lte('created_at', params.end_date + 'T23:59:59');
 
-    if (params.unit_id) {
+    // PENTING: Filter berdasarkan unit untuk user non-global
+    if (!params.has_global_access && params.user_unit_id) {
+      query = query.eq('unit_id', params.user_unit_id);
+    } else if (params.unit_id) {
       query = query.eq('unit_id', params.unit_id);
     }
 

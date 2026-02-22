@@ -1020,6 +1020,14 @@ interface DashboardReportData {
     category: string;
   };
   generatedAt: string;
+  categoryBreakdown?: { name: string; count: number; percentage: number }[];
+  unitBreakdown?: { name: string; count: number; percentage: number }[];
+  trendData?: { date: string; open: number; resolved: number }[];
+  performanceMetrics?: {
+    resolutionRate: number;
+    averageResponseTime: number;
+    escalationRate: number;
+  };
 }
 
 // Fungsi untuk download PDF laporan dashboard
