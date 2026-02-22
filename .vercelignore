@@ -49,3 +49,7 @@ kiss/api/qr-codes/
 kiss/api/response-templates/
 kiss/api/package.json
 kiss/api/tsconfig.json
+
+# Prevent individual handlers from being detected as separate functions
+# Only api/index.ts should be deployed as a function
+api/_lib/

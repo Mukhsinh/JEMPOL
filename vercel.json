@@ -10,8 +10,7 @@
     "api/index.ts": {
       "runtime": "@vercel/node@3.2.29",
       "maxDuration": 10,
-      "memory": 1024,
-      "includeFiles": "api/lib/**"
+      "includeFiles": "api/_lib/**"
     }
   },
   "rewrites": [
