@@ -8,9 +8,7 @@
   "installCommand": "cd kiss && npm install --legacy-peer-deps && cd ../api && npm install",
   "functions": {
     "api/index.ts": {
-      "runtime": "@vercel/node@3.2.29",
-      "maxDuration": 10,
-      "includeFiles": "api/_lib/**"
+      "maxDuration": 10
     }
   },
   "rewrites": [
