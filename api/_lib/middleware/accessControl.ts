@@ -100,12 +100,29 @@ export async function enrichUserInfo(
     
     if (!userError && userData) {
       console.log('✅ Found user in users table:', { id: userInfo.id, unit_id: userData.unit_id, admin_id: userData.admin_id });
+      
+      let email = userData.email;
+      
+      // Jika email tidak ada di tabel users, ambil dari auth.users
+      if (!email) {
+        console.log('⚠️ Email not in users table, fetching from auth.users');
+        const { data: authEmail, error: emailError } = await supabase
+          .rpc('get_auth_user_email', { user_id: userInfo.id });
+        
+        if (!emailError && authEmail) {
+          email = authEmail;
+          console.log('✅ Got email from auth.users:', email);
+        } else {
+          console.error('❌ Failed to get email from auth.users:', emailError);
+        }
+      }
+      
       // Override role, unit_id, dan email dengan data dari database
       return {
         id: userInfo.id,
         role: userData.role || userInfo.role,
         unit_id: userData.unit_id || userInfo.unit_id,
-        email: userData.email
+        email: email
       };
     }
     
