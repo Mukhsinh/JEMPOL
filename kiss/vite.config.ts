@@ -1,11 +1,9 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import { viteApiPlugin } from './vite-api-plugin';
 
 export default defineConfig({
   plugins: [
     react(),
-    viteApiPlugin(),
   ],
   test: {
     globals: true,
