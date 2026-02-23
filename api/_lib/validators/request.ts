@@ -171,10 +171,11 @@ export function validatePhone(phone: string): boolean {
     return false;
   }
   
-  // Indonesian phone: starts with 0 or +62, followed by 8-15 digits
-  // Allow spaces and dashes
-  const phoneRegex = /^(\+62|62|0)[0-9\s-]{8,15}$/;
-  return phoneRegex.test(trimmed);
+  // Lebih fleksibel: minimal 8 digit angka
+  // Bisa dimulai dengan 0, +62, 62, atau langsung angka
+  // Izinkan spasi, dash, dan tanda kurung
+  const phoneRegex = /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{3,}$/;
+  return phoneRegex.test(trimmed) && trimmed.replace(/\D/g, '').length >= 8;
 }
 
 /**
