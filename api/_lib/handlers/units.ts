@@ -173,7 +173,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('Error in units API:', error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Internal server error'
+      error: 'Terjadi kesalahan server',
+      message: error?.message || 'Internal server error',
+      details: error?.details || null,
+      timestamp: new Date().toISOString()
     });
   }
 }

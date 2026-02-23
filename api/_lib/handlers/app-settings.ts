@@ -50,13 +50,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error: any) {
     console.error('❌ Unexpected error in app-settings:', error);
     
-    return res.status(200).json({
+    return res.status(500).json({
       success: false,
-      error: 'Terjadi kesalahan server: ' + (error.message || 'Unknown error'),
+      error: 'Terjadi kesalahan server',
+      message: error?.message || 'Unknown error',
+      details: error?.details || null,
       data: [],
       debug: {
-        errorType: error.constructor?.name || 'Unknown',
-        errorName: error.name || 'Unknown',
+        errorType: error?.constructor?.name || 'Unknown',
+        errorName: error?.name || 'Unknown',
         timestamp: new Date().toISOString()
       }
     });

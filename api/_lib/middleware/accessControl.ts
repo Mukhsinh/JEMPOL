@@ -94,12 +94,12 @@ export async function enrichUserInfo(
     // Coba ambil dari tabel users dulu
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('role, unit_id, email')
+      .select('role, unit_id, email, admin_id')
       .eq('id', userInfo.id)
       .maybeSingle();
     
     if (!userError && userData) {
-      console.log('✅ Found user in users table:', { id: userInfo.id, unit_id: userData.unit_id });
+      console.log('✅ Found user in users table:', { id: userInfo.id, unit_id: userData.unit_id, admin_id: userData.admin_id });
       // Override role, unit_id, dan email dengan data dari database
       return {
         id: userInfo.id,
@@ -109,60 +109,8 @@ export async function enrichUserInfo(
       };
     }
     
-    console.log('⚠️ User not found in users table, trying admins table...');
-    
-    // Jika tidak ada di users, coba cek di admins berdasarkan ID
-    const { data: adminDataById, error: adminByIdError } = await supabase
-      .from('admins')
-      .select('id, email, unit_id, is_active')
-      .eq('id', userInfo.id)
-      .eq('is_active', true)
-      .maybeSingle();
-    
-    if (!adminByIdError && adminDataById) {
-      console.log('✅ Found user in admins table by ID:', { id: adminDataById.id, unit_id: adminDataById.unit_id });
-      return {
-        id: userInfo.id,
-        role: 'admin', // Default role untuk admin
-        unit_id: adminDataById.unit_id || userInfo.unit_id,
-        email: adminDataById.email
-      };
-    }
-    
-    // Jika tidak ketemu by ID, coba cari by email dari auth.users
-    console.log('⚠️ Admin not found by ID, getting email from auth.users...');
-    
-    // Gunakan RPC function untuk mendapatkan email dari auth.users
-    const { data: userEmail, error: emailError } = await supabase
-      .rpc('get_auth_user_email', { user_id: userInfo.id });
-    
-    if (emailError || !userEmail) {
-      console.error('❌ Cannot get email from auth.users:', emailError);
-      return userInfo;
-    }
-    
-    console.log('📧 Got email from auth.users:', userEmail);
-    
-    // Cari admin berdasarkan email
-    const { data: adminDataByEmail, error: adminByEmailError } = await supabase
-      .from('admins')
-      .select('id, email, unit_id, is_active')
-      .eq('email', userEmail)
-      .eq('is_active', true)
-      .maybeSingle();
-    
-    if (!adminByEmailError && adminDataByEmail) {
-      console.log('✅ Found admin by email:', { id: adminDataByEmail.id, unit_id: adminDataByEmail.unit_id });
-      return {
-        id: userInfo.id,
-        role: 'admin',
-        unit_id: adminDataByEmail.unit_id,
-        email: adminDataByEmail.email
-      };
-    }
-    
-    console.error('❌ User not found in users or admins table');
-    return userInfo; // Return original userInfo jika tidak ditemukan di kedua tabel
+    console.log('⚠️ User not found in users table');
+    return userInfo; // Return original userInfo jika tidak ditemukan
   } catch (error) {
     console.error('❌ Error enriching user info:', error);
     return userInfo;

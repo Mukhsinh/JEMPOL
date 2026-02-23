@@ -267,8 +267,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   } catch (error: any) {
     logError('CRITICAL ERROR in survey handler', error, { endpoint });
     
-    // Ensure JSON response even on critical error
-    const errorResponse = buildErrorResponse(error, endpoint);
+    // Ensure JSON response even on critical error - serialize error properly
+    const errorResponse = {
+      success: false,
+      error: 'Terjadi kesalahan server',
+      message: error?.message || 'Unknown error',
+      details: error?.details || null,
+      timestamp: new Date().toISOString(),
+      endpoint
+    };
     
     if (!res.headersSent) {
       return res.status(500).json(errorResponse);

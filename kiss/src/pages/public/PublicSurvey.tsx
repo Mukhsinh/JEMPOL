@@ -178,9 +178,22 @@ const PublicSurvey: React.FC = () => {
       console.log('📊 Response data:', result);
 
       if (!response.ok) {
-        const errorMsg = result.error || 'Gagal mengirim survei';
-        const errorDetails = result.details ? ` (${result.details})` : '';
-        throw new Error(errorMsg + errorDetails);
+        // Handle error dengan lebih baik
+        let errorMsg = 'Gagal mengirim survei';
+        
+        if (result.error) {
+          // Jika error adalah object, stringify
+          if (typeof result.error === 'object') {
+            errorMsg = JSON.stringify(result.error);
+          } else {
+            errorMsg = String(result.error);
+          }
+        }
+        
+        const errorDetails = result.details ? ` - ${result.details}` : '';
+        const fieldErrors = result.field_errors ? `\nKesalahan: ${result.field_errors.join(', ')}` : '';
+        
+        throw new Error(errorMsg + errorDetails + fieldErrors);
       }
 
       setSubmitted(true);
